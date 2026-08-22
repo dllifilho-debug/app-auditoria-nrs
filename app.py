@@ -4,6 +4,8 @@ from groq import Groq
 import PyPDF2
 import os
 import re
+from PIL import Image
+import io
 
 st.set_page_config(page_title="App de Auditoria NR", layout="centered")
 st.title("🚧 App de Auditoria de NRs")
@@ -36,6 +38,18 @@ def extrair_texto_nr(nome_arquivo, max_paginas=12):
     except Exception as e:
         return ""
     return texto
+
+def otimizar_imagem_para_api(arquivo_imagem):
+    """Reduz o tamanho da imagem para economizar tokens da API (evitando Erro 413)"""
+    img = Image.open(arquivo_imagem)
+    if img.mode in ("RGBA", "P"):
+        img = img.convert("RGB")
+    # Redimensiona para no máximo 800x800 pixels mantendo a proporção
+    img.thumbnail((800, 800), Image.Resampling.LANCZOS)
+    buffered = io.BytesIO()
+    # Salva em JPEG com 80% de qualidade para reduzir drásticamente o tamanho do Base64
+    img.save(buffered, format="JPEG", quality=80)
+    return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
 DICT_CITACOES_NRS = """REFERÊNCIA TÉCNICA OFICIAL - ITENS VIGENTES DAS NRs (MTE 2025-2026):
 
@@ -98,7 +112,10 @@ if st.button("Gerar Relatório Técnico"):
             st.info("🔍 A IA analisará a imagem e identificará as normas aplicáveis pelo seu conhecimento interno.")
             
         client = Groq(api_key=api_key)
-        image_b64 = base64.b64encode(uploaded_file.read()).decode("utf-8")
+        
+        # AQUI ESTÁ A MÁGICA QUE RESOLVE O ERRO DE TOKENS:
+        image_b64 = otimizar_imagem_para_api(uploaded_file)
+        
         texto_observacao = f"Contexto anotado durante a vistoria: {observacao}" if observacao else "Nenhuma observação adicional fornecida."
         
         prompt = f"""Você é um engenheiro de segurança do trabalho sênior elaborando um relatório pericial. Analise esta imagem com extremo rigor técnico e escreva SEMPRE em Português Brasileiro.
