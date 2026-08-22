@@ -7,8 +7,9 @@ import re
 from PIL import Image
 import io
 
-st.set_page_config(page_title="App de Auditoria NR", layout="centered")
+st.set_page_config(page_title="App de Auditoria NR | Gauntlet Loop", layout="centered", page_icon="🚧")
 st.title("🚧 App de Auditoria de NRs")
+st.markdown("**Powered by Gauntlet Loop Methodology** - Pipeline de Agentes Autônomos")
 
 api_key = st.text_input("Chave API do Groq:", type="password")
 
@@ -25,7 +26,8 @@ with col2:
 
 observacao = st.text_area("Observação do Engenheiro (Opcional):", placeholder="Ex: Trabalhador no andaime sem cinto e sem guarda-corpo")
 
-uploaded_file = st.file_uploader("Tire uma foto ou envie da galeria", type=["jpg", "png", "jpeg"])
+# Agora suporta múltiplas fotos nativamente sem engessar!
+uploaded_files = st.file_uploader("Envie as fotos da vistoria", type=["jpg", "png", "jpeg"], accept_multiple_files=True)
 
 def extrair_texto_nr(nome_arquivo, max_paginas=12):
     texto = ""
@@ -40,127 +42,118 @@ def extrair_texto_nr(nome_arquivo, max_paginas=12):
     return texto
 
 def otimizar_imagem_para_api(arquivo_imagem):
-    """Reduz o tamanho da imagem para economizar tokens da API (evitando Erro 413)"""
     img = Image.open(arquivo_imagem)
     if img.mode in ("RGBA", "P"):
         img = img.convert("RGB")
-    # Redimensiona para no máximo 800x800 pixels mantendo a proporção
-    img.thumbnail((800, 800), Image.Resampling.LANCZOS)
+    # Imagem compactada para isolar o gargalo de tokens no Agente de Visão
+    img.thumbnail((640, 640), Image.Resampling.LANCZOS)
     buffered = io.BytesIO()
-    # Salva em JPEG com 80% de qualidade para reduzir drásticamente o tamanho do Base64
-    img.save(buffered, format="JPEG", quality=80)
+    img.save(buffered, format="JPEG", quality=70)
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-DICT_CITACOES_NRS = """REFERÊNCIA TÉCNICA OFICIAL - ITENS VIGENTES DAS NRs (MTE 2025-2026):
-
-=== NR-35 (TRABALHO EM ALTURA) ===
-- 35.1: Objetivo da norma
-- 35.2.1: Campo de aplicação (trabalho acima de 2,00m do nível inferior)
-- 35.4.2: Trabalhador capacitado (treinamento teórico e prático)
-- 35.6.2: Seleção de sistema de proteção contra quedas
-- 35.6.3: Prioridade do SPCQ (Sistema de Proteção Coletiva)
-- 35.6.3.1: SPCQ deve ser projetado por profissional legalmente habilitado
-- 35.6.9: Cinturão de segurança tipo paraquedista é obrigatório em SPIQ de retenção de queda
-- Anexo II (Sistemas de Ancoragem):
-  - 3.2.a: Ancoragem estrutural deve ser projetada e construída sob responsabilidade de PLH
-  - 3.1: Sistemas de ancoragem podem atender retenção de quedas, restrição de movimento, posicionamento no trabalho, acesso por cordas
-
-=== NR-18 (INDÚSTRIA DA CONSTRUÇÃO) - ANDAIMES ===
-- 18.9.1.1: Em todo perímetro da construção é obrigatório sistema de proteção contra queda de materiais
-- 18.9.4.2: Guarda-corpo deve ter:
-  a) travessão superior a 1,20 m de altura com resistência mínima de 90 kgf/m
-  b) travessão intermediário a 0,70 m de altura com resistência mínima de 66 kgf/m
-  c) rodapé com altura mínima de 0,15 m, rente à superfície, com resistência mínima de 22 kgf/m
-  d) vãos entre os componentes preenchidos com tela
-- 18.12.5: Piso do andaime deve ser forrado de modo contínuo, antiderrapante, nivelado e travado
-- 18.12.15.2: Andaimes multidirecionais devem ter guarda-corpo com:
-  - travessão superior entre 1,0 m e 1,20 m
-  - travessão intermediário 0,50 m abaixo do superior
-  - rodapé mínimo de 0,15 m
-
-=== NR-6 (EPI) ===
-- 6.1: Objetivo da norma
-- 6.4.1: EPI só pode ser comercializado ou utilizado com CA (Certificado de Aprovação) válido
-- 6.5.1.c: Empregador deve fornecer gratuitamente EPI adequado ao risco, em perfeito estado
-- 6.5.1.d: Orientar e treinar sobre uso adequado
-- 6.5.1.e: Fiscalizar o uso
-- 6.6: Empregado deve usar apenas para finalidade prevista, responsabilizar pela guarda e conservar
+DICT_CITACOES_NRS = """
+=== DICIONÁRIO ESTRITO DE NRs (MTE 2025-2026) ===
+NR-35: 35.1 (Objetivo), 35.2.1 (Campo de aplicação >2m), 35.4.2 (Capacitação), 35.6.3 (Prioridade EPC), 35.6.9 (Cinturão em SPIQ), Anexo II 3.2.a (Ancoragem por PLH).
+NR-18: 18.9.1.1 (Proteção perímetro), 18.9.4.2 (Guarda-corpo: 1,20m sup, 0,70m int, 0,15m rodapé), 18.12.5 (Piso do andaime), 18.12.15.2 (Multidirecionais).
+NR-6: 6.4.1 (CA válido), 6.5.1.c (Fornecimento gratuito).
 """
 
-if st.button("Gerar Relatório Técnico"):
-    if not api_key or not uploaded_file:
-        st.warning("Por favor, insira a chave da API e anexe uma imagem.")
+# ==========================================
+# GAUNTLET LOOP: OS 3 AGENTES AUTÔNOMOS
+# ==========================================
+
+def agente_olho_executor(client, image_b64):
+    """AGENTE 1: Especialista em Extração Visual (Frio e Objetivo)"""
+    prompt = """Você é o Agente Extrator Visual. Sua ÚNICA função é descrever o que você vê na imagem com precisão cirúrgica. 
+    Não cite normas, não proponha soluções. Apenas liste os fatos materiais: equipamentos, estruturas, posições das pessoas, presença ou ausência de EPIs/EPCs perceptíveis."""
+    
+    response = client.chat.completions.create(
+        model="qwen/qwen3.6-27b",
+        messages=[{"role": "user", "content": [{"type": "text", "text": prompt}, {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"}}]}],
+        max_tokens=600,
+        temperature=0.1
+    )
+    return re.sub(r'<think>.*?</think>', '', response.choices[0].message.content, flags=re.DOTALL).strip()
+
+def agente_analista_executor(client, fatos_visuais, bloco_gabarito, company_size, observacao):
+    """AGENTE 2: O Engenheiro Analista que cruza os fatos com as normas"""
+    prompt = f"""Você é o Engenheiro Analista. Baseado APENAS nos fatos visuais relatados abaixo, cruze-os com as normas vigentes e elabore um Relatório Técnico de Não Conformidades.
+    
+    FATOS VISUAIS OBSERVADOS: {fatos_visuais}
+    CONTEXTO DO ENGENHEIRO LOCAL: {observacao}
+    PORTE DA EMPRESA: {company_size}
+    
+    BASE NORMATIVA: {bloco_gabarito}
+    
+    Elabore um laudo com: 1. Fatos Constatados, 2. Enquadramento Normativo, 3. Plano de Ação Direto."""
+    
+    response = client.chat.completions.create(
+        model="openai/gpt-oss-120b", # Usando o motor robusto de texto recomendado pela Groq
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=1500,
+        temperature=0.2
+    )
+    return re.sub(r'<think>.*?</think>', '', response.choices[0].message.content, flags=re.DOTALL).strip()
+
+def agente_supervisor_diretor(client, laudo_bruto):
+    """AGENTE 3 (O GAUNTLET): O Diretor Técnico Rigoroso que exige o 'Fator Uau'"""
+    prompt = f"""Você é o Diretor Técnico de Engenharia de Segurança (O Supervisor do Gauntlet Loop). Seu trabalho é auditar o laudo abaixo gerado por um engenheiro júnior.
+    
+    REGRAS DE ACEITAÇÃO (O Fator Uau):
+    1. O laudo NÃO PODE conter a citação '18.4.1.3' (item inexistente).
+    2. O laudo NÃO PODE usar dramatização (ex: "risco mortal iminente"). Deve usar linguagem fria pericial ("aparente não conformidade").
+    3. Ancoragens de andaime DEVEM obrigatoriamente exigir projeto de PLH (Anexo II, 3.2.a da NR-35).
+    4. Se houver recomendação de gambiarras (fita zebrada como guarda-corpo, arames), VOCÊ DEVE REPROVAR e reescrever o plano de ação exigindo estrutura normativa.
+    
+    LAUDO BRUTO:
+    {laudo_bruto}
+    
+    TAREFA: Reescreva e refine o laudo bruto, aplicando correções implacáveis caso qualquer uma das 4 regras acima tenha sido violada. Entregue o laudo final formatado e perfeito para o cliente."""
+    
+    response = client.chat.completions.create(
+        model="openai/gpt-oss-120b",
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=1500,
+        temperature=0.1
+    )
+    return re.sub(r'<think>.*?</think>', '', response.choices[0].message.content, flags=re.DOTALL).strip()
+
+
+if st.button("Executar Gauntlet Loop de Auditoria"):
+    if not api_key or len(uploaded_files) == 0:
+        st.warning("Insira a chave da API e anexe ao menos uma imagem.")
     else:
+        # Preparação do Gabarito (Feita uma única vez fora do loop para não estourar tokens)
+        bloco_gabarito = DICT_CITACOES_NRS
         if modo_analise == "📚 Usar Gabarito (Selecionar NRs)" and len(nr_selecionadas) > 0:
-            texto_norma = ""
-            nomes_pdfs = []
-            limite_paginas = 5 if len(nr_selecionadas) > 1 else 15
+            bloco_gabarito = "GABARITO ESTRITO EXTRAÍDO PELO ENGENHEIRO:\n"
             for nr in nr_selecionadas:
-                nome_pdf = f"{nr}.pdf"
-                texto_norma += f"\n\n--- INÍCIO DO GABARITO DA {nr} ---\n"
-                texto_norma += extrair_texto_nr(nome_pdf, max_paginas=limite_paginas)
-                nomes_pdfs.append(nome_pdf)
-            nomes_juntos = ", ".join(nomes_pdfs)
-            regra_prompt = f"Utilize ESTRITAMENTE as regras das NRs fornecidas nos documentos oficiais abaixo ({nomes_juntos}). Você SÓ PODE citar dimensões numéricas se elas estiverem ESTRITAMENTE escritas no Gabarito Oficial fornecido."
-            bloco_gabarito = f"\nTEXTO OFICIAL ATUALIZADO DAS NORMAS (GABARITO):\n{texto_norma}"
-            st.info(f"📚 Consultando os arquivos oficiais otimizados: {nomes_juntos}")
-        else:
-            regra_prompt = "Identifique as Normas Regulamentadoras aplicáveis usando seu conhecimento técnico. Você DEVE usar o DICIONÁRIO DE CITAÇÕES CORRETAS abaixo como referência obrigatória para citar os itens das NRs. NUNCA invente números de itens que não existam na redação vigente."
-            bloco_gabarito = ""
-            if modo_analise == "📚 Usar Gabarito (Selecionar NRs)" and len(nr_selecionadas) == 0:
-                st.warning("⚠️ Você escolheu usar o gabarito, mas não selecionou nenhuma NR. A IA fará a identificação automática.")
-            st.info("🔍 A IA analisará a imagem e identificará as normas aplicáveis pelo seu conhecimento interno.")
-            
+                bloco_gabarito += extrair_texto_nr(f"{nr}.pdf", max_paginas=5)
+        
         client = Groq(api_key=api_key)
         
-        # AQUI ESTÁ A MÁGICA QUE RESOLVE O ERRO DE TOKENS:
-        image_b64 = otimizar_imagem_para_api(uploaded_file)
-        
-        texto_observacao = f"Contexto anotado durante a vistoria: {observacao}" if observacao else "Nenhuma observação adicional fornecida."
-        
-        prompt = f"""Você é um engenheiro de segurança do trabalho sênior elaborando um relatório pericial. Analise esta imagem com extremo rigor técnico e escreva SEMPRE em Português Brasileiro.
-        Porte da empresa/equipe: {company_size}.
-        {texto_observacao}
-        
-        === REGRAS DE OURO DA AUDITORIA (RESTRIÇÕES ABSOLUTAS) ===
-        1. LINGUAGEM PERICIAL: É proibido usar conclusões legais definitivas ou dramáticas. Use exclusivamente termos objetivos como "aparente não conformidade", "indícios de", "constatação visual", "na imagem analisada".
-        2. ANCORAGEM (NR-35): É ESTRITAMENTE PROIBIDO recomendar a ancoragem do cinto de segurança em tubos do andaime sem exigir projeto específico assinado por Profissional Legalmente Habilitado (PLH). Cite o Anexo II, item 3.2.a da NR-35.
-        3. IMPROVISAÇÕES PROIBIDAS: Nunca recomende o uso de arames, barbantes, fitas zebradas ou adaptações irregulares para fixação de tábuas, guarda-corpo ou EPIs.
-        4. HIERARQUIA DE RISCO E EPI: Siga a hierarquia de controles da NR-35 (eliminação -> proteção coletiva -> EPI). Ao citar EPIs (NR-6), SEMPRE exija a verificação do Certificado de Aprovação (CA) válido (item 6.4.1).
-        5. CITAÇÃO DOS ITENS (OBRIGATÓRIO): Você DEVE usar o DICIONÁRIO DE CITAÇÕES CORRETAS abaixo como referência. NUNCA invente números de itens. Se não tiver certeza, use linguagem genérica ("conforme NR-18 vigente", "segundo NR-35").
-        6. NR-18 - GUARDA-CORPO: Para andaimes, cite o item 18.9.4.2 (travessão 1,20m, intermediário 0,70m, rodapé 0,15m) ou 18.12.15.2 para andaimes multidirecionais. NUNCA cite 18.4.1.3 (item inexistente na redação vigente).
-        7. NR-35 - CAMPO DE APLICAÇÃO: Cite o item 35.2.1 para definição de trabalho em altura (>2,00m). NUNCA cite 35.1.1 para isso (é o Objetivo da norma).
-        8. NR-35 - CAPACITAÇÃO: O item 35.4.2 trata de trabalhador capacitado. NUNCA cite para fornecimento de EPI.
-        9. NR-35 - CINTURÃO: Cite o item 35.6.9 para obrigatoriedade do cinturão tipo paraquedista em SPIQ de retenção de queda.
-        10. NR-6 - FORNECIMENTO: Cite o item 6.5.1.c para fornecimento gratuito de EPI. NUNCA cite 6.1 ou 6.3 para isso.
-        
-        === DICIONÁRIO DE CITAÇÕES CORRETAS DAS NRs (USE OBRIGATORIAMENTE) ===
-        {DICT_CITACOES_NRS}
-        
-        === DIRETRIZ DE ENQUADRAMENTO ===
-        {regra_prompt}
-        {bloco_gabarito}
-        
-        === ESTRUTURA DO RELATÓRIO ===
-        Entregue um relatório estruturado com:
-        1. DESCRIÇÃO DA CENA (fatos observados na imagem)
-        2. ANÁLISE DE NÃO CONFORMIDADES (tabela ou lista com: Fato Observado, Inferência Técnica, Requisito Normativo com item correto)
-        3. PLANO DE AÇÃO (priorizado: 1. Interdição se houver risco iminente, 2. EPC, 3. Validação técnica/PLH, 4. EPI com CA, 5. Treinamento/Capacitação formal)
-        O plano de ação deve exigir verificação de capacidade de carga e validação por pessoa competente/PLH quando aplicável.
-        IMPORTANTE: Se a imagem não permitir confirmação de algum detalhe (altura exata, tipo de andaime, etc.), registre como "não é possível confirmar visualmente" em vez de assumir."""
-        
-        with st.spinner("Processando análise de risco com base nas normas oficiais..."):
-            try:
-                response = client.chat.completions.create(
-                    model="qwen/qwen3.6-27b",
-                    messages=[{"role": "user", "content": [{"type": "text", "text": prompt}, {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"}}]}],
-                    max_tokens=4096,
-                    temperature=0.2
-                )
-                relatorio_bruto = response.choices[0].message.content
-                relatorio_limpo = re.sub(r'<think>.*?</think>', '', relatorio_bruto, flags=re.DOTALL).strip()
-                st.success("Análise Finalizada com Sucesso!")
-                st.markdown(relatorio_limpo)
-                st.download_button(label="📥 Baixar Relatório em Arquivo de Texto (.txt)", data=relatorio_limpo, file_name="relatorio_auditoria_nr.txt", mime="text/plain")
-            except Exception as e:
-                st.error(f"Erro ao processar a imagem: {e}")
+        for idx, arquivo_foto in enumerate(uploaded_files):
+            st.markdown(f"### 📸 Analisando Foto {idx + 1} de {len(uploaded_files)}")
+            image_b64 = otimizar_imagem_para_api(arquivo_foto)
+            
+            # Interface de Status para acompanhar os Subagentes (Gauntlet Loop UI)
+            with st.status(f"Iniciando Pipeline de Agentes para a Foto {idx + 1}...", expanded=True) as status:
+                try:
+                    st.write("🕵️‍♂️ **Agente Olho (Visão)** extraindo fatos materiais...")
+                    fatos_visuais = agente_olho_executor(client, image_b64)
+                    
+                    st.write("📝 **Agente Analista** cruzando fatos com NRs...")
+                    laudo_bruto = agente_analista_executor(client, fatos_visuais, bloco_gabarito, company_size, observacao)
+                    
+                    st.write("⚖️ **Agente Diretor (Supervisor)** aplicando critérios de aceitação...")
+                    laudo_final = agente_supervisor_diretor(client, laudo_bruto)
+                    
+                    status.update(label="✅ Loop Gauntlet Concluído com Sucesso!", state="complete", expanded=False)
+                    
+                    st.markdown(laudo_final)
+                    st.download_button(label=f"📥 Baixar Relatório da Foto {idx + 1} (.txt)", data=laudo_final, file_name=f"relatorio_foto_{idx+1}.txt", mime="text/plain", key=f"download_{idx}")
+                    st.divider()
+                    
+                except Exception as e:
+                    status.update(label=f"❌ Falha no Loop da Foto {idx + 1}", state="error")
+                    st.error(f"Erro ao processar: {e}")
