@@ -12,15 +12,12 @@ api_key = st.text_input("Chave API do Groq:", type="password")
 
 col1, col2 = st.columns(2)
 with col1:
-    # Novo layout: Botões de rádio para escolher o modo de forma mais clara
     modo_analise = st.radio("Modo de Análise:", ["🧠 Identificação Automática", "📚 Usar Gabarito (Selecionar NRs)"])
     
     nr_selecionadas = []
     if modo_analise == "📚 Usar Gabarito (Selecionar NRs)":
-        # Lê a pasta atual e cria a lista de PDFs
         pdfs_na_pasta = [arquivo.replace(".pdf", "") for arquivo in os.listdir() if arquivo.endswith(".pdf")]
-        # O multiselect permite selecionar quantas NRs você quiser ao mesmo tempo
-        nr_selecionadas = st.multiselect("Selecione as NRs aplicáveis (Recomendado: Máx. 4):", pdfs_na_pasta)
+        nr_selecionadas = st.multiselect("Selecione as NRs aplicáveis (Recomendado: Máx. 3):", pdfs_na_pasta)
 
 with col2:
     company_size = st.text_input("Porte da empresa e Equipe de Manutenção:")
@@ -29,13 +26,14 @@ observacao = st.text_area("Observação do Engenheiro (Opcional):", placeholder=
 
 uploaded_file = st.file_uploader("Tire uma foto ou envie da galeria", type=["jpg", "png", "jpeg"])
 
-def extrair_texto_nr(nome_arquivo):
+def extrair_texto_nr(nome_arquivo, max_paginas=8):
     texto = ""
     try:
         with open(nome_arquivo, "rb") as arquivo:
             leitor = PyPDF2.PdfReader(arquivo)
-            # Lê as primeiras 20 páginas de CADA PDF selecionado
-            for i in range(min(20, len(leitor.pages))):
+            # Otimizado para ler apenas as primeiras páginas mais relevantes e evitar estouro de tokens
+            total_paginas = min(max_paginas, len(leitor.pages))
+            for i in range(total_paginas):
                 texto += leitor.pages[i].extract_text() + "\n"
     except Exception as e:
         return ""
@@ -45,22 +43,24 @@ if st.button("Gerar Relatório Técnico"):
     if not api_key or not uploaded_file:
         st.warning("Por favor, insira a chave da API e anexe uma imagem.")
     else:
-        # Lógica para Múltiplas NRs
+        # Lógica para Múltiplas NRs com limite inteligente de páginas
         if modo_analise == "📚 Usar Gabarito (Selecionar NRs)" and len(nr_selecionadas) > 0:
             texto_norma = ""
             nomes_pdfs = []
             
-            # O sistema entra em um loop e extrai o texto de todas as NRs selecionadas
+            # Se selecionar mais de uma, reduzimos o número de páginas por PDF para caber no limite da Groq
+            limite_paginas = 5 if len(nr_selecionadas) > 1 else 15
+            
             for nr in nr_selecionadas:
                 nome_pdf = f"{nr}.pdf"
                 texto_norma += f"\n\n--- INÍCIO DO GABARITO DA {nr} ---\n"
-                texto_norma += extrair_texto_nr(nome_pdf)
+                texto_norma += extrair_texto_nr(nome_pdf, max_paginas=limite_paginas)
                 nomes_pdfs.append(nome_pdf)
             
             nomes_juntos = ", ".join(nomes_pdfs)
             regra_prompt = f"Utilize ESTRITAMENTE as regras das NRs fornecidas nos documentos oficiais abaixo ({nomes_juntos}). Você SÓ PODE citar dimensões numéricas se elas estiverem ESTRITAMENTE escritas no Gabarito Oficial fornecido."
             bloco_gabarito = f"\nTEXTO OFICIAL ATUALIZADO DAS NORMAS (GABARITO):\n{texto_norma}"
-            st.info(f"📚 Consultando os arquivos oficiais atualizados: {nomes_juntos}")
+            st.info(f"📚 Consultando os arquivos oficiais otimizados: {nomes_juntos}")
             
         else:
             regra_prompt = "Identifique as Normas Regulamentadoras aplicáveis usando seu conhecimento técnico. Como você está sem o texto oficial em anexo, cite expressamente os itens normativos, mas NÃO INVENTE dimensões numéricas exatas (como metragens específicas), focando apenas na exigência do dispositivo de segurança."
