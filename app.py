@@ -18,12 +18,8 @@ with col1:
     nr_type = st.selectbox("Norma de Referência (Gabarito Oficial):", opcoes_nr)
 
 with col2:
-    rigor_nivel = st.selectbox("Perfil da Análise:", [
-        "Pragmático (Foco em viabilidade e custo)", 
-        "Rigor Total (Foco em conformidade jurídica estrita)"
-    ])
+    company_size = st.text_input("Porte da empresa e Equipe de Manutenção:")
 
-company_size = st.text_input("Porte da empresa e Equipe de Manutenção:")
 observacao = st.text_area("Observação do Engenheiro (Opcional):", placeholder="Ex: Trabalhador no andaime sem cinto e sem guarda-corpo")
 
 uploaded_file = st.file_uploader("Tire uma foto ou envie da galeria", type=["jpg", "png", "jpeg"])
@@ -59,18 +55,24 @@ if st.button("Gerar Relatório Técnico"):
         
         texto_observacao = f"Contexto anotado durante a vistoria: {observacao}" if observacao else "Nenhuma observação adicional fornecida."
         
-        prompt = f"""Você é um engenheiro de segurança do trabalho sênior, com foco em soluções reais e viáveis. Analise esta imagem.
+        prompt = f"""Você é um engenheiro de segurança do trabalho sênior elaborando um relatório pericial. Analise esta imagem com extremo rigor técnico.
         Porte da empresa/equipe: {company_size}.
         {texto_observacao}
-        Abordagem desejada para o relatório: {rigor_nivel}.
         
-        DIRETRIZ DE ANÁLISE:
+        REGRAS DE OURO DA AUDITORIA (RESTRIÇÕES ABSOLUTAS):
+        1. LINGUAGEM PERICIAL: É proibido usar conclusões legais definitivas ou dramáticas como "ilegal", "risco de morte" ou "vida em perigo". Use exclusivamente termos objetivos como "aparente não conformidade", "indícios de", e registre que a constatação é visual e possui limitações.
+        2. ANCORAGEM (NR-35): É ESTRITAMENTE PROIBIDO recomendar a ancoragem do cinto de segurança em tubos ou componentes do próprio andaime sem a exigência de projeto específico assinado por Profissional Legalmente Habilitado (PLH).
+        3. IMPROVISAÇÕES PROIBIDAS: Nunca recomende o uso de arames, barbantes, fitas zebradas ou adaptações para fixação de estrutura, rodapés ou pisos.
+        4. HIERARQUIA DE RISCO E EPI: Siga a hierarquia de controles da NR-35 (Eliminação > Proteção Coletiva > Sistema de Proteção Individual contra Quedas). Ao citar EPIs (NR-6), nunca os trate como solução universal e SEMPRE exija a verificação do Certificado de Aprovação (CA) válido.
+        5. DIMENSÕES E ATUALIZAÇÕES: Não utilize metragens padronizadas da sua memória (como 0,90m para guarda-corpo ou 25cm para tábuas). Você só pode citar dimensões numéricas se elas estiverem escritas ESTRITAMENTE no Gabarito Oficial fornecido abaixo.
+        
+        DIRETRIZ DE ENQUADRAMENTO:
         {regra_prompt}
         
         TEXTO OFICIAL ATUALIZADO DA NORMA (GABARITO):
         {texto_norma}
         
-        Entregue um relatório estruturado de não conformidades (incluindo gravidade, item violado) e um plano de ação prático que a equipe de manutenção consiga implementar de fato."""
+        Entregue um relatório estruturado separando fato observado, inferência e requisito normativo. O plano de ação deve exigir verificação de capacidade de carga, integridade do sistema e validação por pessoa competente/PLH quando aplicável."""
         
         with st.spinner("Processando análise de risco com base nas normas oficiais..."):
             try:
@@ -95,7 +97,7 @@ if st.button("Gerar Relatório Técnico"):
                 # Exibe o relatório formatado
                 st.markdown(relatorio_gerado)
                 
-                # Botão de copiar (armazena no estado para facilitar)
+                # Botão de copiar/baixar
                 st.download_button(
                     label="📥 Baixar Relatório em Arquivo de Texto (.txt)",
                     data=relatorio_gerado,
