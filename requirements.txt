@@ -1,3 +1,4 @@
 streamlit
 groq
 PyPDF2
+Pillow
