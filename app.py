@@ -135,7 +135,7 @@ if st.button("Gerar Relatório Técnico"):
         with st.spinner("Processando análise de risco com base nas normas oficiais..."):
             try:
                 response = client.chat.completions.create(
-                    model="llama-3.2-11b-vision-preview",
+                    model="qwen/qwen3.6-27b",
                     messages=[{"role": "user", "content": [{"type": "text", "text": prompt}, {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"}}]}],
                     max_tokens=4096,
                     temperature=0.2
