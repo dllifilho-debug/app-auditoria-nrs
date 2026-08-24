@@ -304,3 +304,74 @@ def test_consolidado_lista_plano_de_acao(base, laudo_demo):
     texto = relatorio.consolidado([("foto_1.jpg", laudo_demo)], base, HOJE)
     assert "Plano de ação priorizado" in texto
     assert "NR-18" in texto
+
+
+# ---------------------------------------------------------------------------
+# Edição vigente — a NR-10 de 2026 só vale a partir de 01/06/2027
+# ---------------------------------------------------------------------------
+
+def test_usa_a_edicao_em_vigor_e_nao_a_mais_recente():
+    """Publicada não é o mesmo que vigente.
+
+    A NR-10 de 2026 renumerou a norma inteira e só entra em vigor em 01/06/2027.
+    Citá-la antes disso daria número certo com o texto de outra redação — o erro
+    mais difícil de detectar, porque o item existe.
+    """
+    antes = carregar_base(referencia=date(2026, 8, 24))
+    depois = carregar_base(referencia=date(2027, 7, 1))
+
+    assert antes.edicoes["NR-10"] != depois.edicoes["NR-10"]
+    assert "2019" in antes.edicoes["NR-10"]
+    assert "2026" in depois.edicoes["NR-10"]
+
+    # Mesmo número, redações diferentes: é justamente o que torna o erro perigoso.
+    assert antes.obter("NR-10", "10.10.1").texto != depois.obter("NR-10", "10.10.1").texto
+
+
+def test_avisa_sobre_edicao_publicada_ainda_nao_vigente():
+    base = carregar_base(referencia=date(2026, 8, 24))
+    assert "NR-10" in base.edicoes_futuras
+    _, inicio = base.edicoes_futuras["NR-10"]
+    assert inicio == "2027-06-01"
+
+
+def test_taxonomia_valida_contra_a_edicao_em_vigor_hoje(base):
+    """Guarda contra o erro que o portão de existência não pega.
+
+    Um item pode existir nas duas edições com textos totalmente diferentes. Este
+    teste garante ao menos que nenhuma referência aponte para item ausente ou
+    revogado na redação que o app realmente vai citar.
+    """
+    for risco in catalogo_riscos().values():
+        for ref in risco.itens:
+            nr, _, item = ref.partition(" ")
+            alvo = base.obter(nr, item)
+            assert alvo is not None, f"{risco.id}: {ref} não existe na edição vigente"
+            assert not alvo.revogado, f"{risco.id}: {ref} está revogado"
+
+
+def test_novas_normas_carregadas_e_mapeadas(base):
+    """NR-13 e NR-20, acrescentadas ao acervo, entraram na base e na taxonomia."""
+    assert "NR-13" in base.por_nr and "NR-20" in base.por_nr
+    assert "vaso de pressão" in base.obter("NR-13", "13.5.1.3").texto.lower()
+    assert "ignição" in base.obter("NR-20", "20.13.4").texto.lower()
+
+    mapeadas = {ref.split()[0] for r in catalogo_riscos().values() for ref in r.itens}
+    assert {"NR-13", "NR-20"} <= mapeadas
+
+
+def test_roteamento_acha_riscos_das_normas_novas():
+    compressor = Visao(achados=[Achado("compressor de ar com reservatório sem placa de identificação")])
+    assert "vaso_pressao_sem_placa_identificacao" in [r.id for r in rotear_riscos(compressor)]
+
+    diesel = Visao(achados=[Achado("tambor de diesel apoiado no chão sem bacia de contenção")])
+    assert "tanque_inflamavel_sem_contencao" in [r.id for r in rotear_riscos(diesel)]
+
+
+def test_base_se_reconstroi_quando_o_acervo_muda(tmp_path):
+    """Subir um PDF novo deve bastar; ninguém precisa lembrar de rodar o kb_build."""
+    from auditoria.kb_build import impressao_digital
+
+    base = carregar_base()
+    assert base.impressao_digital, "base sem impressão digital do acervo"
+    assert base.impressao_digital == impressao_digital()

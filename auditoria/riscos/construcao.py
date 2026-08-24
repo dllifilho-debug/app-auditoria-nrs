@@ -35,6 +35,7 @@ RISCOS: dict[str, dict] = {
         ],
         "itens": ["NR-18 18.9.1", "NR-35 35.5.2", "NR-35 35.6.1"],
         "gravidade_base": "critica",
+        "exige_pessoa": True,
     },
     "periferia_laje_sem_guarda_corpo": {
         "rotulo": "Periferia da edificação sem guarda-corpo e rodapé regulamentares",
@@ -232,7 +233,10 @@ RISCOS: dict[str, dict] = {
             "trepando nos travessoes",
             "acesso improvisado ao andaime",
         ],
-        "itens": ["NR-18 18.12.14", "NR-18 18.12.8"],
+        # 18.12.8 proíbe usar escada SOBRE o piso do andaime para alcançar lugares
+        # mais altos — é o enquadramento de "caixote em cima do estrado", não o de
+        # acesso ao andaime. Para a escada solta encostada, quem manda é 18.8.6.7.
+        "itens": ["NR-18 18.12.14", "NR-18 18.8.6.7"],
         "gravidade_base": "alta",
     },
     "andaime_suspenso_irregular": {
@@ -528,6 +532,7 @@ RISCOS: dict[str, dict] = {
         ],
         "itens": ["NR-18 18.7.8.2", "NR-18 18.7.8.1", "NR-35 35.6.1"],
         "gravidade_base": "critica",
+        "exige_pessoa": True,
     },
     "demolicao_sem_plano": {
         "rotulo": "Demolição executada sem plano e sem as precauções prévias",
@@ -626,7 +631,10 @@ RISCOS: dict[str, dict] = {
             "material empilhado na beirada",
             "empilhamento instavel",
         ],
-        "itens": ["NR-18 18.16.4", "NR-18 18.7.3.3"],
+        # 18.7.3.3 só alcança feixe de vergalhão DESLOCADO por equipamento de guindar
+        # (içamento), não pilha em repouso. A estabilidade da pilha — altura, geometria,
+        # amarração, resistência do piso — é a NR-11 11.2.5.
+        "itens": ["NR-18 18.16.4", "NR-11 11.2.5"],
         "gravidade_base": "alta",
     },
     "canteiro_sem_sinalizacao": {
@@ -790,6 +798,7 @@ RISCOS: dict[str, dict] = {
         ],
         "itens": ["NR-35 35.6.9", "NR-35 35.6.6.5", "NR-35 35.6.9.1.1"],
         "gravidade_base": "critica",
+        "exige_pessoa": True,
     },
     "ancoragem_sem_projeto": {
         "rotulo": "Ancoragem improvisada, sem projeto ou sem resistência comprovada",
@@ -808,7 +817,11 @@ RISCOS: dict[str, dict] = {
             "cabo de aco amarrado em qualquer ponto",
             "sem ponto de ancoragem definido",
         ],
-        "itens": ["NR-35 Anexo II 3.2", "NR-35 Anexo II 4.3", "NR-18 18.12.12"],
+        # 18.12.12 obriga instalar dispositivos de ancoragem em edificação com 12 m ou
+        # mais, para limpeza/manutenção/restauração de fachada — condição que a foto de
+        # uma ancoragem improvisada não estabelece. O ponto de fixação temporário
+        # escolhido no improviso é regido pelo Anexo II 4.2.
+        "itens": ["NR-35 Anexo II 3.2", "NR-35 Anexo II 4.3", "NR-35 Anexo II 4.2"],
         "gravidade_base": "alta",
     },
     "talabarte_mal_conectado": {
@@ -829,5 +842,6 @@ RISCOS: dict[str, dict] = {
         ],
         "itens": ["NR-35 35.6.11.1", "NR-35 35.6.11.1.1"],
         "gravidade_base": "alta",
+        "exige_pessoa": True,
     },
 }

@@ -146,7 +146,10 @@ RISCOS: dict[str, dict] = {
             "extintor atras de empilhadeira",
             "acesso ao extintor fechado",
         ],
-        "itens": ["NR-23 23.3.1", "NR-26 26.3.2"],
+        # 26.3.2 trata da COR de identificação do equipamento de segurança — é o
+        # enquadramento de "extintor sem sinalização", não o de extintor obstruído.
+        # Quem proíbe obstruir equipamento de combate a incêndio é a NR-11 11.3.2.
+        "itens": ["NR-23 23.3.1", "NR-11 11.3.2"],
         "gravidade_base": "alta",
     },
     "extintor_sem_sinalizacao": {
@@ -645,7 +648,10 @@ RISCOS: dict[str, dict] = {
             "ninguem sabe quem e da cipa",
             "sem comissao de acidentes",
         ],
-        "itens": ["NR-05 5.4.1", "NR-05 5.6.3.2", "NR-05 5.7.1"],
+        # 5.7.1 trata de treinamento dos membros antes da posse — outra obrigação,
+        # que não é a descrita aqui. O que a evidência observável (mural vazio, ata
+        # vencida) sustenta é a falta de reunião ordinária mensal: 5.6.1.
+        "itens": ["NR-05 5.4.1", "NR-05 5.6.3.2"],
         "gravidade_base": "media",
     },
     "pcmso_ausente": {
@@ -704,4 +710,69 @@ RISCOS: dict[str, dict] = {
         "itens": ["NR-03 3.2.2", "NR-03 3.4.1", "NR-01 1.4.3.1"],
         "gravidade_base": "critica",
     },
+
+    # ------------------------------------------------------------------
+    # NR-20 — Inflamáveis e combustíveis. A norma se aplica por classe de
+    # instalação (Tabela I), então as descrições ficam nas condições físicas que
+    # a foto realmente mostra, sem presumir o porte da instalação.
+    # ------------------------------------------------------------------
+    "area_inflamavel_sem_sinalizacao_ignicao": {
+        "rotulo": "Área com inflamáveis sem sinalização de proibição de fontes de ignição",
+        "descricao": (
+            "Local de armazenamento ou manuseio de inflamáveis e combustíveis sem "
+            "sinalização visível proibindo fumar, chama aberta e demais fontes de ignição."
+        ),
+        "sinais": [
+            "tambor de diesel", "botijao de gas", "galao de gasolina", "sem placa de proibido fumar",
+            "estoque de tinta e solvente", "combustivel sem sinalizacao", "glp",
+            "deposito de inflamavel", "cilindro de acetileno",
+        ],
+        "itens": ["NR-20 20.13.4"],
+        "gravidade_base": "alta",
+    },
+    "tanque_inflamavel_sem_contencao": {
+        "rotulo": "Tanque de inflamável ou combustível sem sistema de contenção de vazamento",
+        "descricao": (
+            "Tanque ou reservatório de líquido inflamável ou combustível apoiado diretamente "
+            "no solo, sem bacia de contenção ou outro sistema para reter vazamento e "
+            "derramamento."
+        ),
+        "sinais": [
+            "tambor no chao", "tanque sem bacia", "sem bacia de contencao",
+            "combustivel direto no solo", "mancha de oleo no chao", "vazamento de diesel",
+            "reservatorio de combustivel sem dique",
+        ],
+        "itens": ["NR-20 20.14.4"],
+        "gravidade_base": "alta",
+    },
+    "bacia_contencao_usada_como_deposito": {
+        "rotulo": "Bacia de contenção utilizada para armazenar materiais",
+        "descricao": (
+            "Interior da bacia de contenção ocupado por materiais, recipientes ou similares, "
+            "o que reduz seu volume útil e compromete a retenção em caso de vazamento."
+        ),
+        "sinais": [
+            "material dentro da bacia", "bacia de contencao entulhada",
+            "tambores dentro do dique", "dique usado como deposito",
+            "bacia com sucata", "objetos na bacia de contencao",
+        ],
+        "itens": ["NR-20 20.14.4.1"],
+        "gravidade_base": "media",
+    },
+    "equipamento_eletrico_inadequado_area_classificada": {
+        "rotulo": "Equipamento elétrico comum em área sujeita a atmosfera inflamável",
+        "descricao": (
+            "Instalação, luminária, tomada, extensão ou ferramenta elétrica de uso comum "
+            "instalada ou utilizada em área classificada, sem a proteção adequada contra "
+            "ignição exigida para o local."
+        ),
+        "sinais": [
+            "extensao perto do combustivel", "luminaria comum na area de inflamavel",
+            "tomada perto de tambor", "ferramenta eletrica junto ao combustivel",
+            "instalacao eletrica em area classificada", "fio proximo a inflamavel",
+        ],
+        "itens": ["NR-20 20.13.1"],
+        "gravidade_base": "critica",
+    },
+
 }

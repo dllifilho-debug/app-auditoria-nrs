@@ -155,6 +155,13 @@ RE_DATA = re.compile(r"(\d{1,2})\s+de\s+([a-zç]+)\s+de\s+(\d{4})", re.IGNORECAS
 RE_VIGENTE_ATE = re.compile(r"reda[çc][ãa]o\s+vigente\s+at[ée]\s+(?:o\s+dia\s+)?(.{0,40}?\d{4})", re.IGNORECASE)
 RE_ENTRA_VIGOR = re.compile(r"entra\s+em\s+vigor\s+(?:no\s+dia\s+|em\s+)?(.{0,40}?\d{4})", re.IGNORECASE)
 RE_REVOGADO = re.compile(r"\(\s*revogad[oa]\b", re.IGNORECASE)
+# Cláusula que difere a vigência da norma inteira, e não de um item:
+# "(Vigência a partir de 01 de junho de 2027 - art. 5º, da Portaria MTE nº 737…)"
+RE_TITULO_NORMA = re.compile(r"^\s*NR\s*-?\s*\d{1,2}\s*[-\u2013\u2014]\s*\S", re.MULTILINE)
+RE_VIGENCIA_NORMA = re.compile(
+    r"(?:vig[êe]ncia\s+a\s+partir\s+de|entra\s+em\s+vigor\s+(?:a\s+partir\s+)?(?:de|em)?)\s*(.{0,45}?\d{4})",
+    re.IGNORECASE,
+)
 
 
 def _extrair_data(trecho: str) -> str | None:
@@ -202,6 +209,26 @@ def identificar_nr(nome_arquivo: str) -> tuple[str | None, int]:
     # o primeiro número já foi consumido pelo código da NR; anos plausíveis só
     ano = max((a for a in anos if 2000 <= a <= 2100), default=0)
     return f"NR-{numero:02d}", ano
+
+
+def ler_vigencia_da_norma(bruto: str) -> str | None:
+    """Data em que a edição inteira passa a valer, quando a portaria a difere.
+
+    A NR-10 de 2026, por exemplo, só vigora a partir de 01/06/2027 — e renumerou
+    a norma. Citar seus itens antes disso daria número certo com texto de outra
+    época, que é o pior tipo de erro que este projeto existe para evitar.
+    """
+    # A cláusula da norma vem colada ao título ("NR 10 - SEGURANÇA … (Vigência a
+    # partir de 01 de junho de 2027)"). Procurar no cabeçalho inteiro pegaria,
+    # por engano, a cláusula de um subitem citada no sumário — foi o que
+    # aconteceu com a NR-13, cuja data pertence ao subitem 13.5.1.1.1.
+    titulo = RE_TITULO_NORMA.search(bruto)
+    if titulo is None:
+        return None
+    janela = bruto[titulo.start(): titulo.start() + 400]
+    if (m := RE_VIGENCIA_NORMA.search(janela)):
+        return _extrair_data(m.group(1))
+    return None
 
 
 def extrair_texto_pdf(caminho: Path) -> str:
@@ -338,44 +365,54 @@ def localizar_pdfs() -> list[Path]:
 
 
 def construir(verboso: bool = True) -> dict:
-    candidatos: dict[str, tuple[int, Path]] = {}
+    edicoes: dict[str, list[dict]] = {}
     ignorados: list[str] = []
-    substituidos: list[str] = []
 
     for pdf in localizar_pdfs():
         nr, ano = identificar_nr(pdf.name)
         if nr is None:
             ignorados.append(pdf.name)
             continue
-        anterior = candidatos.get(nr)
-        if anterior is None or ano > anterior[0]:
-            if anterior is not None:
-                substituidos.append(f"{nr}: {anterior[1].name} (substituído por {pdf.name})")
-            candidatos[nr] = (ano, pdf)
-        else:
-            substituidos.append(f"{nr}: {pdf.name} (mantido {anterior[1].name})")
-
-    normas: dict[str, dict] = {}
-    for nr, (ano, pdf) in sorted(candidatos.items()):
         bruto = extrair_texto_pdf(pdf)
         itens = parsear_norma(nr, bruto, pdf.name)
-        normas[nr] = {
-            "nr": nr,
-            "edicao": ano or None,
+        edicoes.setdefault(nr, []).append({
             "fonte": pdf.name,
+            "ano": ano or None,
+            # Sem cláusula explícita, a edição vale desde 1º de janeiro do ano
+            # do arquivo — suficiente para ordenar edições entre si.
+            "vigencia_inicio": ler_vigencia_da_norma(bruto) or (f"{ano}-01-01" if ano else None),
             "itens": [asdict(i) for i in itens],
-        }
-        if verboso:
-            print(f"{nr}: {len(itens):4d} itens  ({pdf.name})", file=sys.stderr)
+        })
 
-    kb = {
-        "versao": 2,
+    normas: dict[str, dict] = {}
+    for nr, lista in sorted(edicoes.items()):
+        lista.sort(key=lambda e: (e["vigencia_inicio"] or "", e["ano"] or 0))
+        normas[nr] = {"nr": nr, "edicoes": lista}
+        if verboso:
+            resumo = ", ".join(
+                f"{e['fonte']} (desde {e['vigencia_inicio'] or '?'}, {len(e['itens'])} itens)"
+                for e in lista
+            )
+            print(f"{nr}: {resumo}", file=sys.stderr)
+
+    return {
+        "versao": 3,
         "gerado_em": date.today().isoformat(),
+        "impressao_digital": impressao_digital(),
         "normas": normas,
-        "edicoes_substituidas": substituidos,
         "pdfs_ignorados": ignorados,
     }
-    return kb
+
+
+def impressao_digital() -> str:
+    """Resume o conjunto de PDFs de origem, para detectar quando a base envelheceu."""
+    import hashlib
+
+    marca = hashlib.sha256()
+    for pdf in sorted(localizar_pdfs(), key=lambda p: p.name):
+        marca.update(pdf.name.encode())
+        marca.update(str(pdf.stat().st_size).encode())
+    return marca.hexdigest()[:16]
 
 
 def gravar(kb: dict, destino: Path = DESTINO) -> None:
@@ -388,6 +425,6 @@ def gravar(kb: dict, destino: Path = DESTINO) -> None:
 
 if __name__ == "__main__":
     kb = construir()
-    total = sum(len(n["itens"]) for n in kb["normas"].values())
+    total = sum(len(e["itens"]) for n in kb["normas"].values() for e in n["edicoes"])
     print(f"\n{len(kb['normas'])} normas, {total} itens", file=sys.stderr)
     gravar(kb)

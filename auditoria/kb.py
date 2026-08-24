@@ -110,24 +110,57 @@ class Problema:
 # ---------------------------------------------------------------------------
 
 class BaseNormativa:
-    """Índice em memória dos itens das NRs, com busca BM25."""
+    """Índice em memória dos itens das NRs, com busca BM25.
 
-    def __init__(self, dados: dict):
+    Uma NR pode ter mais de uma edição no acervo. Qual delas vale não é a mais
+    recente, e sim a que está em vigor na data da inspeção: a NR-10 publicada em
+    2026 só vigora a partir de 01/06/2027 e renumerou a norma, de modo que citar
+    seus itens hoje daria número certo com o texto errado.
+    """
+
+    def __init__(self, dados: dict, referencia: date | None = None):
         self.gerado_em: str = dados.get("gerado_em", "")
+        self.impressao_digital: str = dados.get("impressao_digital", "")
+        self.pdfs_ignorados: list[str] = list(dados.get("pdfs_ignorados", []))
+        self.referencia: date = referencia or date.today()
         self.itens: dict[str, Item] = {}
         self.por_nr: dict[str, list[Item]] = {}
         self.edicoes: dict[str, str] = {}
+        self.edicoes_futuras: dict[str, tuple[str, str]] = {}
 
         for nr, bloco in dados["normas"].items():
-            self.edicoes[nr] = bloco.get("fonte", "")
+            escolhida, futura = self._escolher_edicao(bloco["edicoes"], self.referencia)
+            if escolhida is None:
+                continue
+            self.edicoes[nr] = escolhida["fonte"]
+            if futura is not None:
+                self.edicoes_futuras[nr] = (futura["fonte"], futura["vigencia_inicio"])
             lista: list[Item] = []
-            for cru in bloco["itens"]:
+            for cru in escolhida["itens"]:
                 item = Item(**{k: cru[k] for k in Item.__dataclass_fields__ if k in cru})
                 self.itens[self._chave(item.nr, item.item)] = item
                 lista.append(item)
             self.por_nr[nr] = lista
 
         self._construir_indice()
+
+    @staticmethod
+    def _escolher_edicao(
+        edicoes: list[dict], quando: date
+    ) -> tuple[dict | None, dict | None]:
+        """A edição em vigor na data, e a próxima que ainda vai entrar em vigor."""
+        def inicio(edicao: dict) -> date:
+            bruto = edicao.get("vigencia_inicio")
+            return date.fromisoformat(bruto) if bruto else date.min
+
+        ordenadas = sorted(edicoes, key=inicio)
+        vigentes = [e for e in ordenadas if inicio(e) <= quando]
+        futuras = [e for e in ordenadas if inicio(e) > quando]
+        # Se todas ainda são futuras, usamos a mais próxima: melhor a norma que
+        # vem por aí do que nenhuma norma.
+        escolhida = vigentes[-1] if vigentes else (futuras[0] if futuras else None)
+        proxima = futuras[0] if (vigentes and futuras) else None
+        return escolhida, proxima
 
     # -- infraestrutura de busca -------------------------------------------
 
@@ -203,8 +236,9 @@ class BaseNormativa:
         return [(item, s) for s, item in pontuados[:k] if s >= corte]
 
 
-@lru_cache(maxsize=1)
-def carregar_base(caminho: str | None = None) -> BaseNormativa:
+@lru_cache(maxsize=8)
+def carregar_base(caminho: str | None = None, referencia: date | None = None) -> BaseNormativa:
+    """Base normativa em vigor na data de referência (por padrão, hoje)."""
     alvo = Path(caminho) if caminho else CAMINHO_KB
     if not alvo.exists():
         # Numa implantação limpa a base pode não ter vindo junto; se os PDFs
@@ -219,7 +253,18 @@ def carregar_base(caminho: str | None = None) -> BaseNormativa:
                 "Coloque os PDFs oficiais em `normas/` e rode `python -m auditoria.kb_build`."
             )
     with gzip.open(alvo, "rt", encoding="utf-8") as fh:
-        return BaseNormativa(json.load(fh))
+        dados = json.load(fh)
+
+    # Acervo mudou desde a última construção? Reconstrói, para que subir um PDF
+    # novo baste — sem ninguém precisar lembrar de rodar o kb_build.
+    if caminho is None:
+        from .kb_build import construir, gravar, impressao_digital
+
+        if dados.get("impressao_digital") and dados["impressao_digital"] != impressao_digital():
+            dados = construir(verboso=False)
+            gravar(dados, alvo)
+
+    return BaseNormativa(dados, referencia)
 
 
 # ---------------------------------------------------------------------------

@@ -238,6 +238,7 @@ RISCOS: dict[str, dict] = {
         ],
         "itens": ["NR-12 12.11.3", "NR-12 12.4.9", "NR-12 12.4.2"],
         "gravidade_base": "critica",
+        "exige_pessoa": True,
     },
     "sinalizacao_seguranca_maquina_ausente": {
         "rotulo": "Máquina sem sinalização de segurança legível sobre os riscos",
@@ -338,7 +339,7 @@ RISCOS: dict[str, dict] = {
             "terminal sem capa",
             "sem espelho no interruptor",
         ],
-        "itens": ["NR-10 10.6.1", "NR-10 10.6.2", "NR-12 12.3.8"],
+        "itens": ["NR-10 10.2.8.2", "NR-10 10.2.8.2.1", "NR-12 12.3.8"],
         "gravidade_base": "critica",
     },
     "quadro_eletrico_aberto_ou_sem_sinalizacao": {
@@ -357,7 +358,7 @@ RISCOS: dict[str, dict] = {
             "disjuntor a mostra",
             "quadro sem tampa",
         ],
-        "itens": ["NR-10 10.7.7.1", "NR-12 12.3.5"],
+        "itens": ["NR-10 10.10.1", "NR-12 12.3.5"],
         "gravidade_base": "alta",
     },
     "ligacao_eletrica_improvisada": {
@@ -376,7 +377,7 @@ RISCOS: dict[str, dict] = {
             "fio torcido",
             "t em cima de t",
         ],
-        "itens": ["NR-12 12.3.6", "NR-10 10.12.5"],
+        "itens": ["NR-12 12.3.6", "NR-10 10.4.4"],
         "gravidade_base": "alta",
     },
     "cabo_eletrico_danificado": {
@@ -413,7 +414,7 @@ RISCOS: dict[str, dict] = {
             "cabo dentro da agua",
             "sem dr no circuito",
         ],
-        "itens": ["NR-12 12.3.3", "NR-10 10.6.4"],
+        "itens": ["NR-12 12.3.3", "NR-10 10.4.2"],
         "gravidade_base": "critica",
     },
     "maquina_sem_aterramento": {
@@ -432,7 +433,7 @@ RISCOS: dict[str, dict] = {
             "plugue com dois pinos",
             "terra desconectado",
         ],
-        "itens": ["NR-12 12.3.2", "NR-10 10.6.3"],
+        "itens": ["NR-12 12.3.2", "NR-10 10.2.8.3"],
         "gravidade_base": "alta",
     },
     "circuitos_sem_identificacao": {
@@ -450,7 +451,7 @@ RISCOS: dict[str, dict] = {
             "chave sem nome",
             "cabos misturados sem marcacao",
         ],
-        "itens": ["NR-10 10.7.7", "NR-10 10.12.10"],
+        "itens": ["NR-10 10.3.3.1", "NR-10 10.10.1"],
         "gravidade_base": "media",
     },
     "trabalho_energizado_sem_desenergizacao": {
@@ -469,8 +470,9 @@ RISCOS: dict[str, dict] = {
             "sem ordem de servico eletrico",
             "eletricista sem epi no painel",
         ],
-        "itens": ["NR-10 10.13.1", "NR-10 10.7.2", "NR-10 10.14.1"],
+        "itens": ["NR-10 10.5.1", "NR-10 10.11.2"],
         "gravidade_base": "critica",
+        "exige_pessoa": True,
     },
     "sala_eletrica_usada_como_deposito": {
         "rotulo": "Local ou compartimento de serviço elétrico usado para guardar objetos",
@@ -487,7 +489,7 @@ RISCOS: dict[str, dict] = {
             "material na frente do quadro",
             "escada guardada na sala eletrica",
         ],
-        "itens": ["NR-10 10.12.8"],
+        "itens": ["NR-10 10.4.4.1"],
         "gravidade_base": "media",
     },
     # ------------------------------------------------------------------
@@ -529,6 +531,7 @@ RISCOS: dict[str, dict] = {
         ],
         "itens": ["NR-12 12.8.9", "NR-12 12.8.9.1", "NR-12 12.2.8"],
         "gravidade_base": "critica",
+        "exige_pessoa": True,
     },
     "cabo_aco_ou_lingada_deteriorados": {
         "rotulo": "Cabo de aço, corrente, cinta ou gancho de içamento deteriorado",
@@ -585,6 +588,7 @@ RISCOS: dict[str, dict] = {
         ],
         "itens": ["NR-11 11.1.5", "NR-11 11.1.6", "NR-11 11.1.7"],
         "gravidade_base": "alta",
+        "exige_pessoa": True,
     },
     "empilhadeira_combustao_em_local_fechado": {
         "rotulo": "Máquina de transporte a combustão operando em local fechado sem ventilação",
@@ -678,6 +682,7 @@ RISCOS: dict[str, dict] = {
         ],
         "itens": ["NR-17 17.5.1", "NR-17 17.5.2.1", "NR-17 17.5.4"],
         "gravidade_base": "alta",
+        "exige_pessoa": True,
     },
     "transporte_manual_sem_meio_mecanico": {
         "rotulo": "Transporte manual de material por longa distância sem meio mecânico auxiliar",
@@ -696,6 +701,7 @@ RISCOS: dict[str, dict] = {
         ],
         "itens": ["NR-17 17.5.3", "NR-11 11.2.2.1", "NR-11 11.1.4"],
         "gravidade_base": "media",
+        "exige_pessoa": True,
     },
     "mobiliario_posto_trabalho_inadequado": {
         "rotulo": "Posto de trabalho com bancada, plano ou assento inadequado",
@@ -751,6 +757,7 @@ RISCOS: dict[str, dict] = {
         ],
         "itens": ["NR-17 17.4.3", "NR-17 17.4.2", "NR-17 17.4.6"],
         "gravidade_base": "media",
+        "exige_pessoa": True,
     },
     "iluminacao_insuficiente_no_posto": {
         "rotulo": "Iluminação insuficiente ou com ofuscamento no posto de trabalho",
@@ -771,4 +778,68 @@ RISCOS: dict[str, dict] = {
         "itens": ["NR-17 17.8.1", "NR-17 17.8.2", "NR-17 17.8.3"],
         "gravidade_base": "media",
     },
+
+    # ------------------------------------------------------------------
+    # NR-13 — Caldeiras e vasos de pressão. No canteiro, o caso comum é o
+    # reservatório do compressor de ar: é vaso de pressão para todos os efeitos.
+    # ------------------------------------------------------------------
+    "vaso_pressao_sem_placa_identificacao": {
+        "rotulo": "Vaso de pressão sem placa de identificação afixada e visível",
+        "descricao": (
+            "Reservatório de ar comprimido, autoclave ou outro vaso de pressão sem placa "
+            "de identificação indelével no corpo, ou sem a categoria e o código de "
+            "identificação em local visível."
+        ),
+        "sinais": [
+            "compressor de ar", "reservatorio de ar comprimido", "vaso de pressao",
+            "cilindro sem placa", "tanque de ar sem identificacao", "autoclave",
+            "sem placa de identificacao", "tanque pressurizado",
+        ],
+        "itens": ["NR-13 13.5.1.3", "NR-13 13.5.1.4"],
+        "gravidade_base": "media",
+    },
+    "vaso_pressao_sem_dispositivo_seguranca": {
+        "rotulo": "Vaso de pressão sem válvula de segurança ou sem indicador de pressão",
+        "descricao": (
+            "Vaso de pressão em operação sem válvula de segurança (ou outro dispositivo de "
+            "alívio), sem manômetro, ou com o dispositivo de alívio visivelmente bloqueado, "
+            "amarrado ou substituído por improviso."
+        ),
+        "sinais": [
+            "sem valvula de seguranca", "valvula de alivio bloqueada", "sem manometro",
+            "manometro quebrado", "compressor sem valvula", "valvula amarrada",
+            "dispositivo de alivio lacrado", "reservatorio sem manometro",
+        ],
+        "itens": ["NR-13 13.5.1.2"],
+        "gravidade_base": "critica",
+    },
+    "caldeira_sem_dispositivo_seguranca": {
+        "rotulo": "Caldeira sem válvula de segurança ou sem instrumentação de pressão",
+        "descricao": (
+            "Caldeira em operação sem válvula de segurança ajustada, sem instrumento "
+            "indicador de pressão ou sem os dispositivos de controle de nível exigidos."
+        ),
+        "sinais": [
+            "caldeira", "gerador de vapor", "caldeira sem valvula", "sem visor de nivel",
+            "caldeira sem manometro", "vaso de vapor", "sem indicador de pressao",
+        ],
+        "itens": ["NR-13 13.4.1.2"],
+        "gravidade_base": "critica",
+    },
+    "vaso_pressao_instalacao_sem_acesso_seguro": {
+        "rotulo": "Vaso de pressão instalado sem acesso seguro aos drenos e indicadores",
+        "descricao": (
+            "Vaso de pressão posicionado de modo que drenos, respiros, bocas de visita ou "
+            "indicadores de nível, pressão e temperatura não possam ser alcançados por "
+            "meio seguro — encaixotado, encostado em parede ou sobre base improvisada."
+        ),
+        "sinais": [
+            "compressor entalado", "vaso encostado na parede", "sem acesso ao dreno",
+            "manometro inacessivel", "equipamento em vao apertado",
+            "reservatorio sobre base improvisada", "sem passagem para manutencao",
+        ],
+        "itens": ["NR-13 13.5.2.1"],
+        "gravidade_base": "media",
+    },
+
 }

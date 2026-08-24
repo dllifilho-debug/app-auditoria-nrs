@@ -178,6 +178,16 @@ def markdown(
         f"- Base normativa: {len(base.itens)} itens extraídos de "
         f"{len(base.por_nr)} NRs, edição consolidada em {base.gerado_em}."
     )
+    citadas = sorted({nc.item.nr for nc in laudo.nao_conformidades})
+    for nr in citadas:
+        linha = f"  - {nr}: edição `{base.edicoes.get(nr, '?')}`"
+        if (futura := base.edicoes_futuras.get(nr)):
+            arquivo, inicio = futura
+            linha += (
+                f" — há edição posterior (`{arquivo}`) que só entra em vigor em "
+                f"{date.fromisoformat(inicio):%d/%m/%Y} e por isso não foi utilizada"
+            )
+        p.append(linha)
     p.append(
         "- Toda citação deste laudo foi conferida item a item contra o texto oficial "
         "publicado pelo MTE. Citação não localizada na base é removida antes da emissão."

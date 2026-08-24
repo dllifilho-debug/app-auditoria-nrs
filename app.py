@@ -38,8 +38,13 @@ st.set_page_config(
 # ---------------------------------------------------------------------------
 
 @st.cache_resource(show_spinner="Carregando base normativa…")
-def base_normativa():
-    return carregar_base()
+def base_normativa(referencia: date):
+    """Base em vigor na data informada.
+
+    Não é a edição mais recente que vale, e sim a vigente: a NR-10 publicada em
+    2026 só entra em vigor em 01/06/2027 e renumerou a norma inteira.
+    """
+    return carregar_base(referencia=referencia)
 
 
 @st.cache_resource
@@ -80,7 +85,7 @@ def chave_configurada() -> str:
 # Barra lateral
 # ---------------------------------------------------------------------------
 
-base = base_normativa()
+base = base_normativa(date.today())
 riscos = taxonomia()
 
 with st.sidebar:
@@ -162,8 +167,24 @@ with st.sidebar:
                 ". O app sinaliza a aplicabilidade dessas normas, mas nunca cita item delas."
             )
             st.caption(
-                "Para ampliar a cobertura, coloque o PDF oficial em `normas/` e rode "
-                "`python -m auditoria.kb_build`."
+                "Para ampliar a cobertura, basta colocar o PDF oficial em `normas/` — "
+                "a base se reconstrói sozinha quando o acervo muda."
+            )
+        if base.edicoes_futuras:
+            futuras = ", ".join(
+                f"{nr} (a partir de {date.fromisoformat(quando):%d/%m/%Y})"
+                for nr, (_, quando) in sorted(base.edicoes_futuras.items())
+            )
+            st.caption(
+                f"⏳ Edição já publicada mas ainda **não vigente**: {futuras}. "
+                "O app cita a redação em vigor na data da inspeção."
+            )
+        if base.pdfs_ignorados:
+            st.warning(
+                "PDF cujo nome não permite identificar a NR (ignorado): "
+                + ", ".join(f"`{n}`" for n in base.pdfs_ignorados)
+                + ". Renomeie para o padrão `nr-XX-....pdf`.",
+                icon="⚠️",
             )
 
 
@@ -193,6 +214,11 @@ with col_b:
     responsavel = st.text_input("Responsável pela inspeção", placeholder="Ex.: Eng. M. Andrade")
 with col_c:
     data_inspecao = st.date_input("Data da inspeção", value=date.today(), format="DD/MM/YYYY")
+
+# A partir daqui vale a edição vigente na data da inspeção, e não a de hoje —
+# o que importa numa inspeção retroativa ou já agendada para depois de uma
+# mudança de norma.
+base = base_normativa(data_inspecao)
 
 contexto = st.text_area(
     "Contexto da inspeção (opcional, mas melhora muito o enquadramento)",

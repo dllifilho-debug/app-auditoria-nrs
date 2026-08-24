@@ -24,7 +24,7 @@ desligue o modo demonstração e informe a chave da [Groq](https://console.groq.
 ou defina `GROQ_API_KEY` no ambiente / nos *Secrets* do Streamlit Cloud.
 
 ```bash
-pytest tests/          # 30 testes das garantias do produto
+pytest tests/          # 36 testes das garantias do produto
 ```
 
 ---
@@ -41,7 +41,7 @@ Foto → Agente Olho → Dossiê normativo → Agente Analista → Aferição �
 | Etapa | Quem executa | O que garante |
 |---|---|---|
 | **Agente Olho** | modelo de visão | Descreve a foto e nada mais: não conhece norma, não julga, não propõe. Se não há ninguém na imagem, registra isso — e o sistema passa a proibir qualquer cobrança de EPI ou treinamento. |
-| **Dossiê normativo** | código | Roteia os fatos por uma taxonomia curada de 113 riscos e por busca BM25 sobre os itens extraídos dos PDFs. O analista só enxerga o que pode se aplicar. |
+| **Dossiê normativo** | código | Roteia os fatos por uma taxonomia curada de 121 riscos e por busca BM25 sobre os itens extraídos dos PDFs. O analista só enxerga o que pode se aplicar. |
 | **Agente Analista** | modelo de texto | Enquadra os fatos referenciando rótulos do dossiê (`D1`, `D7`…). Nunca escreve um número de NR. |
 | **Aferição** | código | Descarta rótulo inexistente, item fora de vigência na data, item repetido e cobrança de EPI sem gente na foto. |
 | **Agente Diretor** | modelo de texto | Relê cada enquadramento ao lado do texto oficial do item e veta o que a norma não sustenta. No rigor Máximo, o veto volta ao analista. |
@@ -54,12 +54,23 @@ vetou e o que a aferição descartou.
 
 ## Base normativa
 
-`auditoria/data/kb.json.gz` — **5.757 itens de 22 NRs**, extraídos dos PDFs oficiais em
-`normas/`, com o texto verbatim, o anexo de origem e as datas de vigência de cada item
-(inclusive redações com entrada em vigor futura, como a da NR-18 que passou a valer em
-29/06/2026).
+`auditoria/data/kb.json.gz` — **6.420 itens de 24 NRs**, extraídos dos PDFs oficiais em
+`normas/`, com o texto verbatim, o anexo de origem e as datas de vigência de cada item.
 
-Para regenerar depois de atualizar um PDF:
+**Publicada não é o mesmo que vigente.** A base guarda todas as edições de cada norma e
+escolhe, na data da inspeção, a que está em vigor. A NR-10 publicada em 2026 é o caso que
+exige isso: ela **renumerou a norma inteira** e só entra em vigor em **01/06/2027** — dos
+60 números que existem nas duas edições, 59 têm texto diferente. Citá-la hoje daria número
+certo com a redação errada, que é o erro mais difícil de detectar, porque o item existe.
+Até junho de 2027 o app cita a edição de 2019, e avisa na barra lateral que há edição
+posterior à espera.
+
+Para ampliar a cobertura, **basta colocar o PDF oficial em `normas/`**: a base guarda a
+impressão digital do acervo e se reconstrói sozinha quando ele muda. O nome do arquivo
+precisa conter `nr` e o número (`nr-20-atualizada-2025.pdf`); um nome que não permita
+identificar a norma é sinalizado na barra lateral em vez de ser ignorado em silêncio.
+
+Para forçar a reconstrução:
 
 ```bash
 python -m auditoria.kb_build
@@ -68,12 +79,12 @@ python -m auditoria.kb_build
 ### Ampliando a cobertura
 
 `auditoria/catalogo_nr.py` cataloga **as 38 NRs** (36 vigentes; NR-02 e NR-27 revogadas).
-Das 36 vigentes, 22 têm o texto integral carregado. Para as demais, o app **sinaliza a
+Das 36 vigentes, 24 têm o texto integral carregado. Para as demais, o app **sinaliza a
 possível aplicabilidade mas nunca cita item** — é a diferença entre admitir o limite e
 inventar. Basta colocar o PDF oficial em `normas/` e rodar `kb_build` para que a NR entre
 no dossiê.
 
-Faltam: NR-13, 14, 19, 20, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38.
+Faltam: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma delas aplicável a obra civil.
 
 ---
 
@@ -101,7 +112,7 @@ normas/                    PDFs oficiais das NRs
 
 - Uma foto mostra condições físicas. Ausência de documento (PGR, ordem de serviço,
   ficha de treinamento) **não se enxerga em imagem** e o app não a alega.
-- 14 das 36 NRs vigentes ainda não têm texto carregado.
+- 12 das 36 NRs vigentes ainda não têm texto carregado (nenhuma delas de construção civil).
 - O modelo de visão da Groq está em *preview* e pode ser descontinuado pelo fornecedor.
 - O documento gerado é apoio à inspeção. **Não substitui laudo assinado por profissional
   legalmente habilitado.**
