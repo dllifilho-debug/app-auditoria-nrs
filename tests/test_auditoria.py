@@ -375,3 +375,64 @@ def test_base_se_reconstroi_quando_o_acervo_muda(tmp_path):
     base = carregar_base()
     assert base.impressao_digital, "base sem impressão digital do acervo"
     assert base.impressao_digital == impressao_digital()
+
+
+# ---------------------------------------------------------------------------
+# Resiliência do cliente — caminhos que só aparecem contra a API real
+# ---------------------------------------------------------------------------
+
+def _resposta_http(status: int):
+    """Resposta httpx mínima, como a que o SDK da Groq embrulha nos seus erros."""
+    import httpx
+
+    return httpx.Response(status, request=httpx.Request("POST", "https://api.groq.com/x"))
+
+def test_cliente_segue_sem_json_estrito_quando_o_modelo_recusa(monkeypatch):
+    """Nem todo modelo da Groq aceita response_format; a recusa não pode derrubar o laudo."""
+    import groq
+
+    from auditoria.modelos import ClienteGroq
+
+    cliente = ClienteGroq(api_key="falsa")
+    tentativas: list[dict] = []
+
+    class RespostaFalsa:
+        headers: dict = {}
+        usage = None
+        choices = [type("C", (), {"message": type("M", (), {"content": '{"ok": true}'})()})()]
+
+        def parse(self):
+            return self
+
+    def falso_create(**parametros):
+        tentativas.append(parametros)
+        if "response_format" in parametros:
+            raise groq.BadRequestError(
+                "response_format is not supported for this model",
+                response=_resposta_http(400),
+                body=None,
+            )
+        return RespostaFalsa()
+
+    monkeypatch.setattr(cliente.cliente.chat.completions.with_raw_response, "create", falso_create)
+
+    saida = cliente.conversar("modelo-x", [{"role": "user", "content": "oi"}], json_estrito=True)
+
+    assert saida == '{"ok": true}'
+    assert len(tentativas) == 2, "deveria ter tentado de novo sem response_format"
+    assert "response_format" in tentativas[0] and "response_format" not in tentativas[1]
+    # E não insiste na exigência nas chamadas seguintes.
+    assert cliente.json_estrito_indisponivel
+
+
+def test_erros_da_api_viram_mensagem_acionavel():
+    """O usuário precisa saber o que fazer, não ver o traceback cru da biblioteca."""
+    import groq
+
+    from auditoria.modelos import traduzir
+
+    traduzido = traduzir(
+        groq.RateLimitError("429", response=_resposta_http(429), body=None)
+    )
+    assert "cota" in traduzido.mensagem.lower()
+    assert traduzido.sugestao and traduzido.recuperavel

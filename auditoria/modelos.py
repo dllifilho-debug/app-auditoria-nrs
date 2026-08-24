@@ -177,6 +177,7 @@ class ClienteGroq:
         self.cota = Cota()
         self.tokens_gastos = 0
         self.chamadas = 0
+        self.json_estrito_indisponivel = False
 
     # -- cota ---------------------------------------------------------------
 
@@ -211,6 +212,11 @@ class ClienteGroq:
 
     # -- chamada ------------------------------------------------------------
 
+    def _chamar(self, parametros: dict):
+        crua = self.cliente.chat.completions.with_raw_response.create(**parametros)
+        self._ler_cabecalhos(crua.headers)
+        return crua.parse()
+
     def conversar(
         self,
         modelo: str,
@@ -229,13 +235,25 @@ class ClienteGroq:
             "max_completion_tokens": teto_saida,
             "temperature": temperatura,
         }
-        if json_estrito:
+        if json_estrito and not self.json_estrito_indisponivel:
             parametros["response_format"] = {"type": "json_object"}
 
         try:
-            crua = self.cliente.chat.completions.with_raw_response.create(**parametros)
-            self._ler_cabecalhos(crua.headers)
-            resposta = crua.parse()
+            resposta = self._chamar(parametros)
+        except self._groq.BadRequestError as erro:
+            # Nem todo modelo da Groq aceita response_format json_object, e a
+            # recusa vem como 400. O laudo não depende disso: o leitor de JSON
+            # já tolera resposta em prosa com o objeto no meio. Então tenta de
+            # novo sem a exigência, em vez de derrubar a auditoria inteira.
+            if not json_estrito or "response_format" not in str(erro).lower():
+                raise traduzir(erro) from erro
+            self.aviso("O modelo não aceita resposta em JSON estrito; seguindo sem essa exigência.")
+            self.json_estrito_indisponivel = True
+            parametros.pop("response_format", None)
+            try:
+                resposta = self._chamar(parametros)
+            except Exception as segundo:
+                raise traduzir(segundo) from segundo
         except Exception as erro:                     # traduzido para o usuário
             raise traduzir(erro) from erro
 

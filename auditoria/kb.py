@@ -262,7 +262,12 @@ def carregar_base(caminho: str | None = None, referencia: date | None = None) ->
 
         if dados.get("impressao_digital") and dados["impressao_digital"] != impressao_digital():
             dados = construir(verboso=False)
-            gravar(dados, alvo)
+            try:
+                gravar(dados, alvo)
+            except OSError:
+                # Em hospedagem com disco somente-leitura não dá para persistir;
+                # a base reconstruída em memória serve para esta execução.
+                pass
 
     return BaseNormativa(dados, referencia)
 

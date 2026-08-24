@@ -24,7 +24,7 @@ desligue o modo demonstração e informe a chave da [Groq](https://console.groq.
 ou defina `GROQ_API_KEY` no ambiente / nos *Secrets* do Streamlit Cloud.
 
 ```bash
-pytest tests/          # 36 testes das garantias do produto
+pytest tests/          # 38 testes das garantias do produto
 ```
 
 ---
