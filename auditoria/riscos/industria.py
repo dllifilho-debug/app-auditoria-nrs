@@ -198,7 +198,7 @@ RISCOS: dict[str, dict] = {
             "bimanual colado na maquina",
             "peso em cima do botao",
         ],
-        "itens": ["NR-12 12.4.3", "NR-12 12.4.5", "NR-12 12.4.7"],
+        "itens": ["NR-12 12.4.3", "NR-12 12.4.5"],
         "gravidade_base": "alta",
     },
     "pedal_acionamento_desprotegido": {
@@ -236,7 +236,7 @@ RISCOS: dict[str, dict] = {
             "chave geral sem trava",
             "sem loto",
         ],
-        "itens": ["NR-12 12.11.3", "NR-12 12.4.9", "NR-12 12.4.2"],
+        "itens": ["NR-12 12.11.3", "NR-12 12.4.9"],
         "gravidade_base": "critica",
         "exige_pessoa": True,
     },
@@ -299,7 +299,7 @@ RISCOS: dict[str, dict] = {
             "desnivel no piso",
             "placa de piso solta",
         ],
-        "itens": ["NR-12 12.2.4", "NR-11 11.2.9"],
+        "itens": ["NR-12 12.2.4", "NR-08 8.3.2.4"],
         "gravidade_base": "media",
     },
     "maquina_sem_estabilidade_ou_fixacao": {
@@ -567,7 +567,7 @@ RISCOS: dict[str, dict] = {
             "guincho sem indicacao de capacidade",
             "nao tem etiqueta de capacidade",
         ],
-        "itens": ["NR-11 11.1.3.2", "NR-12 12.12.7.1"],
+        "itens": ["NR-11 11.1.3.2"],
         "gravidade_base": "media",
     },
     "empilhadeira_operacao_irregular": {

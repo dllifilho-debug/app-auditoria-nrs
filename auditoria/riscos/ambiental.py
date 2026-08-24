@@ -172,18 +172,20 @@ RISCOS: dict[str, dict] = {
         "gravidade_base": "media",
     },
     "extintor_vencido_ou_sem_manutencao": {
-        "rotulo": "Extintor com carga vencida ou sem inspeção",
+        "rotulo": "Extintor com carga vencida, lacre rompido ou sem inspeção registrada",
         "descricao": (
-            "Extintor com etiqueta de recarga ou de inspeção com data vencida, manômetro "
-            "fora da faixa verde, lacre rompido, mangueira ressecada ou corpo corroído."
+            "Extintor com etiqueta de recarga vencida, manômetro fora da faixa verde, lacre "
+            "rompido ou mangote danificado. A NR-23 não fixa ela própria a periodicidade de "
+            "manutenção: ela remete à legislação estadual de incêndio e às normas técnicas "
+            "oficiais, e é esse comando que o extintor vencido descumpre."
         ),
         "sinais": [
             "extintor vencido",
+            "extintor sem lacre",
             "etiqueta de recarga vencida",
-            "manometro na faixa vermelha",
+            "manometro do extintor no vermelho",
+            "extintor descarregado",
             "extintor enferrujado",
-            "lacre rompido",
-            "extintor sem inspecao",
             "mangueira do extintor rachada",
         ],
         "itens": ["NR-23 23.3.1"],
@@ -364,7 +366,7 @@ RISCOS: dict[str, dict] = {
             "combustivel perto de fogo",
             "estopa junto do solvente",
         ],
-        "itens": ["NR-16 16.8", "NR-23 23.3.1", "NR-26 26.4.2.1"],
+        "itens": ["NR-18 18.16.5", "NR-16 16.8"],
         "gravidade_base": "alta",
     },
     "area_de_risco_nao_delimitada": {
@@ -508,7 +510,7 @@ RISCOS: dict[str, dict] = {
             "lixando a seco",
             "cheiro de tinta sem respirador",
         ],
-        "itens": ["NR-09 9.3.1", "NR-09 9.5.2", "NR-06 6.5.1"],
+        "itens": ["NR-09 9.5.2", "NR-06 6.5.1"],
         "gravidade_base": "alta",
         "exige_pessoa": True,
     },
@@ -568,7 +570,7 @@ RISCOS: dict[str, dict] = {
             "residuo de hospital solto",
             "sem lugar pra lavar a mao",
         ],
-        "itens": ["NR-09 9.3.1", "NR-09 9.5.2", "NR-06 6.5.1"],
+        "itens": ["NR-09 9.5.2", "NR-06 6.5.1"],
         "gravidade_base": "alta",
         "exige_pessoa": True,
     },
@@ -707,7 +709,7 @@ RISCOS: dict[str, dict] = {
             "risco iminente",
             "trabalhando embaixo de carga suspensa",
         ],
-        "itens": ["NR-03 3.2.2", "NR-03 3.4.1", "NR-01 1.4.3.1"],
+        "itens": ["NR-03 3.4.1", "NR-01 1.4.3.1"],
         "gravidade_base": "critica",
     },
 

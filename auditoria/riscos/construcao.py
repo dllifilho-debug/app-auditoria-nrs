@@ -196,7 +196,7 @@ RISCOS: dict[str, dict] = {
             "andaime so com o piso",
             "pedreiro no andaime sem protecao lateral",
         ],
-        "itens": ["NR-18 18.12.1", "NR-18 18.12.15.2"],
+        "itens": ["NR-18 18.9.1", "NR-18 18.9.4.2", "NR-18 18.12.15.2"],
         "gravidade_base": "critica",
     },
     "andaime_sem_travamento": {
@@ -276,7 +276,7 @@ RISCOS: dict[str, dict] = {
             "tabua sobre latas de tinta",
             "plataforma balancando",
         ],
-        "itens": ["NR-18 18.12.11", "NR-18 18.12.8"],
+        "itens": ["NR-18 18.12.11"],
         "gravidade_base": "alta",
     },
     "torre_elevador_sem_cancela": {
@@ -638,23 +638,22 @@ RISCOS: dict[str, dict] = {
         "gravidade_base": "alta",
     },
     "canteiro_sem_sinalizacao": {
-        "rotulo": "Canteiro sem sinalização de segurança e sem vestimenta de alta visibilidade",
+        "rotulo": "Canteiro sem sinalização de segurança",
         "descricao": (
             "Ausência de placas e sinalização que advirtam sobre os riscos existentes, "
-            "identifiquem áreas isoladas, acessos, circulação de veículos e obrigatoriedade "
-            "de EPI; ou trabalhador em área de movimentação de veículos e cargas sem colete "
-            "de alta visibilidade."
+            "identifiquem os locais de apoio, indiquem saídas de emergência, delimitem "
+            "áreas isoladas e a circulação de veículos, ou informem a obrigatoriedade de EPI."
         ),
         "sinais": [
             "sem placa de aviso",
             "canteiro sem sinalizacao",
             "sem faixa de isolamento",
-            "trabalhador sem colete refletivo",
             "area de manobra sem sinalizacao",
             "nenhuma placa de uso de epi",
             "acesso de veiculo sem demarcacao",
+            "sem placa de saida de emergencia",
         ],
-        "itens": ["NR-18 18.13.1", "NR-18 18.13.2"],
+        "itens": ["NR-18 18.13.1"],
         "gravidade_base": "media",
     },
     "tapume_galeria_ausente": {
@@ -844,4 +843,23 @@ RISCOS: dict[str, dict] = {
         "gravidade_base": "alta",
         "exige_pessoa": True,
     },
+    "vestimenta_alta_visibilidade_ausente": {
+        "rotulo": "Trabalhador sem vestimenta de alta visibilidade em área de movimentação de veículos",
+        "descricao": (
+            "Trabalhador em serviço em área de movimentação de veículos e cargas sem colete "
+            "ou vestimenta de alta visibilidade no tórax e nas costas."
+        ),
+        "sinais": [
+            "trabalhador sem colete refletivo",
+            "sem colete de alta visibilidade",
+            "pessoa na area de manobra sem colete",
+            "operario perto de caminhao sem colete",
+            "sem faixa refletiva na roupa",
+            "trabalhador de camiseta perto de maquina",
+        ],
+        "itens": ["NR-18 18.13.2"],
+        "gravidade_base": "alta",
+        "exige_pessoa": True,
+    },
+
 }

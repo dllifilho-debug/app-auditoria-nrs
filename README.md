@@ -41,7 +41,7 @@ Foto → Agente Olho → Dossiê normativo → Agente Analista → Aferição �
 | Etapa | Quem executa | O que garante |
 |---|---|---|
 | **Agente Olho** | modelo de visão | Descreve a foto e nada mais: não conhece norma, não julga, não propõe. Se não há ninguém na imagem, registra isso — e o sistema passa a proibir qualquer cobrança de EPI ou treinamento. |
-| **Dossiê normativo** | código | Roteia os fatos por uma taxonomia curada de 121 riscos e por busca BM25 sobre os itens extraídos dos PDFs. O analista só enxerga o que pode se aplicar. |
+| **Dossiê normativo** | código | Roteia os fatos por uma taxonomia curada de 122 riscos e por busca BM25 sobre os itens extraídos dos PDFs. O analista só enxerga o que pode se aplicar. |
 | **Agente Analista** | modelo de texto | Enquadra os fatos referenciando rótulos do dossiê (`D1`, `D7`…). Nunca escreve um número de NR. |
 | **Aferição** | código | Descarta rótulo inexistente, item fora de vigência na data, item repetido e cobrança de EPI sem gente na foto. |
 | **Agente Diretor** | modelo de texto | Relê cada enquadramento ao lado do texto oficial do item e veta o que a norma não sustenta. No rigor Máximo, o veto volta ao analista. |
