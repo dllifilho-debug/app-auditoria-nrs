@@ -1,155 +1,396 @@
-import streamlit as st
-import base64
-from groq import Groq
-import os
-import re
-import time
-from PIL import Image
-import io
+"""App de Auditoria de NRs — interface Streamlit.
 
-st.set_page_config(page_title="App de Auditoria NR | Gauntlet Loop", layout="centered", page_icon="🚧")
-st.title("🚧 App de Auditoria de NRs")
-st.markdown("**Powered by Gauntlet Loop** - Pipeline de Agentes Autônomos de Engenharia")
-
-api_key = st.text_input("Chave API do Groq:", type="password")
-
-col1, col2 = st.columns(2)
-with col1:
-    # Como abolimos o PDF para não estourar tokens, o usuário escolhe a Bula Enxuta
-    foco_auditoria = st.selectbox("Foco Principal da Auditoria (Gabarito Enxuto):", 
-                                  ["Geral (NR-18, NR-35, NR-06)", "Trabalho em Altura (NR-35 Foco)", "Máquinas e Equipamentos (NR-12)"])
-
-with col2:
-    company_size = st.text_input("Porte da empresa e Equipe de Manutenção:")
-
-observacao = st.text_area("Contexto do Engenheiro (Opcional):", placeholder="Ex: Vistoria na laje do 3º pavimento, concretagem em andamento.")
-
-uploaded_files = st.file_uploader("Envie as fotos da vistoria (Lote)", type=["jpg", "png", "jpeg"], accept_multiple_files=True)
-
-def otimizar_imagem_para_api(arquivo_imagem):
-    img = Image.open(arquivo_imagem)
-    if img.mode in ("RGBA", "P"):
-        img = img.convert("RGB")
-    # Imagem compactada para garantir o limite de tokens da Groq
-    img.thumbnail((640, 640), Image.Resampling.LANCZOS)
-    buffered = io.BytesIO()
-    img.save(buffered, format="JPEG", quality=70)
-    return base64.b64encode(buffered.getvalue()).decode("utf-8")
-
-# GABARITO ENXUTO (A BULA): Substitui os PDFs. É leve, direto e impede alucinações.
-BULA_NRS_GERAL = """
-=== DICIONÁRIO ESTRITO DE NRs (MTE 2025-2026) ===
-NR-35 (Altura): 35.2.1 (Campo de aplicação >2m), 35.4.2 (Capacitação), 35.6.3 (Prioridade EPC), 35.6.9 (Cinturão em SPIQ), Anexo II 3.2.a (Ancoragem exige projeto de PLH).
-NR-18 (Construção): 18.9.1.1 (Proteção de periferia contra queda), 18.9.4.2 (Guarda-corpo: 1,20m sup, 0,70m int, 0,15m rodapé), 18.12.5 (Piso nivelado/antiderrapante).
-NR-6 (EPI): 6.4.1 (CA válido obrigatoriamente), 6.5.1.c (Fornecimento gratuito pelo empregador).
-Regra Geral de Canteiro: Áreas de vivência e circulação devem ser desimpedidas e limpas.
+Analisa fotos de inspeção e emite laudo de não conformidades citando apenas
+itens de Normas Regulamentadoras que existem, palavra por palavra, nos PDFs
+oficiais do MTE e estão vigentes na data da inspeção.
 """
 
-# ==========================================
-# GAUNTLET LOOP V2: ALTA RIGIDEZ TÉCNICA
-# ==========================================
+from __future__ import annotations
 
-def agente_olho_executor(client, image_b64):
-    """AGENTE 1: Visão Fria e Material"""
-    prompt = """Você é o Agente Extrator Visual pericial. Sua ÚNICA função é descrever os fatos materiais na imagem.
-    REGRAS RÍGIDAS (PENA DE DEMISSÃO):
-    1. Se não houver trabalhadores humanos visíveis na foto, ESCREVA EXPLICITAMENTE: 'Nenhum trabalhador presente na cena'.
-    2. NÃO presuma materiais se não tiver certeza (ex: diga 'placa sólida', NUNCA afirme ser 'laje de concreto' sem evidência visual clara).
-    3. NÃO cite normas, não julgue riscos e não proponha soluções. Apenas descreva a geometria, objetos, desníveis e o ambiente."""
-    
-    response = client.chat.completions.create(
-        model="qwen/qwen3.6-27b",
-        messages=[{"role": "user", "content": [{"type": "text", "text": prompt}, {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"}}]}],
-        max_tokens=400,
-        temperature=0.0
+import base64
+import io
+import os
+from datetime import date
+
+import streamlit as st
+from PIL import Image, ImageOps
+
+from auditoria import modelos, relatorio
+from auditoria.catalogo_nr import CATALOGO_NR, NRS_VIGENTES
+from auditoria.demo import ClienteDemonstracao
+from auditoria.kb import carregar_base
+from auditoria.modelos import ClienteGroq, ErroDeAuditoria
+from auditoria.pipeline import Configuracao, executar
+from auditoria.riscos import catalogo as catalogo_riscos
+
+LIMITE_BASE64 = 3_600_000        # a Groq recusa imagem base64 acima de ~4 MB
+
+st.set_page_config(
+    page_title="Auditoria de NRs — Gauntlet Loop",
+    layout="wide",
+    page_icon="🦺",
+    initial_sidebar_state="expanded",
+)
+
+
+# ---------------------------------------------------------------------------
+# Recursos carregados uma vez
+# ---------------------------------------------------------------------------
+
+@st.cache_resource(show_spinner="Carregando base normativa…")
+def base_normativa():
+    return carregar_base()
+
+
+@st.cache_resource
+def taxonomia():
+    return catalogo_riscos()
+
+
+@st.cache_data(show_spinner=False)
+def preparar_imagem(bytes_imagem: bytes, lado: int) -> tuple[str, bytes]:
+    """Corrige orientação, reduz e comprime — devolve base64 e miniatura."""
+    img = Image.open(io.BytesIO(bytes_imagem))
+    img = ImageOps.exif_transpose(img)          # foto de celular vem rotacionada
+    if img.mode in ("RGBA", "P", "LA"):
+        img = img.convert("RGB")
+    img.thumbnail((lado, lado), Image.Resampling.LANCZOS)
+
+    qualidade = 82
+    while True:
+        buffer = io.BytesIO()
+        img.save(buffer, format="JPEG", quality=qualidade, optimize=True)
+        dados = buffer.getvalue()
+        if len(base64.b64encode(dados)) <= LIMITE_BASE64 or qualidade <= 40:
+            break
+        qualidade -= 12
+    return base64.b64encode(dados).decode("ascii"), dados
+
+
+def chave_configurada() -> str:
+    try:
+        if "GROQ_API_KEY" in st.secrets:
+            return str(st.secrets["GROQ_API_KEY"])
+    except Exception:
+        pass
+    return os.environ.get("GROQ_API_KEY", "")
+
+
+# ---------------------------------------------------------------------------
+# Barra lateral
+# ---------------------------------------------------------------------------
+
+base = base_normativa()
+riscos = taxonomia()
+
+with st.sidebar:
+    st.markdown("### ⚙️ Configuração")
+
+    modo_demo = st.toggle(
+        "Modo demonstração",
+        value=not bool(chave_configurada()),
+        help="Roda o pipeline completo com respostas simuladas, sem consumir a API. "
+             "Serve para conhecer o app e para os testes automatizados.",
     )
-    return re.sub(r'<think>.*?</think>', '', response.choices[0].message.content, flags=re.DOTALL).strip()
 
-def agente_analista_executor(client, fatos_visuais, bula_gabarito, company_size, observacao):
-    """AGENTE 2: Enquadramento Normativo"""
-    prompt = f"""Você é o Engenheiro Analista elaborando um Relatório de Não Conformidades.
-    
-    FATOS VISUAIS: {fatos_visuais}
-    CONTEXTO ANOTADO: {observacao}
-    PORTE DA EMPRESA: {company_size}
-    
-    DICIONÁRIO DE NORMAS PERMITIDO: 
-    {bula_gabarito}
-    
-    REGRAS DE ENQUADRAMENTO:
-    1. PROIBIDO INVENTAR: Você SÓ PODE usar os itens listados no Dicionário acima.
-    2. COERÊNCIA MATERIAL: NÃO use regras de andaimes para justificar buracos no chão ou entulho. Se o Dicionário não tiver uma regra exata para o risco, classifique como: "Requer verificação do PGR local".
-    3. FANTASMAS: Se os Fatos Visuais dizem que não há trabalhadores presentes, É ESTRITAMENTE PROIBIDO citar falta de EPI (NR-6) ou falta de treinamento (NR-35).
-    
-    Elabore o laudo bruto contendo: 1. Descrição dos Fatos, 2. Tabela de Enquadramento, 3. Plano de Ação."""
-    
-    response = client.chat.completions.create(
-        model="openai/gpt-oss-120b", 
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=1000,
-        temperature=0.1
+    chave = ""
+    if not modo_demo:
+        padrao = chave_configurada()
+        chave = st.text_input(
+            "Chave da API Groq",
+            value=padrao,
+            type="password",
+            help="Obtenha em console.groq.com/keys. Em produção, prefira definir "
+                 "GROQ_API_KEY nos Secrets do Streamlit.",
+        )
+        if padrao:
+            st.caption("✅ Chave carregada dos Secrets/ambiente.")
+
+    st.divider()
+    st.markdown("### 🧠 Modelos")
+    modelo_visao = st.selectbox(
+        "Visão (leitura da foto)",
+        [m.id for m in modelos.VISAO],
+        format_func=lambda i: modelos.por_id(i).rotulo,
+        disabled=modo_demo,
     )
-    return re.sub(r'<think>.*?</think>', '', response.choices[0].message.content, flags=re.DOTALL).strip()
-
-def agente_supervisor_diretor(client, laudo_bruto, bula_gabarito):
-    """AGENTE 3: Supervisor de Qualidade (Fator Uau)"""
-    prompt = f"""Você é o Diretor Técnico de Engenharia de Segurança. Audite o laudo bruto gerado pelo seu Analista.
-    
-    LAUDO BRUTO:
-    {laudo_bruto}
-    
-    DICIONÁRIO OFICIAL (GABARITO):
-    {bula_gabarito}
-    
-    CHECKLIST DE REPROVAÇÃO E CORREÇÃO OBRIGATÓRIA:
-    1. ALUCINAÇÃO DE SIGLA: Verifique rigorosamente se o Analista usou a sigla PLH. A sigla PLH significa EXCLUSIVAMENTE "Profissional Legalmente Habilitado". Se estiver escrito "Planejamento de...", apague e corrija imediatamente.
-    2. CITAÇÕES FALSAS: Cruze os itens normativos do laudo com o Dicionário Oficial. Se o Analista citou um item que não está no dicionário (ex: 18.4.1.3), DELETE a não-conformidade inteira.
-    3. EPI PARA NINGUÉM: Se o laudo cobra EPI (cinto, capacete, CA), mas os fatos indicam que NÃO HÁ trabalhadores na imagem, EXCLUA sumariamente essa cobrança e a citação da NR-06.
-    4. DRAMATIZAÇÃO: Remova qualquer linguagem alarmista.
-    
-    Reescreva o laudo final corrigindo todas as infrações. O texto deve ser impecável, frio e digno de assinatura pericial."""
-    
-    response = client.chat.completions.create(
-        model="openai/gpt-oss-120b",
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=1500,
-        temperature=0.0
+    modelo_texto = st.selectbox(
+        "Texto (enquadramento e supervisão)",
+        [m.id for m in modelos.TEXTO],
+        format_func=lambda i: modelos.por_id(i).rotulo,
+        disabled=modo_demo,
     )
-    return re.sub(r'<think>.*?</think>', '', response.choices[0].message.content, flags=re.DOTALL).strip()
+    if (m := modelos.por_id(modelo_texto)) and m.nota:
+        st.caption(m.nota)
+
+    st.divider()
+    st.markdown("### 🔁 Rigor do Gauntlet Loop")
+    rigor = st.select_slider(
+        "Ciclos de supervisão",
+        options=["Rápido", "Padrão", "Máximo"],
+        value="Padrão",
+        help="Rápido: sem supervisor (2 chamadas por foto). "
+             "Padrão: com supervisor (3). "
+             "Máximo: supervisor com re-análise em caso de veto (até 5).",
+    )
+    perfis = {
+        "Rápido":  dict(usar_diretor=False, max_ciclos=1, teto_dossie=16),
+        "Padrão":  dict(usar_diretor=True,  max_ciclos=1, teto_dossie=22),
+        "Máximo":  dict(usar_diretor=True,  max_ciclos=3, teto_dossie=28),
+    }
+
+    lado_imagem = st.select_slider(
+        "Resolução enviada ao modelo",
+        options=[640, 768, 896, 1024],
+        value=896,
+        help="Mais resolução enxerga mais detalhe e consome mais cota.",
+    )
+
+    st.divider()
+    with st.expander("📚 Cobertura normativa"):
+        carregadas = set(base.por_nr)
+        st.metric("Itens normativos indexados", f"{len(base.itens):,}".replace(",", "."))
+        st.metric("Riscos catalogados", len(riscos))
+        st.caption(
+            f"**{len(carregadas)} de {len(NRS_VIGENTES)} NRs vigentes** com texto integral "
+            f"carregado. Base consolidada em {base.gerado_em}."
+        )
+        faltantes = sorted(NRS_VIGENTES - carregadas)
+        if faltantes:
+            st.caption(
+                "Sem texto carregado: " + ", ".join(faltantes) +
+                ". O app sinaliza a aplicabilidade dessas normas, mas nunca cita item delas."
+            )
+            st.caption(
+                "Para ampliar a cobertura, coloque o PDF oficial em `normas/` e rode "
+                "`python -m auditoria.kb_build`."
+            )
 
 
-if st.button("Executar Gauntlet Loop de Auditoria em Lote"):
-    if not api_key or len(uploaded_files) == 0:
-        st.warning("Insira a chave da API e anexe ao menos uma imagem.")
-    else:
-        client = Groq(api_key=api_key)
-        
-        for idx, arquivo_foto in enumerate(uploaded_files):
-            st.markdown(f"### 📸 Analisando Foto {idx + 1} de {len(uploaded_files)}")
-            image_b64 = otimizar_imagem_para_api(arquivo_foto)
-            
-            with st.status(f"Iniciando Pipeline de Agentes (Foto {idx + 1})...", expanded=True) as status:
-                try:
-                    st.write("🕵️‍♂️ **Agente Olho (Visão)** periciando fatos materiais...")
-                    fatos_visuais = agente_olho_executor(client, image_b64)
-                    
-                    st.write("📝 **Agente Analista** cruzando restrições normativas...")
-                    laudo_bruto = agente_analista_executor(client, fatos_visuais, BULA_NRS_GERAL, company_size, observacao)
-                    
-                    st.write("⚖️ **Agente Diretor (Supervisor)** podando alucinações técnicas...")
-                    laudo_final = agente_supervisor_diretor(client, laudo_bruto, BULA_NRS_GERAL)
-                    
-                    status.update(label=f"✅ Loop Gauntlet Concluído: Foto {idx + 1}", state="complete", expanded=False)
-                    
-                    st.markdown(laudo_final)
-                    st.download_button(label=f"📥 Baixar Relatório da Foto {idx + 1} (.txt)", data=laudo_final, file_name=f"relatorio_foto_{idx+1}.txt", mime="text/plain", key=f"download_{idx}")
-                    st.divider()
-                    
-                    # Bypass inteligente do limite de Tokens por Minuto da Groq (Escalabilidade)
-                    if idx + 1 < len(uploaded_files):
-                        st.info("⏱️ Pausa estratégica de 15 segundos para não estourar o limite de Tokens da API...")
-                        time.sleep(15)
-                        
-                except Exception as e:
-                    status.update(label=f"❌ Falha no Loop da Foto {idx + 1}", state="error")
-                    st.error(f"Erro ao processar: {e}")
+# ---------------------------------------------------------------------------
+# Cabeçalho
+# ---------------------------------------------------------------------------
+
+st.title("🦺 Auditoria de NRs por imagem")
+st.markdown(
+    "Enquadramento de não conformidades em **Normas Regulamentadoras** a partir de fotos "
+    "de inspeção. Cada citação do laudo é conferida contra o texto oficial do MTE antes "
+    "de ser impressa — o que a base não confirma, não sai no relatório."
+)
+
+if modo_demo:
+    st.info(
+        "**Modo demonstração ativo.** O pipeline roda inteiro — roteamento de riscos, "
+        "dossiê normativo, aferição e supervisão — com respostas simuladas do modelo. "
+        "Desligue na barra lateral e informe a chave da Groq para analisar fotos de verdade.",
+        icon="🧪",
+    )
+
+col_a, col_b, col_c = st.columns([2, 2, 1])
+with col_a:
+    obra = st.text_input("Obra / unidade", placeholder="Ex.: Edifício Aurora — Torre B")
+with col_b:
+    responsavel = st.text_input("Responsável pela inspeção", placeholder="Ex.: Eng. M. Andrade")
+with col_c:
+    data_inspecao = st.date_input("Data da inspeção", value=date.today(), format="DD/MM/YYYY")
+
+contexto = st.text_area(
+    "Contexto da inspeção (opcional, mas melhora muito o enquadramento)",
+    placeholder="Ex.: vistoria no 3º pavimento durante concretagem; equipe própria de 12 pessoas.",
+    height=80,
+)
+
+arquivos = st.file_uploader(
+    "Fotos da vistoria",
+    type=["jpg", "jpeg", "png", "webp", "bmp"],
+    accept_multiple_files=True,
+    help="Envie um lote. Cada foto gera um laudo e o conjunto gera um sumário executivo.",
+)
+
+if arquivos:
+    st.caption(f"{len(arquivos)} imagem(ns) carregada(s).")
+    # Sempre 6 colunas: com poucas fotos, a miniatura não estica pela tela toda.
+    miniaturas = st.columns(6)
+    for n, arquivo in enumerate(arquivos[:6]):
+        with miniaturas[n]:
+            st.image(arquivo, caption=arquivo.name[:18], use_container_width=True)
+    if len(arquivos) > 6:
+        st.caption(f"…e mais {len(arquivos) - 6} imagem(ns).")
+
+executar_agora = st.button(
+    "▶️ Executar auditoria",
+    type="primary",
+    use_container_width=True,
+    disabled=not arquivos,
+)
+
+
+# ---------------------------------------------------------------------------
+# Execução
+# ---------------------------------------------------------------------------
+
+if "resultados" not in st.session_state:
+    st.session_state.resultados = []
+
+if executar_agora:
+    if not modo_demo and not chave.strip():
+        st.error("Informe a chave da API Groq na barra lateral, ou ative o modo demonstração.")
+        st.stop()
+
+    cliente = ClienteDemonstracao() if modo_demo else ClienteGroq(
+        api_key=chave.strip(), aviso=lambda m: st.toast(m, icon="⏳")
+    )
+    config = Configuracao(
+        modelo_visao=modelo_visao,
+        modelo_texto=modelo_texto,
+        data_referencia=data_inspecao,
+        **perfis[rigor],
+    )
+
+    st.session_state.resultados = []
+    barra = st.progress(0.0, text="Iniciando…")
+
+    for indice, arquivo in enumerate(arquivos):
+        rotulo = f"{arquivo.name} ({indice + 1}/{len(arquivos)})"
+        barra.progress(indice / len(arquivos), text=f"Analisando {rotulo}…")
+
+        with st.status(f"📸 {rotulo}", expanded=True) as painel:
+            try:
+                imagem_b64, miniatura = preparar_imagem(arquivo.getvalue(), lado_imagem)
+                laudo = executar(
+                    cliente, base, imagem_b64, contexto, config,
+                    progresso=lambda m: st.write(m),
+                )
+                st.session_state.resultados.append((arquivo.name, laudo, miniatura))
+                achadas = len(laudo.nao_conformidades)
+                painel.update(
+                    label=f"✅ {rotulo} — {achadas} não conformidade(s)",
+                    state="complete",
+                    expanded=False,
+                )
+            except ErroDeAuditoria as erro:
+                painel.update(label=f"❌ {rotulo}", state="error")
+                st.error(f"**{erro.mensagem}**" + (f"\n\n{erro.sugestao}" if erro.sugestao else ""))
+                if not erro.recuperavel:
+                    break
+            except Exception as erro:                      # rede, imagem corrompida…
+                traduzido = modelos.traduzir(erro)
+                painel.update(label=f"❌ {rotulo}", state="error")
+                st.error(f"**{traduzido.mensagem}**" +
+                         (f"\n\n{traduzido.sugestao}" if traduzido.sugestao else ""))
+
+    barra.progress(1.0, text="Concluído.")
+    if not modo_demo and getattr(cliente, "tokens_gastos", 0):
+        st.caption(
+            f"Consumo: {cliente.chamadas} chamadas, "
+            f"{cliente.tokens_gastos:,} tokens.".replace(",", ".")
+        )
+
+
+# ---------------------------------------------------------------------------
+# Resultados
+# ---------------------------------------------------------------------------
+
+resultados = st.session_state.resultados
+
+if resultados:
+    st.divider()
+
+    total = sum(len(l.nao_conformidades) for _, l, _ in resultados)
+    criticas = sum(
+        1 for _, l, _ in resultados for nc in l.nao_conformidades if nc.gravidade == "critica"
+    )
+    normas = {nc.item.nr for _, l, _ in resultados for nc in l.nao_conformidades}
+
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Imagens analisadas", len(resultados))
+    m2.metric("Não conformidades", total)
+    m3.metric("Críticas", criticas, delta="ação imediata" if criticas else None,
+              delta_color="inverse" if criticas else "off")
+    m4.metric("Normas acionadas", len(normas))
+
+    texto_consolidado = relatorio.consolidado(
+        [(nome, laudo) for nome, laudo, _ in resultados], base, data_inspecao
+    )
+
+    aba_resumo, *abas = st.tabs(
+        ["📊 Sumário executivo"] + [f"📸 {nome[:20]}" for nome, _, _ in resultados]
+    )
+
+    with aba_resumo:
+        st.markdown(texto_consolidado)
+        d1, d2 = st.columns(2)
+        d1.download_button(
+            "📥 Sumário em Markdown", texto_consolidado,
+            file_name=f"sumario_inspecao_{data_inspecao:%Y%m%d}.md",
+            mime="text/markdown", use_container_width=True,
+        )
+        d2.download_button(
+            "🖨️ Sumário em HTML (imprimível)",
+            relatorio.para_html(texto_consolidado, "Sumário executivo da inspeção"),
+            file_name=f"sumario_inspecao_{data_inspecao:%Y%m%d}.html",
+            mime="text/html", use_container_width=True,
+        )
+
+    for aba, (nome, laudo, miniatura) in zip(abas, resultados):
+        with aba:
+            esquerda, direita = st.columns([1, 2])
+            with esquerda:
+                st.image(miniatura, caption=nome, use_container_width=True)
+                if laudo.nao_conformidades:
+                    st.markdown("**Gravidade das constatações**")
+                    for nc in laudo.nao_conformidades:
+                        selo, rot = relatorio.SELOS.get(nc.gravidade, ("⚪", nc.gravidade))
+                        st.markdown(f"{selo} `{nc.item.nr} {nc.item.item}` — {rot}")
+                if not laudo.aprovado:
+                    st.warning(
+                        f"O supervisor vetou {len(laudo.vetos)} enquadramento(s), "
+                        "removido(s) do laudo."
+                    )
+
+            with direita:
+                indice = [n for n, (m, _, _) in enumerate(resultados, 1) if m == nome][0]
+                texto = relatorio.markdown(
+                    laudo, base, identificacao=nome, obra=obra,
+                    responsavel=responsavel, numero=indice,
+                )
+                st.markdown(texto)
+                b1, b2 = st.columns(2)
+                b1.download_button(
+                    "📥 Markdown", texto,
+                    file_name=f"laudo_{indice:02d}_{data_inspecao:%Y%m%d}.md",
+                    mime="text/markdown", key=f"md_{indice}", use_container_width=True,
+                )
+                b2.download_button(
+                    "🖨️ HTML imprimível",
+                    relatorio.para_html(texto, f"Laudo {indice} — {nome}"),
+                    file_name=f"laudo_{indice:02d}_{data_inspecao:%Y%m%d}.html",
+                    mime="text/html", key=f"html_{indice}", use_container_width=True,
+                )
+
+elif not executar_agora:
+    st.divider()
+    with st.expander("ℹ️ Como este app evita citar norma inexistente", expanded=False):
+        st.markdown(
+            """
+O erro clássico de um auditor automático é citar um item que não existe, ou citar um
+item real para a situação errada. Aqui o desenho do pipeline torna os dois improváveis:
+
+1. **Agente Olho** descreve a foto e nada mais. Não conhece norma, não julga, não propõe.
+   Se não há ninguém na imagem, ele registra isso — e o sistema passa a proibir qualquer
+   cobrança de EPI ou de treinamento.
+2. **Dossiê normativo** é montado por código, não por modelo: os fatos são roteados por
+   uma taxonomia de riscos curada e por busca textual sobre os itens extraídos dos PDFs
+   oficiais. O analista só enxerga os itens que de fato podem se aplicar.
+3. **Agente Analista** enquadra os fatos referenciando rótulos do dossiê (D1, D7…).
+   Ele nunca escreve um número de NR — quem escreve a citação é o renderizador, a partir
+   do item real. Alucinar citação deixa de ser improvável e passa a ser impossível.
+4. **Aferição determinística** descarta o que não passa: rótulo inexistente, item fora de
+   vigência na data da inspeção, item repetido, cobrança de EPI sem gente na foto.
+5. **Diretor Técnico** relê cada enquadramento ao lado do texto oficial do item e veta o
+   que a norma não sustenta. No rigor Máximo, o veto volta ao analista para novo ciclo.
+
+O laudo traz, ao final, a trilha completa: quantos ciclos rodaram, o que o supervisor
+vetou e o que a aferição descartou.
+            """
+        )
