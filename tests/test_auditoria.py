@@ -558,3 +558,48 @@ def test_visao_preserva_resposta_crua_quando_nao_da_para_ler():
     visao = agente_olho(Tagarela(), "imagem", "modelo-x")
     assert visao.achados == []
     assert "não consigo analisar" in visao.bruto
+
+
+def test_texto_da_norma_nao_carrega_numero_de_pagina(base):
+    """O extrator colava o número da página no fim do item, e ele saía no laudo."""
+    import re
+
+    assert base.obter("NR-08", "8.3.2.4").texto.endswith("antiderrapantes.")
+    sujos = [i.id for i in base.itens.values() if re.search(r"[.;:]\s+\d{1,3}\s*$", i.texto)]
+    assert sujos == [], f"paginação remanescente em {sujos[:5]}"
+
+
+def test_palavra_chave_ambigua_nao_roteia_para_norma_setorial():
+    """"carcaça" de frigorífico casava com a carcaça de um alarme, e a NR-36
+    aparecia como aplicável num laudo de painel elétrico."""
+    from auditoria.dossie import _pontuar_nrs
+
+    pontos = _pontuar_nrs(
+        "dispositivo de alarme sonoro com a carcaça frontal deslocada e danificada; "
+        "chave tipo faca no quadro elétrico"
+    )
+    assert "NR-36" not in pontos
+
+
+def test_tabela_desambigua_constatacoes_sob_o_mesmo_risco(base):
+    """Dois achados distintos no mesmo risco não podem virar linhas idênticas."""
+    from auditoria.pipeline import Laudo, NaoConformidade, Visao
+
+    def nc(item, constatacao):
+        return NaoConformidade(
+            item=base.obter("NR-12", item), constatacao=constatacao,
+            consequencia="", gravidade="media", acao_corretiva="Corrigir.",
+            prazo_dias=5, rotulo_risco="Dispositivo de segurança danificado",
+        )
+
+    laudo = Laudo(
+        visao=Visao(ambiente="oficina"),
+        nao_conformidades=[
+            nc("12.11.5", "Alarme sonoro com a carcaça deslocada."),
+            nc("12.5.16", "Abertura circular vazia no painel."),
+        ],
+        data_referencia=HOJE,
+    )
+    linhas = [l for l in relatorio.markdown(laudo, base, numero=1).splitlines()
+              if l.startswith("| 1 |") or l.startswith("| 2 |")]
+    assert len(linhas) == 2 and linhas[0] != linhas[1]

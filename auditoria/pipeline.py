@@ -562,9 +562,17 @@ ENQUADRAMENTOS PROPOSTOS (com o texto oficial da norma citada)
 
 VETE um enquadramento quando:
 a) o texto do item NÃO trata da situação descrita (o erro mais comum e o mais grave);
-b) o fato não sustenta a conclusão — a foto não mostra o que a constatação afirma;
+b) a CONSTATAÇÃO AFIRMA MAIS DO QUE O FATO REGISTRA. Compare palavra por palavra:
+   se o fato diz "tampa plástica quebrada" e a constatação diz "expondo partes
+   energizadas", a constatação inventou a parte energizada — ninguém viu o que há
+   sob a tampa. Reescreva para o que a foto sustenta, ou vete. Este é o erro mais
+   difícil de perceber, porque a frase soa técnica e plausível;
 c) cobra EPI, treinamento ou conduta sem trabalhador visível na cena;
 d) a linguagem é alarmista ou a gravidade está inflada frente ao que se vê.
+
+A gravidade deve ser coerente entre os enquadramentos do mesmo laudo: se um risco
+de choque elétrico está como "alta" e um piso sujo como "baixa", confira se a
+diferença se justifica pelo que a foto mostra, e ajuste quando não se justificar.
 
 APROVE o que estiver correto, mesmo que simples. Vetar o que está certo também é erro.
 

@@ -144,6 +144,8 @@ def _normalizar(texto: str) -> str:
         r"\1-\2", texto,
     )
     texto = re.sub(r"\s+([,.;:)])", r"\1", texto)
+    # Número de página que o extrator cola no fim do item: "…antiderrapantes. 2".
+    texto = re.sub(r"(?<=[.;:])\s+\d{1,3}\s*$", "", texto)
     return texto.strip()
 
 

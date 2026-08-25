@@ -22,6 +22,12 @@ SELOS = {
 }
 
 
+def _contar(valores) -> list[tuple[str, int]]:
+    from collections import Counter
+
+    return list(Counter(valores).items())
+
+
 def _titulo_nr(nr: str) -> str:
     return CATALOGO_NR.get(nr, {}).get("titulo", "")
 
@@ -96,9 +102,18 @@ def markdown(
     else:
         p.append("| # | Não conformidade | Norma | Item | Gravidade | Prazo |")
         p.append("|---|---|---|---|---|---|")
+        # Duas constatações distintas podem cair no mesmo risco catalogado. Repetir
+        # o rótulo faria a tabela parecer ter linha duplicada, então nesse caso
+        # quem identifica a linha é a própria constatação.
+        repetidos = {
+            r for r, n in _contar(x.rotulo_risco for x in laudo.nao_conformidades)
+            if r and n > 1
+        }
         for n, nc in enumerate(laudo.nao_conformidades, start=1):
             selo, rotulo = SELOS.get(nc.gravidade, ("⚪", nc.gravidade))
-            titulo = nc.rotulo_risco or nc.constatacao[:70]
+            titulo = nc.constatacao[:80] if nc.rotulo_risco in repetidos else (
+                nc.rotulo_risco or nc.constatacao[:70]
+            )
             p.append(
                 f"| {n} | {titulo} | **{nc.item.nr}** | `{nc.item.item}` | "
                 f"{selo} {rotulo} | {nc.prazo_dias} d |"
@@ -109,7 +124,10 @@ def markdown(
         p.append("")
         for n, nc in enumerate(laudo.nao_conformidades, start=1):
             selo, rotulo = SELOS.get(nc.gravidade, ("⚪", nc.gravidade))
-            p.append(f"#### {n}. {nc.rotulo_risco or 'Não conformidade constatada'} {selo}")
+            cabecalho = nc.rotulo_risco or "Não conformidade constatada"
+            if nc.rotulo_risco in repetidos:
+                cabecalho += f" — {nc.item.item}"
+            p.append(f"#### {n}. {cabecalho} {selo}")
             p.append("")
             p.append(f"**Constatação.** {nc.constatacao}")
             p.append("")
