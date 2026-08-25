@@ -376,8 +376,10 @@ REGRAS INEGOCIÁVEIS
 1. Só existe uma não conformidade se um item do dossiê acima for descumprido POR UM FATO da lista.
    Referencie o item pelo rótulo (D1, D7…). Nunca escreva número de NR no texto: o sistema
    insere a citação correta sozinho.
-2. Se um fato preocupa mas nenhum item do dossiê o cobre, escreva-o em "sem_enquadramento".
-   É melhor do que forçar um item que não se aplica.
+2. Se um fato PREOCUPA mas nenhum item do dossiê o cobre, escreva-o em "sem_enquadramento".
+   É melhor do que forçar um item que não se aplica. Mas isso não é inventário da
+   foto: objeto em estado normal — uma tomada íntegra, um interruptor comum — não
+   entra ali. Só entra o que você apontaria a um engenheiro para ele ir verificar.
 3. LEIA o texto do item antes de usá-lo. Item sobre andaime não enquadra buraco no chão;
    item sobre guarda-corpo de periferia não enquadra abertura no piso.
 4. {regra_pessoas}
@@ -578,7 +580,7 @@ Responda SOMENTE com este JSON:
 {{
   "vetados": [{{"ref": "<V<n>>", "motivo": "<por que não se sustenta>"}}],
   "ajustes": [{{"ref": "<V<n>>", "constatacao": "<reescrita, ou omita>", "acao_corretiva": "<reescrita, ou omita>", "gravidade": "critica|alta|media|baixa"}}],
-  "parecer": "<2-3 frases sobre a qualidade geral e o risco predominante do local>"
+  "parecer": "<2-3 frases sobre o risco predominante, considerando APENAS os enquadramentos que você aprovou. Se vetou todos, diga que nenhum se sustentou — não descreva achados que você mesmo derrubou>"
 }}"""
 
 
@@ -605,6 +607,27 @@ def agente_diretor(
         json_estrito=True,
     )
     return _ler_json(bruto, "Diretor")
+
+
+def _parecer_coerente(parecer: str, sobreviventes: list, vetos: list) -> str:
+    """Impede o parecer de descrever achados que o próprio supervisor derrubou.
+
+    O parecer é escrito sobre a proposta que o Diretor recebeu, antes de os
+    vetos dele serem aplicados. Quando ele veta tudo, o texto continua falando
+    em "múltiplas não conformidades" ao lado de um laudo que não tem nenhuma —
+    e um documento que se contradiz não se sustenta diante de quem o questione.
+    """
+    if sobreviventes:
+        return parecer
+    if not vetos:
+        return parecer
+    return (
+        "Os enquadramentos propostos para esta imagem não se sustentaram na "
+        "supervisão técnica e foram recusados, de modo que nenhuma não "
+        "conformidade é caracterizada aqui. Isso não atesta conformidade do "
+        "local: as condições registradas nos fatos seguem para verificação, "
+        "listadas entre os pontos de atenção."
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -703,6 +726,15 @@ def executar(
             ref = f"V{n}"
             if ref in vetados:
                 motivos.append(f"{nc.item.nr} {nc.item.item}: {vetados[ref]}")
+                # O veto derruba o enquadramento, não a observação. Um botão de
+                # emergência solto continua sendo um problema mesmo quando o item
+                # citado para ele estava errado — deixá-lo evaporar seria perder
+                # a informação que mais importa ao inspetor.
+                laudo.sem_enquadramento.append(
+                    f"{nc.constatacao} (enquadramento proposto em "
+                    f"{nc.item.nr} {nc.item.item} foi recusado na supervisão: "
+                    f"{vetados[ref].rstrip('.')})"
+                )
                 continue
             if (ajuste := ajustes.get(ref)):
                 if (novo := str(ajuste.get("constatacao", "")).strip()):
@@ -716,7 +748,9 @@ def executar(
         sobreviventes.sort(key=lambda x: (x.prioridade, x.item.nr, x.item.item))
         laudo.nao_conformidades = sobreviventes
         laudo.vetos = motivos
-        laudo.parecer_diretor = str(veredito.get("parecer", "")).strip()
+        laudo.parecer_diretor = _parecer_coerente(
+            str(veredito.get("parecer", "")).strip(), sobreviventes, motivos
+        )
 
         if not motivos:
             avisar(f"✅ Diretor aprovou sem vetos no ciclo {ciclo}.")

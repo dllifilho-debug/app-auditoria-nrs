@@ -7,6 +7,7 @@ cobrança de EPI sem gente na foto, enquadramento fora de tema.
 
 from __future__ import annotations
 
+import re
 import sys
 from datetime import date
 from pathlib import Path
@@ -714,3 +715,124 @@ def test_texto_da_norma_nao_tem_palavra_partida_ao_meio(base):
     """O extrator partia "de" em "d e" dentro da citação oficial."""
     assert "sistema de seccionamento" in base.obter("NR-10", "10.2.8.2.1").texto
     assert "instalação" in base.obter("NR-18", "18.9.1.1").texto
+
+
+# ---------------------------------------------------------------------------
+# Coerência do laudo quando o supervisor veta
+# ---------------------------------------------------------------------------
+
+class _DubleQueVeta:
+    """Analista propõe um enquadramento; Diretor veta e elogia o que vetou."""
+
+    ultimo_corte_por_limite = False
+
+    def __init__(self, parecer: str):
+        self.parecer = parecer
+
+    def conversar(self, modelo, mensagens, teto_saida=1200, temperatura=0.0,
+                  json_estrito=False):
+        import json as _json
+
+        texto = " ".join(
+            p.get("text", "")
+            for m in mensagens
+            for p in (m["content"] if isinstance(m["content"], list) else [{"text": m["content"]}])
+        )
+        if "perito em documentação fotográfica" in texto:
+            return _json.dumps({
+                "ambiente": "painel elétrico em setor industrial",
+                "pessoas": {"presentes": False, "quantidade": 0},
+                "achados": [{
+                    "fato": "Botão de emergência solto sobre a tampa do painel, "
+                            "fora da posição de fixação",
+                    "onde": "topo do painel", "confianca": "alta",
+                }],
+            }, ensure_ascii=False)
+        if "DOSSIÊ NORMATIVO" in texto:
+            rotulo = re.search(r"\[(D\d+)\]", texto).group(1)
+            return _json.dumps({
+                "nao_conformidades": [{
+                    "dossie": rotulo,
+                    "constatacao": "Botão de emergência solto sobre a tampa do painel.",
+                    "consequencia": "Impossibilidade de acionar a parada.",
+                    "gravidade": "critica",
+                    "acao_corretiva": "Refixar o botão.",
+                    "prazo_dias": 3,
+                }],
+                "sem_enquadramento": [], "conformidades": [],
+            }, ensure_ascii=False)
+        return _json.dumps({
+            "vetados": [{"ref": "V1", "motivo": "o item citado trata de outra situação"}],
+            "ajustes": [],
+            "parecer": self.parecer,
+        }, ensure_ascii=False)
+
+
+def test_parecer_nao_contradiz_um_laudo_sem_achados(base):
+    """Observado em produção: "nenhuma não conformidade" ao lado de um parecer
+    falando em "múltiplas não-conformidades" e "correções imediatas"."""
+    laudo = executar(
+        _DubleQueVeta("A foto evidencia múltiplas não-conformidades elétricas que "
+                      "exigem correções imediatas."),
+        base, "imagem", "painel elétrico",
+        Configuracao(modelo_visao="demo", modelo_texto="demo", data_referencia=HOJE),
+    )
+    assert laudo.nao_conformidades == []
+    assert "múltiplas não-conformidades" not in laudo.parecer_diretor
+    texto = relatorio.markdown(laudo, base, numero=1)
+    assert "não se sustentaram na supervisão" in texto
+    assert "não atesta conformidade" in texto
+
+
+def test_achado_vetado_nao_desaparece_do_laudo(base):
+    """O veto derruba o enquadramento, não a observação: um botão de emergência
+    solto continua sendo um problema mesmo com o item citado errado."""
+    laudo = executar(
+        _DubleQueVeta("Nenhum enquadramento se sustentou."),
+        base, "imagem", "painel elétrico",
+        Configuracao(modelo_visao="demo", modelo_texto="demo", data_referencia=HOJE),
+    )
+    juntos = " ".join(laudo.sem_enquadramento)
+    assert "Botão de emergência solto" in juntos
+    assert "recusado na supervisão" in juntos
+    assert "Botão de emergência solto" in relatorio.markdown(laudo, base, numero=1)
+
+
+# ---------------------------------------------------------------------------
+# Sincronização do lote com os laudos já emitidos
+# ---------------------------------------------------------------------------
+
+def _resultado(nome):
+    return (nome, "laudo", b"miniatura")
+
+
+def test_foto_retirada_do_lote_leva_o_laudo_junto():
+    from auditoria.lote import sincronizar
+
+    mantidos, fora = sincronizar(
+        [_resultado("a.jpg"), _resultado("b.jpg"), _resultado("c.jpg")],
+        ["a.jpg", "b.jpg"],
+    )
+    assert [m[0] for m in mantidos] == ["a.jpg", "b.jpg"]
+    assert fora == ["c.jpg"]
+
+
+def test_lote_vazio_nao_apaga_o_trabalho_da_sessao():
+    """O seletor pode devolver lista vazia por um instante durante a interação;
+    perder o lote inteiro por causa disso sairia caro em cota e em tempo."""
+    from auditoria.lote import sincronizar
+
+    resultados = [_resultado("a.jpg"), _resultado("b.jpg")]
+    mantidos, fora = sincronizar(resultados, [])
+    assert mantidos == resultados and fora == []
+
+
+def test_pendentes_preserva_a_ordem_de_envio():
+    from auditoria.lote import pendentes
+
+    class Arquivo:
+        def __init__(self, name): self.name = name
+
+    fila = [Arquivo("a.jpg"), Arquivo("b.jpg"), Arquivo("c.jpg")]
+    assert [a.name for a in pendentes(fila, {"b.jpg"})] == ["a.jpg", "c.jpg"]
+    assert pendentes(fila, {"a.jpg", "b.jpg", "c.jpg"}) == []

@@ -18,7 +18,7 @@ from pathlib import Path
 import streamlit as st
 from PIL import Image, ImageOps
 
-from auditoria import modelos, relatorio
+from auditoria import lote, modelos, relatorio
 from auditoria.catalogo_nr import CATALOGO_NR, NRS_VIGENTES
 from auditoria.consumo import ORCAMENTO_GRATUITO, Consumo
 from auditoria.demo import ClienteDemonstracao
@@ -380,8 +380,20 @@ CUSTO_POR_FOTO = {"Rápido": 5_000, "Padrão": 7_100, "Máximo": 7_300}
 if "resultados" not in st.session_state:
     st.session_state.resultados = []
 
+# Foto retirada do seletor sai também dos resultados: manter o laudo de uma
+# imagem que já não está no lote faria o sumário e o plano de ação contarem
+# conteúdo que o inspetor removeu de propósito.
+st.session_state.resultados, descartadas = lote.sincronizar(
+    st.session_state.resultados, [a.name for a in arquivos or []]
+)
+if descartadas:
+    st.toast(
+        f"{len(descartadas)} laudo(s) descartado(s) junto com a(s) imagem(ns).",
+        icon="🗑️",
+    )
+
 ja_auditadas = {nome for nome, _, _ in st.session_state.resultados}
-pendentes = [a for a in arquivos or [] if a.name not in ja_auditadas]
+pendentes = lote.pendentes(arquivos or [], ja_auditadas)
 
 if arquivos:
     if ja_auditadas and pendentes:
@@ -545,6 +557,10 @@ if resultados:
               delta_color="inverse" if criticas else "off")
     m4.metric("Normas acionadas", len(normas))
 
+    if st.button("🧹 Limpar todos os resultados", help="Recomeça o lote do zero."):
+        st.session_state.resultados = []
+        st.rerun()
+
     texto_consolidado = relatorio.consolidado(
         [(nome, laudo) for nome, laudo, _ in resultados], base, data_inspecao
     )
@@ -580,9 +596,17 @@ if resultados:
                         st.markdown(f"{selo} `{nc.item.nr} {nc.item.item}` — {rot}")
                 if not laudo.aprovado:
                     st.warning(
-                        f"O supervisor vetou {len(laudo.vetos)} enquadramento(s), "
-                        "removido(s) do laudo."
+                        f"O supervisor vetou {len(laudo.vetos)} enquadramento(s). "
+                        "As observações correspondentes seguem entre os pontos de atenção."
                     )
+                if st.button("🗑️ Descartar este laudo", key=f"descartar_{nome}",
+                             use_container_width=True,
+                             help="Remove o resultado desta imagem. A foto continua no "
+                                  "lote e será auditada de novo na próxima execução."):
+                    st.session_state.resultados = [
+                        r for r in st.session_state.resultados if r[0] != nome
+                    ]
+                    st.rerun()
 
             with direita:
                 indice = [n for n, (m, _, _) in enumerate(resultados, 1) if m == nome][0]
