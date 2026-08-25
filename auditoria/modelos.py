@@ -28,11 +28,16 @@ class Modelo:
     contexto: int
     teto_saida: int
     nota: str = ""
+    # Modelo com modo de raciocínio: os tokens de pensamento não passam pelo
+    # validador de JSON da Groq, que devolve 400 `json_validate_failed`. Para
+    # esses, pedimos o JSON pelo prompt e extraímos do texto.
+    json_estrito_confiavel: bool = True
 
 
 VISAO = [
     Modelo("qwen/qwen3.6-27b", "Qwen 3.6 27B (visão)", True, 262_144, 65_536,
-           "Único modelo multimodal da Groq. Marcado como preview pelo fornecedor."),
+           "Único modelo multimodal da Groq. Marcado como preview pelo fornecedor.",
+           json_estrito_confiavel=False),
 ]
 
 TEXTO = [
@@ -41,7 +46,8 @@ TEXTO = [
     Modelo("openai/gpt-oss-20b", "GPT-OSS 20B", False, 131_072, 65_536,
            "Mais rápido e barato; use quando a cota estiver apertada."),
     Modelo("qwen/qwen3.6-27b", "Qwen 3.6 27B", False, 262_144, 65_536,
-           "Contexto maior, com modo de raciocínio."),
+           "Contexto maior, com modo de raciocínio.",
+           json_estrito_confiavel=False),
 ]
 
 PADRAO_VISAO = VISAO[0].id
@@ -105,10 +111,19 @@ def traduzir(erro: Exception) -> ErroDeAuditoria:
             recuperavel=True,
         )
     if isinstance(erro, groq.BadRequestError):
-        return ErroDeAuditoria(
-            f"A Groq recusou a requisição: {erro}",
-            "Costuma ser imagem grande demais. Reduza a resolução de envio.",
-        )
+        texto = str(erro)
+        if RECUSA_JSON.search(texto):
+            return ErroDeAuditoria(
+                "O modelo não conseguiu responder no formato exigido.",
+                "Tente novamente ou escolha outro modelo na barra lateral.",
+                recuperavel=True,
+            )
+        if re.search(r"image|base64|payload|too large|size", texto, re.IGNORECASE):
+            return ErroDeAuditoria(
+                "A Groq recusou a imagem enviada.",
+                "Reduza a resolução de envio na barra lateral.",
+            )
+        return ErroDeAuditoria(f"A Groq recusou a requisição: {erro}")
     return ErroDeAuditoria(f"Falha inesperada: {type(erro).__name__}: {erro}")
 
 
@@ -124,6 +139,15 @@ class Conversador(Protocol):
 
 
 RE_PENSAMENTO = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
+
+# A Groq recusa o modo JSON de duas formas, e ambas chegam como 400:
+# o modelo não suportar `response_format`, ou aceitá-lo e falhar em produzir
+# JSON válido (`json_validate_failed`) — o que acontece com modelos de
+# raciocínio, cujos tokens de pensamento não passam pelo validador.
+RECUSA_JSON = re.compile(
+    r"response_format|json_object|json_validate_failed|failed to validate json",
+    re.IGNORECASE,
+)
 RE_DURACAO = re.compile(r"([\d.]+)\s*(ms|s|m|h)")
 
 
@@ -177,7 +201,8 @@ class ClienteGroq:
         self.cota = Cota()
         self.tokens_gastos = 0
         self.chamadas = 0
-        self.json_estrito_indisponivel = False
+        # Modelos que já recusaram o modo JSON; não insistimos com eles de novo.
+        self.sem_json_estrito: set[str] = set()
 
     # -- cota ---------------------------------------------------------------
 
@@ -235,7 +260,10 @@ class ClienteGroq:
             "max_completion_tokens": teto_saida,
             "temperature": temperatura,
         }
-        if json_estrito and not self.json_estrito_indisponivel:
+        conhecido = por_id(modelo)
+        if conhecido is not None and not conhecido.json_estrito_confiavel:
+            self.sem_json_estrito.add(modelo)
+        if json_estrito and modelo not in self.sem_json_estrito:
             parametros["response_format"] = {"type": "json_object"}
 
         try:
@@ -245,10 +273,13 @@ class ClienteGroq:
             # recusa vem como 400. O laudo não depende disso: o leitor de JSON
             # já tolera resposta em prosa com o objeto no meio. Então tenta de
             # novo sem a exigência, em vez de derrubar a auditoria inteira.
-            if not json_estrito or "response_format" not in str(erro).lower():
+            if not json_estrito or not RECUSA_JSON.search(str(erro)):
                 raise traduzir(erro) from erro
-            self.aviso("O modelo não aceita resposta em JSON estrito; seguindo sem essa exigência.")
-            self.json_estrito_indisponivel = True
+            self.aviso(
+                f"O modelo {modelo} não entregou JSON no modo estrito; "
+                "repetindo a chamada sem essa exigência."
+            )
+            self.sem_json_estrito.add(modelo)
             parametros.pop("response_format", None)
             try:
                 resposta = self._chamar(parametros)

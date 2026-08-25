@@ -387,8 +387,21 @@ def _resposta_http(status: int):
 
     return httpx.Response(status, request=httpx.Request("POST", "https://api.groq.com/x"))
 
-def test_cliente_segue_sem_json_estrito_quando_o_modelo_recusa(monkeypatch):
-    """Nem todo modelo da Groq aceita response_format; a recusa não pode derrubar o laudo."""
+MENSAGENS_DE_RECUSA_JSON = [
+    # O modelo não suporta o parâmetro.
+    "Error code: 400 - response_format is not supported for this model",
+    # O modelo suporta, aceita, e falha em produzir JSON válido — foi este que
+    # apareceu em produção com o modelo de visão, cujos tokens de raciocínio
+    # não passam pelo validador da Groq.
+    "Error code: 400 - {'error': {'message': \"Failed to validate JSON. Please adjust "
+    "your prompt. See 'failed_generation' for more details.\", 'type': "
+    "'invalid_request_error', 'code': 'json_validate_failed', 'failed_generation': ''}}",
+]
+
+
+@pytest.mark.parametrize("mensagem", MENSAGENS_DE_RECUSA_JSON)
+def test_cliente_segue_sem_json_estrito_quando_o_modelo_recusa(monkeypatch, mensagem):
+    """As duas formas de a Groq recusar o modo JSON não podem derrubar o laudo."""
     import groq
 
     from auditoria.modelos import ClienteGroq
@@ -407,11 +420,7 @@ def test_cliente_segue_sem_json_estrito_quando_o_modelo_recusa(monkeypatch):
     def falso_create(**parametros):
         tentativas.append(parametros)
         if "response_format" in parametros:
-            raise groq.BadRequestError(
-                "response_format is not supported for this model",
-                response=_resposta_http(400),
-                body=None,
-            )
+            raise groq.BadRequestError(mensagem, response=_resposta_http(400), body=None)
         return RespostaFalsa()
 
     monkeypatch.setattr(cliente.cliente.chat.completions.with_raw_response, "create", falso_create)
@@ -421,8 +430,8 @@ def test_cliente_segue_sem_json_estrito_quando_o_modelo_recusa(monkeypatch):
     assert saida == '{"ok": true}'
     assert len(tentativas) == 2, "deveria ter tentado de novo sem response_format"
     assert "response_format" in tentativas[0] and "response_format" not in tentativas[1]
-    # E não insiste na exigência nas chamadas seguintes.
-    assert cliente.json_estrito_indisponivel
+    # E não insiste na exigência com esse modelo nas chamadas seguintes.
+    assert "modelo-x" in cliente.sem_json_estrito
 
 
 def test_erros_da_api_viram_mensagem_acionavel():
@@ -436,3 +445,32 @@ def test_erros_da_api_viram_mensagem_acionavel():
     )
     assert "cota" in traduzido.mensagem.lower()
     assert traduzido.sugestao and traduzido.recuperavel
+
+
+def test_leitor_de_json_atravessa_raciocinio_e_cercas():
+    """Sem o modo estrito, o modelo devolve o objeto embrulhado em prosa."""
+    from auditoria.pipeline import _ler_json
+
+    casos = {
+        "<think>Preciso de {chaves} aqui.</think> {\"ambiente\": \"quadro\"}": "ambiente",
+        "Claro!\n```json\n{\"a\": 1}\n```\nEspero ter ajudado.": "a",
+        "prosa com { chave solta e depois {\"ok\": true} de verdade": "ok",
+        '{"texto": "tem { chave } dentro da string", "n": 2}': "texto",
+    }
+    for bruto, esperado in casos.items():
+        assert esperado in _ler_json(bruto, "teste"), bruto[:40]
+
+
+def test_erro_de_json_vira_mensagem_recuperavel():
+    """O 400 de JSON não deve mais sugerir reduzir a imagem — não é essa a causa."""
+    import groq
+
+    from auditoria.modelos import traduzir
+
+    erro = traduzir(
+        groq.BadRequestError(
+            MENSAGENS_DE_RECUSA_JSON[1], response=_resposta_http(400), body=None
+        )
+    )
+    assert erro.recuperavel
+    assert "resolução" not in erro.sugestao.lower()

@@ -108,6 +108,39 @@ class Laudo:
 RE_BLOCO_JSON = re.compile(r"\{.*\}", re.DOTALL)
 
 
+def _primeiro_objeto(texto: str) -> dict | None:
+    """Extrai o primeiro objeto JSON completo do texto, contando chaves.
+
+    Sem o modo JSON estrito o modelo pode devolver raciocínio em volta da
+    resposta. Casar do primeiro "{" ao último "}" quebra quando há chaves na
+    prosa; equilibrar as chaves — e ignorar as que estiverem dentro de string —
+    acha o objeto de verdade.
+    """
+    for inicio, caractere in enumerate(texto):
+        if caractere != "{":
+            continue
+        profundidade, em_texto, escapado = 0, False, False
+        for fim in range(inicio, len(texto)):
+            atual = texto[fim]
+            if escapado:
+                escapado = False
+                continue
+            if atual == "\\" and em_texto:
+                escapado = True
+            elif atual == '"':
+                em_texto = not em_texto
+            elif not em_texto and atual == "{":
+                profundidade += 1
+            elif not em_texto and atual == "}":
+                profundidade -= 1
+                if profundidade == 0:
+                    try:
+                        return json.loads(texto[inicio: fim + 1])
+                    except json.JSONDecodeError:
+                        break
+    return None
+
+
 def _ler_json(texto: str, onde: str) -> dict:
     """Extrai o objeto JSON da resposta, tolerando cercas de markdown."""
     limpo = texto.strip()
@@ -116,11 +149,8 @@ def _ler_json(texto: str, onde: str) -> dict:
         return json.loads(limpo)
     except json.JSONDecodeError:
         pass
-    if (m := RE_BLOCO_JSON.search(limpo)):
-        try:
-            return json.loads(m.group(0))
-        except json.JSONDecodeError:
-            pass
+    if (objeto := _primeiro_objeto(limpo)) is not None:
+        return objeto
     raise ErroDeAuditoria(
         f"O agente {onde} não devolveu JSON utilizável.",
         "Costuma ser resposta cortada por falta de cota. Tente de novo em um minuto.",
