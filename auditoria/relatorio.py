@@ -22,6 +22,19 @@ SELOS = {
 }
 
 
+def _resumir(texto: str, limite: int) -> str:
+    """Encurta sem cortar palavra ao meio.
+
+    O corte cru deixava a tabela com "…expondo partes internas d", que parece
+    erro de geração num documento que se pretende pericial.
+    """
+    texto = texto.strip()
+    if len(texto) <= limite:
+        return texto
+    corte = texto[:limite].rsplit(" ", 1)[0].rstrip(" ,;:.")
+    return (corte or texto[:limite]) + "…"
+
+
 def _contar(valores) -> list[tuple[str, int]]:
     from collections import Counter
 
@@ -111,8 +124,9 @@ def markdown(
         }
         for n, nc in enumerate(laudo.nao_conformidades, start=1):
             selo, rotulo = SELOS.get(nc.gravidade, ("⚪", nc.gravidade))
-            titulo = nc.constatacao[:80] if nc.rotulo_risco in repetidos else (
-                nc.rotulo_risco or nc.constatacao[:70]
+            titulo = (
+                _resumir(nc.constatacao, 80) if nc.rotulo_risco in repetidos
+                else (nc.rotulo_risco or _resumir(nc.constatacao, 70))
             )
             p.append(
                 f"| {n} | {titulo} | **{nc.item.nr}** | `{nc.item.item}` | "

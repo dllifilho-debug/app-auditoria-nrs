@@ -679,3 +679,38 @@ def test_consumo_nao_ultrapassa_os_limites_do_orcamento():
     assert c.restante(200_000) == 0
     assert c.imagens_que_ainda_cabem(200_000) == 0
     assert c.fracao_usada(200_000) == 1.0
+
+
+def test_titulo_da_tabela_nao_corta_palavra_ao_meio(base):
+    """Corte cru deixava "…expondo partes internas d" num documento pericial."""
+    from auditoria.pipeline import Laudo, NaoConformidade, Visao
+
+    def nc(item, constatacao):
+        return NaoConformidade(
+            item=base.obter("NR-12", item), constatacao=constatacao, consequencia="",
+            gravidade="alta", acao_corretiva="Corrigir.", prazo_dias=7,
+            rotulo_risco="Partes energizadas expostas ao contato",
+        )
+
+    laudo = Laudo(
+        visao=Visao(),
+        nao_conformidades=[
+            nc("12.3.8", "Botão de comando vermelho com a face frontal quebrada, "
+                         "expondo partes internas do dispositivo de acionamento."),
+            nc("12.5.16", "Abertura circular vazia na face frontal do painel elétrico, "
+                          "sem componente instalado."),
+        ],
+        data_referencia=HOJE,
+    )
+    linhas = [l for l in relatorio.markdown(laudo, base, numero=1).splitlines()
+              if l.startswith("| 1 |")]
+    titulo = linhas[0].split("|")[2].strip()
+    assert titulo.endswith("…"), titulo
+    assert not titulo.rstrip("…").endswith(" "), "sobrou espaço antes das reticências"
+    assert titulo.rstrip("…").split()[-1] in laudo.nao_conformidades[0].constatacao.split()
+
+
+def test_texto_da_norma_nao_tem_palavra_partida_ao_meio(base):
+    """O extrator partia "de" em "d e" dentro da citação oficial."""
+    assert "sistema de seccionamento" in base.obter("NR-10", "10.2.8.2.1").texto
+    assert "instalação" in base.obter("NR-18", "18.9.1.1").texto

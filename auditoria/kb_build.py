@@ -95,41 +95,60 @@ def _vocabulario(texto: str) -> Counter:
     return Counter(re.findall(r"[a-zà-úA-ZÀ-Ú]{2,}", texto.lower()))
 
 
-def _corrigir_quebras(texto: str, vocab: Counter) -> str:
-    """Junta palavras que o extrator de PDF partiu ao meio ("instalaçã o" -> "instalação").
+def _fragmento(palavra: str, unido: int, vocab: Counter) -> bool:
+    """A palavra parece pedaço de outra, e não palavra inteira?
 
-    Heurística movida a dados: só junta quando (a) a forma unida é uma palavra
-    de fato recorrente no corpus da própria norma, (b) é bem mais frequente que
-    o lado mais raro do par, e (c) esse lado raro quase não existe sozinho —
-    sinal de que é fragmento, não palavra. Assim "instalaçã o" vira "instalação"
-    mas "de acordo" nunca vira "deacordo".
+    Duas evidências valem: quase não aparecer sozinha no corpus, ou ser muito
+    mais rara do que a forma unida. É o que separa "instalaçã" — que só existe
+    porque o extrator partiu "instalação" — de "feito", que é palavra de verdade
+    e não pode ser colada no "e" anterior para virar "efeito".
     """
+    if palavra in STOPWORDS_CURTAS:
+        return False
+    frequencia = vocab[palavra]
+    return frequencia <= 2 or frequencia * 4 < unido
 
-    def junta(m: re.Match) -> str:
-        w1, w2 = m.group(1), m.group(2)
-        b1, b2 = w1.lower(), w2.lower()
-        if b1 in STOPWORDS_CURTAS and b2 in STOPWORDS_CURTAS:
-            return m.group(0)
-        f1, f2, f_unido = vocab[b1], vocab[b2], vocab[b1 + b2]
-        raro = min(f1, f2)
-        if f_unido >= 3 and raro <= 3 and f_unido > 3 * raro:
-            return w1 + w2
-        return m.group(0)
 
-    # Pares alfabéticos adjacentes em que pelo menos um lado é curto o bastante
-    # para ser um fragmento de palavra.
-    padrao = re.compile(r"\b([a-zà-ÿ]{1,6})\s([a-zà-ÿ]{1,20})\b|\b([a-zà-ÿ]{1,20})\s([a-zà-ÿ]{1,6})\b")
+def _deve_juntar(a: str, b: str, vocab: Counter) -> bool:
+    ba, bb = a.lower(), b.lower()
+    if ba in STOPWORDS_CURTAS and bb in STOPWORDS_CURTAS:
+        return False
+    unido = vocab[ba + bb]
+    if unido < 3:
+        return False
+    return _fragmento(ba, unido, vocab) or _fragmento(bb, unido, vocab)
 
-    def despacha(m: re.Match) -> str:
-        g = m.groups()
-        w1, w2 = (g[0], g[1]) if g[0] is not None else (g[2], g[3])
-        return junta(re.match(r"(\S+) (\S+)", f"{w1} {w2}"))
 
-    anterior = None
-    while anterior != texto:
-        anterior = texto
-        texto = padrao.sub(despacha, texto)
-    return texto
+RE_SO_LETRAS = re.compile(r"^[a-zà-ÿ]+$", re.IGNORECASE)
+
+
+def _corrigir_quebras(texto: str, vocab: Counter) -> str:
+    """Junta palavras que o extrator de PDF partiu ao meio.
+
+    A varredura é por token, e não por expressão regular: casar "sistema d" com
+    uma regex consome o "d", que então nunca é comparado com o "e" seguinte — e
+    "sistema d e seccionamento" continuava partido dentro da citação oficial.
+    Percorrendo os pedaços um a um, cada fragmento tem chance de se juntar ao
+    vizinho, inclusive em cadeia.
+    """
+    pedacos = re.split(r"(\s+)", texto)
+    saida: list[str] = []
+    i = 0
+    while i < len(pedacos):
+        atual = pedacos[i]
+        if (
+            i + 2 < len(pedacos)
+            and pedacos[i + 1] == " "
+            and RE_SO_LETRAS.match(atual)
+            and RE_SO_LETRAS.match(pedacos[i + 2])
+            and _deve_juntar(atual, pedacos[i + 2], vocab)
+        ):
+            pedacos[i + 2] = atual + pedacos[i + 2]   # segue tentando em cadeia
+            i += 2
+            continue
+        saida.append(atual)
+        i += 1
+    return "".join(saida)
 
 
 def _normalizar(texto: str) -> str:
