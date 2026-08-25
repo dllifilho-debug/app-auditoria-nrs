@@ -36,7 +36,8 @@ class Modelo:
 
 VISAO = [
     Modelo("qwen/qwen3.6-27b", "Qwen 3.6 27B (visão)", True, 262_144, 65_536,
-           "Único modelo multimodal da Groq. Marcado como preview pelo fornecedor.",
+           "Único modelo multimodal da Groq, e destino de migração oficial dos "
+           "modelos de visão já desligados.",
            json_estrito_confiavel=False),
 ]
 
@@ -52,6 +53,12 @@ TEXTO = [
 
 PADRAO_VISAO = VISAO[0].id
 PADRAO_TEXTO = TEXTO[0].id
+
+# A Groq desligou modelos quinze vezes desde 2024, em média a cada um ou dois
+# meses. Um registro fixo em código envelhece entre uma release e outra, então o
+# app aceita um ID digitado à mão: quando a troca vier, ela é feita na barra
+# lateral, sem depender de alterar o código.
+PAGINA_DEPRECIACOES = "https://console.groq.com/docs/deprecations"
 
 
 def por_id(modelo_id: str) -> Modelo | None:

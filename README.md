@@ -113,6 +113,12 @@ normas/                    PDFs oficiais das NRs
 - Uma foto mostra condições físicas. Ausência de documento (PGR, ordem de serviço,
   ficha de treinamento) **não se enxerga em imagem** e o app não a alega.
 - 12 das 36 NRs vigentes ainda não têm texto carregado (nenhuma delas de construção civil).
-- O modelo de visão da Groq está em *preview* e pode ser descontinuado pelo fornecedor.
+- A Groq desligou modelos quinze vezes desde 2024, em média a cada um ou dois meses.
+  Modelo desligado responde `404`. Quando acontecer, a troca é feita na barra lateral
+  — o seletor aceita um ID digitado à mão — consultando as
+  [depreciações da Groq](https://console.groq.com/docs/deprecations). Não é preciso
+  esperar por uma nova versão do app.
+- Só existe um modelo multimodal na Groq hoje, então não há para onde cair dentro do
+  mesmo provedor se ele sair.
 - O documento gerado é apoio à inspeção. **Não substitui laudo assinado por profissional
   legalmente habilitado.**

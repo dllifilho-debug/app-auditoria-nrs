@@ -113,20 +113,46 @@ with st.sidebar:
 
     st.divider()
     st.markdown("### 🧠 Modelos")
-    modelo_visao = st.selectbox(
+    OUTRO = "✏️ Outro (digitar o ID)"
+
+    def _rotulo(identificador: str) -> str:
+        conhecido = modelos.por_id(identificador)
+        return conhecido.rotulo if conhecido else identificador
+
+    escolha_visao = st.selectbox(
         "Visão (leitura da foto)",
-        [m.id for m in modelos.VISAO],
-        format_func=lambda i: modelos.por_id(i).rotulo,
+        [m.id for m in modelos.VISAO] + [OUTRO],
+        format_func=_rotulo,
         disabled=modo_demo,
     )
-    modelo_texto = st.selectbox(
+    modelo_visao = (
+        st.text_input("ID do modelo de visão", value=modelos.PADRAO_VISAO,
+                      disabled=modo_demo).strip()
+        if escolha_visao == OUTRO else escolha_visao
+    )
+
+    escolha_texto = st.selectbox(
         "Texto (enquadramento e supervisão)",
-        [m.id for m in modelos.TEXTO],
-        format_func=lambda i: modelos.por_id(i).rotulo,
+        [m.id for m in modelos.TEXTO] + [OUTRO],
+        format_func=_rotulo,
         disabled=modo_demo,
     )
-    if (m := modelos.por_id(modelo_texto)) and m.nota:
-        st.caption(m.nota)
+    modelo_texto = (
+        st.text_input("ID do modelo de texto", value=modelos.PADRAO_TEXTO,
+                      disabled=modo_demo).strip()
+        if escolha_texto == OUTRO else escolha_texto
+    )
+
+    for identificador in (modelo_visao, modelo_texto):
+        if (m := modelos.por_id(identificador)) and m.nota:
+            st.caption(f"**{m.rotulo}** — {m.nota}")
+    if OUTRO in (escolha_visao, escolha_texto):
+        # A Groq desliga modelos a cada um ou dois meses; quando isso acontecer,
+        # a troca é aqui, sem esperar por uma nova versão do app.
+        st.caption(
+            f"Modelos desligados retornam erro 404. Confira os IDs vigentes e as "
+            f"substituições recomendadas em [depreciações da Groq]({modelos.PAGINA_DEPRECIACOES})."
+        )
 
     st.divider()
     st.markdown("### 🔁 Rigor do Gauntlet Loop")
@@ -293,6 +319,9 @@ executar_agora = st.button(
 if executar_agora:
     if not modo_demo and not chave.strip():
         st.error("Informe a chave da API Groq na barra lateral, ou ative o modo demonstração.")
+        st.stop()
+    if not modo_demo and not (modelo_visao and modelo_texto):
+        st.error("Informe o ID dos dois modelos na barra lateral.")
         st.stop()
 
     cliente = ClienteDemonstracao() if modo_demo else ClienteGroq(
