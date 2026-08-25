@@ -627,3 +627,55 @@ def test_modulos_com_dataclass_nao_usam_anotacoes_adiadas():
     assert culpados == [], (
         "estes módulos definem dataclass com anotações adiadas: " + ", ".join(culpados)
     )
+
+
+# ---------------------------------------------------------------------------
+# Contabilidade de consumo diário
+# ---------------------------------------------------------------------------
+
+def test_consumo_soma_execucoes_do_mesmo_dia():
+    from auditoria.consumo import Consumo
+
+    c = Consumo(dia="2026-08-25")
+    c.registrar(7_000, 1, 3, hoje=date(2026, 8, 25))
+    c.registrar(14_000, 2, 6, hoje=date(2026, 8, 25))
+    assert (c.tokens, c.imagens, c.chamadas) == (21_000, 3, 9)
+    assert c.media_por_imagem == 7_000
+
+
+def test_consumo_zera_na_virada_do_dia():
+    """A regra que ninguém percebe estar quebrada até a meia-noite."""
+    from auditoria.consumo import Consumo
+
+    c = Consumo(dia="2026-08-25")
+    c.registrar(150_000, 20, 60, hoje=date(2026, 8, 25))
+    c.registrar(7_000, 1, 3, hoje=date(2026, 8, 26))
+    assert c.dia == "2026-08-26"
+    assert (c.tokens, c.imagens) == (7_000, 1)
+
+
+def test_consumo_projeta_quantas_imagens_ainda_cabem():
+    from auditoria.consumo import Consumo, ORCAMENTO_GRATUITO
+
+    c = Consumo(dia="2026-08-25")
+    c.registrar(70_000, 10, 30, hoje=date(2026, 8, 25))
+    assert c.media_por_imagem == 7_000
+    assert c.imagens_que_ainda_cabem(ORCAMENTO_GRATUITO) == 18   # 130.000 / 7.000
+    assert 0.34 < c.fracao_usada(ORCAMENTO_GRATUITO) < 0.36
+
+
+def test_consumo_nao_estima_sem_medicao():
+    """Sem imagem medida, devolver um número seria devolver um palpite."""
+    from auditoria.consumo import Consumo
+
+    assert Consumo().imagens_que_ainda_cabem(200_000) is None
+
+
+def test_consumo_nao_ultrapassa_os_limites_do_orcamento():
+    from auditoria.consumo import Consumo
+
+    c = Consumo(dia="2026-08-25")
+    c.registrar(250_000, 30, 90, hoje=date(2026, 8, 25))
+    assert c.restante(200_000) == 0
+    assert c.imagens_que_ainda_cabem(200_000) == 0
+    assert c.fracao_usada(200_000) == 1.0

@@ -26,7 +26,7 @@ desligue o modo demonstração e informe a chave da [Groq](https://console.groq.
 ou defina `GROQ_API_KEY` no ambiente / nos *Secrets* do Streamlit Cloud.
 
 ```bash
-pytest tests/          # 49 testes das garantias do produto
+pytest tests/          # 54 testes das garantias do produto
 ```
 
 ---
@@ -103,6 +103,7 @@ auditoria/
   pipeline.py              o Gauntlet Loop e a aferição determinística
   modelos.py               cliente Groq com controle de cota
   relatorio.py             renderização em Markdown e HTML imprimível
+  consumo.py               contabilidade do teto diário de tokens
   demo.py                  dublê de modelo para o modo demonstração
 tests/                     testes das garantias
 normas/                    PDFs oficiais das NRs

@@ -20,6 +20,7 @@ from PIL import Image, ImageOps
 
 from auditoria import modelos, relatorio
 from auditoria.catalogo_nr import CATALOGO_NR, NRS_VIGENTES
+from auditoria.consumo import ORCAMENTO_GRATUITO, Consumo
 from auditoria.demo import ClienteDemonstracao
 from auditoria.kb import carregar_base
 from auditoria.modelos import ClienteGroq, ErroDeAuditoria
@@ -100,6 +101,15 @@ def preparar_imagem(bytes_imagem: bytes, lado: int) -> tuple[str, bytes]:
             break
         qualidade -= 12
     return base64.b64encode(dados).decode("ascii"), dados
+
+
+def consumo_do_dia() -> Consumo:
+    """Acumulado do dia, guardado na sessão do navegador."""
+    estado = st.session_state.get("consumo")
+    if not isinstance(estado, Consumo):
+        estado = Consumo()
+        st.session_state.consumo = estado
+    return estado
 
 
 def chave_configurada() -> str:
@@ -208,6 +218,49 @@ with st.sidebar:
     )
 
     st.divider()
+    if not modo_demo:
+        gasto = consumo_do_dia()
+        with st.expander("🔋 Consumo do dia", expanded=bool(gasto.tokens)):
+            orcamento = st.number_input(
+                "Teto diário de tokens da sua conta",
+                min_value=10_000, max_value=100_000_000,
+                value=st.session_state.get("orcamento_diario", ORCAMENTO_GRATUITO),
+                step=10_000,
+                help="O plano gratuito da Groq trabalha com 200.000 tokens por dia. "
+                     "Se a sua conta for paga, ajuste aqui para a estimativa fazer sentido.",
+            )
+            st.session_state.orcamento_diario = orcamento
+
+            if gasto.imagens:
+                cabem = gasto.imagens_que_ainda_cabem(orcamento)
+                st.progress(
+                    gasto.fracao_usada(orcamento),
+                    text=f"{gasto.tokens:,} de {orcamento:,} tokens".replace(",", "."),
+                )
+                a, b = st.columns(2)
+                a.metric("Imagens hoje", gasto.imagens)
+                b.metric("Média por imagem", f"{gasto.media_por_imagem:,}".replace(",", "."))
+                if cabem:
+                    st.caption(
+                        f"Ainda cabem cerca de **{cabem} imagem(ns)** hoje, nesse ritmo."
+                    )
+                else:
+                    st.warning(
+                        "Teto diário atingido pela contagem desta sessão. "
+                        "A cota volta na virada do dia.",
+                        icon="🪫",
+                    )
+            else:
+                st.caption("Nenhuma imagem auditada hoje nesta sessão.")
+
+            st.caption(
+                "A contagem cobre apenas esta sessão do navegador: recarregar a página "
+                "zera o acumulado, embora a cota real da conta siga consumida."
+            )
+            if gasto.tokens and st.button("Zerar contagem", use_container_width=True):
+                st.session_state.pop("consumo", None)
+                st.rerun()
+
     with st.expander("📚 Cobertura normativa"):
         carregadas = set(base.por_nr)
         st.metric("Itens normativos indexados", f"{len(base.itens):,}".replace(",", "."))
@@ -371,6 +424,7 @@ if executar_agora:
     else:
         fila = pendentes
 
+    auditadas_antes = len(st.session_state.resultados)
     barra = st.progress(0.0, text="Iniciando…")
     interrompido = None
 
@@ -429,8 +483,11 @@ if executar_agora:
             icon="⏸️",
         )
     if not modo_demo and getattr(cliente, "tokens_gastos", 0):
-        auditadas = len(st.session_state.resultados)
-        media = cliente.tokens_gastos // max(auditadas, 1)
+        # Média desta execução, não da sessão: num lote retomado, dividir os
+        # tokens de agora pelo total acumulado dá um número sem sentido.
+        nesta_execucao = len(st.session_state.resultados) - auditadas_antes
+        media = cliente.tokens_gastos // max(nesta_execucao, 1)
+        consumo_do_dia().registrar(cliente.tokens_gastos, nesta_execucao, cliente.chamadas)
         c1, c2, c3 = st.columns(3)
         c1.metric("Chamadas à API", cliente.chamadas)
         c2.metric("Tokens consumidos", f"{cliente.tokens_gastos:,}".replace(",", "."))
