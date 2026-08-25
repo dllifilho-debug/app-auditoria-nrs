@@ -8,9 +8,12 @@ oficiais do MTE e estão vigentes na data da inspeção.
 from __future__ import annotations
 
 import base64
+import hashlib
 import io
 import os
+import subprocess
 from datetime import date
+from pathlib import Path
 
 import streamlit as st
 from PIL import Image, ImageOps
@@ -36,6 +39,33 @@ st.set_page_config(
 # ---------------------------------------------------------------------------
 # Recursos carregados uma vez
 # ---------------------------------------------------------------------------
+
+@st.cache_resource
+def versao_do_app() -> str:
+    """Identifica a versão do código que está de fato rodando.
+
+    Sem isso não dá para distinguir "o conserto não funcionou" de "o conserto
+    não chegou ao servidor" — e as duas coisas se parecem muito na tela de quem
+    está usando. Usa o SHA do commit quando o `.git` veio junto; caso contrário,
+    uma impressão digital dos próprios arquivos, que muda a cada alteração.
+    """
+    raiz = Path(__file__).resolve().parent
+    try:
+        git = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=raiz, capture_output=True, text=True, timeout=5,
+        )
+        if git.returncode == 0 and git.stdout.strip():
+            return git.stdout.strip()
+    except Exception:
+        pass
+
+    marca = hashlib.sha256()
+    fontes = [raiz / "app.py"] + sorted((raiz / "auditoria").rglob("*.py"))
+    for arquivo in fontes:
+        marca.update(arquivo.read_bytes())
+    return "src-" + marca.hexdigest()[:8]
+
 
 @st.cache_resource(show_spinner="Carregando base normativa…")
 def base_normativa(referencia: date):
@@ -205,6 +235,7 @@ with st.sidebar:
                 f"⏳ Edição já publicada mas ainda **não vigente**: {futuras}. "
                 "O app cita a redação em vigor na data da inspeção."
             )
+        st.caption(f"Versão em execução: `{versao_do_app()}`")
         if base.pdfs_ignorados:
             st.warning(
                 "PDF cujo nome não permite identificar a NR (ignorado): "
