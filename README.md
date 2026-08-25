@@ -105,6 +105,13 @@ Faltam: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma delas apli
 
 ---
 
+## Continuidade entre sessões
+
+`CLAUDE.md` na raiz guarda o contexto do projeto — a regra que organiza o desenho, as
+armadilhas já pagas, as classes de erro que o pipeline existe para evitar e o que está
+em aberto. É carregado automaticamente por assistentes de código no início da sessão.
+Ao mudar algo estrutural, atualize-o junto.
+
 ## Estrutura
 
 ```
