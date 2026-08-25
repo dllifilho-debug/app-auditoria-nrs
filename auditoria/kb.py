@@ -5,8 +5,6 @@ que ele faz existir, palavra por palavra, num PDF oficial de NR e estiver
 vigente na data da inspeção. Não é o modelo que decide isso — é código.
 """
 
-from __future__ import annotations
-
 import gzip
 import json
 import math

@@ -603,3 +603,27 @@ def test_tabela_desambigua_constatacoes_sob_o_mesmo_risco(base):
     linhas = [l for l in relatorio.markdown(laudo, base, numero=1).splitlines()
               if l.startswith("| 1 |") or l.startswith("| 2 |")]
     assert len(linhas) == 2 and linhas[0] != linhas[1]
+
+
+def test_modulos_com_dataclass_nao_usam_anotacoes_adiadas():
+    """Guarda contra um erro que só aparece em produção, nunca aqui.
+
+    Com `from __future__ import annotations` toda anotação vira string, e o
+    módulo `dataclasses` passa a resolvê-la por `sys.modules.get(cls.__module__)`.
+    Quando o recarregador do servidor tira o módulo de `sys.modules` no momento
+    errado, esse `get` devolve None e a criação da classe estoura com
+    AttributeError — foi o que derrubou o app no Python 3.14 do Streamlit Cloud.
+
+    As anotações do projeto (`str | None`, `tuple[str, ...]`) são válidas
+    nativamente desde o Python 3.10, então o import adiado não faz falta.
+    """
+    raiz = Path(__file__).resolve().parent.parent / "auditoria"
+    culpados = [
+        arquivo.relative_to(raiz.parent).as_posix()
+        for arquivo in sorted(raiz.rglob("*.py"))
+        if "@dataclass" in (texto := arquivo.read_text(encoding="utf-8"))
+        and "from __future__ import annotations" in texto
+    ]
+    assert culpados == [], (
+        "estes módulos definem dataclass com anotações adiadas: " + ", ".join(culpados)
+    )

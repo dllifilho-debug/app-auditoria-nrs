@@ -8,8 +8,6 @@ com o tamanho do laudo. Aqui a espera é calculada a partir dos cabeçalhos
 folga e desacelera exatamente o necessário quando não há.
 """
 
-from __future__ import annotations
-
 import os
 import re
 import time

@@ -8,8 +8,6 @@ exista, palavra por palavra, num PDF oficial. Tudo que o modelo escrever é
 conferido contra o que sai daqui.
 """
 
-from __future__ import annotations
-
 import gzip
 import json
 import os

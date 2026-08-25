@@ -6,8 +6,6 @@ base a partir do que a foto de fato mostra, e só pode citar por esse rótulo.
 É o que impede tanto a invenção de item quanto o enquadramento fora de tema.
 """
 
-from __future__ import annotations
-
 import re
 from dataclasses import dataclass, field
 from datetime import date

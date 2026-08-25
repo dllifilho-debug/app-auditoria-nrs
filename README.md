@@ -13,6 +13,8 @@ improvável e passa a ser impossível.
 
 ## Como rodar
 
+Requer **Python 3.10 ou superior**.
+
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
@@ -24,7 +26,7 @@ desligue o modo demonstração e informe a chave da [Groq](https://console.groq.
 ou defina `GROQ_API_KEY` no ambiente / nos *Secrets* do Streamlit Cloud.
 
 ```bash
-pytest tests/          # 41 testes das garantias do produto
+pytest tests/          # 49 testes das garantias do produto
 ```
 
 ---

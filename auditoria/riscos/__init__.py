@@ -11,8 +11,6 @@ Cada domínio contribui com um dicionário `RISCOS`; aqui eles são unidos e
 conferidos.
 """
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 
 GRAVIDADES = ("critica", "alta", "media", "baixa")
