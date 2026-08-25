@@ -243,20 +243,52 @@ if arquivos:
     if len(arquivos) > 6:
         st.caption(f"…e mais {len(arquivos) - 6} imagem(ns).")
 
+# Custo medido por foto em cada perfil, para avisar antes de o lote começar.
+CUSTO_POR_FOTO = {"Rápido": 5_000, "Padrão": 7_100, "Máximo": 7_300}
+
+if "resultados" not in st.session_state:
+    st.session_state.resultados = []
+
+ja_auditadas = {nome for nome, _, _ in st.session_state.resultados}
+pendentes = [a for a in arquivos or [] if a.name not in ja_auditadas]
+
+if arquivos:
+    if ja_auditadas and pendentes:
+        st.info(
+            f"**{len(ja_auditadas)} imagem(ns) já auditada(s) nesta sessão.** "
+            f"A execução continua das {len(pendentes)} restantes, sem refazer nem "
+            "gastar cota com o que já está pronto.",
+            icon="↩️",
+        )
+    elif arquivos and not pendentes:
+        st.success("Todas as imagens deste lote já foram auditadas nesta sessão.", icon="✅")
+
+    if pendentes and not modo_demo:
+        previsto = len(pendentes) * CUSTO_POR_FOTO[rigor]
+        st.caption(
+            f"Consumo previsto: **~{previsto:,} tokens** para {len(pendentes)} imagem(ns) "
+            f"no rigor {rigor}.".replace(",", ".")
+            + " Se a cota acabar no meio, o que já saiu fica salvo e basta executar de novo."
+        )
+
+refazer = False
+if ja_auditadas:
+    refazer = st.checkbox(
+        "Refazer as imagens já auditadas",
+        help="Por padrão o app pula o que já analisou, para não gastar cota duas vezes.",
+    )
+
 executar_agora = st.button(
-    "▶️ Executar auditoria",
+    "▶️ Executar auditoria" + (f" ({len(pendentes)} pendente(s))" if pendentes and ja_auditadas else ""),
     type="primary",
     use_container_width=True,
-    disabled=not arquivos,
+    disabled=not arquivos or (not pendentes and not refazer),
 )
 
 
 # ---------------------------------------------------------------------------
 # Execução
 # ---------------------------------------------------------------------------
-
-if "resultados" not in st.session_state:
-    st.session_state.resultados = []
 
 if executar_agora:
     if not modo_demo and not chave.strip():
@@ -273,12 +305,18 @@ if executar_agora:
         **perfis[rigor],
     )
 
-    st.session_state.resultados = []
-    barra = st.progress(0.0, text="Iniciando…")
+    if refazer:
+        st.session_state.resultados = []
+        fila = list(arquivos)
+    else:
+        fila = pendentes
 
-    for indice, arquivo in enumerate(arquivos):
-        rotulo = f"{arquivo.name} ({indice + 1}/{len(arquivos)})"
-        barra.progress(indice / len(arquivos), text=f"Analisando {rotulo}…")
+    barra = st.progress(0.0, text="Iniciando…")
+    interrompido = None
+
+    for indice, arquivo in enumerate(fila):
+        rotulo = f"{arquivo.name} ({indice + 1}/{len(fila)})"
+        barra.progress(indice / len(fila), text=f"Analisando {rotulo}…")
 
         with st.status(f"📸 {rotulo}", expanded=True) as painel:
             try:
@@ -298,6 +336,7 @@ if executar_agora:
                 painel.update(label=f"❌ {rotulo}", state="error")
                 st.error(f"**{erro.mensagem}**" + (f"\n\n{erro.sugestao}" if erro.sugestao else ""))
                 if not erro.recuperavel:
+                    interrompido = (arquivo.name, erro)
                     break
             except Exception as erro:                      # rede, imagem corrompida…
                 traduzido = modelos.traduzir(erro)
@@ -306,11 +345,32 @@ if executar_agora:
                          (f"\n\n{traduzido.sugestao}" if traduzido.sugestao else ""))
 
     barra.progress(1.0, text="Concluído.")
-    if not modo_demo and getattr(cliente, "tokens_gastos", 0):
-        st.caption(
-            f"Consumo: {cliente.chamadas} chamadas, "
-            f"{cliente.tokens_gastos:,} tokens.".replace(",", ".")
+
+    if interrompido is not None:
+        nome, _ = interrompido
+        restantes = len(fila) - [a.name for a in fila].index(nome)
+        st.warning(
+            f"**Lote interrompido em `{nome}`.** As "
+            f"{len(st.session_state.resultados)} imagem(ns) já auditada(s) continuam "
+            f"abaixo e podem ser exportadas agora. Faltam {restantes}: quando a cota "
+            "voltar, é só executar de novo — o app retoma de onde parou.",
+            icon="⏸️",
         )
+    if not modo_demo and getattr(cliente, "tokens_gastos", 0):
+        auditadas = len(st.session_state.resultados)
+        media = cliente.tokens_gastos // max(auditadas, 1)
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Chamadas à API", cliente.chamadas)
+        c2.metric("Tokens consumidos", f"{cliente.tokens_gastos:,}".replace(",", "."))
+        c3.metric("Média por imagem", f"{media:,}".replace(",", "."))
+        # A cota real vem dos cabeçalhos da resposta, não de estimativa nossa.
+        if cliente.cota.tokens_restantes is not None:
+            restantes = cliente.cota.tokens_restantes
+            st.caption(
+                f"Cota informada pela Groq na última resposta: {cliente.cota.descricao()}"
+                + (f" — dá para cerca de {restantes // media} imagem(ns) nesta janela."
+                   if media else "")
+            )
 
 
 # ---------------------------------------------------------------------------
