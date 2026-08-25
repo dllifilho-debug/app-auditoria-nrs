@@ -32,13 +32,17 @@ class Modelo:
     # validador de JSON da Groq, que devolve 400 `json_validate_failed`. Para
     # esses, pedimos o JSON pelo prompt e extraímos do texto.
     json_estrito_confiavel: bool = True
+    # Modelo cujo raciocínio pode ser desligado. O agente de visão não precisa
+    # raciocinar: precisa descrever. Deixá-lo pensar consome todo o orçamento de
+    # saída antes de a resposta começar a ser escrita.
+    raciocinio_desligavel: bool = False
 
 
 VISAO = [
     Modelo("qwen/qwen3.6-27b", "Qwen 3.6 27B (visão)", True, 262_144, 65_536,
            "Único modelo multimodal da Groq, e destino de migração oficial dos "
            "modelos de visão já desligados.",
-           json_estrito_confiavel=False),
+           json_estrito_confiavel=False, raciocinio_desligavel=True),
 ]
 
 TEXTO = [
@@ -48,7 +52,7 @@ TEXTO = [
            "Mais rápido e barato; use quando a cota estiver apertada."),
     Modelo("qwen/qwen3.6-27b", "Qwen 3.6 27B", False, 262_144, 65_536,
            "Contexto maior, com modo de raciocínio.",
-           json_estrito_confiavel=False),
+           json_estrito_confiavel=False, raciocinio_desligavel=True),
 ]
 
 PADRAO_VISAO = VISAO[0].id
@@ -155,6 +159,14 @@ RECUSA_JSON = re.compile(
     r"response_format|json_object|json_validate_failed|failed to validate json",
     re.IGNORECASE,
 )
+# Parâmetros que melhoram a resposta quando aceitos, mas dos quais o pipeline
+# não depende. Se a API recusar qualquer um deles, seguimos sem ele em vez de
+# derrubar a auditoria — a Groq troca de modelo a cada poucas semanas e nem
+# todos aceitam o mesmo conjunto.
+OPCIONAIS = {
+    "response_format": RECUSA_JSON,
+    "reasoning_effort": re.compile(r"reasoning_effort|reasoning", re.IGNORECASE),
+}
 RE_DURACAO = re.compile(r"([\d.]+)\s*(ms|s|m|h)")
 
 
@@ -210,6 +222,9 @@ class ClienteGroq:
         self.chamadas = 0
         # Modelos que já recusaram o modo JSON; não insistimos com eles de novo.
         self.sem_json_estrito: set[str] = set()
+        # A última resposta foi cortada por atingir o teto de saída? É o sinal
+        # determinístico de truncamento, e evita diagnosticar por adivinhação.
+        self.ultimo_corte_por_limite = False
 
     # -- cota ---------------------------------------------------------------
 
@@ -260,6 +275,7 @@ class ClienteGroq:
         custo = _estimar_tokens(mensagens) + teto_saida
         self.aguardar_cota(custo)
 
+        conhecido = por_id(modelo)
         parametros: dict[str, Any] = {
             "model": modelo,
             "messages": mensagens,
@@ -267,40 +283,58 @@ class ClienteGroq:
             "max_completion_tokens": teto_saida,
             "temperature": temperatura,
         }
-        conhecido = por_id(modelo)
         if conhecido is not None and not conhecido.json_estrito_confiavel:
             self.sem_json_estrito.add(modelo)
         if json_estrito and modelo not in self.sem_json_estrito:
             parametros["response_format"] = {"type": "json_object"}
+        # Sem isto, um modelo de raciocínio gasta todo o orçamento de saída
+        # pensando e é cortado antes de escrever a resposta.
+        if conhecido is not None and conhecido.raciocinio_desligavel:
+            parametros["reasoning_effort"] = "none"
 
-        try:
-            resposta = self._chamar(parametros)
-        except self._groq.BadRequestError as erro:
-            # Nem todo modelo da Groq aceita response_format json_object, e a
-            # recusa vem como 400. O laudo não depende disso: o leitor de JSON
-            # já tolera resposta em prosa com o objeto no meio. Então tenta de
-            # novo sem a exigência, em vez de derrubar a auditoria inteira.
-            if not json_estrito or not RECUSA_JSON.search(str(erro)):
-                raise traduzir(erro) from erro
-            self.aviso(
-                f"O modelo {modelo} não entregou JSON no modo estrito; "
-                "repetindo a chamada sem essa exigência."
-            )
-            self.sem_json_estrito.add(modelo)
-            parametros.pop("response_format", None)
-            try:
-                resposta = self._chamar(parametros)
-            except Exception as segundo:
-                raise traduzir(segundo) from segundo
-        except Exception as erro:                     # traduzido para o usuário
-            raise traduzir(erro) from erro
+        resposta = self._chamar_com_degradacao(parametros)
 
         self.chamadas += 1
         if resposta.usage:
             self.tokens_gastos += resposta.usage.total_tokens or 0
 
-        conteudo = resposta.choices[0].message.content or ""
+        escolha = resposta.choices[0]
+        self.ultimo_corte_por_limite = getattr(escolha, "finish_reason", None) == "length"
+        conteudo = escolha.message.content or ""
         return RE_PENSAMENTO.sub("", conteudo).strip()
+
+    def _chamar_com_degradacao(self, parametros: dict):
+        """Chama a API descartando um parâmetro opcional a cada recusa.
+
+        A Groq muda de modelo a cada poucas semanas e nem todos aceitam o mesmo
+        conjunto de parâmetros. Um 400 por parâmetro não suportado não pode
+        custar a auditoria inteira: descartamos o parâmetro implicado, anotamos
+        para não insistir, e seguimos.
+        """
+        for _ in range(len(OPCIONAIS) + 1):
+            try:
+                return self._chamar(parametros)
+            except self._groq.BadRequestError as erro:
+                alvo = next(
+                    (nome for nome, padrao in OPCIONAIS.items()
+                     if nome in parametros and padrao.search(str(erro))),
+                    None,
+                )
+                if alvo is None:
+                    raise traduzir(erro) from erro
+                self.aviso(
+                    f"O modelo {parametros['model']} recusou `{alvo}`; "
+                    "repetindo a chamada sem esse parâmetro."
+                )
+                parametros.pop(alvo)
+                if alvo == "response_format":
+                    self.sem_json_estrito.add(parametros["model"])
+            except Exception as erro:                 # traduzido para o usuário
+                raise traduzir(erro) from erro
+        raise ErroDeAuditoria(
+            "A Groq recusou a requisição mesmo sem os parâmetros opcionais.",
+            "Tente outro modelo na barra lateral.",
+        )
 
 
 def _estimar_tokens(mensagens: list[dict]) -> int:

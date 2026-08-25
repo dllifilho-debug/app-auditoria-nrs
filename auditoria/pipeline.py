@@ -201,14 +201,27 @@ def agente_olho(cliente: Conversador, imagem_b64: str, modelo: str, contexto: st
         "image_url": {"url": f"data:image/jpeg;base64,{imagem_b64}"},
     })
 
+    mensagens = [{"role": "user", "content": conteudo}]
     bruto = cliente.conversar(
-        modelo=modelo,
-        mensagens=[{"role": "user", "content": conteudo}],
-        teto_saida=1600,
-        temperatura=0.0,
-        json_estrito=True,
+        modelo=modelo, mensagens=mensagens, teto_saida=1600,
+        temperatura=0.0, json_estrito=True,
     )
-    dados = _ler_json(bruto, "Olho")
+
+    # Resposta cortada no teto não é resposta: é meia frase. Quando a API diz
+    # que foi isso que aconteceu, uma segunda tentativa com mais espaço é bem
+    # mais barata do que um laudo perdido — e o sinal vem da própria API, não
+    # de suposição nossa.
+    if getattr(cliente, "ultimo_corte_por_limite", False):
+        bruto = cliente.conversar(
+            modelo=modelo, mensagens=mensagens, teto_saida=3200,
+            temperatura=0.0, json_estrito=True,
+        )
+
+    try:
+        dados = _ler_json(bruto, "Olho")
+    except ErroDeAuditoria:
+        # Guardamos o texto cru para a tela de diagnóstico antes de desistir.
+        return Visao(bruto=bruto)
     pessoas = dados.get("pessoas") or {}
     achados = [
         Achado(

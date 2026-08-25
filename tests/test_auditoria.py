@@ -512,3 +512,49 @@ def test_laudo_avisa_que_falha_de_visao_nao_atesta_conformidade(base):
     texto = relatorio.markdown(laudo, base, numero=1)
     assert "leitura da imagem falhou" in texto.lower()
     assert "não** atesta conformidade" in texto
+
+
+def test_visao_repete_quando_a_resposta_foi_cortada_no_limite():
+    """Truncamento não é resposta vazia: é meia frase, e merece nova tentativa.
+
+    Observado em produção: o modelo de raciocínio consumia todo o orçamento de
+    saída pensando e era cortado antes de escrever o JSON, devolvendo um laudo
+    sem nenhum fato.
+    """
+    from auditoria.pipeline import agente_olho
+
+    tentativas: list[int] = []
+
+    class CortaNaPrimeira:
+        ultimo_corte_por_limite = False
+
+        def conversar(self, modelo, mensagens, teto_saida=1200, temperatura=0.0,
+                      json_estrito=False):
+            tentativas.append(teto_saida)
+            if len(tentativas) == 1:
+                self.ultimo_corte_por_limite = True
+                return '{"ambiente": "canteiro", "achados": [{"fato": "trunc'
+            self.ultimo_corte_por_limite = False
+            return (
+                '{"ambiente": "canteiro de obra", "pessoas": {"presentes": false},'
+                ' "achados": [{"fato": "painel elétrico sem tampa", "onde": "centro"}]}'
+            )
+
+    visao = agente_olho(CortaNaPrimeira(), "imagem", "modelo-x")
+    assert len(tentativas) == 2 and tentativas[1] > tentativas[0]
+    assert [a.fato for a in visao.achados] == ["painel elétrico sem tampa"]
+
+
+def test_visao_preserva_resposta_crua_quando_nao_da_para_ler():
+    """Sem o texto cru na mão, não dá para distinguir os modos de falha."""
+    from auditoria.pipeline import agente_olho
+
+    class Tagarela:
+        ultimo_corte_por_limite = False
+
+        def conversar(self, modelo, mensagens, **kwargs):
+            return "Desculpe, não consigo analisar esta imagem."
+
+    visao = agente_olho(Tagarela(), "imagem", "modelo-x")
+    assert visao.achados == []
+    assert "não consigo analisar" in visao.bruto
