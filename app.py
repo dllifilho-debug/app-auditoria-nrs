@@ -140,16 +140,37 @@ with st.sidebar:
 
     chave = ""
     if not modo_demo:
-        padrao = chave_configurada()
-        chave = st.text_input(
-            "Chave da API Groq",
-            value=padrao,
-            type="password",
-            help="Obtenha em console.groq.com/keys. Em produção, prefira definir "
-                 "GROQ_API_KEY nos Secrets do Streamlit.",
-        )
-        if padrao:
-            st.caption("✅ Chave carregada dos Secrets/ambiente.")
+        # A chave da instalação nunca é escrita no campo: o input de senha do
+        # Streamlit tem botão para revelar o conteúdo, e este app roda numa URL
+        # pública. Quem abrir o link escolhe usar a própria chave — que é o
+        # padrão — ou, deliberadamente, a da instalação.
+        da_instalacao = chave_configurada()
+        if da_instalacao:
+            origem = st.radio(
+                "Chave da API Groq",
+                ["Usar minha própria chave", "Usar a chave desta instalação"],
+                key="origem_da_chave",
+                help="Cada conta Groq tem cota própria. Usar a chave da instalação "
+                     "consome a cota de quem a configurou.",
+            )
+        else:
+            origem = "Usar minha própria chave"
+
+        if origem == "Usar minha própria chave":
+            chave = st.text_input(
+                "Sua chave da API Groq" if da_instalacao else "Chave da API Groq",
+                value="",
+                type="password",
+                placeholder="gsk_…",
+                help="Crie a sua em console.groq.com/keys. É gratuita e tem cota "
+                     "diária própria, independente da de qualquer outra pessoa.",
+            )
+        else:
+            chave = da_instalacao
+            st.caption(
+                "⚠️ Em uso a chave configurada nesta instalação — o consumo sai da "
+                "cota de quem a configurou."
+            )
 
     st.divider()
     st.markdown("### 🧠 Modelos")

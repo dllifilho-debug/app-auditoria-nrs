@@ -29,6 +29,21 @@ ou defina `GROQ_API_KEY` no ambiente / nos *Secrets* do Streamlit Cloud.
 pytest tests/          # 54 testes das garantias do produto
 ```
 
+### Emprestando o app para outra pessoa
+
+Cada conta da Groq tem cota diária própria, então o caminho certo é o colega usar
+a chave dele: ele cria a conta em [console.groq.com](https://console.groq.com/keys),
+cola a chave na barra lateral, e o consumo sai da cota dele.
+
+**Se você configurar `GROQ_API_KEY` nos Secrets do Streamlit, essa chave passa a ser
+oferecida a qualquer pessoa que abra a URL** — o app do Streamlit Cloud é público por
+padrão. Por isso a chave da instalação nunca é escrita no campo do formulário (o input
+de senha tem botão para revelar o conteúdo) e nunca é a opção padrão: quem abre o link
+começa com "usar minha própria chave" e só passa para a da instalação escolhendo
+deliberadamente, com aviso de que o consumo sai da cota de outra pessoa.
+
+Se o app for só seu, os Secrets continuam sendo a forma conveniente de não redigitar.
+
 ---
 
 ## O pipeline
