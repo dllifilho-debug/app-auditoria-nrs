@@ -387,10 +387,22 @@ if executar_agora:
                 )
                 st.session_state.resultados.append((arquivo.name, laudo, miniatura))
                 achadas = len(laudo.nao_conformidades)
+                if laudo.visao_falhou:
+                    # Resposta crua à vista: sem ela, "o modelo não viu nada" e
+                    # "o modelo respondeu num formato que não soubemos ler" são
+                    # indistinguíveis, e levam a consertos opostos.
+                    st.warning(
+                        "O agente de visão não devolveu nenhum fato utilizável para esta "
+                        "imagem. Nada foi enquadrado a partir dela.",
+                        icon="👁️",
+                    )
+                    with st.expander("Ver o que o modelo de visão respondeu"):
+                        st.code(laudo.visao.bruto or "(resposta vazia)", language="json")
                 painel.update(
-                    label=f"✅ {rotulo} — {achadas} não conformidade(s)",
-                    state="complete",
-                    expanded=False,
+                    label=(f"👁️ {rotulo} — leitura da imagem falhou" if laudo.visao_falhou
+                           else f"✅ {rotulo} — {achadas} não conformidade(s)"),
+                    state="error" if laudo.visao_falhou else "complete",
+                    expanded=laudo.visao_falhou,
                 )
             except ErroDeAuditoria as erro:
                 painel.update(label=f"❌ {rotulo}", state="error")

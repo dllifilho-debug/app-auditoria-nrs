@@ -73,6 +73,13 @@ def markdown(
         for a in laudo.visao.achados:
             onde = f" — *{a.onde}*" if a.onde else ""
             p.append(f"- {a.fato}{onde}")
+    elif laudo.visao_falhou:
+        p.append(
+            "> ⚠️ **A leitura da imagem falhou.** O agente de visão não devolveu nenhum "
+            "fato utilizável, então nenhum enquadramento foi feito a partir desta foto. "
+            "Isto **não** atesta conformidade: a imagem apenas não pôde ser avaliada. "
+            "Repita a análise, se possível com resolução de envio maior."
+        )
     else:
         p.append("- Nenhum fato relevante foi extraído da imagem.")
     p.append("")

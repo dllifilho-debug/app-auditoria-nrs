@@ -89,6 +89,8 @@ class Laudo:
     afericoes: list[str] = field(default_factory=list)
     data_referencia: date = field(default_factory=date.today)
     tokens: int = 0
+    # O agente de visão devolveu resposta sem nenhum fato utilizável.
+    visao_falhou: bool = False
 
     @property
     def aprovado(self) -> bool:
@@ -202,7 +204,7 @@ def agente_olho(cliente: Conversador, imagem_b64: str, modelo: str, contexto: st
     bruto = cliente.conversar(
         modelo=modelo,
         mensagens=[{"role": "user", "content": conteudo}],
-        teto_saida=900,
+        teto_saida=1600,
         temperatura=0.0,
         json_estrito=True,
     )
@@ -614,11 +616,26 @@ def executar(
 
     avisar("👁️ Agente Olho registrando os fatos materiais da imagem…")
     visao = agente_olho(cliente, imagem_b64, config.modelo_visao, contexto)
+    laudo = Laudo(visao=visao, data_referencia=quando)
+
+    # Sem fato extraído da imagem não existe laudo possível. Deixar o Analista
+    # seguir aqui faria o enquadramento nascer do texto que o inspetor digitou,
+    # e não do que a câmera registrou — uma não conformidade sem evidência
+    # visual, que é exatamente o que este pipeline existe para impedir.
+    if not visao.achados:
+        laudo.visao_falhou = True
+        laudo.parecer_diretor = (
+            "O agente de visão não extraiu nenhum fato desta imagem, de modo que "
+            "não há evidência visual sobre a qual enquadrar. Nenhuma não "
+            "conformidade foi caracterizada — o que não significa que o local "
+            "esteja conforme, e sim que esta imagem não permitiu avaliação."
+        )
+        return laudo
 
     avisar("📚 Montando o dossiê normativo a partir dos PDFs oficiais…")
     dossie_atual, origem = montar_dossie(base, visao, contexto, quando, config.teto_dossie)
 
-    laudo = Laudo(visao=visao, data_referencia=quando, nrs_sem_texto=dossie_atual.nrs_sem_texto)
+    laudo.nrs_sem_texto = dossie_atual.nrs_sem_texto
 
     if not dossie_atual.entradas:
         laudo.sem_enquadramento = visao.textos()

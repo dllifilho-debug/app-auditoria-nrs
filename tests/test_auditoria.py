@@ -474,3 +474,41 @@ def test_erro_de_json_vira_mensagem_recuperavel():
     )
     assert erro.recuperavel
     assert "resolução" not in erro.sugestao.lower()
+
+
+def test_sem_fato_extraido_nao_ha_enquadramento(base):
+    """Se a visão falha, o laudo não pode nascer do texto que o inspetor digitou.
+
+    Este foi um erro observado em produção: o agente de visão voltou vazio, o
+    analista enquadrou assim mesmo a partir do contexto escrito, e só o veto do
+    supervisor impediu uma não conformidade sem nenhuma evidência visual.
+    """
+    from auditoria.demo import ClienteDemonstracao
+
+    class VisaoVazia(ClienteDemonstracao):
+        def conversar(self, modelo, mensagens, teto_saida=1200, temperatura=0.0,
+                      json_estrito=False):
+            texto = " ".join(
+                p.get("text", "")
+                for m in mensagens for p in (m["content"] if isinstance(m["content"], list) else [])
+            )
+            if "perito em documentação fotográfica" in texto:
+                return '{"ambiente": "", "pessoas": {"presentes": false}, "achados": []}'
+            raise AssertionError("o analista não deveria ter sido chamado")
+
+    laudo = executar(
+        VisaoVazia(), base, "imagem-falsa",
+        "O botão de emergência do painel está quebrado",   # contexto tentador
+        Configuracao(modelo_visao="demo", modelo_texto="demo", data_referencia=HOJE),
+    )
+    assert laudo.visao_falhou
+    assert laudo.nao_conformidades == []
+
+
+def test_laudo_avisa_que_falha_de_visao_nao_atesta_conformidade(base):
+    from auditoria.pipeline import Laudo, Visao
+
+    laudo = Laudo(visao=Visao(), visao_falhou=True, data_referencia=HOJE)
+    texto = relatorio.markdown(laudo, base, numero=1)
+    assert "leitura da imagem falhou" in texto.lower()
+    assert "não** atesta conformidade" in texto
