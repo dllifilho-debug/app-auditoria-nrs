@@ -143,6 +143,21 @@ def test_roteamento_tolera_variacao_de_plural_e_pontuacao():
     assert "entulho_sobras_acumulados" in [r.id for r in rotear_riscos(visao)]
 
 
+def test_roteamento_nao_combina_palavras_de_achados_diferentes():
+    """Bug visto em foto real: nenhuma escada na cena, mas "apoiada"/"solta" (do
+    achado da placa sobre a abertura) somadas a "parede" (de um achado sobre
+    madeira empilhada, sem relação) bastavam para acionar um risco de escada.
+    """
+    visao = Visao(achados=[
+        Achado("Abertura quadrada no piso, coberta por uma placa apoiada solta "
+               "sobre o vão, sem fixação nem travamento visível"),
+        Achado("Monte de sobras de madeira e um tubo de PVC empilhados próximos à parede"),
+    ])
+    ids = [r.id for r in rotear_riscos(visao)]
+    assert "abertura_piso_desprotegida" in ids
+    assert not any("escada" in i for i in ids)
+
+
 # ---------------------------------------------------------------------------
 # Aferição — o coração da garantia
 # ---------------------------------------------------------------------------

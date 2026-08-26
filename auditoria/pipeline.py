@@ -282,8 +282,24 @@ def rotear_riscos(visao: Visao, contexto: str = "") -> list[Risco]:
     O casamento é por sobreposição de radicais, não por substring: quem descreve
     a foto escreve "Entulho, cacos e sobras de material espalhados", e o sinal
     cadastrado é "entulho espalhado". Exigir a frase literal perderia o risco.
+
+    Cada achado é seu próprio pedaço (fragmento) para efeito de cobertura: um
+    sinal de várias palavras só pontua se todas — ou quase todas — vierem do
+    MESMO achado. Sem isso, "escada apoiada solta na parede" batia numa foto
+    sem escada nenhuma porque "apoiada" e "solta" vinham do achado da placa sobre
+    a abertura no piso e "parede" vinha de um achado totalmente diferente sobre
+    madeira empilhada — três fatos sem relação nenhuma, somados por acaso.
+
+    Ambiente e contexto não formam fragmento à parte: entram junto de CADA
+    achado, porque descrevem a cena inteira e legitimamente completam um sinal
+    ao lado de qualquer fato específico (ex.: ambiente "portão de acesso ao
+    elevador" + achado "painel com fiação" formam "acesso ao elevador... com").
     """
-    alvo = _radicais(" | ".join(visao.textos() + [visao.ambiente, contexto]))
+    extra = _radicais(" | ".join(t for t in (visao.ambiente, contexto) if t))
+    fragmentos = [f | extra for f in (_radicais(t) for t in visao.textos()) if f]
+    if not fragmentos and extra:
+        fragmentos = [extra]
+
     encontrados: list[tuple[float, Risco]] = []
 
     for risco in catalogo_riscos().values():
@@ -292,7 +308,7 @@ def rotear_riscos(visao: Visao, contexto: str = "") -> list[Risco]:
             termos = _radicais(sinal)
             if not termos:
                 continue
-            cobertura = len(termos & alvo) / len(termos)
+            cobertura = max((len(termos & f) / len(termos) for f in fragmentos), default=0.0)
             # Sinal de uma palavra precisa bater inteiro; sinal composto aceita
             # que uma peça falte, desde que o essencial esteja lá.
             if cobertura == 1.0:
