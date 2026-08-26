@@ -1112,3 +1112,36 @@ def test_limpeza_de_rotulo_nao_mutila_notacao_estrutural():
         "Escoramento retirado da V1 antes do prazo.",
     ):
         assert _sem_rotulo_interno(frase) == frase
+
+
+# ---------------------------------------------------------------------------
+# Sobriedade do documento
+# ---------------------------------------------------------------------------
+
+# Pictogramas, símbolos e emoji. O laudo pode chegar a um auditor fiscal do
+# trabalho e é arquivado impresso, muitas vezes em preto e branco — onde bolinha
+# colorida vira cinza indistinto e figurinha lê como protótipo.
+RE_PICTOGRAMA = re.compile(
+    "[\U0001F000-\U0001FAFF←-⇿⌀-➿⬀-⯿️]"
+)
+
+
+def test_laudo_nao_traz_pictograma(base, laudo_demo):
+    md = relatorio.markdown(laudo_demo, base, numero=1)
+    for renderizado in (md, relatorio.para_html(md)):
+        achados = RE_PICTOGRAMA.findall(renderizado)
+        assert not achados, f"pictograma no laudo: {achados[:5]}"
+
+
+def test_sumario_consolidado_nao_traz_pictograma(base, laudo_demo):
+    texto = relatorio.consolidado([("foto.jpg", laudo_demo)], base, HOJE)
+    achados = RE_PICTOGRAMA.findall(texto)
+    assert not achados, f"pictograma no sumário: {achados[:5]}"
+
+
+def test_gravidade_sai_como_texto_e_nao_como_cor(base, laudo_demo):
+    """A gravidade tem de sobreviver à impressão em preto e branco."""
+    texto = relatorio.markdown(laudo_demo, base, numero=1)
+    assert "Crítica" in texto or "Alta" in texto or "Média" in texto
+    for chave, rotulo in relatorio.SELOS.items():
+        assert isinstance(rotulo, str), f"{chave} devia ser texto puro, veio {rotulo!r}"

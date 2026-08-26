@@ -779,7 +779,7 @@ def executar(
     avisar = progresso or (lambda _m: None)
     quando = config.data_referencia
 
-    avisar("👁️ Agente Olho registrando os fatos materiais da imagem…")
+    avisar("Leitura da imagem — registrando os fatos materiais…")
     visao = agente_olho(cliente, imagem_b64, config.modelo_visao, contexto)
     laudo = Laudo(visao=visao, data_referencia=quando)
 
@@ -797,7 +797,7 @@ def executar(
         )
         return laudo
 
-    avisar("📚 Montando o dossiê normativo a partir dos PDFs oficiais…")
+    avisar("Montando o dossiê normativo a partir dos PDFs oficiais…")
     dossie_atual, origem = montar_dossie(base, visao, contexto, quando, config.teto_dossie)
 
     laudo.nrs_sem_texto = dossie_atual.nrs_sem_texto
@@ -813,7 +813,7 @@ def executar(
     correcoes = ""
     for ciclo in range(1, max(config.max_ciclos, 1) + 1):
         laudo.ciclos = ciclo
-        avisar(f"📐 Agente Analista enquadrando os fatos (ciclo {ciclo})…")
+        avisar(f"Enquadramento normativo dos fatos (ciclo {ciclo})…")
         proposta = agente_analista(
             cliente, visao, dossie_atual, contexto, config.modelo_texto, correcoes
         )
@@ -837,7 +837,7 @@ def executar(
             laudo.vetos = []
             break
 
-        avisar(f"⚖️ Diretor Técnico auditando o laudo (ciclo {ciclo})…")
+        avisar(f"Revisão técnica do laudo (ciclo {ciclo})…")
         veredito = agente_diretor(
             cliente, visao, aprovadas,
             laudo.sem_enquadramento, laudo.conformidades, config.modelo_texto,
@@ -901,13 +901,13 @@ def executar(
         )
 
         if not motivos:
-            avisar(f"✅ Diretor aprovou sem vetos no ciclo {ciclo}.")
+            avisar(f"Revisão técnica aprovou sem vetos no ciclo {ciclo}.")
             break
         if ciclo >= config.max_ciclos:
-            avisar(f"⚠️ Ciclos esgotados; {len(motivos)} enquadramento(s) vetado(s) e removido(s).")
+            avisar(f"Ciclos esgotados; {len(motivos)} enquadramento(s) vetado(s) e removido(s).")
             break
 
-        avisar(f"🔁 {len(motivos)} veto(s). Devolvendo ao Analista para novo ciclo…")
+        avisar(f"{len(motivos)} veto(s). Devolvendo para novo ciclo de enquadramento…")
         correcoes = "\n".join(f"- {m}" for m in motivos)
 
     return laudo
