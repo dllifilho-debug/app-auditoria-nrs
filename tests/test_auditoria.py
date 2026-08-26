@@ -994,3 +994,121 @@ def test_roteamento_reconhece_o_vocabulario_tecnico_do_agente_de_visao():
     )
     ids = [r.id for r in rotear_riscos(visao)]
     assert "partes_vivas_expostas" in ids
+
+
+# ---------------------------------------------------------------------------
+# Supervisão do laudo inteiro — o Diretor auditava só as não conformidades
+# ---------------------------------------------------------------------------
+
+class _DiretorQueDescarta(ClienteDemonstracao):
+    """Supervisor que exerce os poderes novos: derruba P1 e C1."""
+
+    def conversar(self, modelo, mensagens, teto_saida=1200, temperatura=0.0,
+                  json_estrito=False):
+        from auditoria.demo import _texto_do_prompt
+
+        prompt = _texto_do_prompt(mensagens)
+        if "Diretor Técnico" in prompt:
+            self.prompt_visto = prompt
+            import json as _json
+            return _json.dumps({
+                "conferencia": [],
+                "vetados": [],
+                "ajustes": [],
+                "pontos_descartados": [{"ref": "P1", "motivo": "inventário da foto"}],
+                "conformidades_descartadas": [{"ref": "C1", "motivo": "contradiz um achado"}],
+                "parecer": "Risco predominante conforme V1 avaliado.",
+            }, ensure_ascii=False)
+        return super().conversar(modelo, mensagens, teto_saida, temperatura, json_estrito)
+
+
+def test_diretor_recebe_pontos_de_atencao_e_conformidades(base):
+    """Antes, as duas listas iam do Analista direto ao documento.
+
+    Era onde sobreviviam o inventário da foto ("parede sem reboco") e a
+    contradição de elogiar e criticar o mesmo objeto no mesmo laudo.
+    """
+    cliente = _DiretorQueDescarta()
+    executar(
+        cliente, base, "imagem-falsa", "",
+        Configuracao(modelo_visao="demo", modelo_texto="demo", data_referencia=HOJE),
+    )
+    prompt = getattr(cliente, "prompt_visto", "")
+    assert "PONTOS DE ATENÇÃO PROPOSTOS" in prompt
+    assert "CONFORMIDADES PROPOSTAS" in prompt
+
+
+def test_diretor_descarta_ponto_de_atencao_que_e_inventario_da_foto(base):
+    antes = executar(
+        ClienteDemonstracao(), base, "imagem-falsa", "",
+        Configuracao(modelo_visao="demo", modelo_texto="demo", data_referencia=HOJE),
+    )
+    depois = executar(
+        _DiretorQueDescarta(), base, "imagem-falsa", "",
+        Configuracao(modelo_visao="demo", modelo_texto="demo", data_referencia=HOJE),
+    )
+    assert antes.sem_enquadramento, "o cenário precisa ter ponto de atenção para descartar"
+    assert len(depois.sem_enquadramento) == len(antes.sem_enquadramento) - 1
+
+
+def test_diretor_roda_mesmo_sem_nenhuma_nao_conformidade(base):
+    """Laudos reais com zero enquadramentos e cinco pontos de atenção saíam sem
+    passar por supervisor nenhum — e sem sequer uma seção de parecer."""
+    class SemEnquadrar(ClienteDemonstracao):
+        def conversar(self, modelo, mensagens, teto_saida=1200, temperatura=0.0,
+                      json_estrito=False):
+            from auditoria.demo import _texto_do_prompt
+            import json as _json
+
+            prompt = _texto_do_prompt(mensagens)
+            if "DOSSIÊ NORMATIVO" in prompt:
+                return _json.dumps({
+                    "nao_conformidades": [],
+                    "sem_enquadramento": ["Piso irregular a verificar no local"],
+                    "conformidades": [],
+                }, ensure_ascii=False)
+            if "Diretor Técnico" in prompt:
+                self.foi_chamado = True
+                return _json.dumps({
+                    "conferencia": [], "vetados": [], "ajustes": [],
+                    "pontos_descartados": [], "conformidades_descartadas": [],
+                    "parecer": "Nenhum enquadramento se caracterizou nesta imagem.",
+                }, ensure_ascii=False)
+            return super().conversar(modelo, mensagens, teto_saida, temperatura, json_estrito)
+
+    cliente = SemEnquadrar()
+    laudo = executar(
+        cliente, base, "imagem-falsa", "",
+        Configuracao(modelo_visao="demo", modelo_texto="demo", data_referencia=HOJE),
+    )
+    assert laudo.nao_conformidades == []
+    assert getattr(cliente, "foi_chamado", False), "Diretor não foi chamado"
+    assert laudo.parecer_diretor, "laudo sem não conformidade ficava sem parecer"
+
+
+def test_parecer_nao_vaza_rotulo_interno_do_supervisor(base):
+    """Laudo real saiu com "a má fixação dos cabos … (V1)" — V1 é andaime da
+    conversa com o Diretor e não significa nada para quem lê o documento."""
+    from auditoria.pipeline import _sem_rotulo_interno
+
+    assert _sem_rotulo_interno("A má fixação dos cabos (V1) e o isolamento.") == \
+        "A má fixação dos cabos e o isolamento."
+    assert _sem_rotulo_interno("Risco na abertura [P2] do laudo.") == \
+        "Risco na abertura do laudo."
+    assert _sem_rotulo_interno("Sem rótulo aqui.") == "Sem rótulo aqui."
+
+
+def test_limpeza_de_rotulo_nao_mutila_notacao_estrutural():
+    """V1 é viga 1, P2 é pilar 2, C1 é coluna 1 em projeto estrutural brasileiro.
+
+    Apagar o rótulo solto estragaria a frase de um engenheiro descrevendo a
+    própria obra — a mesma armadilha de "carcaça" e "faca" na taxonomia.
+    """
+    from auditoria.pipeline import _sem_rotulo_interno
+
+    for frase in (
+        "Fissura no pilar P2 junto ao encontro com a viga V1.",
+        "A coluna C1 apresenta ninho de concretagem.",
+        "Escoramento retirado da V1 antes do prazo.",
+    ):
+        assert _sem_rotulo_interno(frase) == frase
