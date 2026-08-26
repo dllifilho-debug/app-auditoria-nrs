@@ -17,6 +17,37 @@ from .kb import BaseNormativa, Item, normalizar
 # ambiente de trabalho, mesmo quando o roteamento por palavra-chave não pega.
 NRS_TRANSVERSAIS = ["NR-01", "NR-06"]
 
+# Obrigações puramente documentais ou de gestão: inventário de riscos, guarda e
+# digitalização de documentos, carga horária de treinamento, registro de entrega
+# de EPI, contrato com organizações contratadas. Uma fotografia não comprova nem
+# desmente nenhuma delas.
+#
+# Por que isto existe: numa foto real de fiação desencapada, o roteamento curado
+# não pegou o risco elétrico e a busca textual devolveu um dossiê inteiro de
+# itens administrativos. O analista é obrigado a escolher do dossiê — escolheu
+# "o inventário de riscos ocupacionais deve contemplar…" para enquadrar um fio
+# exposto, e o laudo saiu com um item verdadeiro na situação errada.
+#
+# O filtro vale SÓ para a recuperação textual desta função. Os itens da taxonomia
+# curada entram por outro caminho, em `pipeline.montar_dossie`, e nunca passam
+# por aqui: alguns deles são deliberadamente documentais (o quadro de avisos da
+# CIPA, a ficha de entrega de EPI) porque um humano decidiu que aquela foto
+# específica os evidencia. Filtrá-los seria desfazer curadoria à mão.
+MARCADORES_DOCUMENTAIS = (
+    "inventario de riscos", "guarda de documentos", "processo de digitalizacao",
+    "os treinamentos previstos", "modalidade de ensino", "carga horaria",
+    "registro de fornecimento", "manual de instrucoes", "deve ser documentad",
+    "prestacao de informacoes", "organizacoes contratadas", "adquirir somente",
+    "programa de gerenciamento", "deve manter os originais",
+    "que oferte as capacitacoes", "material didatico", "relatorio analitico",
+)
+
+
+def comprovavel_em_foto(item: Item) -> bool:
+    """O item descreve condição física observável, e não obrigação de papel?"""
+    texto = normalizar(item.texto)
+    return not any(marcador in texto for marcador in MARCADORES_DOCUMENTAIS)
+
 
 @dataclass(frozen=True)
 class Entrada:
@@ -103,6 +134,8 @@ def montar(
     melhor: dict[str, tuple[float, Item, str]] = {}
 
     def registrar(item: Item, score: float, origem: str) -> None:
+        if not comprovavel_em_foto(item):
+            return
         score *= prior.get(item.nr, 1.0)
         atual = melhor.get(item.id)
         if atual is None or score > atual[0]:

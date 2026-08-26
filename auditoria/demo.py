@@ -122,8 +122,20 @@ class ClienteDemonstracao:
         if "DOSSIÊ NORMATIVO" in prompt:
             return json.dumps(self._analisar(prompt), ensure_ascii=False)
         if "Diretor Técnico" in prompt:
-            return json.dumps({"vetados": [], "ajustes": [], "parecer": PARECER_DEMO},
-                              ensure_ascii=False)
+            return json.dumps(
+                {
+                    "conferencia": [
+                        {"ref": rotulo, "fato": "Abertura quadrada no piso"}
+                        for rotulo in re.findall(r"\[(V\d+)\]", prompt)
+                    ],
+                    "vetados": [],
+                    "ajustes": [],
+                    "pontos_descartados": [],
+                    "conformidades_descartadas": [],
+                    "parecer": PARECER_DEMO,
+                },
+                ensure_ascii=False,
+            )
         return "{}"
 
     def _analisar(self, prompt: str) -> dict:

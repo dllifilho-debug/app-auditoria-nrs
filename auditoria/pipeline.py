@@ -510,6 +510,11 @@ def aferir(
             prazo = 0
         if prazo <= 0:
             prazo = PRAZO_SUGERIDO[gravidade]
+        # O prazo do modelo é aceito, mas nunca acima do teto da gravidade que
+        # ele mesmo atribuiu: um laudo real saiu com "crítica — ação imediata"
+        # no sumário e "7 dias" na tabela, contradição que o inspetor leva para
+        # a obra. Quem manda é a gravidade; prazo mais curto continua valendo.
+        prazo = min(prazo, PRAZO_SUGERIDO[gravidade])
 
         usados.add(item.id)
         aprovadas.append(
@@ -535,12 +540,19 @@ RE_CITACAO_SOLTA = re.compile(
     r"\s*[(\[]?\bNR[\s\-\u2011\u2013\u2014]?\d{1,2}\b"
     r"(?:\s*[-\u2013\u2014,;:]?\s*(?:sub)?ite(?:m|ns))?"
     r"(?:\s*\d{1,2}(?:\.\d{1,3})*(?:\s*(?:e|ou|,)\s*\d{1,2}(?:\.\d{1,3})*)*)?"
+    # Cauda de lista abreviada de subitens ("18.9.4.1/2", "18.9.4.1 ou .2").
+    # Sem ela a regex comia o miolo e deixava ".1/2." pendurado — visto em laudo real.
+    r"(?:\s*(?:/|ou|e)\s*\.?\d{1,3}(?:\.\d{1,3})*)*"
     r"[)\]]?(?=[\s,.;:)\]]|$)",
     re.IGNORECASE,
 )
 
 # Preposição que fica órfã quando a citação some do meio da frase.
-RE_ORFA = re.compile(r"\b(?:na|no|da|do|de|a|o|em|com|conforme|segundo|pela|pelo)\s+(?=[,.;]|$)",
+# O `\s*` (em vez de `\s+`) é essencial: quando a citação estava no fim da frase
+# ("…sistema de proteção conforme NR-18 18.9.2."), a remoção encosta a preposição
+# na pontuação e não sobra espaço nenhum — era assim que "conforme." vazava para
+# o laudo. Exigir espaço aqui deixava passar justamente o caso mais comum.
+RE_ORFA = re.compile(r"\b(?:na|no|da|do|de|a|o|em|com|conforme|segundo|pela|pelo)\s*(?=[,.;]|$)",
                      re.IGNORECASE)
 
 
@@ -554,10 +566,26 @@ def _limpar_citacoes(texto: str) -> str:
     limpo = RE_CITACAO_SOLTA.sub("", texto)
     if limpo == texto:
         return texto.strip()
-    limpo = RE_ORFA.sub("", limpo)
-    limpo = re.sub(r"\s{2,}", " ", limpo)
-    limpo = re.sub(r"\s+([,.;:])", r"\1", limpo)
+
+    # Uma passada só não basta: tirar a citação de "conforme a NR-18, …" deixa
+    # "conforme a," e, removido o "a", sobra o "conforme" — que só então fica
+    # órfão. Repetimos até estabilizar, com teto para não girar à toa.
+    for _ in range(4):
+        antes = limpo
+        limpo = RE_ORFA.sub("", limpo)
+        limpo = re.sub(r"\s{2,}", " ", limpo)
+        limpo = re.sub(r"\s+([,.;:])", r"\1", limpo)
+        # Pontuação que ficou encostada na pontuação seguinte (", ." → ".").
+        limpo = re.sub(r"[,;:]+(?=[.!?])", "", limpo)
+        limpo = re.sub(r"([,;:])\s*\1+", r"\1", limpo)
+        if limpo == antes:
+            break
+
     limpo = re.sub(r"[\s,;:]+$", "", limpo).strip()
+    # Citação que abria a frase ("Conforme a NR-18, a remoção…") deixa a vírgula
+    # órfã na frente; a maiúscula perdida volta com a palavra que assumiu o início.
+    if (sem_borda := re.sub(r"^[\s,;:.]+", "", limpo)) != limpo:
+        limpo = sem_borda[:1].upper() + sem_borda[1:] if sem_borda else ""
     if not limpo:
         return texto.strip()
     return limpo if limpo[-1] in ".!?" else limpo + "."
@@ -568,7 +596,7 @@ def _limpar_citacoes(texto: str) -> str:
 # ---------------------------------------------------------------------------
 
 PROMPT_DIRETOR = """Você é o Diretor Técnico. Uma assinatura sua num laudo errado custa a sua credibilidade.
-Audite os enquadramentos abaixo com ceticismo. Seu trabalho não é elogiar: é vetar o que não se sustenta.
+Audite o laudo abaixo INTEIRO com ceticismo. Seu trabalho não é elogiar: é derrubar o que não se sustenta.
 
 FATOS DA FOTO
 {fatos}
@@ -576,36 +604,79 @@ FATOS DA FOTO
 ENQUADRAMENTOS PROPOSTOS (com o texto oficial da norma citada)
 {enquadramentos}
 
-VETE um enquadramento quando:
-a) o texto do item NÃO trata da situação descrita (o erro mais comum e o mais grave);
-b) a CONSTATAÇÃO AFIRMA MAIS DO QUE O FATO REGISTRA. Compare palavra por palavra:
-   se o fato diz "tampa plástica quebrada" e a constatação diz "expondo partes
-   energizadas", a constatação inventou a parte energizada — ninguém viu o que há
-   sob a tampa. Reescreva para o que a foto sustenta, ou vete. Este é o erro mais
-   difícil de perceber, porque a frase soa técnica e plausível;
+PONTOS DE ATENÇÃO PROPOSTOS (sem enquadramento normativo)
+{pontos}
+
+CONFORMIDADES PROPOSTAS
+{conformidades}
+
+PARTE 1 — CONFERÊNCIA OBRIGATÓRIA DOS ENQUADRAMENTOS
+Para CADA [V<n>], antes de decidir qualquer coisa, copie o trecho LITERAL do fato
+da lista acima que sustenta a constatação. Copiar, não resumir nem parafrasear.
+Se você não encontrar um fato que sustente a constatação inteira, o enquadramento
+está vetado — sem exceção. Esta conferência é o que separa o que a câmera
+registrou do que soa plausível: "escada apoiada no piso" NÃO sustenta "sem sapata
+antiderrapante", e "madeira empilhada" NÃO sustenta "sem retirada de pregos".
+
+PARTE 2 — VETE um enquadramento quando:
+a) o texto do item NÃO trata da situação descrita (o erro mais comum e o mais grave).
+   Item que regula documento, inventário, treinamento ou registro NUNCA enquadra
+   condição física de uma foto;
+b) a conferência da Parte 1 não achou fato que sustente a constatação;
 c) cobra EPI, treinamento ou conduta sem trabalhador visível na cena;
 d) a linguagem é alarmista ou a gravidade está inflada frente ao que se vê.
 
-A gravidade deve ser coerente entre os enquadramentos do mesmo laudo: se um risco
-de choque elétrico está como "alta" e um piso sujo como "baixa", confira se a
-diferença se justifica pelo que a foto mostra, e ajuste quando não se justificar.
+A gravidade deve ser coerente entre os enquadramentos do mesmo laudo: se dois
+enquadramentos descrevem o MESMO problema físico, devem ter a mesma gravidade e
+o mesmo prazo. Ajuste quando divergirem.
 
 APROVE o que estiver correto, mesmo que simples. Vetar o que está certo também é erro.
 
+PARTE 3 — DESCARTE ponto de atenção [P<n>] quando:
+- for inventário da foto, e não risco: objeto em estado normal para uma obra em
+  andamento (parede sem reboco, marca de fôrma no concreto, tijolo aparente,
+  ferramenta apoiada no chão, sujeira) não é ponto de atenção;
+- disser a mesma coisa que um enquadramento que você aprovou — não repita;
+- afirmar mais do que o fato registra, pela mesma régua da Parte 1.
+Mantenha o que você apontaria a um engenheiro para ele ir verificar no local.
+
+PARTE 4 — DESCARTE conformidade [C<n>] quando ela elogiar exatamente o que um
+enquadramento ou um ponto de atenção critica. Um laudo não pode aprovar e reprovar
+o mesmo objeto.
+
 Responda SOMENTE com este JSON:
 {{
-  "vetados": [{{"ref": "<V<n>>", "motivo": "<por que não se sustenta>"}}],
-  "ajustes": [{{"ref": "<V<n>>", "constatacao": "<reescrita, ou omita>", "acao_corretiva": "<reescrita, ou omita>", "gravidade": "critica|alta|media|baixa"}}],
-  "parecer": "<2-3 frases sobre o risco predominante, considerando APENAS os enquadramentos que você aprovou. Se vetou todos, diga que nenhum se sustentou — não descreva achados que você mesmo derrubou>"
+  "conferencia": [{{"ref": "V<n>", "fato": "<trecho literal do fato que sustenta, ou vazio se não houver>"}}],
+  "vetados": [{{"ref": "V<n>", "motivo": "<por que não se sustenta>"}}],
+  "ajustes": [{{"ref": "V<n>", "constatacao": "<reescrita, ou omita>", "acao_corretiva": "<reescrita, ou omita>", "gravidade": "critica|alta|media|baixa"}}],
+  "pontos_descartados": [{{"ref": "P<n>", "motivo": "<por que sai>"}}],
+  "conformidades_descartadas": [{{"ref": "C<n>", "motivo": "<por que sai>"}}],
+  "parecer": "<2-3 frases sobre o risco predominante, considerando APENAS o que você aprovou. Se vetou tudo, diga que nada se sustentou — não descreva achados que você mesmo derrubou. Escreva para o engenheiro que vai ler o laudo: nunca mencione os rótulos V, P ou C>"
 }}"""
+
+SEM_ITENS = "(nenhum)"
+
+
+def _rotular(itens: list[str], letra: str) -> str:
+    return "\n".join(f"[{letra}{n}] {t}" for n, t in enumerate(itens, start=1)) or SEM_ITENS
 
 
 def agente_diretor(
     cliente: Conversador,
     visao: Visao,
     aprovadas: list[NaoConformidade],
+    sem_enquadramento: list[str],
+    conformidades: list[str],
     modelo: str,
 ) -> dict:
+    """Audita o laudo inteiro numa única chamada.
+
+    Os pontos de atenção e as conformidades entram aqui — antes iam do Analista
+    direto para o documento, sem supervisão de ninguém. Era onde sobreviviam o
+    inventário da foto ("parede sem reboco") e a contradição de elogiar e criticar
+    o mesmo objeto. Alargar esta chamada custa poucos tokens de entrada; abrir uma
+    quarta chamada custaria uma rodada inteira por foto.
+    """
     blocos = []
     for n, nc in enumerate(aprovadas, start=1):
         blocos.append(
@@ -614,15 +685,51 @@ def agente_diretor(
             f"  CONSTATAÇÃO: {nc.constatacao}\n"
             f"  GRAVIDADE: {nc.gravidade} | AÇÃO: {nc.acao_corretiva}"
         )
-    prompt = PROMPT_DIRETOR.format(fatos=visao.resumo(), enquadramentos="\n\n".join(blocos))
+    prompt = PROMPT_DIRETOR.format(
+        fatos=visao.resumo(),
+        enquadramentos="\n\n".join(blocos) or SEM_ITENS,
+        pontos=_rotular(sem_enquadramento, "P"),
+        conformidades=_rotular(conformidades, "C"),
+    )
     bruto = cliente.conversar(
         modelo=modelo,
         mensagens=[{"role": "user", "content": prompt}],
-        teto_saida=1200,
+        teto_saida=1600,
         temperatura=0.0,
         json_estrito=True,
     )
     return _ler_json(bruto, "Diretor")
+
+
+# Rótulo interno da conversa com o Diretor que vazou para o parecer de um laudo
+# real: "a má fixação dos cabos … (V1)". É andaime de trabalho e não significa
+# nada para quem lê o documento.
+#
+# Só a forma entre parênteses ou colchetes é removida, e é de propósito: em
+# projeto estrutural brasileiro V1 é viga 1, P2 é pilar 2 e C1 é coluna 1. Apagar
+# o rótulo solto mutilaria a frase de um engenheiro descrevendo a própria obra —
+# a mesma armadilha de vocabulário que já custou caro em "carcaça" e "faca".
+# Contra o rótulo solto age o prompt, que manda o Diretor nunca mencioná-lo.
+RE_ROTULO_INTERNO = re.compile(r"\s*[(\[]\s*[VPC]\d{1,2}\s*[)\]]")
+
+
+def _sem_rotulo_interno(texto: str) -> str:
+    limpo = RE_ROTULO_INTERNO.sub("", texto)
+    if limpo == texto:
+        return texto
+    limpo = re.sub(r"\s{2,}", " ", limpo)
+    limpo = re.sub(r"\s+([,.;:])", r"\1", limpo)
+    return limpo.strip()
+
+
+def _descartar(itens: list[str], veredito: dict, chave: str, letra: str) -> list[str]:
+    """Remove da lista os índices que o Diretor descartou, pelo rótulo P<n>/C<n>."""
+    fora: set[int] = set()
+    for registro in veredito.get(chave, []) or []:
+        ref = str(registro.get("ref", "")).strip().upper()
+        if ref.startswith(letra) and ref[1:].isdigit():
+            fora.add(int(ref[1:]))
+    return [t for n, t in enumerate(itens, start=1) if n not in fora]
 
 
 def _parecer_coerente(parecer: str, sobreviventes: list, vetos: list) -> str:
@@ -720,16 +827,40 @@ def executar(
             str(s).strip() for s in proposta.get("conformidades", []) if str(s).strip()
         ]
 
-        if not config.usar_diretor or not aprovadas:
+        # O Diretor roda mesmo sem nenhuma não conformidade: um laudo com zero
+        # enquadramentos e cinco pontos de atenção continua sendo um laudo, e
+        # antes saía sem passar por supervisor nenhum. Só pulamos quando não há
+        # absolutamente nada para auditar.
+        ha_o_que_auditar = bool(aprovadas or laudo.sem_enquadramento or laudo.conformidades)
+        if not config.usar_diretor or not ha_o_que_auditar:
             laudo.nao_conformidades = aprovadas
             laudo.vetos = []
             break
 
-        avisar(f"⚖️ Diretor Técnico auditando os enquadramentos (ciclo {ciclo})…")
-        veredito = agente_diretor(cliente, visao, aprovadas, config.modelo_texto)
+        avisar(f"⚖️ Diretor Técnico auditando o laudo (ciclo {ciclo})…")
+        veredito = agente_diretor(
+            cliente, visao, aprovadas,
+            laudo.sem_enquadramento, laudo.conformidades, config.modelo_texto,
+        )
 
+        # Descartes do supervisor sobre as duas listas que antes ninguém auditava.
+        # Aplicados antes do laço de vetos porque os enquadramentos derrubados são
+        # acrescentados aos pontos de atenção logo em seguida, e esses não passam
+        # pelo crivo do Diretor — ele não os viu.
+        laudo.sem_enquadramento = _descartar(
+            laudo.sem_enquadramento, veredito, "pontos_descartados", "P"
+        )
+        laudo.conformidades = _descartar(
+            laudo.conformidades, veredito, "conformidades_descartadas", "C"
+        )
+
+        # O motivo do veto é prosa do modelo e sai impresso no laudo, tanto nos
+        # pontos de atenção quanto na trilha de auditoria. Passa pela mesma
+        # limpeza das constatações: a citação que acompanha o veto é a que o
+        # código emite ao lado, nunca a que o supervisor digitou.
         vetados = {
-            str(v.get("ref", "")).strip().upper(): str(v.get("motivo", "")).strip()
+            str(v.get("ref", "")).strip().upper():
+                _limpar_citacoes(str(v.get("motivo", "")).strip())
             for v in veredito.get("vetados", [])
         }
         ajustes = {
@@ -765,7 +896,8 @@ def executar(
         laudo.nao_conformidades = sobreviventes
         laudo.vetos = motivos
         laudo.parecer_diretor = _parecer_coerente(
-            str(veredito.get("parecer", "")).strip(), sobreviventes, motivos
+            _limpar_citacoes(_sem_rotulo_interno(str(veredito.get("parecer", "")).strip())),
+            sobreviventes, motivos,
         )
 
         if not motivos:

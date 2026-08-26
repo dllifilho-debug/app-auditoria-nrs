@@ -338,6 +338,17 @@ RISCOS: dict[str, dict] = {
             "barramento exposto",
             "terminal sem capa",
             "sem espelho no interruptor",
+            # O agente de visão descreve em registro técnico, não no vocabulário
+            # de campo: escreve "fios desencapados" e "caixa de distribuição com
+            # componentes expostos" onde o eletricista diz "fio pelado". Sem
+            # estes sinais o risco não era roteado, o dossiê saía sem nenhum item
+            # elétrico e o laudo enquadrava fio exposto em item de documentação.
+            "fio desencapado",
+            "fios eletricos expostos",
+            "condutor eletrico exposto",
+            "fio sem isolamento",
+            "caixa de distribuicao com componentes expostos",
+            "emenda exposta",
         ],
         "itens": ["NR-10 10.2.8.2", "NR-10 10.2.8.2.1", "NR-12 12.3.8"],
         "gravidade_base": "critica",
@@ -395,6 +406,11 @@ RISCOS: dict[str, dict] = {
             "cabo encostando em parte quente",
             "cabo prensado",
             "extensao atravessada no chao",
+            # Mesmo motivo do risco de partes vivas: registro técnico do agente
+            # de visão, que não usa o vocabulário de campo já cadastrado.
+            "cabo com isolamento danificado",
+            "isolamento do cabo comprometido",
+            "cabo eletrico estendido sobre o piso",
         ],
         "itens": ["NR-12 12.3.4", "NR-12 12.3.8"],
         "gravidade_base": "alta",
