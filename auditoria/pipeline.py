@@ -510,6 +510,11 @@ def aferir(
             prazo = 0
         if prazo <= 0:
             prazo = PRAZO_SUGERIDO[gravidade]
+        # O prazo do modelo é aceito, mas nunca acima do teto da gravidade que
+        # ele mesmo atribuiu: um laudo real saiu com "crítica — ação imediata"
+        # no sumário e "7 dias" na tabela, contradição que o inspetor leva para
+        # a obra. Quem manda é a gravidade; prazo mais curto continua valendo.
+        prazo = min(prazo, PRAZO_SUGERIDO[gravidade])
 
         usados.add(item.id)
         aprovadas.append(
@@ -535,12 +540,19 @@ RE_CITACAO_SOLTA = re.compile(
     r"\s*[(\[]?\bNR[\s\-\u2011\u2013\u2014]?\d{1,2}\b"
     r"(?:\s*[-\u2013\u2014,;:]?\s*(?:sub)?ite(?:m|ns))?"
     r"(?:\s*\d{1,2}(?:\.\d{1,3})*(?:\s*(?:e|ou|,)\s*\d{1,2}(?:\.\d{1,3})*)*)?"
+    # Cauda de lista abreviada de subitens ("18.9.4.1/2", "18.9.4.1 ou .2").
+    # Sem ela a regex comia o miolo e deixava ".1/2." pendurado — visto em laudo real.
+    r"(?:\s*(?:/|ou|e)\s*\.?\d{1,3}(?:\.\d{1,3})*)*"
     r"[)\]]?(?=[\s,.;:)\]]|$)",
     re.IGNORECASE,
 )
 
 # Preposição que fica órfã quando a citação some do meio da frase.
-RE_ORFA = re.compile(r"\b(?:na|no|da|do|de|a|o|em|com|conforme|segundo|pela|pelo)\s+(?=[,.;]|$)",
+# O `\s*` (em vez de `\s+`) é essencial: quando a citação estava no fim da frase
+# ("…sistema de proteção conforme NR-18 18.9.2."), a remoção encosta a preposição
+# na pontuação e não sobra espaço nenhum — era assim que "conforme." vazava para
+# o laudo. Exigir espaço aqui deixava passar justamente o caso mais comum.
+RE_ORFA = re.compile(r"\b(?:na|no|da|do|de|a|o|em|com|conforme|segundo|pela|pelo)\s*(?=[,.;]|$)",
                      re.IGNORECASE)
 
 
@@ -554,10 +566,26 @@ def _limpar_citacoes(texto: str) -> str:
     limpo = RE_CITACAO_SOLTA.sub("", texto)
     if limpo == texto:
         return texto.strip()
-    limpo = RE_ORFA.sub("", limpo)
-    limpo = re.sub(r"\s{2,}", " ", limpo)
-    limpo = re.sub(r"\s+([,.;:])", r"\1", limpo)
+
+    # Uma passada só não basta: tirar a citação de "conforme a NR-18, …" deixa
+    # "conforme a," e, removido o "a", sobra o "conforme" — que só então fica
+    # órfão. Repetimos até estabilizar, com teto para não girar à toa.
+    for _ in range(4):
+        antes = limpo
+        limpo = RE_ORFA.sub("", limpo)
+        limpo = re.sub(r"\s{2,}", " ", limpo)
+        limpo = re.sub(r"\s+([,.;:])", r"\1", limpo)
+        # Pontuação que ficou encostada na pontuação seguinte (", ." → ".").
+        limpo = re.sub(r"[,;:]+(?=[.!?])", "", limpo)
+        limpo = re.sub(r"([,;:])\s*\1+", r"\1", limpo)
+        if limpo == antes:
+            break
+
     limpo = re.sub(r"[\s,;:]+$", "", limpo).strip()
+    # Citação que abria a frase ("Conforme a NR-18, a remoção…") deixa a vírgula
+    # órfã na frente; a maiúscula perdida volta com a palavra que assumiu o início.
+    if (sem_borda := re.sub(r"^[\s,;:.]+", "", limpo)) != limpo:
+        limpo = sem_borda[:1].upper() + sem_borda[1:] if sem_borda else ""
     if not limpo:
         return texto.strip()
     return limpo if limpo[-1] in ".!?" else limpo + "."
@@ -728,8 +756,13 @@ def executar(
         avisar(f"⚖️ Diretor Técnico auditando os enquadramentos (ciclo {ciclo})…")
         veredito = agente_diretor(cliente, visao, aprovadas, config.modelo_texto)
 
+        # O motivo do veto é prosa do modelo e sai impresso no laudo, tanto nos
+        # pontos de atenção quanto na trilha de auditoria. Passa pela mesma
+        # limpeza das constatações: a citação que acompanha o veto é a que o
+        # código emite ao lado, nunca a que o supervisor digitou.
         vetados = {
-            str(v.get("ref", "")).strip().upper(): str(v.get("motivo", "")).strip()
+            str(v.get("ref", "")).strip().upper():
+                _limpar_citacoes(str(v.get("motivo", "")).strip())
             for v in veredito.get("vetados", [])
         }
         ajustes = {
@@ -765,7 +798,8 @@ def executar(
         laudo.nao_conformidades = sobreviventes
         laudo.vetos = motivos
         laudo.parecer_diretor = _parecer_coerente(
-            str(veredito.get("parecer", "")).strip(), sobreviventes, motivos
+            _limpar_citacoes(str(veredito.get("parecer", "")).strip()),
+            sobreviventes, motivos,
         )
 
         if not motivos:

@@ -851,3 +851,146 @@ def test_pendentes_preserva_a_ordem_de_envio():
     fila = [Arquivo("a.jpg"), Arquivo("b.jpg"), Arquivo("c.jpg")]
     assert [a.name for a in pendentes(fila, {"b.jpg"})] == ["a.jpg", "c.jpg"]
     assert pendentes(fila, {"a.jpg", "b.jpg", "c.jpg"}) == []
+
+
+# ---------------------------------------------------------------------------
+# Defeitos vistos no lote de 10 laudos reais de 26/08/2026
+# ---------------------------------------------------------------------------
+
+def test_limpeza_de_citacao_nao_deixa_preposicao_nem_cauda_de_subitem():
+    """Três laudos reais saíram com "conforme." e "conforme.1/2." no texto.
+
+    A citação do modelo era removida, mas a preposição que a introduzia ficava
+    colada na pontuação — e a regex não alcançava a lista abreviada de subitens
+    ("18.9.4.1/2"), deixando ".1/2." pendurado na ação corretiva.
+    """
+    from auditoria.pipeline import _limpar_citacoes
+
+    sujos = [
+        "Instalar fechamento provisório ou sistema de proteção conforme NR-18 18.9.4.1/2.",
+        "Empilhar as madeiras em local adequado, conforme NR-18 18.16.4.1.",
+        "Instalar cobertura resistente ou proteção contra quedas conforme NR-18 18.9.2.",
+        "Conforme a NR‑18, a remoção deve ser feita por calha fechada.",
+    ]
+    for sujo in sujos:
+        limpo = _limpar_citacoes(sujo)
+        assert "NR" not in limpo, f"citação sobreviveu: {limpo}"
+        assert not re.search(r"\bconforme\s*[.,;]", limpo, re.IGNORECASE), limpo
+        assert ".1/2" not in limpo, limpo
+        assert not limpo.startswith(("," , ".", ";")), limpo
+
+
+def test_limpeza_de_citacao_preserva_texto_sem_citacao():
+    """A limpeza só pode agir quando há citação: nada de mutilar prosa legítima."""
+    from auditoria.pipeline import _limpar_citacoes
+
+    intactos = [
+        "A proteção deve ter altura mínima de 1,20 m, conforme o projeto aprovado.",
+        "Substituir os cabos por novos condutores em conformidade.",
+        "Remover o entulho utilizando equipamentos adequados ou calhas fechadas.",
+    ]
+    for texto in intactos:
+        assert _limpar_citacoes(texto) == texto
+
+
+def test_parecer_do_diretor_nao_carrega_citacao_escrita_pelo_modelo(base):
+    """O parecer é a única prosa do laudo que escapava da limpeza.
+
+    Laudos reais saíram com "conforme NR‑18" escrito pelo supervisor — quem cita
+    neste projeto é o código, nunca um agente.
+    """
+    from auditoria.pipeline import agente_diretor  # noqa: F401  (contrato)
+    from auditoria.pipeline import _limpar_citacoes
+
+    parecer = ("O risco predominante é a abertura no piso, configurando risco "
+               "crítico de queda conforme NR‑18. Recomenda-se cobertura.")
+    assert "NR" not in _limpar_citacoes(parecer)
+
+
+def test_prazo_nunca_excede_o_teto_da_gravidade(base):
+    """Laudo real trouxe "🔴 Crítica" no sumário e "7 d" na tabela.
+
+    O prazo proposto pelo modelo é aceito, mas a gravidade que ele mesmo
+    atribuiu manda: crítica não sai com prazo de uma semana.
+    """
+    from auditoria.pipeline import PRAZO_SUGERIDO
+
+    dossie = _dossie_de(base, ["NR-18 18.9.2"])
+    proposta = _proposta("D1", gravidade="critica", prazo_dias=7)
+    aprovadas, _ = aferir(proposta, dossie, {}, Visao(), HOJE)
+
+    assert len(aprovadas) == 1
+    assert aprovadas[0].prazo_dias <= PRAZO_SUGERIDO["critica"]
+
+
+def test_prazo_mais_curto_que_o_teto_e_respeitado(base):
+    """O teto limita para cima, não força para baixo."""
+    dossie = _dossie_de(base, ["NR-18 18.9.2"])
+    proposta = _proposta("D1", gravidade="media", prazo_dias=2)
+    aprovadas, _ = aferir(proposta, dossie, {}, Visao(), HOJE)
+    assert aprovadas[0].prazo_dias == 2
+
+
+def test_busca_textual_nao_oferece_item_que_foto_nao_comprova(base):
+    """O pior laudo do lote: fiação desencapada enquadrada no item que manda o
+    inventário de riscos ocupacionais listar informações.
+
+    O item existe e é real — mas nenhuma foto prova ou desmente um inventário.
+    O analista é obrigado a escolher do dossiê; se o dossiê só oferece papel, o
+    laudo sai com item verdadeiro na situação errada.
+    """
+    from auditoria import dossie as mod_dossie
+
+    achados = [
+        "Fios elétricos expostos e desencapados cruzando a frente das tubulações",
+        "Cabo elétrico preto com isolamento danificado e fios internos visíveis",
+        "Caixa de distribuição elétrica cinza com componentes internos expostos",
+    ]
+    montado = mod_dossie.montar(base, achados, quando=HOJE, teto=22)
+    citados = {f"{e.item.nr} {e.item.item}" for e in montado.entradas}
+    assert "NR-01 1.5.7.3.2" not in citados, "inventário de riscos voltou ao dossiê"
+    for entrada in montado.entradas:
+        assert mod_dossie.comprovavel_em_foto(entrada.item), \
+            f"item documental no dossiê: {entrada.item.nr} {entrada.item.item}"
+
+
+def test_filtro_documental_nao_alcanca_a_taxonomia_curada(base):
+    """Alguns itens documentais estão na taxonomia de propósito — o quadro de
+    avisos vazio da CIPA, a ficha de entrega de EPI. Um humano decidiu que a foto
+    os evidencia; o filtro da busca textual não pode desfazer isso."""
+    from auditoria import dossie as mod_dossie
+    from auditoria.pipeline import montar_dossie
+
+    curados = {ref for risco in catalogo_riscos().values() for ref in risco.itens}
+    documentais = set()
+    for ref in curados:
+        nr, _, num = ref.partition(" ")
+        item = base.obter(nr, num)
+        if item is not None and not mod_dossie.comprovavel_em_foto(item):
+            documentais.add(ref)
+
+    assert documentais, "amostra vazia invalidaria o teste"
+
+    visao = Visao(
+        ambiente="área de vivência de canteiro",
+        achados=[Achado("Quadro de avisos vazio, sem ata nem cartaz da CIPA afixado")],
+    )
+    dossie_final, _ = montar_dossie(base, visao, contexto="", quando=HOJE, teto=22)
+    assert dossie_final.entradas, "o caminho curado não pode ser esvaziado pelo filtro"
+
+
+def test_roteamento_reconhece_o_vocabulario_tecnico_do_agente_de_visao():
+    """O Olho escreve "fios desencapados"; a taxonomia dizia só "fio pelado".
+
+    A distância entre o registro técnico do modelo e o vocabulário de campo
+    cadastrado fazia o risco elétrico não ser roteado em foto de fiação exposta.
+    """
+    visao = Visao(
+        ambiente="setor de instalações prediais com infraestrutura elétrica aparente",
+        achados=[
+            Achado("Fios elétricos expostos e desencapados cruzando a frente das tubulações"),
+            Achado("Cabo elétrico preto com isolamento danificado e fios internos visíveis"),
+        ],
+    )
+    ids = [r.id for r in rotear_riscos(visao)]
+    assert "partes_vivas_expostas" in ids
