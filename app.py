@@ -30,9 +30,9 @@ from auditoria.riscos import catalogo as catalogo_riscos
 LIMITE_BASE64 = 3_600_000        # a Groq recusa imagem base64 acima de ~4 MB
 
 st.set_page_config(
-    page_title="Auditoria de NRs — Gauntlet Loop",
+    page_title="Auditoria de NRs por imagem",
     layout="wide",
-    page_icon="🦺",
+    page_icon="•",
     initial_sidebar_state="expanded",
 )
 
@@ -129,7 +129,7 @@ base = base_normativa(date.today())
 riscos = taxonomia()
 
 with st.sidebar:
-    st.markdown("### ⚙️ Configuração")
+    st.markdown("### Configuração")
 
     modo_demo = st.toggle(
         "Modo demonstração",
@@ -168,13 +168,13 @@ with st.sidebar:
         else:
             chave = da_instalacao
             st.caption(
-                "⚠️ Em uso a chave configurada nesta instalação — o consumo sai da "
+                "Em uso a chave configurada nesta instalação — o consumo sai da "
                 "cota de quem a configurou."
             )
 
     st.divider()
-    st.markdown("### 🧠 Modelos")
-    OUTRO = "✏️ Outro (digitar o ID)"
+    st.markdown("### Modelos")
+    OUTRO = "Outro (digitar o ID)"
 
     def _rotulo(identificador: str) -> str:
         conhecido = modelos.por_id(identificador)
@@ -216,14 +216,14 @@ with st.sidebar:
         )
 
     st.divider()
-    st.markdown("### 🔁 Rigor do Gauntlet Loop")
+    st.markdown("### Rigor da análise")
     rigor = st.select_slider(
         "Ciclos de supervisão",
         options=["Rápido", "Padrão", "Máximo"],
         value="Padrão",
-        help="Rápido: sem supervisor (2 chamadas por foto). "
-             "Padrão: com supervisor (3). "
-             "Máximo: supervisor com re-análise em caso de veto (até 5).",
+        help="Rápido: sem revisão técnica (2 chamadas por foto). "
+             "Padrão: com revisão técnica (3). "
+             "Máximo: revisão técnica com reenquadramento em caso de veto (até 5).",
     )
     perfis = {
         "Rápido":  dict(usar_diretor=False, max_ciclos=1, teto_dossie=16),
@@ -241,7 +241,7 @@ with st.sidebar:
     st.divider()
     if not modo_demo:
         gasto = consumo_do_dia()
-        with st.expander("🔋 Consumo do dia", expanded=bool(gasto.tokens)):
+        with st.expander("Consumo do dia", expanded=bool(gasto.tokens)):
             orcamento = st.number_input(
                 "Teto diário de tokens da sua conta",
                 min_value=10_000, max_value=100_000_000,
@@ -269,8 +269,7 @@ with st.sidebar:
                     st.warning(
                         "Teto diário atingido pela contagem desta sessão. "
                         "A cota volta na virada do dia.",
-                        icon="🪫",
-                    )
+                            )
             else:
                 st.caption("Nenhuma imagem auditada hoje nesta sessão.")
 
@@ -282,7 +281,7 @@ with st.sidebar:
                 st.session_state.pop("consumo", None)
                 st.rerun()
 
-    with st.expander("📚 Cobertura normativa"):
+    with st.expander("Cobertura normativa"):
         carregadas = set(base.por_nr)
         st.metric("Itens normativos indexados", f"{len(base.itens):,}".replace(",", "."))
         st.metric("Riscos catalogados", len(riscos))
@@ -306,7 +305,7 @@ with st.sidebar:
                 for nr, (_, quando) in sorted(base.edicoes_futuras.items())
             )
             st.caption(
-                f"⏳ Edição já publicada mas ainda **não vigente**: {futuras}. "
+                f"Edição já publicada mas ainda **não vigente**: {futuras}. "
                 "O app cita a redação em vigor na data da inspeção."
             )
         st.caption(f"Versão em execução: `{versao_do_app()}`")
@@ -315,7 +314,6 @@ with st.sidebar:
                 "PDF cujo nome não permite identificar a NR (ignorado): "
                 + ", ".join(f"`{n}`" for n in base.pdfs_ignorados)
                 + ". Renomeie para o padrão `nr-XX-....pdf`.",
-                icon="⚠️",
             )
 
 
@@ -323,7 +321,7 @@ with st.sidebar:
 # Cabeçalho
 # ---------------------------------------------------------------------------
 
-st.title("🦺 Auditoria de NRs por imagem")
+st.title("Auditoria de NRs por imagem")
 st.markdown(
     "Enquadramento de não conformidades em **Normas Regulamentadoras** a partir de fotos "
     "de inspeção. Cada citação do laudo é conferida contra o texto oficial do MTE antes "
@@ -335,7 +333,6 @@ if modo_demo:
         "**Modo demonstração ativo.** O pipeline roda inteiro — roteamento de riscos, "
         "dossiê normativo, aferição e supervisão — com respostas simuladas do modelo. "
         "Desligue na barra lateral e informe a chave da Groq para analisar fotos de verdade.",
-        icon="🧪",
     )
 
 col_a, col_b, col_c = st.columns([2, 2, 1])
@@ -389,7 +386,6 @@ st.session_state.resultados, descartadas = lote.sincronizar(
 if descartadas:
     st.toast(
         f"{len(descartadas)} laudo(s) descartado(s) junto com a(s) imagem(ns).",
-        icon="🗑️",
     )
 
 ja_auditadas = {nome for nome, _, _ in st.session_state.resultados}
@@ -401,10 +397,9 @@ if arquivos:
             f"**{len(ja_auditadas)} imagem(ns) já auditada(s) nesta sessão.** "
             f"A execução continua das {len(pendentes)} restantes, sem refazer nem "
             "gastar cota com o que já está pronto.",
-            icon="↩️",
         )
     elif arquivos and not pendentes:
-        st.success("Todas as imagens deste lote já foram auditadas nesta sessão.", icon="✅")
+        st.success("Todas as imagens deste lote já foram auditadas nesta sessão.")
 
     if pendentes and not modo_demo:
         previsto = len(pendentes) * CUSTO_POR_FOTO[rigor]
@@ -422,7 +417,7 @@ if ja_auditadas:
     )
 
 executar_agora = st.button(
-    "▶️ Executar auditoria" + (f" ({len(pendentes)} pendente(s))" if pendentes and ja_auditadas else ""),
+    "Executar auditoria" + (f" ({len(pendentes)} pendente(s))" if pendentes and ja_auditadas else ""),
     type="primary",
     use_container_width=True,
     disabled=not arquivos or (not pendentes and not refazer),
@@ -442,7 +437,7 @@ if executar_agora:
         st.stop()
 
     cliente = ClienteDemonstracao() if modo_demo else ClienteGroq(
-        api_key=chave.strip(), aviso=lambda m: st.toast(m, icon="⏳")
+        api_key=chave.strip(), aviso=lambda m: st.toast(m)
     )
     config = Configuracao(
         modelo_visao=modelo_visao,
@@ -465,7 +460,7 @@ if executar_agora:
         rotulo = f"{arquivo.name} ({indice + 1}/{len(fila)})"
         barra.progress(indice / len(fila), text=f"Analisando {rotulo}…")
 
-        with st.status(f"📸 {rotulo}", expanded=True) as painel:
+        with st.status(rotulo, expanded=True) as painel:
             try:
                 imagem_b64, miniatura = preparar_imagem(arquivo.getvalue(), lado_imagem)
                 laudo = executar(
@@ -481,25 +476,24 @@ if executar_agora:
                     st.warning(
                         "O agente de visão não devolveu nenhum fato utilizável para esta "
                         "imagem. Nada foi enquadrado a partir dela.",
-                        icon="👁️",
                     )
                     with st.expander("Ver o que o modelo de visão respondeu"):
                         st.code(laudo.visao.bruto or "(resposta vazia)", language="json")
                 painel.update(
-                    label=(f"👁️ {rotulo} — leitura da imagem falhou" if laudo.visao_falhou
-                           else f"✅ {rotulo} — {achadas} não conformidade(s)"),
+                    label=(f"{rotulo} — leitura da imagem falhou" if laudo.visao_falhou
+                           else f"{rotulo} — {achadas} não conformidade(s)"),
                     state="error" if laudo.visao_falhou else "complete",
                     expanded=laudo.visao_falhou,
                 )
             except ErroDeAuditoria as erro:
-                painel.update(label=f"❌ {rotulo}", state="error")
+                painel.update(label=f"{rotulo} — falhou", state="error")
                 st.error(f"**{erro.mensagem}**" + (f"\n\n{erro.sugestao}" if erro.sugestao else ""))
                 if not erro.recuperavel:
                     interrompido = (arquivo.name, erro)
                     break
             except Exception as erro:                      # rede, imagem corrompida…
                 traduzido = modelos.traduzir(erro)
-                painel.update(label=f"❌ {rotulo}", state="error")
+                painel.update(label=f"{rotulo} — falhou", state="error")
                 st.error(f"**{traduzido.mensagem}**" +
                          (f"\n\n{traduzido.sugestao}" if traduzido.sugestao else ""))
 
@@ -513,7 +507,6 @@ if executar_agora:
             f"{len(st.session_state.resultados)} imagem(ns) já auditada(s) continuam "
             f"abaixo e podem ser exportadas agora. Faltam {restantes}: quando a cota "
             "voltar, é só executar de novo — o app retoma de onde parou.",
-            icon="⏸️",
         )
     if not modo_demo and getattr(cliente, "tokens_gastos", 0):
         # Média desta execução, não da sessão: num lote retomado, dividir os
@@ -557,7 +550,7 @@ if resultados:
               delta_color="inverse" if criticas else "off")
     m4.metric("Normas acionadas", len(normas))
 
-    if st.button("🧹 Limpar todos os resultados", help="Recomeça o lote do zero."):
+    if st.button("Limpar todos os resultados", help="Recomeça o lote do zero."):
         st.session_state.resultados = []
         st.rerun()
 
@@ -566,19 +559,19 @@ if resultados:
     )
 
     aba_resumo, *abas = st.tabs(
-        ["📊 Sumário executivo"] + [f"📸 {nome[:20]}" for nome, _, _ in resultados]
+        ["Sumário executivo"] + [nome[:24] for nome, _, _ in resultados]
     )
 
     with aba_resumo:
         st.markdown(texto_consolidado)
         d1, d2 = st.columns(2)
         d1.download_button(
-            "📥 Sumário em Markdown", texto_consolidado,
+            "Sumário em Markdown", texto_consolidado,
             file_name=f"sumario_inspecao_{data_inspecao:%Y%m%d}.md",
             mime="text/markdown", use_container_width=True,
         )
         d2.download_button(
-            "🖨️ Sumário em HTML (imprimível)",
+            "Sumário em HTML (imprimível)",
             relatorio.para_html(texto_consolidado, "Sumário executivo da inspeção"),
             file_name=f"sumario_inspecao_{data_inspecao:%Y%m%d}.html",
             mime="text/html", use_container_width=True,
@@ -592,14 +585,14 @@ if resultados:
                 if laudo.nao_conformidades:
                     st.markdown("**Gravidade das constatações**")
                     for nc in laudo.nao_conformidades:
-                        selo, rot = relatorio.SELOS.get(nc.gravidade, ("⚪", nc.gravidade))
-                        st.markdown(f"{selo} `{nc.item.nr} {nc.item.item}` — {rot}")
+                        rot = relatorio.SELOS.get(nc.gravidade, nc.gravidade)
+                        st.markdown(f"`{nc.item.nr} {nc.item.item}` — **{rot}**")
                 if not laudo.aprovado:
                     st.warning(
-                        f"O supervisor vetou {len(laudo.vetos)} enquadramento(s). "
+                        f"A revisão técnica vetou {len(laudo.vetos)} enquadramento(s). "
                         "As observações correspondentes seguem entre os pontos de atenção."
                     )
-                if st.button("🗑️ Descartar este laudo", key=f"descartar_{nome}",
+                if st.button("Descartar este laudo", key=f"descartar_{nome}",
                              use_container_width=True,
                              help="Remove o resultado desta imagem. A foto continua no "
                                   "lote e será auditada de novo na próxima execução."):
@@ -617,12 +610,12 @@ if resultados:
                 st.markdown(texto)
                 b1, b2 = st.columns(2)
                 b1.download_button(
-                    "📥 Markdown", texto,
+                    "Markdown", texto,
                     file_name=f"laudo_{indice:02d}_{data_inspecao:%Y%m%d}.md",
                     mime="text/markdown", key=f"md_{indice}", use_container_width=True,
                 )
                 b2.download_button(
-                    "🖨️ HTML imprimível",
+                    "HTML imprimível",
                     relatorio.para_html(texto, f"Laudo {indice} — {nome}"),
                     file_name=f"laudo_{indice:02d}_{data_inspecao:%Y%m%d}.html",
                     mime="text/html", key=f"html_{indice}", use_container_width=True,
@@ -630,7 +623,7 @@ if resultados:
 
 elif not executar_agora:
     st.divider()
-    with st.expander("ℹ️ Como este app evita citar norma inexistente", expanded=False):
+    with st.expander("Como este app evita citar norma inexistente", expanded=False):
         st.markdown(
             """
 O erro clássico de um auditor automático é citar um item que não existe, ou citar um
@@ -650,7 +643,7 @@ item real para a situação errada. Aqui o desenho do pipeline torna os dois imp
 5. **Diretor Técnico** relê cada enquadramento ao lado do texto oficial do item e veta o
    que a norma não sustenta. No rigor Máximo, o veto volta ao analista para novo ciclo.
 
-O laudo traz, ao final, a trilha completa: quantos ciclos rodaram, o que o supervisor
+O laudo traz, ao final, a trilha completa: quantos ciclos rodaram, o que a revisão técnica
 vetou e o que a aferição descartou.
             """
         )

@@ -14,11 +14,15 @@ from .catalogo_nr import CATALOGO_NR
 from .kb import BaseNormativa
 from .pipeline import Laudo, NaoConformidade
 
+# Rótulo de gravidade em texto. Não há símbolo aqui de propósito: o laudo é
+# arquivado impresso, muitas vezes em preto e branco, onde bolinha colorida vira
+# cinza indistinto — e num documento que pode chegar à fiscalização, figurinha
+# lê como protótipo. Quem dá o peso é a tipografia.
 SELOS = {
-    "critica": ("🔴", "Crítica"),
-    "alta": ("🟠", "Alta"),
-    "media": ("🟡", "Média"),
-    "baixa": ("🔵", "Baixa"),
+    "critica": "Crítica",
+    "alta": "Alta",
+    "media": "Média",
+    "baixa": "Baixa",
 }
 
 
@@ -94,7 +98,7 @@ def markdown(
             p.append(f"- {a.fato}{onde}")
     elif laudo.visao_falhou:
         p.append(
-            "> ⚠️ **A leitura da imagem falhou.** O agente de visão não devolveu nenhum "
+            "> **A leitura da imagem falhou.** O agente de visão não devolveu nenhum "
             "fato utilizável, então nenhum enquadramento foi feito a partir desta foto. "
             "Isto **não** atesta conformidade: a imagem apenas não pôde ser avaliada. "
             "Repita a análise, se possível com resolução de envio maior."
@@ -123,25 +127,25 @@ def markdown(
             if r and n > 1
         }
         for n, nc in enumerate(laudo.nao_conformidades, start=1):
-            selo, rotulo = SELOS.get(nc.gravidade, ("⚪", nc.gravidade))
+            rotulo = SELOS.get(nc.gravidade, nc.gravidade)
             titulo = (
                 _resumir(nc.constatacao, 80) if nc.rotulo_risco in repetidos
                 else (nc.rotulo_risco or _resumir(nc.constatacao, 70))
             )
             p.append(
                 f"| {n} | {titulo} | **{nc.item.nr}** | `{nc.item.item}` | "
-                f"{selo} {rotulo} | {nc.prazo_dias} d |"
+                f"**{rotulo}** | {nc.prazo_dias} d |"
             )
         p.append("")
 
         p.append("### Detalhamento")
         p.append("")
         for n, nc in enumerate(laudo.nao_conformidades, start=1):
-            selo, rotulo = SELOS.get(nc.gravidade, ("⚪", nc.gravidade))
+            rotulo = SELOS.get(nc.gravidade, nc.gravidade)
             cabecalho = nc.rotulo_risco or "Não conformidade constatada"
             if nc.rotulo_risco in repetidos:
                 cabecalho += f" — {nc.item.item}"
-            p.append(f"#### {n}. {cabecalho} {selo}")
+            p.append(f"#### {n}. {cabecalho} — gravidade {rotulo.lower()}")
             p.append("")
             p.append(f"**Constatação.** {nc.constatacao}")
             p.append("")
@@ -177,7 +181,7 @@ def markdown(
     if laudo.nrs_sem_texto:
         faltantes = ", ".join(f"{nr} ({_titulo_nr(nr)})" for nr in laudo.nrs_sem_texto)
         p.append(
-            f"> ℹ️ Os fatos sugerem possível aplicabilidade de {faltantes}, cujo texto integral "
+            f"> Os fatos sugerem possível aplicabilidade de {faltantes}, cujo texto integral "
             f"não está carregado nesta instalação. Nenhum item dessas normas foi citado — "
             f"recomenda-se verificação manual."
         )
@@ -187,12 +191,12 @@ def markdown(
         p.append("## 4. Conformidades observadas")
         p.append("")
         for c in laudo.conformidades:
-            p.append(f"- ✅ {c}")
+            p.append(f"- {c}")
         p.append("")
 
     # Parecer e trilha de auditoria
     if laudo.parecer_diretor:
-        p.append("## Parecer do Diretor Técnico")
+        p.append("## Parecer da revisão técnica")
         p.append("")
         p.append(laudo.parecer_diretor)
         p.append("")
@@ -201,18 +205,18 @@ def markdown(
     p.append("")
     p.append("### Trilha de auditoria do laudo")
     p.append("")
-    p.append(f"- Ciclos do Gauntlet Loop executados: **{laudo.ciclos}**")
+    p.append(f"- Ciclos de análise e revisão executados: **{laudo.ciclos}**")
     p.append(
-        f"- Veredito do supervisor: "
+        f"- Veredito da revisão técnica: "
         f"**{'aprovado sem vetos' if laudo.aprovado else f'{len(laudo.vetos)} enquadramento(s) vetado(s)'}**"
     )
     if laudo.vetos:
         for v in laudo.vetos:
-            p.append(f"  - ❌ {v}")
+            p.append(f"  - Vetado — {v}")
     if laudo.afericoes:
         p.append("- Descartes da aferição automática:")
         for a in laudo.afericoes:
-            p.append(f"  - ⚙️ {a}")
+            p.append(f"  - {a}")
     p.append(
         f"- Base normativa: {len(base.itens)} itens extraídos de "
         f"{len(base.por_nr)} NRs, edição consolidada em {base.gerado_em}."
@@ -264,8 +268,7 @@ def consolidado(laudos: list[tuple[str, Laudo]], base: BaseNormativa, quando: da
         p.append("|---|---|")
         for chave in ("critica", "alta", "media", "baixa"):
             if chave in por_gravidade:
-                selo, rotulo = SELOS[chave]
-                p.append(f"| {selo} {rotulo} | {por_gravidade[chave]} |")
+                p.append(f"| **{SELOS[chave]}** | {por_gravidade[chave]} |")
         p.append("")
 
         p.append("## Normas mais acionadas")
