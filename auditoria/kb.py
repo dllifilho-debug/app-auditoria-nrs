@@ -10,6 +10,7 @@ import json
 import math
 import re
 import unicodedata
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import date
 from functools import lru_cache
@@ -181,6 +182,27 @@ class BaseNormativa:
     def obter(self, nr: str, item: str) -> Item | None:
         return self.itens.get(self._chave(nr, item))
 
+    def titulo_da_secao(self, item: Item) -> str:
+        """Cabeçalho da seção que contém o item, ou "" se a norma não o trouxer.
+
+        O rótulo é hierárquico ("18.9.4.2", "Anexo II 3.2.1"): subir um nível de
+        cada vez e perguntar à base devolve o cabeçalho mais próximo. É o que
+        permite saber que o Anexo II 1.1 da NR-35 mora em "Objetivo" — e que,
+        portanto, ele diz do que o anexo trata em vez de impor conduta.
+        """
+        prefixo, _, numero = (
+            item.item.rpartition(" ") if item.anexo else ("", "", item.item)
+        )
+        partes = numero.split(".")
+        for corte in range(len(partes) - 1, 0, -1):
+            rotulo = f"{prefixo} {'.'.join(partes[:corte])}".strip()
+            pai = self.obter(item.nr, rotulo)
+            # Cabeçalho é curto; ancestral longo é item normativo de verdade e a
+            # busca continua subindo.
+            if pai is not None and len(pai.texto) <= 90:
+                return pai.texto
+        return ""
+
     def nrs_carregadas(self) -> list[str]:
         return sorted(self.por_nr)
 
@@ -194,11 +216,18 @@ class BaseNormativa:
         k: int = 8,
         quando: date | None = None,
         minimo_relativo: float = 0.0,
+        aceitar: Callable[[Item], bool] | None = None,
     ) -> list[tuple[Item, float]]:
         """Recupera os `k` itens mais pertinentes à consulta (BM25 Okapi).
 
         `minimo_relativo` descarta o que pontuar abaixo dessa fração do melhor
         resultado — é o que impede o dossiê de encher de item vagamente parecido.
+
+        `aceitar` peneira os candidatos **antes** do corte relativo. A ordem
+        importa: um item recusado que ficasse no topo levantaria a régua e
+        derrubaria, junto consigo, os itens bons abaixo dele — foi o que
+        aconteceu com o objetivo do Anexo II da NR-35, que sozinho pontuava mais
+        que o dobro do item de ancoragem que devia ter sido oferecido.
         """
         termos = tokenizar(consulta)
         if not termos:
@@ -211,6 +240,8 @@ class BaseNormativa:
             if permitidas is not None and doc.nr not in permitidas:
                 continue
             if quando is not None and not doc.vigente_em(quando):
+                continue
+            if aceitar is not None and not aceitar(doc):
                 continue
             if not toks:
                 continue

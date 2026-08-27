@@ -17,7 +17,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from auditoria import relatorio
+from auditoria import dossie, kb_build, relatorio
 from auditoria.catalogo_nr import CATALOGO_NR, NRS_REVOGADAS, NRS_VIGENTES
 from auditoria.demo import ClienteDemonstracao, _texto_do_prompt
 from auditoria.kb import carregar_base, extrair_citacoes, tokenizar
@@ -1480,3 +1480,142 @@ def test_escada_fixa_de_concreto_nao_vira_escada_de_mao():
         achados=[Achado("Escada fixa de concreto com corrimao, piso irregular por desgaste")],
     )
     assert "escada_mao_irregular" not in [r.id for r in rotear_riscos(visao)]
+
+
+# ---------------------------------------------------------------------------
+# Citação verbatim: nada do documento pode vazar para dentro do item
+#
+# Um laudo real citou a NR-35 Anexo II 1.1 e imprimiu o cabeçalho da seção
+# seguinte colado no fim: "…no trabalho em altura. 2. Campo de Aplicação".
+# ---------------------------------------------------------------------------
+
+RE_CAUDA_DE_CABECALHO = re.compile(
+    r"(?<=[.;:!?\)])\s+(\d{1,2}(?:\.\d{1,3})*)\.?\s+([^.;:]{3,70})$"
+)
+
+# O que o acervo atual ainda não resolve: anexos cuja numeração de seção pula um
+# número, de modo que o encadeamento se perde. Nenhum deles é de construção
+# civil. A lista é fechada de propósito — um item novo aqui é regressão.
+CAUDA_TOLERADA = {"NR-07 Anexo III 1.1.1", "NR-11 Anexo I 6"}
+
+
+def test_citacao_nao_arrasta_o_cabecalho_da_secao_seguinte(base):
+    item = base.obter("NR-35", "Anexo II 1.1")
+    assert item is not None
+    assert item.texto.endswith("no trabalho em altura.")
+    assert "Campo de Aplicação" not in item.texto
+
+    sujos = {
+        i.id
+        for i in base.itens.values()
+        if (m := RE_CAUDA_DE_CABECALHO.search(i.texto))
+        and m.group(2).strip()[:1].isupper()
+    }
+    assert sujos <= CAUDA_TOLERADA, sorted(sujos - CAUDA_TOLERADA)
+
+
+def test_cabecalho_de_secao_de_anexo_fecha_o_item_anterior():
+    """Dentro do anexo a seção tem um nível só e RE_ITEM exige dois."""
+    bruto = "\n".join([
+        "ANEXO II",
+        "SISTEMAS DE ANCORAGEM",
+        "",
+        "1. Objetivo",
+        "",
+        "1.1 Estabelecer os requisitos e as medidas de prevenção para o emprego de",
+        "sistemas de ancoragem, no trabalho em altura.",
+        "",
+        "2. Campo de Aplicação",
+        "",
+        "2.1 Este Anexo se aplica ao sistema de ancoragem instalado na estrutura.",
+    ])
+    itens = {i.item: i.texto for i in kb_build.parsear_norma("NR-35", bruto, "teste.pdf")}
+    assert itens["Anexo II 1.1"].endswith("no trabalho em altura.")
+    assert "Campo de Aplicação" not in itens["Anexo II 1.1"]
+    assert itens["Anexo II 2"] == "Campo de Aplicação"
+
+
+def test_linha_numerada_fora_de_sequencia_nao_parte_o_item():
+    """Legenda de figura e primeira linha de parágrafo têm a mesma forma que o
+    cabeçalho; o que as separa é a inicial minúscula e o número fora de ordem."""
+    bruto = "\n".join([
+        "ANEXO X",
+        "MÁQUINAS PARA CALÇADOS",
+        "",
+        "1. Balancim",
+        "",
+        "1.1 O balancim deve possuir dispositivo de acionamento bimanual, conforme",
+        "a Figura 1 deste Anexo.",
+        "Legenda:",
+        "1. trava mecânica do prato giratório",
+        "2. proteção fixa",
+        "",
+        "5. Máquina de cambrê",
+    ])
+    itens = {i.item: i.texto for i in kb_build.parsear_norma("NR-12", bruto, "teste.pdf")}
+    assert "trava mecânica" in itens["Anexo X 1.1"], "legenda virou seção"
+    assert "Anexo X 5" not in itens, "número fora de sequência abriu seção"
+
+
+def test_subtitulo_sem_numero_nao_entra_na_citacao():
+    """A NR-18 separa os itens com cabeçalhos sem número."""
+    bruto = "\n".join([
+        "18.8.6.12 As escadas portáteis devem possuir sapatas antiderrapantes ou",
+        "dispositivo que impeça o seu escorregamento.",
+        "Escada portátil de uso individual (de mão)",
+        "",
+        "18.8.6.13 As escadas de mão devem possuir, no máximo, 7 m de extensão.",
+    ])
+    itens = {i.item: i.texto for i in kb_build.parsear_norma("NR-18", bruto, "teste.pdf")}
+    assert itens["18.8.6.12"].endswith("escorregamento.")
+    assert "uso individual" not in itens["18.8.6.12"]
+
+
+# ---------------------------------------------------------------------------
+# Item que existe, está vigente e fala do assunto — mas não manda fazer nada
+# ---------------------------------------------------------------------------
+
+def test_item_que_so_enuncia_o_objetivo_nao_entra_no_dossie(base):
+    """NR-35 Anexo II 1.1 é o objetivo do anexo, não regra prescritiva.
+
+    O portão de emissão só confere existência e vigência, então ele aprovou; e
+    o Analista, obrigado a escolher do dossiê, escolheu o que mais parecia
+    falar de ancoragem.
+    """
+    objetivo = base.obter("NR-35", "Anexo II 1.1")
+    assert base.titulo_da_secao(objetivo) == "Objetivo"
+    assert not dossie.prescritivo(objetivo, base)
+
+    d = dossie.montar(
+        base,
+        ["Sistema de ancoragem sem identificação, empregado como parte da "
+         "proteção contra quedas no trabalho em altura"],
+        contexto="trabalho em altura",
+        quando=HOJE,
+    )
+    citados = [e.item.id for e in d.entradas]
+    assert "NR-35 Anexo II 1.1" not in citados
+    # O item recusado pontuava mais que o dobro do bom: peneirar só depois do
+    # corte relativo esvaziaria o dossiê em vez de trocar o item.
+    assert "NR-35 Anexo II 3.3" in citados, citados
+
+
+def test_filtro_de_nao_prescritivo_nao_alcanca_a_taxonomia_curada(base):
+    """Curadoria à mão manda mais que heurística: a NR-09 9.6.1 é disposição
+    transitória e está mapeada de propósito."""
+    refs = {ref for risco in catalogo_riscos().values() for ref in risco.itens}
+    barrados = sorted(
+        ref for ref in refs
+        if not dossie.prescritivo(base.obter(*ref.split(" ", 1)), base)
+    )
+    assert barrados == [], barrados
+    assert dossie.prescritivo(base.obter("NR-09", "9.6.1"), base)
+
+
+def test_item_prescritivo_continua_no_dossie(base):
+    """O filtro não pode cortar o comando normativo comum."""
+    for nr, num in (("NR-18", "18.9.4.1"), ("NR-35", "Anexo III 5.2.2.5"),
+                    ("NR-12", "12.5.16"), ("NR-06", "6.3.1")):
+        item = base.obter(nr, num)
+        assert item is not None, f"{nr} {num}"
+        assert dossie.prescritivo(item, base), f"{nr} {num} barrado"
