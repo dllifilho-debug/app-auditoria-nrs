@@ -413,6 +413,9 @@ REGRAS INEGOCIÁVEIS
 5. "constatacao" descreve o que a foto mostra e por que aquilo descumpre o item — sem adjetivo
    dramático, sem "gravíssimo", sem "risco iminente de morte".
 6. Um item, uma não conformidade. Não repita o mesmo item.
+7. "conformidades" só aceita proteção que o fato descreva como rígida, contínua e íntegra.
+   Barreira flexível, rasgada, frouxa, baixa ou presa em poucos pontos NUNCA é conformidade:
+   se preocupa, vai para "sem_enquadramento".
 
 Responda SOMENTE com este JSON:
 {{

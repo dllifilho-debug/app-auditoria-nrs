@@ -1280,3 +1280,23 @@ def test_painel_nao_eletrico_nao_vira_quadro_eletrico_aberto():
         visao = Visao(ambiente=ambiente, achados=[Achado(fato)])
         ids = [r.id for r in rotear_riscos(visao)]
         assert "quadro_eletrico_aberto_ou_sem_sinalizacao" not in ids, f"{fato} -> {ids}"
+
+
+def test_lista_de_conformidades_traz_a_ressalva_de_que_nao_e_atestado(base, laudo_demo):
+    """A conformidade falsamente atestada foi o pior erro do lote real.
+
+    Um laudo registrou "proteção coletiva contra quedas" para uma tela de
+    sombreamento pregada numa ripa, na borda de laje de prédio alto. As regras
+    de prompt reduzem a chance disso; a ressalva impressa é a parte que não
+    depende de o modelo obedecer.
+    """
+    import dataclasses
+    laudo = dataclasses.replace(
+        laudo_demo,
+        conformidades=["Barreira instalada na borda da laje, aparentemente contínua."],
+    )
+    md = relatorio.markdown(laudo, base, numero=1)
+    assert "Conformidades observadas" in md
+    assert "não é atestado de conformidade" in md.lower()
+    # e a ressalva tem de sobreviver à renderização impressa
+    assert "não é atestado de conformidade" in relatorio.para_html(md).lower()

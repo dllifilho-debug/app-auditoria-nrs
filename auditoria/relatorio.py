@@ -190,6 +190,16 @@ def markdown(
     if laudo.conformidades:
         p.append("## 4. Conformidades observadas")
         p.append("")
+        # Ressalva de código, não de modelo: num laudo real esta lista atestou
+        # "proteção coletiva contra quedas" para uma tela de sombreamento presa
+        # numa ripa, na borda de laje de prédio alto. Enquanto quem escreve a
+        # lista é um modelo, o documento precisa dizer o que ela não é.
+        p.append(
+            "*Registro do que a imagem sugere em ordem no instante da foto. Não é "
+            "atestado de conformidade do sistema de proteção, cuja adequação depende "
+            "de verificação em campo.*"
+        )
+        p.append("")
         for c in laudo.conformidades:
             p.append(f"- {c}")
         p.append("")
