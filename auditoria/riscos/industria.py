@@ -368,6 +368,13 @@ RISCOS: dict[str, dict] = {
             "ferramenta dentro do quadro",
             "disjuntor a mostra",
             "quadro sem tampa",
+            # Dois radicais, ambos obrigatórios pela cobertura: com sinal
+            # longo ("painel eletrico sem tampa") a cobertura parcial dispensa
+            # justamente o discriminante, e "painel de fôrma de madeira sem
+            # tampa protetora" virava quadro elétrico aberto. Medido.
+            "painel eletrico",
+            "painel elétrico",
+            "painel de comando",
         ],
         "itens": ["NR-10 10.10.1", "NR-12 12.3.5"],
         "gravidade_base": "alta",

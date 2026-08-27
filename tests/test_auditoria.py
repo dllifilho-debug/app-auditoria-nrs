@@ -1183,3 +1183,100 @@ def test_sincronizar_tira_da_lista_de_falhas_a_foto_removida():
     mantidas, descartadas = sincronizar(falhas, ["a.jpg"])
     assert mantidas == [("a.jpg", "erro")]
     assert descartadas == ["b.jpg"]
+
+
+# ---------------------------------------------------------------------------
+# Proteção coletiva: o Olho tem de qualificar a barreira, não nomeá-la
+# ---------------------------------------------------------------------------
+
+def test_prompt_do_olho_preserva_a_sentinela_do_duble():
+    """O ClienteDemonstracao reconhece o Olho por esta frase.
+
+    Se ela mudar, o dublê cai no ramo genérico, a visão volta vazia e o Modo
+    Demonstração morre sem erro nenhum — some da tela, e nenhum teste de
+    pipeline acusa. Vale um teste barato para travar.
+    """
+    from auditoria.pipeline import PROMPT_OLHO
+    assert "perito em documentação fotográfica" in PROMPT_OLHO
+
+
+def test_olho_e_proibido_de_afirmar_finalidade_que_nao_verifica():
+    """A proibição de afirmar material sem verificar valia só para metade.
+
+    "rede de proteção" para uma tela plástica de sinalização é o mesmo erro que
+    "laje de concreto" para uma placa clara — o modelo nomeia o objeto pela
+    função que supõe. Num lote real isso custou três falsos negativos de
+    periferia em prédio alto.
+    """
+    from auditoria.pipeline import PROMPT_OLHO
+    assert "material ou finalidade" in PROMPT_OLHO
+    assert "rede de proteção" in PROMPT_OLHO       # o contraexemplo tem de estar lá
+
+
+def test_barreira_so_roteia_periferia_quando_o_fato_traz_os_atributos(base):
+    """O falso negativo mais caro do lote real, travado nos dois sentidos.
+
+    Enquanto o fato diz "rede de proteção", o roteamento não tem como saber que
+    a barreira é uma tela plástica frouxa: o dossiê sai com item genérico de
+    NR-01 e o enquadramento correto de periferia nunca chega ao Analista.
+    Descritos material, rigidez, fixação e altura, o item certo entra.
+    """
+    ambiente = ("Área de construção civil em fase de alvenaria, localizada em um "
+                "edifício de grande altura com vista para uma cidade.")
+
+    como_saiu = Visao(ambiente=ambiente, achados=[Achado(
+        "Rede de proteção laranja de malha plástica estendida ao longo da borda "
+        "do piso, fixada a uma estrutura vertical."
+    )])
+    assert "periferia_laje_sem_guarda_corpo" not in [r.id for r in rotear_riscos(como_saiu)]
+
+    com_atributos = Visao(ambiente=ambiente, achados=[Achado(
+        "Tela plástica flexível laranja de malha larga estendida ao longo da borda "
+        "do piso, presa a um cone e a uma haste, altura na altura do joelho, sem "
+        "guarda-corpo rigido visivel."
+    )])
+    assert "periferia_laje_sem_guarda_corpo" in [r.id for r in rotear_riscos(com_atributos)]
+
+    from auditoria.pipeline import montar_dossie
+    dossie_final, _ = montar_dossie(base, com_atributos, contexto="", quando=HOJE)
+    refs = {f"{e.item.nr} {e.item.item}" for e in dossie_final.entradas}
+    assert "NR-18 18.9.4" in refs, f"periferia sem o item de anteparo rígido: {refs}"
+
+
+def test_painel_eletrico_e_quadro_eletrico_abrem_o_mesmo_dossie(base):
+    """Uma palavra decidia entre laudo e nada.
+
+    "quadro elétrico" roteava o risco e trazia sete itens; "painel elétrico" —
+    o mesmo objeto, outro nome de campo — deixava o dossiê vazio, e o pipeline
+    abortava depois de já ter pago a chamada da visão.
+    """
+    from auditoria.pipeline import montar_dossie
+
+    def refs(palavra):
+        visao = Visao(
+            ambiente="Setor industrial com equipamentos elétricos instalados",
+            achados=[Achado(f"{palavra} com orifício circular vazio sem tampa")],
+        )
+        dossie_final, _ = montar_dossie(base, visao, contexto="", quando=HOJE)
+        return {f"{e.item.nr} {e.item.item}" for e in dossie_final.entradas}
+
+    assert refs("Painel elétrico") == refs("Quadro elétrico") != set()
+
+
+def test_painel_nao_eletrico_nao_vira_quadro_eletrico_aberto():
+    """A armadilha de sempre: palavra de obra que colide com termo elétrico.
+
+    Com o sinal escrito por extenso ("painel eletrico sem tampa"), a cobertura
+    parcial do roteador dispensava justamente o radical discriminante, e um
+    painel de fôrma de madeira sem tampa protetora virava quadro elétrico
+    aberto — item verdadeiro, situação errada.
+    """
+    for ambiente, fato in (
+        ("Fachada de edifício comercial concluído",
+         "Painel de vidro temperado sem tampa de acabamento no montante"),
+        ("Área de concretagem com formas montadas",
+         "Painel de fôrma de madeira apoiado contra a parede, sem tampa protetora"),
+    ):
+        visao = Visao(ambiente=ambiente, achados=[Achado(fato)])
+        ids = [r.id for r in rotear_riscos(visao)]
+        assert "quadro_eletrico_aberto_ou_sem_sinalizacao" not in ids, f"{fato} -> {ids}"

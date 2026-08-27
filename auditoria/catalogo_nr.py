@@ -354,6 +354,12 @@ CATALOGO_NR: dict[str, dict] = {
             "quadro elétrico",
             "quadro de distribuicao",
             "quadro de distribuição",
+            # Sempre em duas palavras: "painel" sozinho casa com painel de
+            # vidro, de fachada e de fôrma — a armadilha de "carcaça"/"faca".
+            "painel eletrico",
+            "painel elétrico",
+            "painel de comando",
+            "quadro de comando",
             "fiacao exposta",
             "fiação exposta",
             "cabo desencapado",
