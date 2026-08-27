@@ -219,10 +219,13 @@ def markdown(
     p.append(
         f"- Veredito da revisão técnica: "
         f"**{'aprovado sem vetos' if laudo.aprovado else f'{len(laudo.vetos)} enquadramento(s) vetado(s)'}**"
+        + (f", {len(laudo.aparos)} constatação(ões) aparada(s)" if laudo.aparos else "")
     )
     if laudo.vetos:
         for v in laudo.vetos:
             p.append(f"  - Vetado — {v}")
+    for a in laudo.aparos:
+        p.append(f"  - Aparada — {a}")
     if laudo.afericoes:
         p.append("- Descartes da aferição automática:")
         for a in laudo.afericoes:

@@ -93,6 +93,19 @@ PREFERENCIAS = [
     ),
 ]
 
+# O supervisor apara a constatação da madeira: o fato registra prego aparente,
+# não registra que ninguém os retirou antes do empilhamento. Aparar mantém a não
+# conformidade de pé em vez de derrubá-la inteira por causa da cláusula a mais.
+APARO_DEMO = [{
+    "ref": "V2",
+    "constatacao": "As peças de madeira estão empilhadas com pregos aparentes voltados para cima, "
+                   "na área de circulação.",
+    "acao_corretiva": "Rebater ou retirar os pregos expostos e reorganizar a pilha em local "
+                      "delimitado, fora da via de circulação.",
+    "gravidade": "alta",
+    "retirado": "afirmação de que os pregos não foram retirados antes do empilhamento",
+}]
+
 PARECER_DEMO = (
     "O risco predominante do local é a abertura no piso com fechamento não travado, "
     "que caracteriza exposição a queda com altura desconhecida e exige providência imediata. "
@@ -129,6 +142,7 @@ class ClienteDemonstracao:
                         for rotulo in re.findall(r"\[(V\d+)\]", prompt)
                     ],
                     "vetados": [],
+                    "aparados": APARO_DEMO,
                     "ajustes": [],
                     "pontos_descartados": [],
                     "conformidades_descartadas": [],

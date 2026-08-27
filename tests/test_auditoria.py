@@ -7,6 +7,7 @@ cobrança de EPI sem gente na foto, enquadramento fora de tema.
 
 from __future__ import annotations
 
+import json
 import re
 import sys
 from datetime import date
@@ -18,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from auditoria import relatorio
 from auditoria.catalogo_nr import CATALOGO_NR, NRS_REVOGADAS, NRS_VIGENTES
-from auditoria.demo import ClienteDemonstracao
+from auditoria.demo import ClienteDemonstracao, _texto_do_prompt
 from auditoria.kb import carregar_base, extrair_citacoes, tokenizar
 from auditoria.pipeline import (
     Achado, Configuracao, Visao, aferir, executar, rotear_riscos,
@@ -1300,3 +1301,151 @@ def test_lista_de_conformidades_traz_a_ressalva_de_que_nao_e_atestado(base, laud
     assert "não é atestado de conformidade" in md.lower()
     # e a ressalva tem de sobreviver à renderização impressa
     assert "não é atestado de conformidade" in relatorio.para_html(md).lower()
+
+
+# ---------------------------------------------------------------------------
+# Veto que apara em vez de derrubar
+#
+# Cenário real do lote de 14 fotos: escada apoiada sobre entulho. O mesmo fato,
+# dois itens diferentes do dossiê, duas respostas certas opostas — é isso que
+# separa "aparar" de "vetar", e é por isso que o aparo não pode ser aplicado sem
+# reconferir o texto oficial do item.
+# ---------------------------------------------------------------------------
+
+FATO = ("Escada portátil de alumínio com os montantes apoiados sobre entulho e sobras "
+        "de material, base fora do nível")
+
+
+class _Duble:
+    """Olho vê a escada; Analista enquadra no item pedido; Diretor responde `veredito`."""
+
+    ultimo_corte_por_limite = False
+
+    def __init__(self, item_alvo: str, constatacao: str, veredito_fn):
+        self.item_alvo, self.constatacao, self.veredito_fn = item_alvo, constatacao, veredito_fn
+        self.prompt_diretor = ""
+
+    def conversar(self, modelo, mensagens, teto_saida=1200, temperatura=0.0, json_estrito=False):
+        p = _texto_do_prompt(mensagens)
+        if "perito em documentação fotográfica" in p:
+            return json.dumps({
+                "ambiente": "canteiro de obra em pavimento em construção",
+                "pessoas": {"presentes": False, "quantidade": 0},
+                "achados": [{"fato": FATO, "onde": "centro", "confianca": "alta"}],
+            }, ensure_ascii=False)
+        if "DOSSIÊ NORMATIVO" in p:
+            rotulo = dict(
+                (num, rot) for rot, num in re.findall(r"\[(D\d+)\]\s+(NR-\d{2}(?: Anexo [IVX]+)? \S+)", p)
+            )
+            alvo = rotulo[self.item_alvo]
+            return json.dumps({
+                "nao_conformidades": [{
+                    "dossie": alvo, "constatacao": self.constatacao,
+                    "consequencia": "Queda do trabalhador por escorregamento da escada.",
+                    "gravidade": "alta", "acao_corretiva":
+                        "Instalar sapatas antiderrapantes e reposicionar a escada em piso firme.",
+                    "prazo_dias": 7,
+                }],
+                "sem_enquadramento": [], "conformidades": [],
+            }, ensure_ascii=False)
+        self.prompt_diretor = p
+        return json.dumps(self.veredito_fn(), ensure_ascii=False)
+
+
+CONSTATACAO = ("A escada portátil está apoiada sobre entulho, com a base fora do nível, "
+               "e não possui sapatas antiderrapantes.")
+
+
+def _rodar(base, item_alvo, veredito_fn):
+    duble = _Duble(item_alvo, CONSTATACAO, veredito_fn)
+    laudo = executar(duble, base, "img", "",
+                     Configuracao(modelo_visao="d", modelo_texto="d", data_referencia=HOJE))
+    return laudo, duble
+
+
+def test_aparo_salva_o_enquadramento_que_o_fato_sustenta(base):
+    """NR-35 Anexo III 5.2.2.5 exige piso estável E sapata: cortada a cláusula da
+    sapata, o que sobra ainda descumpre o item — vetar tudo zerava o laudo."""
+    laudo, _ = _rodar(base, "NR-35 Anexo III 5.2.2.5", lambda: {
+        "conferencia": [{"ref": "V1", "fato": FATO, "decisao": "aparado"}],
+        "aparados": [{
+            "ref": "V1",
+            "constatacao": "A escada portátil está apoiada sobre entulho, com a base fora do nível.",
+            "acao_corretiva": "Reposicionar a escada sobre piso estável e nivelado.",
+            "gravidade": "alta",
+            "retirado": "ausência de sapata antiderrapante, não observável no fato",
+        }],
+        "vetados": [], "ajustes": [], "pontos_descartados": [],
+        "conformidades_descartadas": [], "parecer": "Apoio instável da escada.",
+    })
+    assert len(laudo.nao_conformidades) == 1, "o achado evaporou"
+    nc = laudo.nao_conformidades[0]
+    assert nc.item.item == "Anexo III 5.2.2.5"
+    assert "sapata" not in nc.constatacao.lower()
+    assert "entulho" in nc.constatacao
+    assert "sapata" not in nc.acao_corretiva.lower()
+    assert laudo.aparos and "retirado" in laudo.aparos[0]
+    md = relatorio.markdown(laudo, base, numero=1)
+    assert "Aparada — NR-35 Anexo III 5.2.2.5" in md
+
+
+def test_veto_continua_certo_quando_o_item_exigia_justamente_o_que_foi_cortado(base):
+    """NR-18 18.8.6.12 trata SÓ de sapata antiderrapante: sem o fato da sapata,
+    o que sobra não descumpre este item — aqui vetar é o certo."""
+    laudo, _ = _rodar(base, "NR-18 18.8.6.12", lambda: {
+        "conferencia": [{"ref": "V1", "fato": FATO, "decisao": "vetado"}],
+        "aparados": [],
+        "vetados": [{
+            "ref": "V1",
+            "motivo": "o fato não registra a base da escada; sem isso o item não se descumpre",
+            "observacao": "Não é possível determinar pela imagem se a escada possui sapatas "
+                          "antiderrapantes; verificar no local.",
+        }],
+        "ajustes": [], "pontos_descartados": [],
+        "conformidades_descartadas": [], "parecer": "Nada se sustentou.",
+    })
+    assert laudo.nao_conformidades == []
+    junto = " ".join(laudo.sem_enquadramento)
+    assert "Não é possível determinar pela imagem" in junto
+    assert "não possui sapatas antiderrapantes" not in junto, "afirmação vetada vazou"
+    assert "recusado na supervisão" in junto
+
+
+def test_prompt_do_diretor_traz_o_texto_oficial_para_decidir_o_aparo(base):
+    _, duble = _rodar(base, "NR-35 Anexo III 5.2.2.5", lambda: {
+        "conferencia": [], "aparados": [], "vetados": [], "ajustes": [],
+        "pontos_descartados": [], "conformidades_descartadas": [], "parecer": "p",
+    })
+    assert "TEXTO OFICIAL" in duble.prompt_diretor
+    assert "apoiada em piso estável" in duble.prompt_diretor
+
+
+def test_aparo_nao_deixa_o_modelo_escrever_citacao(base):
+    laudo, _ = _rodar(base, "NR-35 Anexo III 5.2.2.5", lambda: {
+        "conferencia": [], "aparados": [{
+            "ref": "V1",
+            "constatacao": "Escada apoiada sobre entulho, em desacordo com a NR-35, item 5.2.2.5.",
+            "acao_corretiva": "Reposicionar conforme NR-18 18.8.6.12.",
+            "retirado": "cláusula da NR-18 18.8.6.12 sobre sapatas",
+        }], "vetados": [], "ajustes": [], "pontos_descartados": [],
+        "conformidades_descartadas": [], "parecer": "p",
+    })
+    nc = laudo.nao_conformidades[0]
+    assert "NR-35" not in nc.constatacao and "5.2.2.5" not in nc.constatacao
+    assert "NR-18" not in nc.acao_corretiva and "18.8.6.12" not in nc.acao_corretiva
+    assert "18.8.6.12" not in " ".join(laudo.aparos)
+    md = relatorio.markdown(laudo, base, numero=1)
+    assert "NR-35, item Anexo III 5.2.2.5" not in md.replace("`", "")  # citação inventada
+    assert "`Anexo III 5.2.2.5`" in md  # a citação do código continua lá
+
+
+def test_gravidade_reescrita_nunca_deixa_prazo_incoerente(base):
+    """Ajuste que SOBE a gravidade deixava 'crítica' com prazo de 7 dias."""
+    laudo, _ = _rodar(base, "NR-35 Anexo III 5.2.2.5", lambda: {
+        "conferencia": [], "aparados": [],
+        "vetados": [], "ajustes": [{"ref": "V1", "gravidade": "critica"}],
+        "pontos_descartados": [], "conformidades_descartadas": [], "parecer": "p",
+    })
+    nc = laudo.nao_conformidades[0]
+    assert nc.gravidade == "critica"
+    assert nc.prazo_dias == 1, f"crítica com prazo de {nc.prazo_dias} dias"

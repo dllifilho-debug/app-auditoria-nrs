@@ -84,6 +84,7 @@ class Laudo:
     parecer_diretor: str = ""
     ciclos: int = 1
     vetos: list[str] = field(default_factory=list)
+    aparos: list[str] = field(default_factory=list)
     afericoes: list[str] = field(default_factory=list)
     data_referencia: date = field(default_factory=date.today)
     tokens: int = 0
@@ -625,26 +626,42 @@ CONFORMIDADES PROPOSTAS
 {conformidades}
 
 PARTE 1 — CONFERÊNCIA OBRIGATÓRIA DOS ENQUADRAMENTOS
-Para CADA [V<n>], antes de decidir qualquer coisa, copie o trecho LITERAL do fato
-da lista acima que sustenta a constatação. Copiar, não resumir nem parafrasear.
-Se você não encontrar um fato que sustente a constatação inteira, o enquadramento
-está vetado — sem exceção. Esta conferência é o que separa o que a câmera
-registrou do que soa plausível: "escada apoiada no piso" NÃO sustenta "sem sapata
-antiderrapante", e "madeira empilhada" NÃO sustenta "sem retirada de pregos".
+Para CADA [V<n>], copie em "fato" o trecho LITERAL da lista de fatos que sustenta a
+constatação — copiar, não resumir. Compare oração por oração e decida entre três:
 
-PARTE 2 — VETE um enquadramento quando:
+APROVADO — tudo o que a constatação afirma está no trecho copiado.
+APARADO — o trecho sustenta PARTE da constatação e o resto é suposição. NÃO derrube o
+  conjunto por causa da parte: em "aparados", reescreva a constatação restrita ao que o
+  trecho diz e ajuste a ação corretiva a ela. "Escada apoiada sobre entulho, com a base
+  fora do nível" sustenta apoio instável; "sem sapata antiderrapante" é suposição e sai
+  da frase. O que sobrou continua sendo não conformidade e continua no laudo.
+VETADO — nenhum trecho sustenta a constatação; OU a versão aparada já não descumpre o
+  TEXTO OFICIAL daquele item. Confira sempre este segundo caso: o enquadramento aparado
+  aponta o MESMO item, então releia o TEXTO OFICIAL do bloco [V<n>] e pergunte se o que
+  sobrou o descumpre. Se o item exigia justamente a parte que você cortou, vete —
+  situação errada num item verdadeiro é o pior erro, porque sobrevive à conferência.
+
+MOLDURA — a constatação só pode afirmar que algo NÃO existe se aquilo apareceria neste
+recorte fotográfico caso existisse. Ancoragem na cobertura, aterramento dentro do quadro,
+projeto na pasta do engenheiro, sapata sob entulho: fora da moldura, "sem evidência de X"
+não é fato, é o limite da foto — trate como suposição, apare, e vete só se nada sobrar.
+Escreva o que saiu por aqui em "observacao", como verificação ("não é possível determinar
+pela imagem se há X; verificar no local"), nunca como afirmação. Isto NÃO vale contra a
+falta que a foto mostra: borda que aparece inteira e sem guarda-corpo é fato — aprove.
+
+PARTE 2 — VETE também quando:
 a) o texto do item NÃO trata da situação descrita (o erro mais comum e o mais grave).
    Item que regula documento, inventário, treinamento ou registro NUNCA enquadra
    condição física de uma foto;
-b) a conferência da Parte 1 não achou fato que sustente a constatação;
-c) cobra EPI, treinamento ou conduta sem trabalhador visível na cena;
-d) a linguagem é alarmista ou a gravidade está inflada frente ao que se vê.
+b) cobra EPI, treinamento ou conduta sem trabalhador visível na cena;
+c) a linguagem é alarmista ou a gravidade está inflada frente ao que se vê.
 
 A gravidade deve ser coerente entre os enquadramentos do mesmo laudo: se dois
 enquadramentos descrevem o MESMO problema físico, devem ter a mesma gravidade e
 o mesmo prazo. Ajuste quando divergirem.
 
-APROVE o que estiver correto, mesmo que simples. Vetar o que está certo também é erro.
+APROVE o que estiver correto, mesmo que simples. Vetar o que está certo também é erro:
+aparar existe para você não ter de escolher entre aprovar o exagero e perder o achado.
 
 PARTE 3 — DESCARTE ponto de atenção [P<n>] quando:
 - for inventário da foto, e não risco: objeto em estado normal para uma obra em
@@ -660,12 +677,13 @@ o mesmo objeto.
 
 Responda SOMENTE com este JSON:
 {{
-  "conferencia": [{{"ref": "V<n>", "fato": "<trecho literal do fato que sustenta, ou vazio se não houver>"}}],
-  "vetados": [{{"ref": "V<n>", "motivo": "<por que não se sustenta>"}}],
+  "conferencia": [{{"ref": "V<n>", "fato": "<trecho literal que sustenta, ou vazio>", "decisao": "aprovado|aparado|vetado"}}],
+  "aparados": [{{"ref": "V<n>", "constatacao": "<reescrita, restrita ao trecho copiado>", "acao_corretiva": "<reescrita compatível>", "gravidade": "critica|alta|media|baixa", "retirado": "<a cláusula sem lastro que saiu, em poucas palavras>"}}],
+  "vetados": [{{"ref": "V<n>", "motivo": "<por que não se sustenta>", "observacao": "<a condição reescrita como verificação, ou vazio>"}}],
   "ajustes": [{{"ref": "V<n>", "constatacao": "<reescrita, ou omita>", "acao_corretiva": "<reescrita, ou omita>", "gravidade": "critica|alta|media|baixa"}}],
   "pontos_descartados": [{{"ref": "P<n>", "motivo": "<por que sai>"}}],
   "conformidades_descartadas": [{{"ref": "C<n>", "motivo": "<por que sai>"}}],
-  "parecer": "<2-3 frases sobre o risco predominante, considerando APENAS o que você aprovou. Se vetou tudo, diga que nada se sustentou — não descreva achados que você mesmo derrubou. Escreva para o engenheiro que vai ler o laudo: nunca mencione os rótulos V, P ou C>"
+  "parecer": "<2-3 frases sobre o risco predominante, considerando APENAS o que você aprovou ou aparou. Se vetou tudo, diga que nada se sustentou — não descreva achados que você mesmo derrubou. Escreva para o engenheiro que vai ler o laudo: nunca mencione os rótulos V, P ou C>"
 }}"""
 
 SEM_ITENS = "(nenhum)"
@@ -835,7 +853,8 @@ def executar(
         aprovadas, recusas = aferir(proposta, dossie_atual, origem, visao, quando)
         laudo.afericoes = recusas
         laudo.sem_enquadramento = [
-            str(s).strip() for s in proposta.get("sem_enquadramento", []) if str(s).strip()
+            _limpar_citacoes(str(s).strip())
+            for s in proposta.get("sem_enquadramento", []) if str(s).strip()
         ]
         laudo.conformidades = [
             str(s).strip() for s in proposta.get("conformidades", []) if str(s).strip()
@@ -877,8 +896,17 @@ def executar(
                 _limpar_citacoes(str(v.get("motivo", "")).strip())
             for v in veredito.get("vetados", [])
         }
+        observacoes = {
+            str(v.get("ref", "")).strip().upper():
+                _limpar_citacoes(str(v.get("observacao", "")).strip())
+            for v in veredito.get("vetados", [])
+            if str(v.get("observacao", "")).strip()
+        }
         ajustes = {
             str(a.get("ref", "")).strip().upper(): a for a in veredito.get("ajustes", [])
+        }
+        aparados = {
+            str(a.get("ref", "")).strip().upper(): a for a in veredito.get("aparados", [])
         }
 
         sobreviventes: list[NaoConformidade] = []
@@ -892,11 +920,23 @@ def executar(
                 # citado para ele estava errado — deixá-lo evaporar seria perder
                 # a informação que mais importa ao inspetor.
                 laudo.sem_enquadramento.append(
-                    f"{nc.constatacao} (enquadramento proposto em "
+                    f"{observacoes.get(ref) or nc.constatacao} (enquadramento proposto em "
                     f"{nc.item.nr} {nc.item.item} foi recusado na supervisão: "
                     f"{vetados[ref].rstrip('.')})"
                 )
                 continue
+            if (aparo := aparados.get(ref)) and str(aparo.get("constatacao", "")).strip():
+                retirado = _limpar_citacoes(str(aparo.get("retirado", "")).strip()).rstrip(".")
+                laudo.aparos.append(
+                    f"{nc.item.nr} {nc.item.item}: constatação restrita ao fato registrado"
+                    + (f" — retirado: {retirado}" if retirado else "")
+                )
+                nc.constatacao = _limpar_citacoes(str(aparo["constatacao"]).strip())
+                if (novo := str(aparo.get("acao_corretiva", "")).strip()):
+                    nc.acao_corretiva = _limpar_citacoes(novo)
+                if str(aparo.get("gravidade", "")).lower() in GRAVIDADE_ORDEM:
+                    nc.gravidade = str(aparo["gravidade"]).lower()
+                nc.prazo_dias = min(nc.prazo_dias, PRAZO_SUGERIDO[nc.gravidade])
             if (ajuste := ajustes.get(ref)):
                 if (novo := str(ajuste.get("constatacao", "")).strip()):
                     nc.constatacao = _limpar_citacoes(novo)
@@ -904,6 +944,7 @@ def executar(
                     nc.acao_corretiva = _limpar_citacoes(novo)
                 if str(ajuste.get("gravidade", "")).lower() in GRAVIDADE_ORDEM:
                     nc.gravidade = str(ajuste["gravidade"]).lower()
+                    nc.prazo_dias = min(nc.prazo_dias, PRAZO_SUGERIDO[nc.gravidade])
             sobreviventes.append(nc)
 
         sobreviventes.sort(key=lambda x: (x.prioridade, x.item.nr, x.item.item))
