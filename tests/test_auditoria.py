@@ -1145,3 +1145,41 @@ def test_gravidade_sai_como_texto_e_nao_como_cor(base, laudo_demo):
     assert "Crítica" in texto or "Alta" in texto or "Média" in texto
     for chave, rotulo in relatorio.SELOS.items():
         assert isinstance(rotulo, str), f"{chave} devia ser texto puro, veio {rotulo!r}"
+
+
+# ---------------------------------------------------------------------------
+# Imagem que entrou no lote e não virou laudo não pode desaparecer do sumário
+# ---------------------------------------------------------------------------
+
+def test_sumario_declara_as_imagens_nao_auditadas(base, laudo_demo):
+    """Foto que falhou tem de aparecer no documento, não sumir em silêncio.
+
+    Um lote de 17 fotos com 3 falhas emitia um sumário dizendo "14 imagens
+    analisadas", sem nenhuma menção às outras: quem lesse o laudo entenderia
+    que as 14 eram o lote inteiro e que nas demais não havia achado.
+    """
+    texto = relatorio.consolidado(
+        [("foto_1.jpg", laudo_demo)], base, HOJE,
+        nao_auditadas=[("foto_2.jpg", "cota diária esgotada"),
+                       ("foto_3.jpg", "falha de rede")],
+    )
+    assert "Imagens não auditadas" in texto
+    assert "foto_2.jpg" in texto and "foto_3.jpg" in texto
+    assert "cota diária esgotada" in texto
+    assert "1 de 3 enviadas" in texto           # o cabeçalho não pode dizer só "1"
+    assert "não significa ausência de risco" in texto
+
+
+def test_sumario_sem_falhas_nao_inventa_secao(base, laudo_demo):
+    texto = relatorio.consolidado([("foto_1.jpg", laudo_demo)], base, HOJE)
+    assert "Imagens não auditadas" not in texto
+    assert "**Imagens analisadas:** 1" in texto
+
+
+def test_sincronizar_tira_da_lista_de_falhas_a_foto_removida():
+    """A mesma regra dos laudos vale para as falhas: foto fora do lote, fora do sumário."""
+    from auditoria.lote import sincronizar
+    falhas = [("a.jpg", "erro"), ("b.jpg", "erro")]
+    mantidas, descartadas = sincronizar(falhas, ["a.jpg"])
+    assert mantidas == [("a.jpg", "erro")]
+    assert descartadas == ["b.jpg"]

@@ -377,11 +377,21 @@ CUSTO_POR_FOTO = {"Rápido": 5_000, "Padrão": 7_100, "Máximo": 7_300}
 if "resultados" not in st.session_state:
     st.session_state.resultados = []
 
+# Imagem que entrou no lote e não produziu laudo precisa sobreviver à execução:
+# antes ela só aparecia como erro na tela, sumia no rerun seguinte e ficava de
+# fora do sumário — o laudo então dizia "14 imagens analisadas" para um lote de
+# 17, e as três que faltavam se liam como fotos sem achado.
+if "falhas" not in st.session_state:
+    st.session_state.falhas = []
+
 # Foto retirada do seletor sai também dos resultados: manter o laudo de uma
 # imagem que já não está no lote faria o sumário e o plano de ação contarem
 # conteúdo que o inspetor removeu de propósito.
 st.session_state.resultados, descartadas = lote.sincronizar(
     st.session_state.resultados, [a.name for a in arquivos or []]
+)
+st.session_state.falhas, _ = lote.sincronizar(
+    st.session_state.falhas, [a.name for a in arquivos or []]
 )
 if descartadas:
     st.toast(
@@ -448,6 +458,7 @@ if executar_agora:
 
     if refazer:
         st.session_state.resultados = []
+        st.session_state.falhas = []
         fila = list(arquivos)
     else:
         fila = pendentes
@@ -455,6 +466,12 @@ if executar_agora:
     auditadas_antes = len(st.session_state.resultados)
     barra = st.progress(0.0, text="Iniciando…")
     interrompido = None
+
+    def registrar_falha(nome: str, motivo: str) -> None:
+        """Guarda a imagem que não virou laudo, sem duplicar em nova tentativa."""
+        st.session_state.falhas = [
+            f for f in st.session_state.falhas if f[0] != nome
+        ] + [(nome, motivo)]
 
     for indice, arquivo in enumerate(fila):
         rotulo = f"{arquivo.name} ({indice + 1}/{len(fila)})"
@@ -468,6 +485,9 @@ if executar_agora:
                     progresso=lambda m: st.write(m),
                 )
                 st.session_state.resultados.append((arquivo.name, laudo, miniatura))
+                st.session_state.falhas = [
+                    f for f in st.session_state.falhas if f[0] != arquivo.name
+                ]
                 achadas = len(laudo.nao_conformidades)
                 if laudo.visao_falhou:
                     # Resposta crua à vista: sem ela, "o modelo não viu nada" e
@@ -488,6 +508,7 @@ if executar_agora:
             except ErroDeAuditoria as erro:
                 painel.update(label=f"{rotulo} — falhou", state="error")
                 st.error(f"**{erro.mensagem}**" + (f"\n\n{erro.sugestao}" if erro.sugestao else ""))
+                registrar_falha(arquivo.name, erro.mensagem)
                 if not erro.recuperavel:
                     interrompido = (arquivo.name, erro)
                     break
@@ -496,6 +517,7 @@ if executar_agora:
                 painel.update(label=f"{rotulo} — falhou", state="error")
                 st.error(f"**{traduzido.mensagem}**" +
                          (f"\n\n{traduzido.sugestao}" if traduzido.sugestao else ""))
+                registrar_falha(arquivo.name, traduzido.mensagem)
 
     barra.progress(1.0, text="Concluído.")
 
@@ -534,6 +556,15 @@ if executar_agora:
 
 resultados = st.session_state.resultados
 
+if st.session_state.falhas and not resultados:
+    # Lote inteiro falhou: sem este aviso a tela volta ao estado inicial no rerun
+    # seguinte e não sobra vestígio de que alguma coisa foi tentada.
+    st.divider()
+    st.error(
+        "**Nenhuma imagem do lote foi auditada.** Falharam: "
+        + ", ".join(f"`{n}` ({m})" for n, m in st.session_state.falhas)
+    )
+
 if resultados:
     st.divider()
 
@@ -543,8 +574,21 @@ if resultados:
     )
     normas = {nc.item.nr for _, l, _ in resultados for nc in l.nao_conformidades}
 
+    if st.session_state.falhas:
+        # Antes este aviso não existia e as imagens que falharam sumiam no rerun:
+        # o lote parecia completo com fotos que ninguém examinou.
+        nomes = ", ".join(f"`{n}`" for n, _ in st.session_state.falhas)
+        st.error(
+            f"**{len(st.session_state.falhas)} imagem(ns) do lote não foi(ram) "
+            f"auditada(s):** {nomes}. Elas constam no sumário como não auditadas. "
+            "Executar de novo tenta só as que faltam."
+        )
+
     m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Imagens analisadas", len(resultados))
+    m1.metric("Imagens analisadas", len(resultados),
+              delta=(f"-{len(st.session_state.falhas)} não auditada(s)"
+                     if st.session_state.falhas else None),
+              delta_color="inverse" if st.session_state.falhas else "off")
     m2.metric("Não conformidades", total)
     m3.metric("Críticas", criticas, delta="ação imediata" if criticas else None,
               delta_color="inverse" if criticas else "off")
@@ -552,10 +596,12 @@ if resultados:
 
     if st.button("Limpar todos os resultados", help="Recomeça o lote do zero."):
         st.session_state.resultados = []
+        st.session_state.falhas = []
         st.rerun()
 
     texto_consolidado = relatorio.consolidado(
-        [(nome, laudo) for nome, laudo, _ in resultados], base, data_inspecao
+        [(nome, laudo) for nome, laudo, _ in resultados], base, data_inspecao,
+        nao_auditadas=st.session_state.falhas,
     )
 
     aba_resumo, *abas = st.tabs(
