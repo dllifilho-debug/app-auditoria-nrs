@@ -1449,3 +1449,34 @@ def test_gravidade_reescrita_nunca_deixa_prazo_incoerente(base):
     nc = laudo.nao_conformidades[0]
     assert nc.gravidade == "critica"
     assert nc.prazo_dias == 1, f"crítica com prazo de {nc.prazo_dias} dias"
+
+
+def test_escada_com_apoio_instavel_roteia_sem_depender_do_fraseado():
+    """O que a foto mostra da escada é o apoio, não a sapata.
+
+    Os sinais cadastrados descreviam a escada pelo defeito da própria escada
+    ("bamba", "sem sapata", "degrau quebrado"). O apoio instável — que é o
+    fato observável, e o que sobra depois de o supervisor aparar a cláusula da
+    sapata — dependia de a frase cair perto de "escada apoiada solta na parede".
+    """
+    for fato in (
+        "Escada portatil com a base assentada sobre entulho solto",
+        "Base da escada desnivelada sobre restos de tijolo",
+    ):
+        visao = Visao(ambiente="Interior de edificação em construção",
+                      achados=[Achado(fato)])
+        assert "escada_mao_irregular" in [r.id for r in rotear_riscos(visao)], fato
+
+
+def test_escada_fixa_de_concreto_nao_vira_escada_de_mao():
+    """Contraparte obrigatória: escada fixa não é escada de mão.
+
+    Com o sinal escrito por extenso ("escada apoiada em piso irregular"), a
+    cobertura parcial dispensava justamente "apoiada", e uma escada fixa de
+    concreto num piso desgastado disparava o risco de escada portátil.
+    """
+    visao = Visao(
+        ambiente="Edifício concluído",
+        achados=[Achado("Escada fixa de concreto com corrimao, piso irregular por desgaste")],
+    )
+    assert "escada_mao_irregular" not in [r.id for r in rotear_riscos(visao)]

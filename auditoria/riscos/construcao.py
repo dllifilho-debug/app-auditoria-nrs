@@ -318,6 +318,13 @@ RISCOS: dict[str, dict] = {
             "escada curta demais",
             "escada apoiada solta na parede",
             "escada de um montante so",
+            # O apoio instável é o que a foto realmente mostra — a sapata quase
+            # nunca aparece. Sinais curtos de propósito: com "escada apoiada em
+            # piso irregular" a cobertura parcial dispensava "apoiada", e uma
+            # escada FIXA de concreto com piso desgastado virava escada de mão.
+            "escada sobre entulho",
+            "base da escada desnivelada",
+            "escada com base instavel",
         ],
         "itens": [
             "NR-18 18.8.6.13",
