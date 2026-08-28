@@ -190,6 +190,16 @@ def markdown(
     if laudo.conformidades:
         p.append("## 4. Conformidades observadas")
         p.append("")
+        # Ressalva de código, não de modelo: num laudo real esta lista atestou
+        # "proteção coletiva contra quedas" para uma tela de sombreamento presa
+        # numa ripa, na borda de laje de prédio alto. Enquanto quem escreve a
+        # lista é um modelo, o documento precisa dizer o que ela não é.
+        p.append(
+            "*Registro do que a imagem sugere em ordem no instante da foto. Não é "
+            "atestado de conformidade do sistema de proteção, cuja adequação depende "
+            "de verificação em campo.*"
+        )
+        p.append("")
         for c in laudo.conformidades:
             p.append(f"- {c}")
         p.append("")
@@ -209,10 +219,13 @@ def markdown(
     p.append(
         f"- Veredito da revisão técnica: "
         f"**{'aprovado sem vetos' if laudo.aprovado else f'{len(laudo.vetos)} enquadramento(s) vetado(s)'}**"
+        + (f", {len(laudo.aparos)} constatação(ões) aparada(s)" if laudo.aparos else "")
     )
     if laudo.vetos:
         for v in laudo.vetos:
             p.append(f"  - Vetado — {v}")
+    for a in laudo.aparos:
+        p.append(f"  - Aparada — {a}")
     if laudo.afericoes:
         p.append("- Descartes da aferição automática:")
         for a in laudo.afericoes:
@@ -243,8 +256,19 @@ def markdown(
     return "\n".join(p)
 
 
-def consolidado(laudos: list[tuple[str, Laudo]], base: BaseNormativa, quando: date) -> str:
-    """Sumário executivo de um lote de fotos."""
+def consolidado(
+    laudos: list[tuple[str, Laudo]],
+    base: BaseNormativa,
+    quando: date,
+    nao_auditadas: list[tuple[str, str]] | None = None,
+) -> str:
+    """Sumário executivo de um lote de fotos.
+
+    `nao_auditadas` são as imagens que entraram no lote e não produziram laudo,
+    como (nome, motivo). Elas precisam aparecer no documento: um sumário que diz
+    "14 imagens analisadas" quando o engenheiro enviou 17 deixa três fotos fora
+    do laudo sem que ninguém perceba, e o silêncio se lê como ausência de achado.
+    """
     total = sum(len(l.nao_conformidades) for _, l in laudos)
     por_gravidade: dict[str, int] = {}
     por_nr: dict[str, int] = {}
@@ -257,7 +281,14 @@ def consolidado(laudos: list[tuple[str, Laudo]], base: BaseNormativa, quando: da
     p.append("# Sumário executivo da inspeção")
     p.append("")
     p.append(f"**Data de referência:** {quando:%d/%m/%Y}  ")
-    p.append(f"**Imagens analisadas:** {len(laudos)}  ")
+    if nao_auditadas:
+        enviadas = len(laudos) + len(nao_auditadas)
+        p.append(
+            f"**Imagens analisadas:** {len(laudos)} de {enviadas} enviadas "
+            f"— {len(nao_auditadas)} não auditada(s), ver o fim deste sumário  "
+        )
+    else:
+        p.append(f"**Imagens analisadas:** {len(laudos)}  ")
     p.append(f"**Não conformidades caracterizadas:** {total}")
     p.append("")
 
@@ -297,6 +328,21 @@ def consolidado(laudos: list[tuple[str, Laudo]], base: BaseNormativa, quando: da
         p.append("")
     else:
         p.append("Nenhuma não conformidade foi caracterizada no lote analisado.")
+        p.append("")
+
+    if nao_auditadas:
+        p.append("## Imagens não auditadas")
+        p.append("")
+        p.append(
+            "Estas imagens faziam parte do lote e não produziram laudo. "
+            "**Não foram examinadas** — a ausência de constatação sobre elas não "
+            "significa ausência de risco. Reprocessar antes de dar o lote por concluído."
+        )
+        p.append("")
+        p.append("| Imagem | Motivo |")
+        p.append("|---|---|")
+        for nome, motivo in nao_auditadas:
+            p.append(f"| {nome} | {motivo} |")
         p.append("")
 
     return "\n".join(p)

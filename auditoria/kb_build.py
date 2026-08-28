@@ -35,6 +35,11 @@ MESES = {
 
 # Um item começa numa linha do tipo "18.9.4.2 A proteção..." ou "3.2.a) ..."
 RE_ITEM = re.compile(r"^(\d{1,2}(?:\.\d{1,3})+)\.?\s+(\S.*)$")
+# Dentro de um anexo a numeração recomeça do 1, e a seção tem um nível só:
+# "1. Objetivo", "2. Campo de Aplicação", "13. Máquina sorveteira". RE_ITEM
+# exige dois níveis e não reconhecia essas linhas — elas caíam no corpo do item
+# anterior e o cabeçalho da seção seguinte entrava na citação oficial.
+RE_SECAO_ANEXO = re.compile(r"^\s*(\d{1,2})\.\s+(\S.*?)\s*$")
 # Os PDFs oficiais usam quatro grafias: "ANEXO I", "ANEXO Nº 13-A", "ANEXO "A""
 # e "ANEXO (*)". Só a primeira era reconhecida, e por isso os itens dos demais
 # anexos caíam no corpo da norma e colidiam entre si.
@@ -45,6 +50,10 @@ RE_ANEXO = re.compile(
     re.IGNORECASE,
 )
 RE_ALINEA = re.compile(r"^\s*([a-z])\)\s+(\S.*)$")
+# Cabeçalho sem número. A NR-18 separa os itens com eles ("Escadas portáteis",
+# "Andaime suspenso"), e sem número não há como abrir item: a linha só serve
+# para fechar o anterior, antes que vire cauda da citação oficial.
+RE_SUBTITULO = re.compile(r"^\s*([A-ZÀ-Ú][^.;:,]{4,59})\s*$")
 
 # Palavras curtas legítimas do português — nunca são fragmento de palavra quebrada.
 STOPWORDS_CURTAS = {
@@ -266,6 +275,7 @@ def parsear_norma(nr: str, bruto: str, fonte: str) -> list[ItemNorma]:
     itens: dict[str, ItemNorma] = {}
     anexo_atual: str | None = None
     numero_atual: str | None = None
+    secao_atual: int | None = None
     buffer: list[str] = []
 
     def fechar() -> None:
@@ -280,7 +290,13 @@ def parsear_norma(nr: str, bruto: str, fonte: str) -> list[ItemNorma]:
         # (18.9.2 na NR-18). Dentro de um anexo a numeração recomeça do 1. Isso
         # torna a classificação imune a "ANEXO ..." aparecendo no sumário.
         raiz = int(numero_atual.split(".")[0])
-        no_corpo = raiz == numero_nr and (anexo_atual is None or raiz != _numero_anexo(anexo_atual))
+        # Número de um nível só nunca é item do corpo: RE_ITEM exige dois, então
+        # ele só pode ter vindo de um cabeçalho de seção de anexo.
+        no_corpo = (
+            "." in numero_atual
+            and raiz == numero_nr
+            and (anexo_atual is None or raiz != _numero_anexo(anexo_atual))
+        )
         anexo_do_item = None if no_corpo else anexo_atual
         rotulo = f"Anexo {anexo_do_item} {numero_atual}" if anexo_do_item else numero_atual
         chave = f"{nr} {rotulo}"
@@ -297,11 +313,12 @@ def parsear_norma(nr: str, bruto: str, fonte: str) -> list[ItemNorma]:
             itens[chave] = novo
         numero_atual, buffer = None, []
 
-    for linha in linhas:
+    for n, linha in enumerate(linhas):
         if (m := RE_ANEXO.match(linha)):
             fechar()
             rotulo = next(g for g in m.groups() if g)
             anexo_atual = "*" if rotulo == "(*)" else rotulo.upper()
+            secao_atual = None
             continue
         if (m := RE_ITEM.match(linha.strip())):
             # Texto legal começa em maiúscula. Uma linha como "18.9.4.1 ou
@@ -310,9 +327,25 @@ def parsear_norma(nr: str, bruto: str, fonte: str) -> list[ItemNorma]:
             if _abre_item(m.group(2)):
                 fechar()
                 numero_atual, buffer = m.group(1), [m.group(2)]
+                secao_atual = int(m.group(1).split(".")[0])
                 continue
             if numero_atual is not None:
                 buffer.append(linha.strip())
+            continue
+        if anexo_atual is not None and (m := RE_SECAO_ANEXO.match(linha)) and _abre_secao(m.group(2)):
+            # Só conta como seção o número que sucede o anterior — ou o 1, que
+            # reinicia a contagem depois do sumário. Sem esse encadeamento, uma
+            # linha qualquer que comece por "4. " (primeira linha de um
+            # parágrafo, célula de tabela de carga horária) partiria o item ao
+            # meio e apagaria o resto do texto oficial.
+            numero = int(m.group(1))
+            if numero == 1 or numero == (secao_atual or 0) + 1:
+                fechar()
+                numero_atual, buffer = m.group(1), [m.group(2)]
+                secao_atual = numero
+                continue
+        if _e_subtitulo(linhas, n):
+            fechar()
             continue
         if numero_atual is not None:
             if (m := RE_ALINEA.match(linha)):
@@ -329,6 +362,41 @@ RE_CONTINUACAO = re.compile(r"^(ou|e|de|da|do|das|dos|desta|deste|conforme|que|c
 
 def _numero_anexo(rotulo: str) -> int | None:
     return int(rotulo) if rotulo.isdigit() else None
+
+
+def _e_subtitulo(linhas: list[str], n: int) -> bool:
+    """A linha é um cabeçalho sem número, e não um parágrafo quebrado?
+
+    O que separa os dois: o cabeçalho começa depois de uma linha em branco ou do
+    fim de uma frase, e o texto logo depois dele é a abertura de um item
+    numerado. Um parágrafo partido pelo extrator continua na linha seguinte, que
+    não começa com número de item.
+    """
+    anterior = linhas[n - 1].strip() if n else ""
+    if anterior and not anterior.endswith("."):
+        return False
+    if not RE_SUBTITULO.match(linhas[n]):
+        return False
+    seguinte = next((l for l in linhas[n + 1: n + 4] if l.strip()), None)
+    if seguinte is None:
+        return False
+    m = RE_ITEM.match(seguinte.strip())
+    return bool(m and _abre_item(m.group(2)))
+
+
+def _abre_secao(corpo: str) -> bool:
+    """Decide se a linha é o cabeçalho de uma seção de anexo, e não texto corrido.
+
+    O título de seção é curto, começa em maiúscula e não carrega pontuação de
+    frase. A legenda de figura da NR-12 ("1. trava mecânica do prato giratório")
+    tem a mesma forma numérica e é descartada pela inicial minúscula; a linha de
+    tabela ("3 02 PRODUÇÃO FLORESTAL") não tem o ponto depois do número.
+    """
+    if not corpo or len(corpo) > 90 or corpo[-1] in ".;:,":
+        return False
+    if any(c in corpo for c in ".;:"):
+        return False
+    return corpo[0].isupper()
 
 
 def _abre_item(corpo: str) -> bool:

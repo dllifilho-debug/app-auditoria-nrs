@@ -42,7 +42,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 78 testes
+$VENV -m pytest tests/ -q          # 101 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -76,21 +76,38 @@ próprio comando composto (exit 144).
 | Palavra-chave ambígua em NR setorial | "carcaça" (frigorífico) casava com carcaça de alarme; "faca" com "chave tipo faca"; `V1`/`P2`/`C1` (rótulo interno do Diretor) coincide com viga/pilar/coluna de projeto estrutural. Ao mexer em `catalogo_nr.py`/`riscos/`, e ao limpar texto que um agente escreveu, desconfie de vocabulário industrial e de notação de engenharia comuns. |
 | Substituição de string que não casa em silêncio | Aconteceu 3 vezes. Depois de todo patch por script, **leia o arquivo** e confirme. |
 | `rotear_riscos` somando palavras de achados sem relação | `_radicais()` juntava todos os achados num bag-of-words só; um sinal de 4 palavras encontrava as 4 espalhadas em achados que não tinham nada a ver entre si e acionava risco inexistente (viu isso: nenhuma escada na foto, risco de escada disparado). Corrigido tratando cada achado como fragmento isolado — ambiente/contexto entram em todos (são descrição da cena inteira), achados nunca se misturam entre si. Ao adicionar heurística de matching textual, pense em "de onde vêm as palavras", não só "quais palavras". |
+| Sinal de roteamento escrito por extenso | A cobertura é parcial (70%): um sinal de 4 radicais casa com 3, e o que falta é justamente o **discriminante**. `"painel eletrico sem tampa"` fazia "painel de fôrma de madeira sem tampa protetora" virar quadro elétrico aberto; `"escada apoiada em piso irregular"` fazia escada **fixa** de concreto virar escada de mão. Sinal curto, em que nenhum radical pode faltar, é mais seguro que sinal descritivo. **Toda vez que acrescentar sinal, teste a contraparte que NÃO deve disparar.** |
+| Filtrar candidato depois do corte relativo do BM25 | O `minimo_relativo` é calculado sobre o topo bruto. Um item ruim no topo levanta a régua e derruba os bons abaixo dele — filtrando depois, o dossiê fica vazio em vez de trocar o item. Por isso `buscar_pontuado` recebe `aceitar` e peneira **antes**. |
 | `git fetch origin main <branch-que-não-existe-mais>` falha inteiro, silenciosamente | Fetch de múltiplos refs é atômico: se um ref já foi deletado no remoto (branch mergeada), o comando inteiro falha e **nenhum ref é atualizado** — inclusive o `main`, que existia e seria atualizado sozinho. `origin/main` local fica congelado na versão de antes, e comparações feitas contra ele mentem. Já causou uma sessão inteira concluir errado que "a reescrita nunca foi mergeada". Se o histórico parecer suspeito, rode `git fetch origin main` sozinho antes de confiar em qualquer diff. |
 
 ---
 
-## Estado atual (commit `6caf40d`)
+## Estado atual (commit `87bab2c`)
 
-- **6.110 itens** de **24 NRs** (de 36 vigentes), extraídos dos PDFs em `normas/`
+- **6.358 itens** vigentes de **24 NRs** (de 36 vigentes), extraídos dos PDFs em `normas/`
 - **122 riscos** curados mapeando para **232 itens** reais; 25 exigem pessoa na cena
-- **78 testes**
+- **101 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
   de atenção e conformidades propostos, e roda mesmo com zero não conformidades (antes
   o laço quebrava antes de chamá-lo). Faz conferência obrigatória — copia o trecho
   literal do fato que sustenta cada constatação; não achar fato é veto automático.
+- **O veto apara antes de derrubar.** A conferência decide entre aprovado, aparado e
+  vetado. Quando parte da constatação não tem lastro no fato, o Diretor devolve a
+  constatação restrita ao que o fato sustenta, em vez de derrubar o conjunto — mas só
+  depois de reler o texto oficial e confirmar que o que sobrou ainda descumpre **aquele**
+  item. A distinção é o coração disso: a NR-35 exige piso estável *e* sapata (cortada a
+  sapata, ainda descumpre → aparar); a NR-18 18.8.6.12 trata só de sapata (cortada a
+  sapata, não descumpre mais nada → vetar).
+- **Regra da moldura.** A constatação só afirma que algo não existe se aquilo apareceria
+  no recorte da foto. Ancoragem na cobertura, aterramento dentro do quadro: fora da
+  moldura vira verificação ("não é possível determinar pela imagem"), não afirmação. É
+  motivo de aparo, nunca de veto sozinha — senão anularia a regra acima.
+- **O Olho qualifica a barreira, não a nomeia pela função.** "Rede de proteção" para uma
+  tela plástica de sinalização é conclusão, não descrição. O prompt exige material,
+  rigidez, fixação, continuidade, altura e estado; "sem <peça> visível" só quando o lugar
+  dela aparece vazio na foto.
 - **Laudo e interface sem pictograma.** Gravidade é texto (`Crítica`, `Alta`…), não
   emoji — sobrevive a laudo impresso em preto e branco. Mensagens de progresso não
   expõem nome de agente ("Leitura da imagem", não "Agente Olho"); os nomes continuam
@@ -192,11 +209,19 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
     diferentes (agrupou por composição: duas telas de proteção viraram "iguais" a uma
     betoneira). Com limiar apertado, achado real foi 3 fotos em 100 — não move a
     agulha do rendimento.
-- **Próxima validação pendente**: rodar as mesmas 10 fotos do lote de 26/08/2026 de
-  novo (estão em `auditoria-nrs-fixtures/fotos/`, ver acima) e comparar com os laudos
-  antigos. É a única forma de confirmar se a conferência obrigatória do Diretor
-  realmente reduziu "constatação afirma mais que o fato" — é mudança de prompt, não
-  de código, e só um lote real prova.
+- **Próxima validação pendente — a mais importante desta sessão.** O lote de 14 fotos
+  de 27/08/2026 saiu com **2 NCs**, e a auditoria foto a foto encontrou pelo menos oito
+  não conformidades reais, três delas com risco de queda de 6 a 20 andares. As quatro
+  correções de prompt desta sessão (Olho, Analista, Diretor, moldura) **não podem ser
+  validadas sem rede**: o dublê devolve fixture, não lê imagem. O que está provado aqui
+  é que o item certo entra no dossiê e que o aparo chega ao laudo.
+  Rodar **as mesmas 14 fotos** e comparar. Se as 2 NCs virarem cinco ou seis com
+  constatações mais curtas, funcionou. Se virarem doze, o pêndulo voltou para o outro
+  lado. Vale rodar o lote de 10 de 26/08 na mesma leva — passa pelos mesmos prompts.
+  Sinal a procurar na trilha de auditoria do laudo: a linha `Aparada — …`.
+- **Efeito colateral a vigiar em produção**: o Olho começar a inventar ausência ("sem
+  rodapé") de peça que está fora do enquadramento. É o preço de risco da mudança do
+  Olho, e a razão da cláusula "não dá para ver".
 
 ---
 

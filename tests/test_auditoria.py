@@ -7,6 +7,7 @@ cobrança de EPI sem gente na foto, enquadramento fora de tema.
 
 from __future__ import annotations
 
+import json
 import re
 import sys
 from datetime import date
@@ -16,9 +17,9 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from auditoria import relatorio
+from auditoria import dossie, kb_build, relatorio
 from auditoria.catalogo_nr import CATALOGO_NR, NRS_REVOGADAS, NRS_VIGENTES
-from auditoria.demo import ClienteDemonstracao
+from auditoria.demo import ClienteDemonstracao, _texto_do_prompt
 from auditoria.kb import carregar_base, extrair_citacoes, tokenizar
 from auditoria.pipeline import (
     Achado, Configuracao, Visao, aferir, executar, rotear_riscos,
@@ -1145,3 +1146,476 @@ def test_gravidade_sai_como_texto_e_nao_como_cor(base, laudo_demo):
     assert "Crítica" in texto or "Alta" in texto or "Média" in texto
     for chave, rotulo in relatorio.SELOS.items():
         assert isinstance(rotulo, str), f"{chave} devia ser texto puro, veio {rotulo!r}"
+
+
+# ---------------------------------------------------------------------------
+# Imagem que entrou no lote e não virou laudo não pode desaparecer do sumário
+# ---------------------------------------------------------------------------
+
+def test_sumario_declara_as_imagens_nao_auditadas(base, laudo_demo):
+    """Foto que falhou tem de aparecer no documento, não sumir em silêncio.
+
+    Um lote de 17 fotos com 3 falhas emitia um sumário dizendo "14 imagens
+    analisadas", sem nenhuma menção às outras: quem lesse o laudo entenderia
+    que as 14 eram o lote inteiro e que nas demais não havia achado.
+    """
+    texto = relatorio.consolidado(
+        [("foto_1.jpg", laudo_demo)], base, HOJE,
+        nao_auditadas=[("foto_2.jpg", "cota diária esgotada"),
+                       ("foto_3.jpg", "falha de rede")],
+    )
+    assert "Imagens não auditadas" in texto
+    assert "foto_2.jpg" in texto and "foto_3.jpg" in texto
+    assert "cota diária esgotada" in texto
+    assert "1 de 3 enviadas" in texto           # o cabeçalho não pode dizer só "1"
+    assert "não significa ausência de risco" in texto
+
+
+def test_sumario_sem_falhas_nao_inventa_secao(base, laudo_demo):
+    texto = relatorio.consolidado([("foto_1.jpg", laudo_demo)], base, HOJE)
+    assert "Imagens não auditadas" not in texto
+    assert "**Imagens analisadas:** 1" in texto
+
+
+def test_sincronizar_tira_da_lista_de_falhas_a_foto_removida():
+    """A mesma regra dos laudos vale para as falhas: foto fora do lote, fora do sumário."""
+    from auditoria.lote import sincronizar
+    falhas = [("a.jpg", "erro"), ("b.jpg", "erro")]
+    mantidas, descartadas = sincronizar(falhas, ["a.jpg"])
+    assert mantidas == [("a.jpg", "erro")]
+    assert descartadas == ["b.jpg"]
+
+
+# ---------------------------------------------------------------------------
+# Proteção coletiva: o Olho tem de qualificar a barreira, não nomeá-la
+# ---------------------------------------------------------------------------
+
+def test_prompt_do_olho_preserva_a_sentinela_do_duble():
+    """O ClienteDemonstracao reconhece o Olho por esta frase.
+
+    Se ela mudar, o dublê cai no ramo genérico, a visão volta vazia e o Modo
+    Demonstração morre sem erro nenhum — some da tela, e nenhum teste de
+    pipeline acusa. Vale um teste barato para travar.
+    """
+    from auditoria.pipeline import PROMPT_OLHO
+    assert "perito em documentação fotográfica" in PROMPT_OLHO
+
+
+def test_olho_e_proibido_de_afirmar_finalidade_que_nao_verifica():
+    """A proibição de afirmar material sem verificar valia só para metade.
+
+    "rede de proteção" para uma tela plástica de sinalização é o mesmo erro que
+    "laje de concreto" para uma placa clara — o modelo nomeia o objeto pela
+    função que supõe. Num lote real isso custou três falsos negativos de
+    periferia em prédio alto.
+    """
+    from auditoria.pipeline import PROMPT_OLHO
+    assert "material ou finalidade" in PROMPT_OLHO
+    assert "rede de proteção" in PROMPT_OLHO       # o contraexemplo tem de estar lá
+
+
+def test_barreira_so_roteia_periferia_quando_o_fato_traz_os_atributos(base):
+    """O falso negativo mais caro do lote real, travado nos dois sentidos.
+
+    Enquanto o fato diz "rede de proteção", o roteamento não tem como saber que
+    a barreira é uma tela plástica frouxa: o dossiê sai com item genérico de
+    NR-01 e o enquadramento correto de periferia nunca chega ao Analista.
+    Descritos material, rigidez, fixação e altura, o item certo entra.
+    """
+    ambiente = ("Área de construção civil em fase de alvenaria, localizada em um "
+                "edifício de grande altura com vista para uma cidade.")
+
+    como_saiu = Visao(ambiente=ambiente, achados=[Achado(
+        "Rede de proteção laranja de malha plástica estendida ao longo da borda "
+        "do piso, fixada a uma estrutura vertical."
+    )])
+    assert "periferia_laje_sem_guarda_corpo" not in [r.id for r in rotear_riscos(como_saiu)]
+
+    com_atributos = Visao(ambiente=ambiente, achados=[Achado(
+        "Tela plástica flexível laranja de malha larga estendida ao longo da borda "
+        "do piso, presa a um cone e a uma haste, altura na altura do joelho, sem "
+        "guarda-corpo rigido visivel."
+    )])
+    assert "periferia_laje_sem_guarda_corpo" in [r.id for r in rotear_riscos(com_atributos)]
+
+    from auditoria.pipeline import montar_dossie
+    dossie_final, _ = montar_dossie(base, com_atributos, contexto="", quando=HOJE)
+    refs = {f"{e.item.nr} {e.item.item}" for e in dossie_final.entradas}
+    assert "NR-18 18.9.4" in refs, f"periferia sem o item de anteparo rígido: {refs}"
+
+
+def test_painel_eletrico_e_quadro_eletrico_abrem_o_mesmo_dossie(base):
+    """Uma palavra decidia entre laudo e nada.
+
+    "quadro elétrico" roteava o risco e trazia sete itens; "painel elétrico" —
+    o mesmo objeto, outro nome de campo — deixava o dossiê vazio, e o pipeline
+    abortava depois de já ter pago a chamada da visão.
+    """
+    from auditoria.pipeline import montar_dossie
+
+    def refs(palavra):
+        visao = Visao(
+            ambiente="Setor industrial com equipamentos elétricos instalados",
+            achados=[Achado(f"{palavra} com orifício circular vazio sem tampa")],
+        )
+        dossie_final, _ = montar_dossie(base, visao, contexto="", quando=HOJE)
+        return {f"{e.item.nr} {e.item.item}" for e in dossie_final.entradas}
+
+    assert refs("Painel elétrico") == refs("Quadro elétrico") != set()
+
+
+def test_painel_nao_eletrico_nao_vira_quadro_eletrico_aberto():
+    """A armadilha de sempre: palavra de obra que colide com termo elétrico.
+
+    Com o sinal escrito por extenso ("painel eletrico sem tampa"), a cobertura
+    parcial do roteador dispensava justamente o radical discriminante, e um
+    painel de fôrma de madeira sem tampa protetora virava quadro elétrico
+    aberto — item verdadeiro, situação errada.
+    """
+    for ambiente, fato in (
+        ("Fachada de edifício comercial concluído",
+         "Painel de vidro temperado sem tampa de acabamento no montante"),
+        ("Área de concretagem com formas montadas",
+         "Painel de fôrma de madeira apoiado contra a parede, sem tampa protetora"),
+    ):
+        visao = Visao(ambiente=ambiente, achados=[Achado(fato)])
+        ids = [r.id for r in rotear_riscos(visao)]
+        assert "quadro_eletrico_aberto_ou_sem_sinalizacao" not in ids, f"{fato} -> {ids}"
+
+
+def test_lista_de_conformidades_traz_a_ressalva_de_que_nao_e_atestado(base, laudo_demo):
+    """A conformidade falsamente atestada foi o pior erro do lote real.
+
+    Um laudo registrou "proteção coletiva contra quedas" para uma tela de
+    sombreamento pregada numa ripa, na borda de laje de prédio alto. As regras
+    de prompt reduzem a chance disso; a ressalva impressa é a parte que não
+    depende de o modelo obedecer.
+    """
+    import dataclasses
+    laudo = dataclasses.replace(
+        laudo_demo,
+        conformidades=["Barreira instalada na borda da laje, aparentemente contínua."],
+    )
+    md = relatorio.markdown(laudo, base, numero=1)
+    assert "Conformidades observadas" in md
+    assert "não é atestado de conformidade" in md.lower()
+    # e a ressalva tem de sobreviver à renderização impressa
+    assert "não é atestado de conformidade" in relatorio.para_html(md).lower()
+
+
+# ---------------------------------------------------------------------------
+# Veto que apara em vez de derrubar
+#
+# Cenário real do lote de 14 fotos: escada apoiada sobre entulho. O mesmo fato,
+# dois itens diferentes do dossiê, duas respostas certas opostas — é isso que
+# separa "aparar" de "vetar", e é por isso que o aparo não pode ser aplicado sem
+# reconferir o texto oficial do item.
+# ---------------------------------------------------------------------------
+
+FATO = ("Escada portátil de alumínio com os montantes apoiados sobre entulho e sobras "
+        "de material, base fora do nível")
+
+
+class _Duble:
+    """Olho vê a escada; Analista enquadra no item pedido; Diretor responde `veredito`."""
+
+    ultimo_corte_por_limite = False
+
+    def __init__(self, item_alvo: str, constatacao: str, veredito_fn):
+        self.item_alvo, self.constatacao, self.veredito_fn = item_alvo, constatacao, veredito_fn
+        self.prompt_diretor = ""
+
+    def conversar(self, modelo, mensagens, teto_saida=1200, temperatura=0.0, json_estrito=False):
+        p = _texto_do_prompt(mensagens)
+        if "perito em documentação fotográfica" in p:
+            return json.dumps({
+                "ambiente": "canteiro de obra em pavimento em construção",
+                "pessoas": {"presentes": False, "quantidade": 0},
+                "achados": [{"fato": FATO, "onde": "centro", "confianca": "alta"}],
+            }, ensure_ascii=False)
+        if "DOSSIÊ NORMATIVO" in p:
+            rotulo = dict(
+                (num, rot) for rot, num in re.findall(r"\[(D\d+)\]\s+(NR-\d{2}(?: Anexo [IVX]+)? \S+)", p)
+            )
+            alvo = rotulo[self.item_alvo]
+            return json.dumps({
+                "nao_conformidades": [{
+                    "dossie": alvo, "constatacao": self.constatacao,
+                    "consequencia": "Queda do trabalhador por escorregamento da escada.",
+                    "gravidade": "alta", "acao_corretiva":
+                        "Instalar sapatas antiderrapantes e reposicionar a escada em piso firme.",
+                    "prazo_dias": 7,
+                }],
+                "sem_enquadramento": [], "conformidades": [],
+            }, ensure_ascii=False)
+        self.prompt_diretor = p
+        return json.dumps(self.veredito_fn(), ensure_ascii=False)
+
+
+CONSTATACAO = ("A escada portátil está apoiada sobre entulho, com a base fora do nível, "
+               "e não possui sapatas antiderrapantes.")
+
+
+def _rodar(base, item_alvo, veredito_fn):
+    duble = _Duble(item_alvo, CONSTATACAO, veredito_fn)
+    laudo = executar(duble, base, "img", "",
+                     Configuracao(modelo_visao="d", modelo_texto="d", data_referencia=HOJE))
+    return laudo, duble
+
+
+def test_aparo_salva_o_enquadramento_que_o_fato_sustenta(base):
+    """NR-35 Anexo III 5.2.2.5 exige piso estável E sapata: cortada a cláusula da
+    sapata, o que sobra ainda descumpre o item — vetar tudo zerava o laudo."""
+    laudo, _ = _rodar(base, "NR-35 Anexo III 5.2.2.5", lambda: {
+        "conferencia": [{"ref": "V1", "fato": FATO, "decisao": "aparado"}],
+        "aparados": [{
+            "ref": "V1",
+            "constatacao": "A escada portátil está apoiada sobre entulho, com a base fora do nível.",
+            "acao_corretiva": "Reposicionar a escada sobre piso estável e nivelado.",
+            "gravidade": "alta",
+            "retirado": "ausência de sapata antiderrapante, não observável no fato",
+        }],
+        "vetados": [], "ajustes": [], "pontos_descartados": [],
+        "conformidades_descartadas": [], "parecer": "Apoio instável da escada.",
+    })
+    assert len(laudo.nao_conformidades) == 1, "o achado evaporou"
+    nc = laudo.nao_conformidades[0]
+    assert nc.item.item == "Anexo III 5.2.2.5"
+    assert "sapata" not in nc.constatacao.lower()
+    assert "entulho" in nc.constatacao
+    assert "sapata" not in nc.acao_corretiva.lower()
+    assert laudo.aparos and "retirado" in laudo.aparos[0]
+    md = relatorio.markdown(laudo, base, numero=1)
+    assert "Aparada — NR-35 Anexo III 5.2.2.5" in md
+
+
+def test_veto_continua_certo_quando_o_item_exigia_justamente_o_que_foi_cortado(base):
+    """NR-18 18.8.6.12 trata SÓ de sapata antiderrapante: sem o fato da sapata,
+    o que sobra não descumpre este item — aqui vetar é o certo."""
+    laudo, _ = _rodar(base, "NR-18 18.8.6.12", lambda: {
+        "conferencia": [{"ref": "V1", "fato": FATO, "decisao": "vetado"}],
+        "aparados": [],
+        "vetados": [{
+            "ref": "V1",
+            "motivo": "o fato não registra a base da escada; sem isso o item não se descumpre",
+            "observacao": "Não é possível determinar pela imagem se a escada possui sapatas "
+                          "antiderrapantes; verificar no local.",
+        }],
+        "ajustes": [], "pontos_descartados": [],
+        "conformidades_descartadas": [], "parecer": "Nada se sustentou.",
+    })
+    assert laudo.nao_conformidades == []
+    junto = " ".join(laudo.sem_enquadramento)
+    assert "Não é possível determinar pela imagem" in junto
+    assert "não possui sapatas antiderrapantes" not in junto, "afirmação vetada vazou"
+    assert "recusado na supervisão" in junto
+
+
+def test_prompt_do_diretor_traz_o_texto_oficial_para_decidir_o_aparo(base):
+    _, duble = _rodar(base, "NR-35 Anexo III 5.2.2.5", lambda: {
+        "conferencia": [], "aparados": [], "vetados": [], "ajustes": [],
+        "pontos_descartados": [], "conformidades_descartadas": [], "parecer": "p",
+    })
+    assert "TEXTO OFICIAL" in duble.prompt_diretor
+    assert "apoiada em piso estável" in duble.prompt_diretor
+
+
+def test_aparo_nao_deixa_o_modelo_escrever_citacao(base):
+    laudo, _ = _rodar(base, "NR-35 Anexo III 5.2.2.5", lambda: {
+        "conferencia": [], "aparados": [{
+            "ref": "V1",
+            "constatacao": "Escada apoiada sobre entulho, em desacordo com a NR-35, item 5.2.2.5.",
+            "acao_corretiva": "Reposicionar conforme NR-18 18.8.6.12.",
+            "retirado": "cláusula da NR-18 18.8.6.12 sobre sapatas",
+        }], "vetados": [], "ajustes": [], "pontos_descartados": [],
+        "conformidades_descartadas": [], "parecer": "p",
+    })
+    nc = laudo.nao_conformidades[0]
+    assert "NR-35" not in nc.constatacao and "5.2.2.5" not in nc.constatacao
+    assert "NR-18" not in nc.acao_corretiva and "18.8.6.12" not in nc.acao_corretiva
+    assert "18.8.6.12" not in " ".join(laudo.aparos)
+    md = relatorio.markdown(laudo, base, numero=1)
+    assert "NR-35, item Anexo III 5.2.2.5" not in md.replace("`", "")  # citação inventada
+    assert "`Anexo III 5.2.2.5`" in md  # a citação do código continua lá
+
+
+def test_gravidade_reescrita_nunca_deixa_prazo_incoerente(base):
+    """Ajuste que SOBE a gravidade deixava 'crítica' com prazo de 7 dias."""
+    laudo, _ = _rodar(base, "NR-35 Anexo III 5.2.2.5", lambda: {
+        "conferencia": [], "aparados": [],
+        "vetados": [], "ajustes": [{"ref": "V1", "gravidade": "critica"}],
+        "pontos_descartados": [], "conformidades_descartadas": [], "parecer": "p",
+    })
+    nc = laudo.nao_conformidades[0]
+    assert nc.gravidade == "critica"
+    assert nc.prazo_dias == 1, f"crítica com prazo de {nc.prazo_dias} dias"
+
+
+def test_escada_com_apoio_instavel_roteia_sem_depender_do_fraseado():
+    """O que a foto mostra da escada é o apoio, não a sapata.
+
+    Os sinais cadastrados descreviam a escada pelo defeito da própria escada
+    ("bamba", "sem sapata", "degrau quebrado"). O apoio instável — que é o
+    fato observável, e o que sobra depois de o supervisor aparar a cláusula da
+    sapata — dependia de a frase cair perto de "escada apoiada solta na parede".
+    """
+    for fato in (
+        "Escada portatil com a base assentada sobre entulho solto",
+        "Base da escada desnivelada sobre restos de tijolo",
+    ):
+        visao = Visao(ambiente="Interior de edificação em construção",
+                      achados=[Achado(fato)])
+        assert "escada_mao_irregular" in [r.id for r in rotear_riscos(visao)], fato
+
+
+def test_escada_fixa_de_concreto_nao_vira_escada_de_mao():
+    """Contraparte obrigatória: escada fixa não é escada de mão.
+
+    Com o sinal escrito por extenso ("escada apoiada em piso irregular"), a
+    cobertura parcial dispensava justamente "apoiada", e uma escada fixa de
+    concreto num piso desgastado disparava o risco de escada portátil.
+    """
+    visao = Visao(
+        ambiente="Edifício concluído",
+        achados=[Achado("Escada fixa de concreto com corrimao, piso irregular por desgaste")],
+    )
+    assert "escada_mao_irregular" not in [r.id for r in rotear_riscos(visao)]
+
+
+# ---------------------------------------------------------------------------
+# Citação verbatim: nada do documento pode vazar para dentro do item
+#
+# Um laudo real citou a NR-35 Anexo II 1.1 e imprimiu o cabeçalho da seção
+# seguinte colado no fim: "…no trabalho em altura. 2. Campo de Aplicação".
+# ---------------------------------------------------------------------------
+
+RE_CAUDA_DE_CABECALHO = re.compile(
+    r"(?<=[.;:!?\)])\s+(\d{1,2}(?:\.\d{1,3})*)\.?\s+([^.;:]{3,70})$"
+)
+
+# O que o acervo atual ainda não resolve: anexos cuja numeração de seção pula um
+# número, de modo que o encadeamento se perde. Nenhum deles é de construção
+# civil. A lista é fechada de propósito — um item novo aqui é regressão.
+CAUDA_TOLERADA = {"NR-07 Anexo III 1.1.1", "NR-11 Anexo I 6"}
+
+
+def test_citacao_nao_arrasta_o_cabecalho_da_secao_seguinte(base):
+    item = base.obter("NR-35", "Anexo II 1.1")
+    assert item is not None
+    assert item.texto.endswith("no trabalho em altura.")
+    assert "Campo de Aplicação" not in item.texto
+
+    sujos = {
+        i.id
+        for i in base.itens.values()
+        if (m := RE_CAUDA_DE_CABECALHO.search(i.texto))
+        and m.group(2).strip()[:1].isupper()
+    }
+    assert sujos <= CAUDA_TOLERADA, sorted(sujos - CAUDA_TOLERADA)
+
+
+def test_cabecalho_de_secao_de_anexo_fecha_o_item_anterior():
+    """Dentro do anexo a seção tem um nível só e RE_ITEM exige dois."""
+    bruto = "\n".join([
+        "ANEXO II",
+        "SISTEMAS DE ANCORAGEM",
+        "",
+        "1. Objetivo",
+        "",
+        "1.1 Estabelecer os requisitos e as medidas de prevenção para o emprego de",
+        "sistemas de ancoragem, no trabalho em altura.",
+        "",
+        "2. Campo de Aplicação",
+        "",
+        "2.1 Este Anexo se aplica ao sistema de ancoragem instalado na estrutura.",
+    ])
+    itens = {i.item: i.texto for i in kb_build.parsear_norma("NR-35", bruto, "teste.pdf")}
+    assert itens["Anexo II 1.1"].endswith("no trabalho em altura.")
+    assert "Campo de Aplicação" not in itens["Anexo II 1.1"]
+    assert itens["Anexo II 2"] == "Campo de Aplicação"
+
+
+def test_linha_numerada_fora_de_sequencia_nao_parte_o_item():
+    """Legenda de figura e primeira linha de parágrafo têm a mesma forma que o
+    cabeçalho; o que as separa é a inicial minúscula e o número fora de ordem."""
+    bruto = "\n".join([
+        "ANEXO X",
+        "MÁQUINAS PARA CALÇADOS",
+        "",
+        "1. Balancim",
+        "",
+        "1.1 O balancim deve possuir dispositivo de acionamento bimanual, conforme",
+        "a Figura 1 deste Anexo.",
+        "Legenda:",
+        "1. trava mecânica do prato giratório",
+        "2. proteção fixa",
+        "",
+        "5. Máquina de cambrê",
+    ])
+    itens = {i.item: i.texto for i in kb_build.parsear_norma("NR-12", bruto, "teste.pdf")}
+    assert "trava mecânica" in itens["Anexo X 1.1"], "legenda virou seção"
+    assert "Anexo X 5" not in itens, "número fora de sequência abriu seção"
+
+
+def test_subtitulo_sem_numero_nao_entra_na_citacao():
+    """A NR-18 separa os itens com cabeçalhos sem número."""
+    bruto = "\n".join([
+        "18.8.6.12 As escadas portáteis devem possuir sapatas antiderrapantes ou",
+        "dispositivo que impeça o seu escorregamento.",
+        "Escada portátil de uso individual (de mão)",
+        "",
+        "18.8.6.13 As escadas de mão devem possuir, no máximo, 7 m de extensão.",
+    ])
+    itens = {i.item: i.texto for i in kb_build.parsear_norma("NR-18", bruto, "teste.pdf")}
+    assert itens["18.8.6.12"].endswith("escorregamento.")
+    assert "uso individual" not in itens["18.8.6.12"]
+
+
+# ---------------------------------------------------------------------------
+# Item que existe, está vigente e fala do assunto — mas não manda fazer nada
+# ---------------------------------------------------------------------------
+
+def test_item_que_so_enuncia_o_objetivo_nao_entra_no_dossie(base):
+    """NR-35 Anexo II 1.1 é o objetivo do anexo, não regra prescritiva.
+
+    O portão de emissão só confere existência e vigência, então ele aprovou; e
+    o Analista, obrigado a escolher do dossiê, escolheu o que mais parecia
+    falar de ancoragem.
+    """
+    objetivo = base.obter("NR-35", "Anexo II 1.1")
+    assert base.titulo_da_secao(objetivo) == "Objetivo"
+    assert not dossie.prescritivo(objetivo, base)
+
+    d = dossie.montar(
+        base,
+        ["Sistema de ancoragem sem identificação, empregado como parte da "
+         "proteção contra quedas no trabalho em altura"],
+        contexto="trabalho em altura",
+        quando=HOJE,
+    )
+    citados = [e.item.id for e in d.entradas]
+    assert "NR-35 Anexo II 1.1" not in citados
+    # O item recusado pontuava mais que o dobro do bom: peneirar só depois do
+    # corte relativo esvaziaria o dossiê em vez de trocar o item.
+    assert "NR-35 Anexo II 3.3" in citados, citados
+
+
+def test_filtro_de_nao_prescritivo_nao_alcanca_a_taxonomia_curada(base):
+    """Curadoria à mão manda mais que heurística: a NR-09 9.6.1 é disposição
+    transitória e está mapeada de propósito."""
+    refs = {ref for risco in catalogo_riscos().values() for ref in risco.itens}
+    barrados = sorted(
+        ref for ref in refs
+        if not dossie.prescritivo(base.obter(*ref.split(" ", 1)), base)
+    )
+    assert barrados == [], barrados
+    assert dossie.prescritivo(base.obter("NR-09", "9.6.1"), base)
+
+
+def test_item_prescritivo_continua_no_dossie(base):
+    """O filtro não pode cortar o comando normativo comum."""
+    for nr, num in (("NR-18", "18.9.4.1"), ("NR-35", "Anexo III 5.2.2.5"),
+                    ("NR-12", "12.5.16"), ("NR-06", "6.3.1")):
+        item = base.obter(nr, num)
+        assert item is not None, f"{nr} {num}"
+        assert dossie.prescritivo(item, base), f"{nr} {num} barrado"

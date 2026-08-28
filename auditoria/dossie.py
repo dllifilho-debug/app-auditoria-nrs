@@ -49,6 +49,46 @@ def comprovavel_em_foto(item: Item) -> bool:
     return not any(marcador in texto for marcador in MARCADORES_DOCUMENTAIS)
 
 
+# Seções que dizem para que a norma serve, a quem ela se aplica, o que cada
+# palavra significa e quando ela deixa de valer. Nenhuma impõe conduta, e por
+# isso nenhuma sustenta autuação.
+#
+# Por que isto existe: um laudo real enquadrou um ponto de ancoragem no item
+# "Anexo II 1.1" da NR-35 — que é o OBJETIVO do anexo ("Estabelecer os
+# requisitos e as medidas de prevenção para o emprego de sistemas de
+# ancoragem"). O item existe, está vigente e fala de ancoragem, então o portão
+# de emissão o aprovou; o que faltava era perceber que ele não manda fazer nada.
+#
+# Vale, como `comprovavel_em_foto`, SÓ para a recuperação textual: os itens da
+# taxonomia curada entram por `pipeline.montar_dossie` e não passam por aqui.
+# A distinção importa — a NR-09 9.6.1, mapeada à mão, é disposição transitória,
+# e é justamente por ser curada que ela deve continuar valendo.
+SECOES_SEM_COMANDO = frozenset((
+    "objetivo", "objetivos", "objetivo e campo de aplicacao",
+    "campo de aplicacao", "aplicacao", "abrangencia", "introducao",
+    "definicoes", "termos e definicoes", "glossario", "conceitos",
+    "referencias", "referencias normativas", "sumario", "disposicoes finais",
+))
+
+# Abertura de item que enuncia escopo. Serve para o caso em que o PDF não traz
+# o cabeçalho da seção e `titulo_da_secao` volta vazio.
+RE_ITEM_DE_ESCOPO = re.compile(
+    r"^(estabelecer\b|este anexo (estabelece|se aplica|trata|tem)\b|"
+    r"esta norma (estabelece|se aplica|trata|tem)\b|o presente anexo\b)",
+    re.IGNORECASE,
+)
+
+
+def prescritivo(item: Item, base: BaseNormativa) -> bool:
+    """O item impõe conduta, ou só diz do que a norma trata?"""
+    if RE_ITEM_DE_ESCOPO.match(normalizar(item.texto)):
+        return False
+    titulo = normalizar(base.titulo_da_secao(item)).strip(" .:-")
+    titulo = re.sub(r"^(?:d[aeo]s)\s+", "", titulo)   # "Das disposições finais"
+    titulo = re.sub(r"\s+\d+$", "", titulo)           # número de página colado
+    return titulo not in SECOES_SEM_COMANDO
+
+
 @dataclass(frozen=True)
 class Entrada:
     """Um item do dossiê, com o rótulo pelo qual o analista deve referenciá-lo."""
@@ -133,9 +173,11 @@ def montar(
 
     melhor: dict[str, tuple[float, Item, str]] = {}
 
+    def util(item: Item) -> bool:
+        """Item que uma fotografia pode evidenciar e que impõe conduta."""
+        return comprovavel_em_foto(item) and prescritivo(item, base)
+
     def registrar(item: Item, score: float, origem: str) -> None:
-        if not comprovavel_em_foto(item):
-            return
         score *= prior.get(item.nr, 1.0)
         atual = melhor.get(item.id)
         if atual is None or score > atual[0]:
@@ -145,14 +187,15 @@ def montar(
     for achado in achados:
         for item, score in base.buscar_pontuado(
             f"{achado} {contexto}", nrs=escopo or None, k=por_achado,
-            quando=quando, minimo_relativo=0.45,
+            quando=quando, minimo_relativo=0.45, aceitar=util,
         ):
             registrar(item, score, achado[:60])
 
     # 2) Uma varredura ampla de reforço, para não perder enquadramento
     #    que só aparece quando os achados são lidos em conjunto.
     for item, score in base.buscar_pontuado(
-        blob, nrs=escopo or None, k=8, quando=quando, minimo_relativo=0.55
+        blob, nrs=escopo or None, k=8, quando=quando, minimo_relativo=0.55,
+        aceitar=util,
     ):
         registrar(item, score * 0.9, "visão geral")
 
