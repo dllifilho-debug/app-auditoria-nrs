@@ -598,6 +598,29 @@ def test_palavra_chave_ambigua_nao_roteia_para_norma_setorial():
     assert "NR-36" not in pontos
 
 
+def test_maquina_e_equipamento_sozinhos_nao_roteiam_para_nr12():
+    """"máquina" e "equipamento" sozinhos casavam com quase qualquer achado
+    (EPI, quadro elétrico, máquina de lavar) e a NR-12 virava lixeira do
+    dossiê, enchendo o complemento textual de itens fora de tema."""
+    from auditoria.dossie import _pontuar_nrs
+
+    casos = [
+        "trabalhador sem uso de equipamento de proteção individual (capacete)",
+        "andaime sem proteção lateral em altura",
+        "escada de mão sem proteção antiderrapante nos degraus",
+        "máquina de lavar roupa na área de vivência sem manutenção",
+        "operador da máquina fotográfica sem crachá",
+    ]
+    for caso in casos:
+        assert "NR-12" not in _pontuar_nrs(caso), caso
+
+    # mas o achado genuíno de máquina continua roteando
+    assert "NR-12" in _pontuar_nrs("serra circular sem proteção no disco")
+    assert "NR-12" in _pontuar_nrs(
+        "zona de prensagem de prensa hidráulica sem enclausuramento"
+    )
+
+
 def test_tabela_desambigua_constatacoes_sob_o_mesmo_risco(base):
     """Dois achados distintos no mesmo risco não podem virar linhas idênticas."""
     from auditoria.pipeline import Laudo, NaoConformidade, Visao
