@@ -42,7 +42,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 101 testes
+$VENV -m pytest tests/ -q          # 103 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -82,11 +82,11 @@ próprio comando composto (exit 144).
 
 ---
 
-## Estado atual (commit `87bab2c`)
+## Estado atual (commit `b21ffce`)
 
 - **6.358 itens** vigentes de **24 NRs** (de 36 vigentes), extraídos dos PDFs em `normas/`
 - **122 riscos** curados mapeando para **232 itens** reais; 25 exigem pessoa na cena
-- **101 testes**
+- **103 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
@@ -209,19 +209,78 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
     diferentes (agrupou por composição: duas telas de proteção viraram "iguais" a uma
     betoneira). Com limiar apertado, achado real foi 3 fotos em 100 — não move a
     agulha do rendimento.
-- **Próxima validação pendente — a mais importante desta sessão.** O lote de 14 fotos
-  de 27/08/2026 saiu com **2 NCs**, e a auditoria foto a foto encontrou pelo menos oito
-  não conformidades reais, três delas com risco de queda de 6 a 20 andares. As quatro
-  correções de prompt desta sessão (Olho, Analista, Diretor, moldura) **não podem ser
-  validadas sem rede**: o dublê devolve fixture, não lê imagem. O que está provado aqui
-  é que o item certo entra no dossiê e que o aparo chega ao laudo.
-  Rodar **as mesmas 14 fotos** e comparar. Se as 2 NCs virarem cinco ou seis com
-  constatações mais curtas, funcionou. Se virarem doze, o pêndulo voltou para o outro
-  lado. Vale rodar o lote de 10 de 26/08 na mesma leva — passa pelos mesmos prompts.
-  Sinal a procurar na trilha de auditoria do laudo: a linha `Aparada — …`.
+- **A NR-12 virou a lixeira do dossiê — é a próxima frente, e a mais importante.**
+  Validado em produção (ver abaixo): quatro das nove NCs das últimas três fotos caíram
+  na NR-12 em cenas de obra **sem máquina nenhuma**. Entulho no chão virou `12.2.4`
+  ("o piso do local de trabalho onde se instalam *máquinas e equipamentos*"), crítica,
+  1 dia; cabo pendurado na parede e caixa de distribuição de obra viraram `12.3.8`
+  ("são proibidas *nas máquinas e equipamentos*"). A NR-12 tem 920 itens — quase um
+  quarto da base indexável — e texto genérico o bastante ("áreas de circulação",
+  "condutores de alimentação elétrica") para casar com qualquer coisa de canteiro.
+  Do mesmo lote anterior: betoneira enquadrada em `NR-12 Anexo VIII 2.1` (**prensas** —
+  o título da NC saiu "Prensa, guilhotina ou dobradeira"), e foto de tela de computador
+  enquadrada em `NR-01 Anexo II 4.6.1`, que é avaliação de aprendizagem de EAD.
+  **Frente já iniciada em `d2d92b2`**, que tirou `máquina`, `equipamento` e
+  `sem proteção` sozinhos das palavras-chave da NR-12 — casavam com quase qualquer
+  achado e eram provavelmente o caminho pelo qual ela entrava no escopo nos casos acima.
+  Quanto isso resolve só o próximo lote real dirá; a linha de base para comparar são as
+  **19 NCs**, não as 2.
+  O que ainda não existe, e tem precedente no próprio código: a taxonomia já tem
+  `exige_pessoa`, que impede cobrar capacete em foto sem ninguém. O análogo é **exigir
+  máquina ou equipamento na cena para a NR-12 entrar no dossiê**, somado a um filtro de
+  anexo setorial fora de contexto (prensa, panificação, calçados) — este último é o que
+  pega a betoneira virando prensa, que o `d2d92b2` não alcança. É código, testável sem
+  rede, e reaproveita `titulo_da_secao`, criada para o filtro de item não prescritivo.
+  **Cuidado com a contraparte**: NR-35 Anexo III (escadas) e NR-12 Anexo XII (içamento)
+  são anexos que *devem* passar.
+- **O aparo pode salvar enquadramento que devia ser vetado.** Visto em produção: NC em
+  `NR-12 12.3.8` (partes energizadas expostas) com a trilha dizendo
+  `retirado: partes energizadas expostas`. Cortado justamente o que o item exige, o que
+  sobrou ("cabo amarelo pendurado na parede") não descumpre mais nada — era veto. A regra
+  está escrita no prompt (a distinção NR-35 apara / NR-18 18.8.6.12 veta) e o modelo
+  errou o lado. Reforçar depois da frente da NR-12.
+- **Gravidade inflada e constatação inventada ainda passam.** Entulho no chão como
+  crítica com prazo de 1 dia; e "os degraus não apresentam fixação aos montantes" quando
+  o Olho escrevera "sem fixação visível na base ou no topo" — sobre o apoio, não sobre os
+  degraus. A conferência literal do Diretor deixou passar.
+- **Persistir os resultados do lote.** Hoje vivem só em `st.session_state`: um redeploy
+  do Streamlit Cloud (ou um F5) apaga o lote em andamento. No plano gratuito um lote de
+  100 fotos leva vários dias, então a chance de perder trabalho no meio não é pequena.
 - **Efeito colateral a vigiar em produção**: o Olho começar a inventar ausência ("sem
   rodapé") de peça que está fora do enquadramento. É o preço de risco da mudança do
-  Olho, e a razão da cláusula "não dá para ver".
+  Olho, e a razão da cláusula "não dá para ver". Até aqui não apareceu.
+
+---
+
+## Validação em produção de 29/08/2026 — o que ficou provado
+
+As mesmas 14 fotos do lote de 27/08, com os laudos de volta. **2 NCs → 19 NCs.**
+Sem rede à Groq nesta sessão, este é o único jeito de validar mudança de prompt; o
+que vem abaixo foi lido nos laudos reais, não inferido.
+
+Funcionou, com evidência no laudo:
+
+- **O Olho qualifica a barreira.** "Rede de proteção laranja de malha plástica" virou
+  "Tela plástica flexível de malha larga, cor laranja, pendurada e amarrada em postes
+  verticais, cobrindo parcialmente a borda do piso e **deixando trecho aberto**", mais um
+  fato separado: "sem barreira física rígida (como guarda-corpo metálico ou rodapé)
+  **visível**". A forma canônica "sem <peça> visível" saiu como pedida.
+- **As três periferias foram reconhecidas** (eram 0 NC), e a conformidade falsamente
+  atestada ("proteção coletiva contra quedas" para tela de sombreamento) **desapareceu**.
+- **O andaime sem guarda-corpo** (0 NC, 0 pontos antes) saiu com `NR-18 18.9.4.2` crítica.
+- **A regra da moldura fez o que devia.** O veto da sapata mandou para os pontos de
+  atenção "*não é possível determinar pela imagem se a escada possui sapatas
+  antiderrapantes; verificar no local*" — antes ia a afirmação inteira que o Diretor
+  acabara de recusar. É o comportamento novo mais difícil de provar sem rede.
+- **Fotos equivalentes passaram a concordar**: as duas do mesmo quadro de tomadas deram
+  3 e 2 NCs, contra 3 e 0 antes.
+- **A ressalva impressa nas conformidades** aparece no laudo.
+
+Regressão introduzida e corrigida na mesma sessão: o schema do Diretor cresceu com as
+chaves do aparo, a resposta passou do teto de saída e **três laudos morreram com JSON
+truncado** — não inválido, truncado. O Olho já refazia a chamada nesse caso; o Analista
+e o Diretor não. Hoje os três compartilham `_conversar_sem_cortar`. **Toda vez que
+crescer o que se pede a um agente, verificar o teto de saída dele.**
 
 ---
 
