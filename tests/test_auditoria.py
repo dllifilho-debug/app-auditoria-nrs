@@ -22,7 +22,7 @@ from auditoria.catalogo_nr import CATALOGO_NR, NRS_REVOGADAS, NRS_VIGENTES
 from auditoria.demo import ClienteDemonstracao, _texto_do_prompt
 from auditoria.kb import carregar_base, extrair_citacoes, tokenizar
 from auditoria.pipeline import (
-    Achado, Configuracao, Visao, aferir, executar, rotear_riscos,
+    Achado, Configuracao, Visao, aferir, executar, montar_dossie, rotear_riscos,
 )
 from auditoria.riscos import catalogo as catalogo_riscos
 
@@ -157,6 +157,166 @@ def test_roteamento_nao_combina_palavras_de_achados_diferentes():
     ids = [r.id for r in rotear_riscos(visao)]
     assert "abertura_piso_desprotegida" in ids
     assert not any("escada" in i for i in ids)
+
+
+def _dossie_da_cena(base, ambiente, fatos, quando=HOJE):
+    visao = Visao(ambiente=ambiente, achados=[Achado(f) for f in fatos])
+    return montar_dossie(base, visao, "", quando)[0]
+
+
+def _nr12(dossie):
+    return [e.item.item for e in dossie.entradas if e.item.nr == "NR-12"]
+
+
+def test_eletrica_predial_generica_nao_cita_nr12_sem_maquina_na_cena(base):
+    """Lote real: cabo danificado e caixa de distribuição aberta em obra civil,
+    sem nenhuma máquina na cena, chegavam ao dossiê com NR-12 12.3.4/12.3.8 —
+    itens que falam de condutor e parte energizada DE MÁQUINA.
+
+    A verificação é sobre o dossiê, e não sobre `rotear_riscos`: o item de
+    NR-12 continua mapeado no risco, e é o portão de máquina que decide se ele
+    entra. Testar o roteamento diria que o mapeamento existe, não que o laudo
+    fica limpo."""
+    casos = [
+        ("Parede interna de alvenaria em obra, pavimento em acabamento", [
+            "Cabo elétrico preto grosso com isolamento danificado e fios internos "
+            "expostos pendurado na estrutura metálica.",
+        ]),
+        ("Canteiro de obra, área externa junto ao tapume", [
+            "Caixa de distribuição elétrica com tampa frontal aberta, sem proteção "
+            "de tampa visível, expondo os componentes internos.",
+        ]),
+        ("Laje de concreto em obra de edificação, área de circulação", [
+            "Entulho de construção e restos de fôrma de madeira acumulados sobre o "
+            "piso da área de circulação.",
+        ]),
+    ]
+    for ambiente, fatos in casos:
+        citados = _nr12(_dossie_da_cena(base, ambiente, fatos))
+        assert not citados, f"{fatos[0]!r} citou NR-12 sem máquina na cena: {citados}"
+
+
+def test_a_mesma_eletrica_cita_nr12_quando_a_maquina_esta_na_cena(base):
+    """A contraparte do teste acima, e a razão de o portão ser por item e não
+    uma remoção seca: com a máquina de fato na foto, o item que fala do cabo
+    de alimentação DE MÁQUINA é o enquadramento certo, não um exagero."""
+    dossie = _dossie_da_cena(
+        base, "Canteiro de obra, área de preparo de concreto",
+        ["Betoneira com o cabo de alimentação de isolamento danificado e fios "
+         "internos expostos, estendido sobre o piso."],
+    )
+    assert "12.3.4" in _nr12(dossie), _nr12(dossie)
+
+
+def test_maquina_na_cena_e_reconhecida_pelo_nome_e_nao_pela_palavra_maquina():
+    """O portão só ABRE, então um sinal que aparece em frase de negação seria
+    pior que inútil: "nenhuma máquina visível" destrancaria justamente a foto
+    que se quer barrar. Por isso vale o substantivo concreto."""
+    assert dossie.ha_maquina_na_cena("Betoneira em operação junto à laje")
+    assert dossie.ha_maquina_na_cena("Serra circular de bancada com disco exposto")
+    assert dossie.ha_maquina_na_cena("Grua fixa com cabo de aço desfiado")
+    assert dossie.ha_maquina_na_cena("Masseira espiral com a grade levantada")
+
+    assert not dossie.ha_maquina_na_cena("Nenhuma máquina visível na cena")
+    assert not dossie.ha_maquina_na_cena(
+        "Trabalhador sem equipamento de proteção individual"
+    )
+    assert not dossie.ha_maquina_na_cena(
+        "Entulho acumulado sobre o piso da área de circulação"
+    )
+    # "torno" sozinho abriria o portão em "em torno de", que é como um laudo
+    # descreve a área ao redor de um pilar; "prensa" não pode vir de
+    # "imprensado". Substantivo é o critério, substring não.
+    assert not dossie.ha_maquina_na_cena("Material empilhado em torno da coluna")
+    assert not dossie.ha_maquina_na_cena("Risco de trabalhador imprensado na carga")
+    assert dossie.ha_maquina_na_cena("Torno mecânico com placa exposta")
+    # Varridas contra frases reais de canteiro: "talha" abria em "madeira
+    # talhada" e "gerador" em "gerador de resíduos", que é vocabulário de PGR.
+    assert not dossie.ha_maquina_na_cena("Madeira talhada empilhada junto ao tapume")
+    assert not dossie.ha_maquina_na_cena("Gerador de resíduos identificado no canteiro")
+    assert dossie.ha_maquina_na_cena("Grupo gerador a diesel junto ao tapume")
+
+
+def test_anexo_setorial_de_outro_ramo_nao_entra_no_dossie(base):
+    """Uma betoneira de canteiro gastava os cinco lugares da NR-12 com o Anexo X
+    (calçados: "máquina de pregar salto", "injetora rotativa de carrossel"), e
+    uma serra circular de bancada recebia três itens de serra fita de AÇOUGUE.
+    Item verdadeiro, situação errada — e foi por aí que a betoneira do lote
+    anterior saiu no laudo como prensa."""
+    setoriais = {"V", "VI", "VII", "VIII", "IX", "X", "XI"}
+    cenas = [
+        ("Canteiro de obra, área de preparo de concreto", [
+            "Betoneira em operação com o conjunto de coroa e pinhão exposto, sem "
+            "proteção fixa sobre a engrenagem.",
+        ]),
+        ("Central de corte de madeira do canteiro", [
+            "Serra circular de bancada com o disco exposto, sem coifa protetora "
+            "sobre a lâmina.",
+        ]),
+    ]
+    for ambiente, fatos in cenas:
+        dossie_ = _dossie_da_cena(base, ambiente, fatos)
+        intrusos = [
+            f"{e.item.nr} {e.item.item}"
+            for e in dossie_.entradas
+            if e.item.nr == "NR-12" and e.item.anexo in setoriais
+        ]
+        assert not intrusos, f"{ambiente!r} recebeu anexo de outro ramo: {intrusos}"
+
+
+def test_anexo_setorial_entra_quando_a_cena_e_daquele_ramo(base):
+    """A contraparte que impede o filtro de virar remoção: numa foto de açougue
+    o Anexo VII é a norma certa, e o app existe para citá-la."""
+    dossie_ = _dossie_da_cena(
+        base, "Açougue de supermercado, sala de desossa",
+        ["Serra fita de açougue com a lâmina exposta acima da mesa, sem proteção "
+         "regulável.",
+         "Moedor de carne sem proteção contra alcance das mãos no funil."],
+    )
+    anexos = {e.item.anexo for e in dossie_.entradas if e.item.nr == "NR-12"}
+    assert "VII" in anexos, sorted(a for a in anexos if a)
+
+
+def test_anexo_geral_de_maquina_e_de_altura_continuam_passando(base):
+    """A contraparte registrada no CLAUDE.md: NR-12 Anexo XII (equipamentos de
+    guindar — cesta aérea, grua, elevador de carga) e NR-35 Anexo III (escadas)
+    são o pão de cada dia de um canteiro e não podem ser confundidos com anexo
+    setorial."""
+    cena = "canteiro de obra, laje, escada de mão apoiada, entulho no piso"
+    for nr, num in (("NR-12", "Anexo XII 2.1"), ("NR-12", "Anexo III 1"),
+                    ("NR-12", "Anexo I 1"), ("NR-35", "Anexo III 5.2.2.5"),
+                    ("NR-12", "12.5.1"), ("NR-12", "12.2.4")):
+        item = base.obter(nr, num)
+        assert item is not None, f"{nr} {num}"
+        assert dossie.setor_pertinente(item, cena), f"{nr} {num} barrado"
+
+
+def test_item_setorial_deixado_fora_do_anexo_pela_extracao_tambem_e_barrado(base):
+    """O anexo é o critério principal, mas não basta: a extração do PDF deixou
+    `12.1` ("máquinas de montar base de calçados") no corpo principal, sem
+    marca de anexo nenhuma, e ele apareceu no dossiê de uma betoneira."""
+    item = base.obter("NR-12", "12.1")
+    assert item is not None and item.anexo is None
+    assert not dossie.setor_pertinente(item, "canteiro de obra com betoneira")
+    assert dossie.setor_pertinente(item, "fábrica de calçados, setor de montagem do solado")
+
+
+def test_anexo_vence_o_texto_ao_classificar_o_ramo(base):
+    """Os anexos setoriais se citam entre si, e item do Anexo X (calçados) fala
+    de prensa. Se o texto decidisse, ele passaria como se fosse do Anexo VIII
+    numa foto de estamparia — que legitimamente destranca prensas."""
+    item = base.obter("NR-12", "Anexo X 10.1")
+    assert item is not None
+    assert not dossie.setor_pertinente(item, "setor de estamparia com prensa excêntrica")
+
+
+def test_glossario_extraido_como_item_nao_entra_no_dossie(base):
+    """Laudo real: "Glossário Ambiente exclusivo: espaço físico…" da NR-01
+    ocupava vaga do dossiê. O PDF não separou o cabeçalho do primeiro item,
+    então `titulo_da_secao` volta vazio e o cabeçalho vem colado no texto."""
+    item = base.obter("NR-01", "Anexo II 6")
+    assert item is not None
+    assert not dossie.prescritivo(item, base)
 
 
 # ---------------------------------------------------------------------------
@@ -619,6 +779,18 @@ def test_maquina_e_equipamento_sozinhos_nao_roteiam_para_nr12():
     assert "NR-12" in _pontuar_nrs(
         "zona de prensagem de prensa hidráulica sem enclausuramento"
     )
+
+
+def test_item_de_formato_de_avaliacao_nao_e_comprovavel_em_foto(base):
+    """Laudo real: uma foto de escritório (monitor exibindo documento de RH,
+    sem nenhum achado de campo) enquadrou "documento exposto na tela" no
+    item que trata do FORMATO da prova de treinamento (presencial x digital
+    com senha) — item verdadeiro, situação completamente errada. Nenhuma
+    foto prova ou desmente o método de avaliação de um treinamento."""
+    from auditoria.dossie import comprovavel_em_foto
+
+    item = base.obter("NR-01", "Anexo II 4.6.1")
+    assert not comprovavel_em_foto(item)
 
 
 def test_tabela_desambigua_constatacoes_sob_o_mesmo_risco(base):
@@ -1691,3 +1863,39 @@ def test_analista_e_diretor_refazem_a_chamada_cortada_no_teto(base):
     # cada agente foi chamado duas vezes, a segunda com o dobro de espaço
     assert 3600 in cliente.tetos, cliente.tetos      # Analista 1800 → 3600
     assert 4400 in cliente.tetos, cliente.tetos      # Diretor 2200 → 4400
+
+
+class _ClienteQueDevolveJsonInvalidoUmaVez:
+    """Devolve texto não parseável na primeira chamada de cada agente, sem
+    nunca sinalizar truncamento — simula aspas de citação não escapadas."""
+
+    def __init__(self):
+        self.ultimo_corte_por_limite = False
+        self.vistos: set[str] = set()
+
+    def conversar(self, modelo, mensagens, teto_saida=1200, temperatura=0.0, json_estrito=False):
+        p = _texto_do_prompt(mensagens)
+        quem = ("olho" if "perito em documentação fotográfica" in p
+                else "analista" if "DOSSIÊ NORMATIVO" in p else "diretor")
+        completo = ClienteDemonstracao().conversar(
+            modelo, mensagens, teto_saida, temperatura, json_estrito
+        )
+        self.ultimo_corte_por_limite = False
+        if quem == "olho" or quem in self.vistos:
+            return completo
+        self.vistos.add(quem)
+        return '{"trecho": "citação com "aspas" soltas no meio", "resto": trunca aqui'
+
+
+def test_analista_e_diretor_refazem_a_chamada_com_json_invalido_nao_sinalizado(base):
+    """Um lote real perdeu três fotos de novo com "não devolveu JSON
+    utilizável" mesmo depois do fix de resposta cortada — porque o JSON
+    quebrado ali não vinha com o sinal de truncamento da API. Sem esse sinal,
+    a chamada tem que refazer mesmo assim quando o parser falha."""
+    cliente = _ClienteQueDevolveJsonInvalidoUmaVez()
+    laudo = executar(
+        cliente, base, "imagem-falsa", "",
+        Configuracao(modelo_visao="d", modelo_texto="d", data_referencia=HOJE),
+    )
+    assert laudo.nao_conformidades, "o laudo se perdeu no JSON inválido não sinalizado"
+    assert not laudo.visao_falhou

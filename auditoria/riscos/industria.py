@@ -149,7 +149,11 @@ RISCOS: dict[str, dict] = {
         "sinais": [
             "prensa sem cortina de luz",
             "mao dentro da prensa",
-            "guilhotina sem protecao frontal",
+            # 4 radicais: "sem protecao ... frontal" batia sozinho por
+            # cobertura parcial (75%) em qualquer achado de tampa/caixa
+            # aberta sem proteção — sem "guilhotina", o discriminante que
+            # falta. 3 radicais fecha a fresta: exige cobertura total.
+            "guilhotina sem protecao",
             "dobradeira aberta",
             "volante da prensa exposto",
             "zona de prensagem livre",
@@ -299,7 +303,15 @@ RISCOS: dict[str, dict] = {
             "desnivel no piso",
             "placa de piso solta",
         ],
-        "itens": ["NR-12 12.2.4", "NR-08 8.3.2.4"],
+        # Sinais como "piso quebrado" e "chao escorregadio" não têm nada de
+        # máquina — batem em qualquer piso de obra ou depósito. NR-12 12.2.4
+        # é sobre o piso da área de máquina especificamente; sem máquina na
+        # cena, citá-lo é "item verdadeiro, situação errada" (foi assim que
+        # entulho numa laje virou 12.2.4 crítica). NR-08 8.3.2.4
+        # (antiderrapância de piso, geral) cobre o achado sozinho; com máquina
+        # nomeada na cena, o item específico volta a caber.
+        "itens": ["NR-08 8.3.2.4", "NR-12 12.2.4"],
+        "itens_so_com_maquina": ("NR-12 12.2.4",),
         "gravidade_base": "media",
     },
     "maquina_sem_estabilidade_ou_fixacao": {
@@ -350,7 +362,12 @@ RISCOS: dict[str, dict] = {
             "caixa de distribuicao com componentes expostos",
             "emenda exposta",
         ],
-        "itens": ["NR-10 10.2.8.2", "NR-10 10.2.8.2.1", "NR-12 12.3.8"],
+        # Nenhum destes sinais menciona máquina — "caixa de passagem aberta"
+        # e "fio desencapado" descrevem elétrica predial comum tanto quanto
+        # elétrica de máquina. NR-12 12.3.8 é sobre partes energizadas DE
+        # MÁQUINAS E EQUIPAMENTOS; sem esse contexto no achado, NR-10 já
+        # cobre a mesma exigência de forma geral.
+        "itens": ["NR-10 10.2.8.2", "NR-10 10.2.8.2.1"],
         "gravidade_base": "critica",
     },
     "quadro_eletrico_aberto_ou_sem_sinalizacao": {
@@ -376,7 +393,11 @@ RISCOS: dict[str, dict] = {
             "painel elétrico",
             "painel de comando",
         ],
-        "itens": ["NR-10 10.10.1", "NR-12 12.3.5"],
+        # Mesmo raciocínio de partes_vivas_expostas: quadro/painel aberto ou
+        # sem sinalização é achado predial comum. NR-12 12.3.5 é sobre o
+        # painel de comando DE MÁQUINA; sem máquina no achado, NR-10 10.10.1
+        # já exige o mesmo fechamento e sinalização de forma geral.
+        "itens": ["NR-10 10.10.1"],
         "gravidade_base": "alta",
     },
     "ligacao_eletrica_improvisada": {
@@ -395,7 +416,11 @@ RISCOS: dict[str, dict] = {
             "fio torcido",
             "t em cima de t",
         ],
-        "itens": ["NR-12 12.3.6", "NR-10 10.4.4"],
+        # "Gambiarra" e "benjamim sobrecarregado" são achado de tomada e
+        # extensão comuns, não de máquina especificamente. NR-12 12.3.6 é
+        # sobre ligação de máquina; NR-10 10.4.4 já cobre a mesma exigência
+        # de forma geral.
+        "itens": ["NR-10 10.4.4"],
         "gravidade_base": "alta",
     },
     "cabo_eletrico_danificado": {
@@ -419,7 +444,14 @@ RISCOS: dict[str, dict] = {
             "isolamento do cabo comprometido",
             "cabo eletrico estendido sobre o piso",
         ],
-        "itens": ["NR-12 12.3.4", "NR-12 12.3.8"],
+        # Estava mapeado só para NR-12 (condutor DE MÁQUINA) sem nenhuma
+        # alternativa geral — pior caso do padrão: qualquer cabo danificado
+        # em qualquer lugar da obra, sem máquina nenhuma na cena, citava
+        # NR-12 sozinho. Cabo com isolamento comprometido expondo partes
+        # vivas é a mesma exigência de NR-10 10.2.8.2, geral; 12.3.4 é sobre
+        # o cabo de alimentação da máquina e depende dela estar na cena.
+        "itens": ["NR-10 10.2.8.2", "NR-10 10.2.8.2.1", "NR-12 12.3.4"],
+        "itens_so_com_maquina": ("NR-12 12.3.4",),
         "gravidade_base": "alta",
     },
     "instalacao_eletrica_em_area_molhada": {
@@ -437,7 +469,10 @@ RISCOS: dict[str, dict] = {
             "cabo dentro da agua",
             "sem dr no circuito",
         ],
-        "itens": ["NR-12 12.3.3", "NR-10 10.4.2"],
+        # "Tomada perto da agua" e "extensao no chao molhado" não implicam
+        # máquina. NR-12 12.3.3 é sobre instalação DE MÁQUINA em área
+        # molhada; NR-10 10.4.2 já exige a mesma proteção de forma geral.
+        "itens": ["NR-10 10.4.2"],
         "gravidade_base": "critica",
     },
     "maquina_sem_aterramento": {
@@ -456,7 +491,14 @@ RISCOS: dict[str, dict] = {
             "plugue com dois pinos",
             "terra desconectado",
         ],
-        "itens": ["NR-12 12.3.2", "NR-10 10.2.8.3"],
+        # "Carcaça" sozinha já é ambígua (armadilha registrada no CLAUDE.md:
+        # carcaça de alarme x carcaça de frigorífico), e os demais sinais
+        # ("sem fio terra", "plugue com dois pinos") são elétrica predial
+        # comum. NR-10 10.2.8.3 exige aterramento de forma geral e serve a
+        # qualquer um deles; NR-12 12.3.2, que é o aterramento DE MÁQUINA,
+        # volta quando a cena de fato nomeia uma.
+        "itens": ["NR-10 10.2.8.3", "NR-12 12.3.2"],
+        "itens_so_com_maquina": ("NR-12 12.3.2",),
         "gravidade_base": "alta",
     },
     "circuitos_sem_identificacao": {

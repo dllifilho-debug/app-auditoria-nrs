@@ -30,6 +30,15 @@ class Risco:
     # Risco que só existe se houver pessoa na cena (EPI, conduta, capacitação).
     # É o que impede o laudo de cobrar capacete numa foto sem ninguém.
     exige_pessoa: bool = False
+    # Itens que só entram no dossiê se houver máquina nomeada na cena. Mesmo
+    # princípio do `exige_pessoa`, mas por item e não pelo risco inteiro: um
+    # cabo de alimentação descascado é achado de verdade com ou sem máquina —
+    # o que muda é se cabe citar o item que fala do condutor DE MÁQUINA
+    # (NR-12 12.3.4) ou só o geral (NR-10 10.2.8.2). Sem esta distinção
+    # sobravam duas saídas ruins: citar NR-12 sempre, que foi como entulho
+    # virou 12.2.4 num canteiro sem máquina, ou nunca, que era perder a
+    # citação certa justamente quando a máquina está lá.
+    itens_so_com_maquina: tuple[str, ...] = ()
 
 
 def _reunir() -> dict[str, dict]:
@@ -68,6 +77,12 @@ def _validar(cru: dict[str, dict]) -> dict[str, Risco]:
         if not dados["itens"]:
             problemas.append(f"{chave}: nenhum item de NR mapeado")
 
+        for ref in dados.get("itens_so_com_maquina", ()):
+            if ref not in dados["itens"]:
+                problemas.append(
+                    f"{chave}: '{ref}' está em itens_so_com_maquina mas não em itens"
+                )
+
         for ref in dados["itens"]:
             nr, _, item = ref.partition(" ")
             alvo = base.obter(nr, item)
@@ -89,6 +104,7 @@ def _validar(cru: dict[str, dict]) -> dict[str, Risco]:
             itens=tuple(dados["itens"]),
             gravidade_base=dados["gravidade_base"],
             exige_pessoa=bool(dados.get("exige_pessoa", False)),
+            itens_so_com_maquina=tuple(dados.get("itens_so_com_maquina", ())),
         )
 
     if problemas:
