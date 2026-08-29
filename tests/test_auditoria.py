@@ -1619,3 +1619,52 @@ def test_item_prescritivo_continua_no_dossie(base):
         item = base.obter(nr, num)
         assert item is not None, f"{nr} {num}"
         assert dossie.prescritivo(item, base), f"{nr} {num} barrado"
+
+
+# ---------------------------------------------------------------------------
+# Resposta cortada no teto: o Olho já refazia, o Analista e o Diretor não
+# ---------------------------------------------------------------------------
+
+class _ClienteQueCortaUmaVez:
+    """Devolve JSON truncado na primeira chamada de cada agente, íntegro na segunda."""
+
+    def __init__(self):
+        self.ultimo_corte_por_limite = False
+        self.tetos: list[int] = []
+        self.vistos: set[str] = set()
+
+    def conversar(self, modelo, mensagens, teto_saida=1200, temperatura=0.0, json_estrito=False):
+        p = _texto_do_prompt(mensagens)
+        self.tetos.append(teto_saida)
+        quem = ("olho" if "perito em documentação fotográfica" in p
+                else "analista" if "DOSSIÊ NORMATIVO" in p else "diretor")
+        completo = ClienteDemonstracao().conversar(
+            modelo, mensagens, teto_saida, temperatura, json_estrito
+        )
+        if quem in self.vistos:
+            self.ultimo_corte_por_limite = False
+            return completo
+        self.vistos.add(quem)
+        self.ultimo_corte_por_limite = True
+        return completo[: len(completo) // 2]          # JSON cortado no meio
+
+
+def test_analista_e_diretor_refazem_a_chamada_cortada_no_teto(base):
+    """Três laudos de um lote real morreram com "não devolveu JSON utilizável".
+
+    Não era JSON inválido: era JSON truncado. O veredito ficou mais longo quando
+    ganhou o aparo, passou do teto de saída, e nem o Analista nem o Diretor
+    tinham a segunda tentativa que o Olho já fazia desde que um laudo se perdeu
+    do mesmo jeito. A foto já foi lida e cobrada — perdê-la aqui é o pior
+    desfecho possível.
+    """
+    cliente = _ClienteQueCortaUmaVez()
+    laudo = executar(
+        cliente, base, "imagem-falsa", "",
+        Configuracao(modelo_visao="d", modelo_texto="d", data_referencia=HOJE),
+    )
+    assert laudo.nao_conformidades, "o laudo se perdeu na resposta cortada"
+    assert not laudo.visao_falhou
+    # cada agente foi chamado duas vezes, a segunda com o dobro de espaço
+    assert 3600 in cliente.tetos, cliente.tetos      # Analista 1800 → 3600
+    assert 4400 in cliente.tetos, cliente.tetos      # Diretor 2200 → 4400
