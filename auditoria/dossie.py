@@ -40,6 +40,15 @@ MARCADORES_DOCUMENTAIS = (
     "prestacao de informacoes", "organizacoes contratadas", "adquirir somente",
     "programa de gerenciamento", "deve manter os originais",
     "que oferte as capacitacoes", "material didatico", "relatorio analitico",
+    # Um laudo real enquadrou "documento de registro de empregado exibido na
+    # tela do monitor" (uma foto de escritório, sem nenhum achado de campo)
+    # neste item — que é sobre o FORMATO da prova de treinamento (presencial
+    # x digital com senha), não sobre exposição de dado pessoal. NR-01 entra
+    # sempre como rede de segurança (NRS_TRANSVERSAIS) mesmo quando a foto não
+    # tem achado de segurança nenhum, e a busca textual ofereceu o item menos
+    # ruim do cluster de avaliação de aprendizagem. Nenhuma foto prova ou
+    # desmente o método de avaliação de um treinamento.
+    "avaliacao da aprendizagem",
 )
 
 

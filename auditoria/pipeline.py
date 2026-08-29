@@ -390,22 +390,35 @@ def montar_dossie(
 # ---------------------------------------------------------------------------
 
 def _conversar_sem_cortar(cliente, modelo, prompt, teto, temperatura, quem):
-    """Conversa de texto que refaz a chamada quando a resposta bateu no teto.
+    """Conversa de texto que refaz a chamada quando a resposta bateu no teto —
+    ou quando o JSON simplesmente não veio parseável, truncado ou não.
 
     O Olho já fazia isso desde que um laudo se perdeu por resposta cortada; o
     Analista e o Diretor não, e a conta chegou quando o veredito ganhou as
     chaves do aparo: num lote real de 14 fotos, três laudos morreram com "não
-    devolveu JSON utilizável" — JSON truncado no meio, não JSON inválido.
+    devolveu JSON utilizável". A primeira correção só refazia a chamada quando
+    a própria API sinalizava truncamento (`finish_reason == "length"`); um
+    lote seguinte perdeu três fotos de novo com a mesma mensagem, sem esse
+    sinal — JSON inválido por outro motivo (aspas de citação oficial não
+    escapadas, por exemplo), não truncamento. Refazer sempre que o parser
+    falhar, e não só quando a API confirma corte, cobre os dois casos.
 
-    Quem paga o dobro de saída é só a chamada que de fato estourou, e ainda sai
-    mais barato do que perder a foto: a imagem já foi lida e cobrada.
+    Quem paga o dobro de saída é só a chamada que de fato precisar de uma
+    segunda tentativa, e ainda sai mais barato do que perder a foto: a imagem
+    já foi lida e cobrada.
     """
     mensagens = [{"role": "user", "content": prompt}]
     bruto = cliente.conversar(
         modelo=modelo, mensagens=mensagens, teto_saida=teto,
         temperatura=temperatura, json_estrito=True,
     )
-    if getattr(cliente, "ultimo_corte_por_limite", False):
+    refazer = getattr(cliente, "ultimo_corte_por_limite", False)
+    if not refazer:
+        try:
+            return _ler_json(bruto, quem)
+        except ErroDeAuditoria:
+            refazer = True
+    if refazer:
         bruto = cliente.conversar(
             modelo=modelo, mensagens=mensagens, teto_saida=teto * 2,
             temperatura=temperatura, json_estrito=True,

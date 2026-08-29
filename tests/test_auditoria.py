@@ -159,6 +159,27 @@ def test_roteamento_nao_combina_palavras_de_achados_diferentes():
     assert not any("escada" in i for i in ids)
 
 
+def test_eletrica_predial_generica_nao_cita_nr12_sem_maquina_na_cena():
+    """Lote real: cabo danificado e caixa de distribuição aberta em obra
+    civil, sem nenhuma máquina na cena, citavam NR-12 12.3.4/12.3.8 (itens
+    que são especificamente sobre máquinas e equipamentos) via taxonomia
+    curada. NR-10, já presente nos mesmos riscos, cobre a mesma exigência
+    de forma geral — sem precisar do enquadramento fora de tema."""
+    casos = [
+        "Cabo elétrico preto grosso com isolamento danificado e fios internos "
+        "expostos pendurado na estrutura metálica.",
+        "Caixa de distribuição elétrica com tampa frontal aberta, sem proteção "
+        "de tampa visível, expondo os componentes internos.",
+        "Fios elétricos pendurados soltos, descendo do teto em direção ao piso, "
+        "sem conduítes ou caixas de proteção aparentes.",
+    ]
+    for fato in casos:
+        visao = Visao(achados=[Achado(fato)])
+        itens = {ref for r in rotear_riscos(visao) for ref in r.itens}
+        nr12 = {i for i in itens if i.startswith("NR-12")}
+        assert not nr12, f"{fato!r} citou NR-12 fora de tema: {nr12}"
+
+
 # ---------------------------------------------------------------------------
 # Aferição — o coração da garantia
 # ---------------------------------------------------------------------------
@@ -619,6 +640,18 @@ def test_maquina_e_equipamento_sozinhos_nao_roteiam_para_nr12():
     assert "NR-12" in _pontuar_nrs(
         "zona de prensagem de prensa hidráulica sem enclausuramento"
     )
+
+
+def test_item_de_formato_de_avaliacao_nao_e_comprovavel_em_foto(base):
+    """Laudo real: uma foto de escritório (monitor exibindo documento de RH,
+    sem nenhum achado de campo) enquadrou "documento exposto na tela" no
+    item que trata do FORMATO da prova de treinamento (presencial x digital
+    com senha) — item verdadeiro, situação completamente errada. Nenhuma
+    foto prova ou desmente o método de avaliação de um treinamento."""
+    from auditoria.dossie import comprovavel_em_foto
+
+    item = base.obter("NR-01", "Anexo II 4.6.1")
+    assert not comprovavel_em_foto(item)
 
 
 def test_tabela_desambigua_constatacoes_sob_o_mesmo_risco(base):
@@ -1691,3 +1724,39 @@ def test_analista_e_diretor_refazem_a_chamada_cortada_no_teto(base):
     # cada agente foi chamado duas vezes, a segunda com o dobro de espaço
     assert 3600 in cliente.tetos, cliente.tetos      # Analista 1800 → 3600
     assert 4400 in cliente.tetos, cliente.tetos      # Diretor 2200 → 4400
+
+
+class _ClienteQueDevolveJsonInvalidoUmaVez:
+    """Devolve texto não parseável na primeira chamada de cada agente, sem
+    nunca sinalizar truncamento — simula aspas de citação não escapadas."""
+
+    def __init__(self):
+        self.ultimo_corte_por_limite = False
+        self.vistos: set[str] = set()
+
+    def conversar(self, modelo, mensagens, teto_saida=1200, temperatura=0.0, json_estrito=False):
+        p = _texto_do_prompt(mensagens)
+        quem = ("olho" if "perito em documentação fotográfica" in p
+                else "analista" if "DOSSIÊ NORMATIVO" in p else "diretor")
+        completo = ClienteDemonstracao().conversar(
+            modelo, mensagens, teto_saida, temperatura, json_estrito
+        )
+        self.ultimo_corte_por_limite = False
+        if quem == "olho" or quem in self.vistos:
+            return completo
+        self.vistos.add(quem)
+        return '{"trecho": "citação com "aspas" soltas no meio", "resto": trunca aqui'
+
+
+def test_analista_e_diretor_refazem_a_chamada_com_json_invalido_nao_sinalizado(base):
+    """Um lote real perdeu três fotos de novo com "não devolveu JSON
+    utilizável" mesmo depois do fix de resposta cortada — porque o JSON
+    quebrado ali não vinha com o sinal de truncamento da API. Sem esse sinal,
+    a chamada tem que refazer mesmo assim quando o parser falha."""
+    cliente = _ClienteQueDevolveJsonInvalidoUmaVez()
+    laudo = executar(
+        cliente, base, "imagem-falsa", "",
+        Configuracao(modelo_visao="d", modelo_texto="d", data_referencia=HOJE),
+    )
+    assert laudo.nao_conformidades, "o laudo se perdeu no JSON inválido não sinalizado"
+    assert not laudo.visao_falhou

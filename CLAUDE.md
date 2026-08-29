@@ -42,7 +42,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 103 testes
+$VENV -m pytest tests/ -q          # 106 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -86,7 +86,7 @@ próprio comando composto (exit 144).
 
 - **6.358 itens** vigentes de **24 NRs** (de 36 vigentes), extraídos dos PDFs em `normas/`
 - **122 riscos** curados mapeando para **232 itens** reais; 25 exigem pessoa na cena
-- **103 testes**
+- **106 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
@@ -209,30 +209,40 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
     diferentes (agrupou por composição: duas telas de proteção viraram "iguais" a uma
     betoneira). Com limiar apertado, achado real foi 3 fotos em 100 — não move a
     agulha do rendimento.
-- **A NR-12 virou a lixeira do dossiê — é a próxima frente, e a mais importante.**
-  Validado em produção (ver abaixo): quatro das nove NCs das últimas três fotos caíram
-  na NR-12 em cenas de obra **sem máquina nenhuma**. Entulho no chão virou `12.2.4`
-  ("o piso do local de trabalho onde se instalam *máquinas e equipamentos*"), crítica,
-  1 dia; cabo pendurado na parede e caixa de distribuição de obra viraram `12.3.8`
-  ("são proibidas *nas máquinas e equipamentos*"). A NR-12 tem 920 itens — quase um
-  quarto da base indexável — e texto genérico o bastante ("áreas de circulação",
-  "condutores de alimentação elétrica") para casar com qualquer coisa de canteiro.
-  Do mesmo lote anterior: betoneira enquadrada em `NR-12 Anexo VIII 2.1` (**prensas** —
-  o título da NC saiu "Prensa, guilhotina ou dobradeira"), e foto de tela de computador
-  enquadrada em `NR-01 Anexo II 4.6.1`, que é avaliação de aprendizagem de EAD.
-  **Frente já iniciada em `d2d92b2`**, que tirou `máquina`, `equipamento` e
-  `sem proteção` sozinhos das palavras-chave da NR-12 — casavam com quase qualquer
-  achado e eram provavelmente o caminho pelo qual ela entrava no escopo nos casos acima.
-  Quanto isso resolve só o próximo lote real dirá; a linha de base para comparar são as
-  **19 NCs**, não as 2.
-  O que ainda não existe, e tem precedente no próprio código: a taxonomia já tem
-  `exige_pessoa`, que impede cobrar capacete em foto sem ninguém. O análogo é **exigir
-  máquina ou equipamento na cena para a NR-12 entrar no dossiê**, somado a um filtro de
-  anexo setorial fora de contexto (prensa, panificação, calçados) — este último é o que
-  pega a betoneira virando prensa, que o `d2d92b2` não alcança. É código, testável sem
-  rede, e reaproveita `titulo_da_secao`, criada para o filtro de item não prescritivo.
-  **Cuidado com a contraparte**: NR-35 Anexo III (escadas) e NR-12 Anexo XII (içamento)
-  são anexos que *devem* passar.
+- **A NR-12 virava a lixeira do dossiê — segunda rodada de correção nesta sessão,
+  ainda sem validação em produção.** `d2d92b2` tirou `máquina`, `equipamento` e
+  `sem proteção` sozinhos das palavras-chave de roteamento textual (`catalogo_nr.py`).
+  Não bastou: a taxonomia **curada** (`riscos/industria.py`) tinha o mesmo problema por
+  um caminho que o roteamento textual nem alcança. Sete riscos (`piso_local_maquinas_
+  danificado`, `partes_vivas_expostas`, `cabo_eletrico_danificado`, `quadro_eletrico_
+  aberto_ou_sem_sinalizacao`, `ligacao_eletrica_improvisada`, `instalacao_eletrica_em_
+  area_molhada`, `maquina_sem_aterramento`) citavam item de NR-12 (12.2.4, 12.3.x —
+  todos explicitamente "de máquinas e equipamentos" no próprio texto) **sempre**, para
+  sinais tão genéricos quanto "cabo rasgado" ou "quadro sem tampa" — sem checar se
+  havia máquina na cena. `cabo_eletrico_danificado` era o pior caso: mapeava só para
+  NR-12, nenhuma alternativa geral. Corrigido tirando o item de NR-12 de cada um (NR-10
+  ou NR-08, já presentes na maioria, cobrem a mesma exigência de forma geral).
+  De quebra, achado ao verificar o fix: o sinal `"guilhotina sem protecao frontal"`
+  (4 radicais) casava por cobertura parcial (75%, ver armadilha de sinal por extenso)
+  com qualquer "sem proteção ... frontal" — **sem** a palavra "guilhotina". Era esse o
+  caminho pelo qual a betoneira do lote anterior virou `NR-12 Anexo VIII 2.1` (prensas).
+  Encurtado para `"guilhotina sem protecao"` (3 radicais, cobertura parcial não
+  qualifica mais) — testado que a betoneira não bate mais nesse risco.
+  E a foto de tela de computador enquadrada em `NR-01 Anexo II 4.6.1` (avaliação de
+  aprendizagem de EAD — nada a ver com documento de RH exposto na tela): esse item
+  entrou em `MARCADORES_DOCUMENTAIS` (`dossie.py`), que já existia para bloquear item
+  de obrigação documental do roteamento textual.
+  **Ainda não existe** — precedente já no código: `exige_pessoa` impede cobrar capacete
+  em foto sem ninguém; o análogo (`exige_maquina`, exigindo máquina na cena para a NR-12
+  ENTRAR no dossiê, em vez de simplesmente tirar o item de NR-12 do risco) foi
+  considerado e descartado por ora — a correção aplicada é mais grosseira (perde a
+  citação de NR-12 mesmo quando a máquina está genuinamente na cena, se o achado usa
+  vocabulário genérico de cabo/quadro) mas testável e evidenciada; se o próximo lote
+  real mostrar itens de máquina desaparecendo onde deveriam aparecer, `exige_maquina`
+  é o próximo passo. **Cuidado com a contraparte**: NR-35 Anexo III (escadas) e NR-12
+  Anexo XII (içamento) são anexos que *devem* passar — não tocados nesta rodada.
+  **Sem validação em produção ainda** — precisa rodar o lote de 14 de novo (linha de
+  base: 19 NCs) e comparar.
 - **O aparo pode salvar enquadramento que devia ser vetado.** Visto em produção: NC em
   `NR-12 12.3.8` (partes energizadas expostas) com a trilha dizendo
   `retirado: partes energizadas expostas`. Cortado justamente o que o item exige, o que
@@ -281,6 +291,15 @@ chaves do aparo, a resposta passou do teto de saída e **três laudos morreram c
 truncado** — não inválido, truncado. O Olho já refazia a chamada nesse caso; o Analista
 e o Diretor não. Hoje os três compartilham `_conversar_sem_cortar`. **Toda vez que
 crescer o que se pede a um agente, verificar o teto de saída dele.**
+
+**A mesma mensagem voltou no lote de 29/08, com outra causa.** O sumário do lote de 14
+listou 3 fotos não auditadas com "Diretor/Analista não devolveu JSON utilizável" — a
+retentativa acima já estava em produção, então não era truncamento (`finish_reason ==
+"length"`) de novo; era JSON malformado por outro motivo (suspeita: aspas de citação
+oficial não escapadas) que a API não sinaliza. `_conversar_sem_cortar` só refazia a
+chamada quando a API confirmava o corte; agora refaz também sempre que o parser falha,
+sinalizado ou não. Sem validação em produção ainda — o lote de 14 tem 3 fotos que nunca
+saíram de jeito nenhum, então qualquer redução nesse número já é sinal de progresso.
 
 ---
 
