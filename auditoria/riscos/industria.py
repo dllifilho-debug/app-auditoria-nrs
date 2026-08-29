@@ -305,10 +305,13 @@ RISCOS: dict[str, dict] = {
         ],
         # Sinais como "piso quebrado" e "chao escorregadio" não têm nada de
         # máquina — batem em qualquer piso de obra ou depósito. NR-12 12.2.4
-        # é sobre piso de área de máquina especificamente; sem máquina na
-        # cena, citá-lo é "item verdadeiro, situação errada". NR-08 8.3.2.4
-        # (antiderrapância de piso, geral) já cobre o achado sozinho.
-        "itens": ["NR-08 8.3.2.4"],
+        # é sobre o piso da área de máquina especificamente; sem máquina na
+        # cena, citá-lo é "item verdadeiro, situação errada" (foi assim que
+        # entulho numa laje virou 12.2.4 crítica). NR-08 8.3.2.4
+        # (antiderrapância de piso, geral) cobre o achado sozinho; com máquina
+        # nomeada na cena, o item específico volta a caber.
+        "itens": ["NR-08 8.3.2.4", "NR-12 12.2.4"],
+        "itens_so_com_maquina": ("NR-12 12.2.4",),
         "gravidade_base": "media",
     },
     "maquina_sem_estabilidade_ou_fixacao": {
@@ -445,8 +448,10 @@ RISCOS: dict[str, dict] = {
         # alternativa geral — pior caso do padrão: qualquer cabo danificado
         # em qualquer lugar da obra, sem máquina nenhuma na cena, citava
         # NR-12 sozinho. Cabo com isolamento comprometido expondo partes
-        # vivas é a mesma exigência de NR-10 10.2.8.2, geral.
-        "itens": ["NR-10 10.2.8.2", "NR-10 10.2.8.2.1"],
+        # vivas é a mesma exigência de NR-10 10.2.8.2, geral; 12.3.4 é sobre
+        # o cabo de alimentação da máquina e depende dela estar na cena.
+        "itens": ["NR-10 10.2.8.2", "NR-10 10.2.8.2.1", "NR-12 12.3.4"],
+        "itens_so_com_maquina": ("NR-12 12.3.4",),
         "gravidade_base": "alta",
     },
     "instalacao_eletrica_em_area_molhada": {
@@ -489,9 +494,11 @@ RISCOS: dict[str, dict] = {
         # "Carcaça" sozinha já é ambígua (armadilha registrada no CLAUDE.md:
         # carcaça de alarme x carcaça de frigorífico), e os demais sinais
         # ("sem fio terra", "plugue com dois pinos") são elétrica predial
-        # comum. NR-12 12.3.2 é sobre aterramento DE MÁQUINA; NR-10 10.2.8.3
-        # já exige aterramento de forma geral.
-        "itens": ["NR-10 10.2.8.3"],
+        # comum. NR-10 10.2.8.3 exige aterramento de forma geral e serve a
+        # qualquer um deles; NR-12 12.3.2, que é o aterramento DE MÁQUINA,
+        # volta quando a cena de fato nomeia uma.
+        "itens": ["NR-10 10.2.8.3", "NR-12 12.3.2"],
+        "itens_so_com_maquina": ("NR-12 12.3.2",),
         "gravidade_base": "alta",
     },
     "circuitos_sem_identificacao": {

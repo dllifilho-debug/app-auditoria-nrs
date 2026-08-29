@@ -344,11 +344,19 @@ def montar_dossie(
     """Dossiê = itens dos riscos roteados (prioridade) + reforço por busca textual."""
     riscos = rotear_riscos(visao, contexto)
 
+    # O ambiente entra aqui junto dos achados: é ele que costuma nomear a
+    # máquina ("central de corte", "área de preparo de concreto com betoneira")
+    # quando o achado fala só da peça defeituosa.
+    cena = "\n".join(t for t in ([visao.ambiente] + visao.textos() + [contexto]) if t)
+    ha_maquina = mod_dossie.ha_maquina_na_cena(cena)
+
     curados: list[tuple[Item, Risco]] = []
     vistos: set[str] = set()
     for risco in riscos:
         if not risco.exige_pessoa or visao.pessoas_presentes:
             for ref in risco.itens:
+                if ref in risco.itens_so_com_maquina and not ha_maquina:
+                    continue
                 nr, _, num = ref.partition(" ")
                 item = base.obter(nr, num)
                 if item is not None and item.id not in vistos and item.vigente_em(quando):
@@ -357,7 +365,7 @@ def montar_dossie(
 
     complemento = mod_dossie.montar(
         base, visao.textos(), contexto=contexto, quando=quando,
-        teto=max(teto - len(curados), 4),
+        teto=max(teto - len(curados), 4), cena=visao.ambiente,
     )
 
     entradas: list[mod_dossie.Entrada] = []

@@ -42,7 +42,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 106 testes
+$VENV -m pytest tests/ -q          # 114 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -78,6 +78,9 @@ próprio comando composto (exit 144).
 | `rotear_riscos` somando palavras de achados sem relação | `_radicais()` juntava todos os achados num bag-of-words só; um sinal de 4 palavras encontrava as 4 espalhadas em achados que não tinham nada a ver entre si e acionava risco inexistente (viu isso: nenhuma escada na foto, risco de escada disparado). Corrigido tratando cada achado como fragmento isolado — ambiente/contexto entram em todos (são descrição da cena inteira), achados nunca se misturam entre si. Ao adicionar heurística de matching textual, pense em "de onde vêm as palavras", não só "quais palavras". |
 | Sinal de roteamento escrito por extenso | A cobertura é parcial (70%): um sinal de 4 radicais casa com 3, e o que falta é justamente o **discriminante**. `"painel eletrico sem tampa"` fazia "painel de fôrma de madeira sem tampa protetora" virar quadro elétrico aberto; `"escada apoiada em piso irregular"` fazia escada **fixa** de concreto virar escada de mão. Sinal curto, em que nenhum radical pode faltar, é mais seguro que sinal descritivo. **Toda vez que acrescentar sinal, teste a contraparte que NÃO deve disparar.** |
 | Filtrar candidato depois do corte relativo do BM25 | O `minimo_relativo` é calculado sobre o topo bruto. Um item ruim no topo levanta a régua e derruba os bons abaixo dele — filtrando depois, o dossiê fica vazio em vez de trocar o item. Por isso `buscar_pontuado` recebe `aceitar` e peneira **antes**. |
+| Mesmo vocabulário para reconhecer o ramo no **item** e na **cena** | Os dois lados correm riscos opostos. Dentro da NR-12, "calçado" só aparece em item de máquina calçadista — serve para classificar o item. Mas na cena "calçado" é o que um laudo escreve o tempo todo ("calçado de segurança", EPI da NR-06), e usá-lo ali destrancaria o Anexo X em qualquer foto. Por isso `Setor` tem `no_item` e `na_cena` separados. É a armadilha do sinal por extenso vista de outro ângulo: o que discrimina de um lado não discrimina do outro. |
+| Classificar o ramo de um item pelo texto antes do anexo | Os anexos setoriais se citam entre si ("as disposições deste Anexo não se aplicam às máquinas dispostas no Anexo X"), e item do Anexo X **fala de prensa**. Pelo texto, ele passava como se fosse do Anexo VIII — que uma foto de estamparia legitimamente destranca. O anexo decide primeiro; o texto só para o que a extração deixou fora dele (`12.1`, "máquinas de montar base de calçados", ficou no corpo principal). |
+| Portão que só ABRE, com sinal que aparece em negação | `ha_maquina_na_cena` destrancaria a NR-12 com "**nenhuma máquina** visível na cena" se aceitasse a palavra "máquina" — exatamente a foto que se quer barrar. Por isso a lista é de substantivos concretos ("betoneira", "grua"), e inclui as máquinas dos ramos setoriais: sem elas o portão fecharia numa foto de padaria, trocando erro de enquadramento por buraco de cobertura. |
 | `git fetch origin main <branch-que-não-existe-mais>` falha inteiro, silenciosamente | Fetch de múltiplos refs é atômico: se um ref já foi deletado no remoto (branch mergeada), o comando inteiro falha e **nenhum ref é atualizado** — inclusive o `main`, que existia e seria atualizado sozinho. `origin/main` local fica congelado na versão de antes, e comparações feitas contra ele mentem. Já causou uma sessão inteira concluir errado que "a reescrita nunca foi mergeada". Se o histórico parecer suspeito, rode `git fetch origin main` sozinho antes de confiar em qualquer diff. |
 
 ---
@@ -85,8 +88,9 @@ próprio comando composto (exit 144).
 ## Estado atual (commit `b21ffce`)
 
 - **6.358 itens** vigentes de **24 NRs** (de 36 vigentes), extraídos dos PDFs em `normas/`
-- **122 riscos** curados mapeando para **232 itens** reais; 25 exigem pessoa na cena
-- **106 testes**
+- **122 riscos** curados mapeando para **228 itens** reais; 25 exigem pessoa na cena e
+  3 têm item que só entra com máquina nomeada na cena (`itens_so_com_maquina`)
+- **114 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
@@ -120,9 +124,12 @@ kb_build.py   PDF oficial → base estruturada (vigência por item e por ediçã
 kb.py         consulta, BM25 com bigramas, extração de citações
 catalogo_nr.py  as 38 NRs: título, status, palavras-chave de roteamento
 riscos/       taxonomia curada risco→item; o portão valida no import e quebra se um item sumir
-dossie.py     recuperação dos itens candidatos; comprovavel_em_foto() filtra item
-              documental (inventário de riscos, carga horária...) da busca textual —
-              não alcança a taxonomia curada, onde alguns estão lá de propósito
+dossie.py     recuperação dos itens candidatos. Três peneiras sobre a busca
+              textual, nenhuma delas alcançando a taxonomia curada (onde há item
+              documental de propósito): comprovavel_em_foto() tira obrigação de
+              papel, prescritivo() tira o que não impõe conduta, e
+              setor_pertinente() tira a parte da norma que é de outro ramo.
+              ha_maquina_na_cena() é o portão que a NR-12 precisa atravessar
 pipeline.py   Gauntlet Loop e a aferição determinística
 modelos.py    cliente Groq: cota, degradação por parâmetro, truncamento
 relatorio.py  Markdown e HTML imprimível
@@ -209,40 +216,50 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
     diferentes (agrupou por composição: duas telas de proteção viraram "iguais" a uma
     betoneira). Com limiar apertado, achado real foi 3 fotos em 100 — não move a
     agulha do rendimento.
-- **A NR-12 virava a lixeira do dossiê — segunda rodada de correção nesta sessão,
-  ainda sem validação em produção.** `d2d92b2` tirou `máquina`, `equipamento` e
-  `sem proteção` sozinhos das palavras-chave de roteamento textual (`catalogo_nr.py`).
-  Não bastou: a taxonomia **curada** (`riscos/industria.py`) tinha o mesmo problema por
-  um caminho que o roteamento textual nem alcança. Sete riscos (`piso_local_maquinas_
-  danificado`, `partes_vivas_expostas`, `cabo_eletrico_danificado`, `quadro_eletrico_
-  aberto_ou_sem_sinalizacao`, `ligacao_eletrica_improvisada`, `instalacao_eletrica_em_
-  area_molhada`, `maquina_sem_aterramento`) citavam item de NR-12 (12.2.4, 12.3.x —
-  todos explicitamente "de máquinas e equipamentos" no próprio texto) **sempre**, para
-  sinais tão genéricos quanto "cabo rasgado" ou "quadro sem tampa" — sem checar se
-  havia máquina na cena. `cabo_eletrico_danificado` era o pior caso: mapeava só para
-  NR-12, nenhuma alternativa geral. Corrigido tirando o item de NR-12 de cada um (NR-10
-  ou NR-08, já presentes na maioria, cobrem a mesma exigência de forma geral).
-  De quebra, achado ao verificar o fix: o sinal `"guilhotina sem protecao frontal"`
-  (4 radicais) casava por cobertura parcial (75%, ver armadilha de sinal por extenso)
-  com qualquer "sem proteção ... frontal" — **sem** a palavra "guilhotina". Era esse o
-  caminho pelo qual a betoneira do lote anterior virou `NR-12 Anexo VIII 2.1` (prensas).
-  Encurtado para `"guilhotina sem protecao"` (3 radicais, cobertura parcial não
-  qualifica mais) — testado que a betoneira não bate mais nesse risco.
-  E a foto de tela de computador enquadrada em `NR-01 Anexo II 4.6.1` (avaliação de
-  aprendizagem de EAD — nada a ver com documento de RH exposto na tela): esse item
-  entrou em `MARCADORES_DOCUMENTAIS` (`dossie.py`), que já existia para bloquear item
-  de obrigação documental do roteamento textual.
-  **Ainda não existe** — precedente já no código: `exige_pessoa` impede cobrar capacete
-  em foto sem ninguém; o análogo (`exige_maquina`, exigindo máquina na cena para a NR-12
-  ENTRAR no dossiê, em vez de simplesmente tirar o item de NR-12 do risco) foi
-  considerado e descartado por ora — a correção aplicada é mais grosseira (perde a
-  citação de NR-12 mesmo quando a máquina está genuinamente na cena, se o achado usa
-  vocabulário genérico de cabo/quadro) mas testável e evidenciada; se o próximo lote
-  real mostrar itens de máquina desaparecendo onde deveriam aparecer, `exige_maquina`
-  é o próximo passo. **Cuidado com a contraparte**: NR-35 Anexo III (escadas) e NR-12
-  Anexo XII (içamento) são anexos que *devem* passar — não tocados nesta rodada.
+- **A NR-12 virava a lixeira do dossiê — três rodadas, ainda sem validação em
+  produção.** `d2d92b2` (1ª) tirou `máquina`, `equipamento` e `sem proteção` sozinhos
+  das palavras-chave de roteamento textual. `905fdf4` (2ª) foi atrás da taxonomia
+  **curada** (`riscos/industria.py`), que tinha o mesmo problema por um caminho que o
+  roteamento textual nem alcança: sete riscos citavam item de NR-12 (12.2.4, 12.3.x —
+  todos "de máquinas e equipamentos" no próprio texto) **sempre**, para sinais tão
+  genéricos quanto "cabo rasgado". Também encurtou o sinal `"guilhotina sem protecao
+  frontal"` (4 radicais, casava por cobertura parcial em qualquer "sem proteção …
+  frontal" **sem** a palavra "guilhotina" — era esse o caminho pelo qual a betoneira do
+  lote anterior virou `NR-12 Anexo VIII 2.1`, prensas), e pôs a avaliação de
+  aprendizagem de EAD em `MARCADORES_DOCUMENTAIS`.
+  A 3ª rodada mediu o dossiê em vez de adivinhar, e achou o que sobrava — **mais grave
+  do que o registrado**. Numa cena de canteiro **com** máquina, o filtro anterior não
+  age: uma betoneira gastava os **cinco** lugares da NR-12 com o **Anexo X (calçados)**
+  — "máquina de pregar salto", "injetora rotativa de carrossel móvel" — e uma serra
+  circular de bancada recebia **três itens de serra fita de AÇOUGUE** (Anexo VII) e dois
+  de "máquina boca de sapo". Os itens certos nem chegavam a caber. **O anexo setorial
+  não era só ruído: era o que consumia a cota.** Duas peças novas, ambas em `dossie.py`:
+  - `ha_maquina_na_cena()` — o `exige_maquina` que estava pendente, nos dois lugares em
+    que ele faz sentido. Como portão de NR (a NR-12 não entra no escopo da busca textual
+    sem máquina nomeada) e, na taxonomia curada, como `itens_so_com_maquina`: o item de
+    NR-12 volta aos três riscos cujo objeto **é** a máquina (piso da área de máquina,
+    aterramento da carcaça, cabo de alimentação) e entra só quando ela está na cena.
+    Isso desfaz a perda que a 2ª rodada tinha aceitado — a betoneira com cabo
+    descascado volta a citar `12.3.4`, medido. Os outros quatro riscos, que descrevem
+    elétrica **predial**, seguem só em NR-10: lá o item de NR-12 não acrescentava nada.
+  - `setor_pertinente()` — tabela `SETORES` com os sete ramos da NR-12 (motosserras,
+    panificação, açougue, prensas, injetoras, calçados, agrícola), 61% dos 920 itens da
+    norma. Vai como `aceitar` de `buscar_pontuado`, portanto **antes** do corte relativo.
+  Medido em 10 cenas de canteiro reconstruídas do lote real: **10 itens de anexo setorial
+  → 0**, e de quebra sumiram as duas vagas que o glossário da NR-01 ocupava.
   **Sem validação em produção ainda** — precisa rodar o lote de 14 de novo (linha de
-  base: 19 NCs) e comparar.
+  base: 19 NCs) e comparar. O que vigiar no retorno: item de máquina **sumindo** onde
+  deveria aparecer (o portão fecha por nome de máquina; se o Olho descrever a máquina
+  sem nomeá-la, a NR-12 não entra).
+- **Duas lacunas de roteamento achadas ao medir, não corrigidas.** São de recall, não da
+  frente da lixeira, e mexer em sinal pede validação em produção:
+  1. A betoneira com **coroa e pinhão expostos** não bate em
+     `maquina_sem_protecao_zona_perigo` — os sinais são "polia exposta", "engrenagem a
+     mostra", "correia sem protecao", e nenhum cobre o vocabulário do Olho. É a NC mais
+     óbvia da foto e ela não routeia.
+  2. Uma cena de panificação (masseira, cilindro de massa) não pontua NR-12 nenhuma em
+     `_pontuar_nrs` — e ainda dispara `atmosfera_ipvs_sem_protecao_respiratoria`, que
+     não tem nada a ver. Fora do domínio do usuário (construção), mas é o mesmo padrão.
 - **O aparo pode salvar enquadramento que devia ser vetado.** Visto em produção: NC em
   `NR-12 12.3.8` (partes energizadas expostas) com a trilha dizendo
   `retirado: partes energizadas expostas`. Cortado justamente o que o item exige, o que

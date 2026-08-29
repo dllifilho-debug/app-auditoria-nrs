@@ -17,6 +17,10 @@ from .kb import BaseNormativa, Item, normalizar
 # ambiente de trabalho, mesmo quando o roteamento por palavra-chave não pega.
 NRS_TRANSVERSAIS = ["NR-01", "NR-06"]
 
+# NRs cujo objeto é a máquina em si. Sem máquina nomeada na cena, nenhum item
+# delas é candidato — ver `ha_maquina_na_cena`.
+NRS_QUE_EXIGEM_MAQUINA = frozenset({"NR-12"})
+
 # Obrigações puramente documentais ou de gestão: inventário de riscos, guarda e
 # digitalização de documentos, carga horária de treinamento, registro de entrega
 # de EPI, contrato com organizações contratadas. Uma fotografia não comprova nem
@@ -90,12 +94,262 @@ RE_ITEM_DE_ESCOPO = re.compile(
 
 def prescritivo(item: Item, base: BaseNormativa) -> bool:
     """O item impõe conduta, ou só diz do que a norma trata?"""
-    if RE_ITEM_DE_ESCOPO.match(normalizar(item.texto)):
+    texto = normalizar(item.texto)
+    if RE_ITEM_DE_ESCOPO.match(texto):
+        return False
+    # Quando o PDF não separa o cabeçalho do primeiro item, ele vem colado na
+    # frente do texto: "Glossário Ambiente exclusivo: espaço físico…" é o
+    # glossário da NR-01 Anexo II, extraído como se fosse item normativo.
+    if normalizar(texto.split(" ")[0]).strip(" .:-") in SECOES_SEM_COMANDO:
         return False
     titulo = normalizar(base.titulo_da_secao(item)).strip(" .:-")
     titulo = re.sub(r"^(?:d[aeo]s)\s+", "", titulo)   # "Das disposições finais"
     titulo = re.sub(r"\s+\d+$", "", titulo)           # número de página colado
     return titulo not in SECOES_SEM_COMANDO
+
+
+# ---------------------------------------------------------------------------
+# Máquina na cena, e parte setorial da norma fora de contexto
+# ---------------------------------------------------------------------------
+
+# A NR-12 tem 920 itens — quase um quarto de tudo que é indexável — e um
+# vocabulário genérico o bastante ("áreas de circulação", "condutores de
+# alimentação elétrica", "piso do local de trabalho") para casar com qualquer
+# coisa de canteiro. Por isso ela virou a lixeira do dossiê: entulho no chão
+# saiu como 12.2.4 e cabo pendurado na parede como 12.3.8, em fotos sem
+# máquina nenhuma.
+#
+# O precedente está na taxonomia curada: `exige_pessoa` impede cobrar capacete
+# numa foto sem ninguém. Este é o análogo — a NR-12 só entra no escopo da busca
+# textual se a cena nomear uma máquina.
+#
+# A lista é de substantivos concretos de propósito. "Máquina" e "equipamento"
+# sozinhos foram tirados do roteamento em `d2d92b2` justamente por casarem com
+# quase tudo (equipamento de proteção individual, equipamento elétrico), e aqui
+# seriam piores: como o portão só ABRE, uma frase de negação do Olho ("nenhuma
+# máquina visível na cena") destrancaria exatamente o caso que se quer barrar.
+# Nomear a máquina é o sinal que não se inverte.
+MAQUINAS_NA_CENA = (
+    # canteiro
+    "betoneira", "argamassadeira", "masseira de argamassa", "bomba de concreto",
+    "vibrador de concreto", "vibrador de imersao", "regua vibratoria",
+    "placa vibratoria", "compactador", "rolo compactador", "bate-estaca",
+    "cortadora de piso", "policorte", "serra circular", "serra de bancada",
+    "serra marmore", "serra de disco", "serra de fita", "esmerilhadeira",
+    "lixadeira", "furadeira", "martelete", "rompedor", "maquina de solda",
+    "compressor", "motobomba", "bancada de corte e dobra",
+    # transporte e elevação
+    # "talha" e "gerador" sozinhos abrem em "madeira talhada" e em "gerador de
+    # resíduos", que é vocabulário de PGR, não de máquina.
+    "guincho", "guindaste", "grua", "munck", "talha eletrica",
+    "talha de corrente", "talha manual", "grupo gerador",
+    "gerador de energia", "elevador de carga",
+    "elevador cremalheira", "cremalheira", "plataforma elevatoria",
+    "cesta aerea", "empilhadeira", "retroescavadeira", "escavadeira",
+    "pa carregadeira", "motoniveladora", "correia transportadora",
+    "esteira transportadora", "transportador de correia",
+    # industriais
+    # "torno" sozinho não vai: casa com "em torno de", que é como um laudo
+    # descreve a área ao redor de um pilar.
+    "torno mecanico", "torno cnc", "fresadora", "prensa", "guilhotina",
+    "dobradeira", "calandra",
+    "injetora", "extrusora", "misturador industrial", "motosserra", "motopoda",
+    # Máquinas dos ramos que a tabela `SETORES` trata logo abaixo. Sem elas
+    # aqui o portão fecharia justamente nas fotos em que a NR-12 setorial é a
+    # norma certa: uma masseira de padaria é tão máquina quanto uma betoneira,
+    # e barrar a NR-12 inteira ali trocaria um erro de enquadramento por um
+    # buraco de cobertura. O nome do ramo ("padaria", "açougue") fica de fora
+    # de propósito — quem abre o portão é a máquina, não o lugar.
+    "masseira", "amassadeira", "cilindro de massa", "divisora de massa",
+    "modeladora", "laminadora", "fatiadora de pao", "batedeira planetaria",
+    "forno de lastro", "moedor de carne", "serra fita", "amaciador de bife",
+    "fatiador de frios", "cortador de frios", "descascador de legumes",
+    "liquidificador industrial", "rebaixadeira", "colheitadeira", "plantadeira",
+    "semeadora", "ensiladeira", "forrageira", "motocultivador",
+)
+
+
+@dataclass(frozen=True)
+class Setor:
+    """Um ramo para o qual parte de uma NR vale, e só ele.
+
+    Dois vocabulários, porque os dois lados correm riscos opostos:
+
+    - `no_item` reconhece que o item é daquele ramo. Pode ser a palavra
+      simples: dentro da NR-12, "calçado" só aparece em item de máquina
+      calçadista.
+    - `na_cena` decide se a foto é daquele ramo, e aí a palavra simples é
+      perigosa — "calçado" é o que um laudo de segurança escreve o tempo todo
+      ("calçado de segurança", EPI da NR-06). Aqui vale o nome da máquina.
+
+    Confundir os dois lados é a armadilha do sinal escrito por extenso, vista
+    de outro ângulo: o que discrimina de um lado não discrimina do outro.
+    """
+
+    nome: str
+    anexos: tuple[str, ...]
+    no_item: tuple[str, ...]
+    na_cena: tuple[str, ...]
+
+
+# Medido no dossiê antes deste filtro: uma betoneira de canteiro gastava os
+# cinco lugares da NR-12 com o Anexo X (calçados — "máquina de pregar salto",
+# "injetora rotativa de carrossel móvel"), e uma serra circular de bancada
+# recebia três itens de serra fita de AÇOUGUE (Anexo VII) e dois de "máquina
+# boca de sapo". Os itens certos — proteção de zona de perigo, 12.5.x — nem
+# chegavam a caber. O filtro não serve só para tirar item errado: serve para
+# devolver a cota da NR-12 ao item certo.
+#
+# O anexo é o critério principal, mas não basta: a extração do PDF deixou
+# `12.1` ("máquinas de montar base de calçados") no corpo principal, sem marca
+# de anexo, e ele apareceu no dossiê da betoneira. Por isso o texto do item
+# também conta.
+SETORES: dict[str, tuple[Setor, ...]] = {
+    "NR-12": (
+        Setor(
+            nome="motosserras e motopodas",
+            anexos=("V",),
+            no_item=("motosserra", "motopoda"),
+            na_cena=("motosserra", "motopoda"),
+        ),
+        Setor(
+            nome="panificação e confeitaria",
+            anexos=("VI",),
+            no_item=(
+                "panificacao", "confeitaria", "padaria", "masseira",
+                "amassadeira", "cilindro de massa", "divisora de massa",
+                "modeladora", "laminadora", "fatiadora de pao",
+                "forno de lastro", "farinha de rosca",
+            ),
+            na_cena=(
+                "panificacao", "confeitaria", "padaria", "masseira",
+                "amassadeira", "cilindro de massa", "divisora de massa",
+                "fatiadora de pao", "forno de lastro", "batedeira planetaria",
+            ),
+        ),
+        Setor(
+            nome="açougue, mercearia, bares e restaurantes",
+            anexos=("VII",),
+            no_item=(
+                "acougue", "mercearia", "bares e restaurantes",
+                "moedor de carne", "serra fita", "amaciador de bife",
+                "fatiador de frios", "cortador de frios",
+                "descascador de legumes", "liquidificador",
+            ),
+            na_cena=(
+                "acougue", "mercearia", "restaurante", "lanchonete",
+                "cozinha industrial", "moedor de carne", "serra fita",
+                "amaciador de bife", "fatiador de frios",
+                "descascador de legumes",
+            ),
+        ),
+        Setor(
+            nome="prensas e similares",
+            anexos=("VIII",),
+            no_item=(
+                "prensa", "guilhotina", "dobradeira", "tesoura mecanica",
+                "estampo", "martelo de queda",
+            ),
+            na_cena=(
+                "prensa", "guilhotina", "dobradeira", "tesoura mecanica",
+                "estampo", "zona de prensagem",
+            ),
+        ),
+        Setor(
+            nome="injetoras de material plástico",
+            anexos=("IX",),
+            no_item=(
+                "injetora", "injecao de plastico", "molde de injecao",
+                "termoplastico",
+            ),
+            na_cena=(
+                "injetora", "injecao de plastico", "molde de injecao",
+                "termoplastico",
+            ),
+        ),
+        Setor(
+            nome="fabricação de calçados",
+            anexos=("X",),
+            no_item=(
+                "calcado", "solado", "palmilha", "curtume", "boca de sapo",
+                "montar bicos", "pregar salto", "conformar traseiro",
+            ),
+            na_cena=(
+                "fabricacao de calcados", "industria calcadista", "curtume",
+                "solado", "palmilha", "boca de sapo", "montar bicos",
+                "pregar salto", "conformar traseiro", "rebaixadeira",
+            ),
+        ),
+        Setor(
+            nome="máquinas agrícolas e florestais",
+            anexos=("XI",),
+            no_item=(
+                "colheitadeira", "plantadeira", "semeadora", "ensiladeira",
+                "forrageira", "motocultivador", "implemento agricola",
+                "maquinas agricolas", "uso agricola", "agroflorest",
+                "lavoura", "colheita",
+            ),
+            na_cena=(
+                "colheitadeira", "plantadeira", "semeadora", "ensiladeira",
+                "forrageira", "motocultivador", "implemento agricola",
+                "trator agricola", "pulverizador agricola", "lavoura",
+                "colheita",
+            ),
+        ),
+    ),
+}
+
+# Os demais anexos da NR-12 valem para qualquer máquina e ficam de fora da
+# tabela de propósito: I (distâncias de segurança e cortina de luz), II
+# (capacitação do operador), III (meios de acesso a máquinas) e sobretudo
+# XII (equipamentos de guindar, transportar e descarregar — cesta aérea, grua,
+# elevador de carga), que é justamente o que uma obra tem. A contraparte a
+# vigiar é essa: NR-12 Anexo XII e NR-35 Anexo III (escadas) devem passar.
+
+
+def _menciona(alvo: str, termos) -> bool:
+    """Algum dos termos aparece no texto já normalizado, como palavra inteira?
+
+    Mesmo casamento do roteamento por palavra-chave: tolera sufixo curto
+    (plural, "prensagem" para "prensa") sem deixar "imprensado" contar como
+    prensa.
+    """
+    return any(
+        re.search(r"\b" + re.escape(termo).replace(r"\ ", r"\s+") + r"\w{0,3}\b", alvo)
+        for termo in map(normalizar, termos)
+        if termo
+    )
+
+
+def ha_maquina_na_cena(texto: str) -> bool:
+    """A cena nomeia alguma máquina, ou equipamento de guindar e transportar?"""
+    return _menciona(normalizar(texto), MAQUINAS_NA_CENA)
+
+
+def setor_do_item(item: Item) -> Setor | None:
+    """Ramo ao qual o item pertence exclusivamente, se houver.
+
+    O anexo decide antes do texto, e a ordem importa: os anexos setoriais se
+    citam entre si ("as disposições deste Anexo não se aplicam às máquinas
+    dispostas no Anexo X"), e itens do Anexo X — calçados — falam de prensa.
+    Pelo texto, eles passariam como se fossem do Anexo VIII, que uma foto de
+    estamparia legitimamente destranca.
+    """
+    setores = SETORES.get(item.nr, ())
+    if item.anexo:
+        for setor in setores:
+            if item.anexo in setor.anexos:
+                return setor
+    for setor in setores:
+        if _menciona(normalizar(item.texto), setor.no_item):
+            return setor
+    return None
+
+
+def setor_pertinente(item: Item, cena: str) -> bool:
+    """O item não é de um ramo alheio ao que a foto mostra?"""
+    setor = setor_do_item(item)
+    return setor is None or _menciona(normalizar(cena), setor.na_cena)
 
 
 @dataclass(frozen=True)
@@ -155,6 +409,7 @@ def montar(
     teto: int = 22,
     teto_por_nr: int = 5,
     nrs_forcadas: list[str] | None = None,
+    cena: str = "",
 ) -> Dossie:
     """Constrói o dossiê a partir dos achados factuais do Agente Olho.
 
@@ -166,12 +421,22 @@ def montar(
     achados = [a.strip() for a in achados if a and a.strip()]
     blob = "\n".join(achados + [contexto])
 
+    # `cena` (na prática, o ambiente que o Olho caracterizou) não entra na
+    # busca: ela descreve o lugar, não o achado, e diluiria o recorte de cada
+    # fato. Mas entra nos portões, e faz falta lá — é em "açougue, área de
+    # manipulação" ou "central de corte do canteiro" que o ramo e a máquina
+    # costumam estar nomeados, não no achado.
+    texto_da_cena = "\n".join(t for t in (blob, cena) if t.strip())
+
     pontos = _pontuar_nrs(blob)
     for nr in nrs_forcadas or []:
         pontos[nr] = pontos.get(nr, 0) + 10
     ordenadas = sorted(pontos, key=lambda n: (-pontos[n], n))
     candidatas = [n for n in ordenadas if n in base.por_nr]
     sem_texto = [n for n in ordenadas if n in NRS_VIGENTES and n not in base.por_nr]
+
+    if not ha_maquina_na_cena(texto_da_cena):
+        candidatas = [n for n in candidatas if n not in NRS_QUE_EXIGEM_MAQUINA]
 
     escopo = candidatas + [n for n in NRS_TRANSVERSAIS if n in base.por_nr and n not in candidatas]
 
@@ -183,8 +448,18 @@ def montar(
     melhor: dict[str, tuple[float, Item, str]] = {}
 
     def util(item: Item) -> bool:
-        """Item que uma fotografia pode evidenciar e que impõe conduta."""
-        return comprovavel_em_foto(item) and prescritivo(item, base)
+        """Item que a foto pode evidenciar, que impõe conduta e cujo anexo
+        pertence ao ramo que a foto mostra.
+
+        Vai como `aceitar` para `buscar_pontuado`, e não como peneira depois:
+        o `minimo_relativo` é calculado sobre o topo bruto, então um item ruim
+        no topo levantaria a régua e derrubaria os bons abaixo dele.
+        """
+        return (
+            comprovavel_em_foto(item)
+            and prescritivo(item, base)
+            and setor_pertinente(item, texto_da_cena)
+        )
 
     def registrar(item: Item, score: float, origem: str) -> None:
         score *= prior.get(item.nr, 1.0)
