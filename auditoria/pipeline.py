@@ -389,6 +389,30 @@ def montar_dossie(
 # Etapa 3 — Agente Analista
 # ---------------------------------------------------------------------------
 
+def _conversar_sem_cortar(cliente, modelo, prompt, teto, temperatura, quem):
+    """Conversa de texto que refaz a chamada quando a resposta bateu no teto.
+
+    O Olho já fazia isso desde que um laudo se perdeu por resposta cortada; o
+    Analista e o Diretor não, e a conta chegou quando o veredito ganhou as
+    chaves do aparo: num lote real de 14 fotos, três laudos morreram com "não
+    devolveu JSON utilizável" — JSON truncado no meio, não JSON inválido.
+
+    Quem paga o dobro de saída é só a chamada que de fato estourou, e ainda sai
+    mais barato do que perder a foto: a imagem já foi lida e cobrada.
+    """
+    mensagens = [{"role": "user", "content": prompt}]
+    bruto = cliente.conversar(
+        modelo=modelo, mensagens=mensagens, teto_saida=teto,
+        temperatura=temperatura, json_estrito=True,
+    )
+    if getattr(cliente, "ultimo_corte_por_limite", False):
+        bruto = cliente.conversar(
+            modelo=modelo, mensagens=mensagens, teto_saida=teto * 2,
+            temperatura=temperatura, json_estrito=True,
+        )
+    return _ler_json(bruto, quem)
+
+
 PROMPT_ANALISTA = """Você é engenheiro de segurança do trabalho enquadrando os fatos de uma inspeção.
 
 FATOS OBSERVADOS NA FOTO
@@ -462,14 +486,7 @@ def agente_analista(
             "\n\nO DIRETOR TÉCNICO REPROVOU A VERSÃO ANTERIOR. Corrija exatamente estes pontos "
             "e não repita os enquadramentos vetados:\n" + correcoes
         )
-    bruto = cliente.conversar(
-        modelo=modelo,
-        mensagens=[{"role": "user", "content": prompt}],
-        teto_saida=1800,
-        temperatura=0.1,
-        json_estrito=True,
-    )
-    return _ler_json(bruto, "Analista")
+    return _conversar_sem_cortar(cliente, modelo, prompt, 1800, 0.1, "Analista")
 
 
 # ---------------------------------------------------------------------------
@@ -723,14 +740,10 @@ def agente_diretor(
         pontos=_rotular(sem_enquadramento, "P"),
         conformidades=_rotular(conformidades, "C"),
     )
-    bruto = cliente.conversar(
-        modelo=modelo,
-        mensagens=[{"role": "user", "content": prompt}],
-        teto_saida=1600,
-        temperatura=0.0,
-        json_estrito=True,
-    )
-    return _ler_json(bruto, "Diretor")
+    # O veredito ficou mais longo quando ganhou o aparo: cada enquadramento
+    # devolve o fato copiado, a decisão e, quando aparado, a constatação
+    # reescrita. 1600 deixou de bastar num laudo com muitos achados.
+    return _conversar_sem_cortar(cliente, modelo, prompt, 2200, 0.0, "Diretor")
 
 
 # Rótulo interno da conversa com o Diretor que vazou para o parecer de um laudo
