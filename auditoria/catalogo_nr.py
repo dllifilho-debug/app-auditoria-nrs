@@ -429,9 +429,18 @@ CATALOGO_NR: dict[str, dict] = {
         ),
         "tipo": "especial",
         "palavras_chave": [
-            "maquina",
-            "máquina",
-            "equipamento",
+            # "máquina" e "equipamento" sozinhos casam com quase qualquer
+            # achado (equipamento de proteção individual, equipamento
+            # elétrico, máquina fotográfica, máquina de lavar) e enchiam o
+            # dossiê de itens de NR-12 fora de tema — a mesma armadilha do
+            # "painel" sozinho na NR-10. Exigir as duas palavras juntas
+            # mantém o sinal específico de máquina sem perder cobertura,
+            # já que o roteamento curado (riscos/industria.py) não depende
+            # deste catálogo.
+            "maquina industrial",
+            "máquina industrial",
+            "maquina sem protecao",
+            "máquina sem proteção",
             "protecao fixa",
             "proteção fixa",
             "protecao movel intertravada",
@@ -455,8 +464,6 @@ CATALOGO_NR: dict[str, dict] = {
             "eixo cardan",
             "transmissao de forca",
             "transmissão de força",
-            "sem protecao",
-            "sem proteção",
             "coifa",
             "manual de instrucoes",
             "manual de instruções",
