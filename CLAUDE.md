@@ -42,7 +42,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 114 testes
+$VENV -m pytest tests/ -q          # 119 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -90,7 +90,7 @@ próprio comando composto (exit 144).
 - **6.358 itens** vigentes de **24 NRs** (de 36 vigentes), extraídos dos PDFs em `normas/`
 - **122 riscos** curados mapeando para **228 itens** reais; 25 exigem pessoa na cena e
   3 têm item que só entra com máquina nomeada na cena (`itens_so_com_maquina`)
-- **114 testes**
+- **119 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
@@ -133,7 +133,7 @@ dossie.py     recuperação dos itens candidatos. Três peneiras sobre a busca
 pipeline.py   Gauntlet Loop e a aferição determinística
 modelos.py    cliente Groq: cota, degradação por parâmetro, truncamento
 relatorio.py  Markdown e HTML imprimível
-consumo.py    contabilidade do teto diário de tokens
+consumo.py    contabilidade do teto diário de tokens, um balde por modelo
 lote.py       sincronização entre fotos do lote e laudos emitidos
 demo.py       dublê de modelo para o Modo Demonstração
 ```
@@ -179,11 +179,20 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   diferentes. Um botão de emergência danificado foi crítico numa foto e passou
   despercebido em outra do mesmo painel. O app é apoio, não substituto do olho do
   engenheiro — e o rodapé do laudo diz isso a sério.
-- **Cota.** ~7.100 tokens por foto no rigor Padrão. O teto que aperta é o diário
-  (200.000 no gratuito), não o por minuto: cerca de **28 fotos/dia**. Um lote de 100
-  não cabe num dia — por isso o app retoma de onde parou. Medido onde a cota vai
-  (entrada, Padrão): Olho ~1.956 tokens (1.600 são só a imagem em 896px), Analista
-  ~1.716 (dossiê sozinho: 921), Diretor ~1.551. Ver "Em aberto" para onde cortar.
+- **Cota.** ~7.100 tokens por foto no rigor Padrão. O teto que aperta é o diário, não
+  o por minuto — e ele é **por modelo**, conferido no console em 30/08: 200.000
+  tokens/dia para `gpt-oss-120b`, `gpt-oss-20b` e `qwen/qwen3.6-27b` cada um
+  (`qwen/qwen3.8-27b` tem 2.000.000, ver "Em aberto"). Também por modelo: 8.000
+  TPM e 1.000 requisições/dia, nenhum dos dois limitante hoje.
+  O app somava os três num balde só e por isso anunciava **28 fotos/dia**; o gargalo
+  real é o `120b`, que carrega Analista **e** Diretor, em torno de **43 fotos/dia**.
+  A conta errada mandava parar de auditar com cota sobrando. Corrigido: `consumo.py`
+  guarda um balde por modelo e a barra lateral mostra qual deles vai estourar
+  primeiro. Um lote de 100 ainda não cabe num dia — por isso o app retoma de onde
+  parou. Medido onde a cota vai (entrada, Padrão): Olho ~1.956 tokens (1.600 são só
+  a imagem em 896px), Analista ~1.716 (dossiê sozinho: 921), Diretor ~1.551. A
+  repartição da **saída** por modelo nunca foi medida — agora dá, porque o cliente
+  discrimina; confirmar no próximo lote real antes de confiar nos ~43.
 - **Documento gerado não substitui laudo assinado por profissional habilitado.**
 
 ---
@@ -200,12 +209,23 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   textual, em modo degradado.
 - **Tier pago da Groq** é o que resolve o lote de 100 fotos de verdade.
 - **Rendimento diário — discutido, não implementado.** Em ordem de retorno:
+  0. **`qwen/qwen3.8-27b` tem 2.000.000 de TPD — dez vezes todos os outros**, com o
+     mesmo RPM/RPD/TPM. Se ele aceitar imagem, o teto do Olho sai de ~80 fotos/dia
+     para a casa das centenas e a cota deixa de ser o problema de uma auditoria de
+     100 fotos; se servir só para texto, Analista e Diretor passariam de ~43 para
+     ~430. Duas incógnitas que só produção responde: se é multimodal (o registro diz
+     que o 3.6 é o único, mas o 3.8 é posterior) e se o JSON dele se comporta — o 3.6
+     está marcado `json_estrito_confiavel=False` e a família provavelmente herda isso.
+     **Testável sem código**: a barra lateral aceita ID digitado à mão.
   1. Separar o Diretor num modelo diferente do Analista (ex.: `gpt-oss-20b` em vez de
-     `gpt-oss-120b`). No plano gratuito o teto diário é *por modelo*; hoje Analista e
-     Diretor dividem o mesmo balde. Como a conferência obrigatória tornou o trabalho
-     do Diretor mais mecânico, um modelo menor deve dar conta. **Confirmar limites
-     reais no console da Groq antes de contar com isso** — não dá pra verificar desta
-     sessão (sem rede).
+     `gpt-oss-120b`). Teto por modelo **confirmado** no console em 30/08; hoje
+     Analista e Diretor dividem o balde do `120b`, que por isso é o gargalo. Separando,
+     o teto vai de ~43 para ~80 fotos/dia e o gargalo **passa a ser o Olho** — e não
+     há segundo modelo de visão para dividir, o que é o que torna o item 0 mais
+     importante que este. Ganho secundário independente do diário: os dois hoje
+     dividem uma janela de 8.000 TPM, e é ela que faz a espera adaptativa frear.
+     Como a conferência obrigatória tornou o trabalho do Diretor mais mecânico, um
+     modelo menor deve dar conta.
   2. Resolução padrão 768px em vez de 896px (a imagem é ~31% da entrada) — mas isso
      morde direto na variabilidade da visão, que já é o limite honesto do app. Manter
      896px como opção pra foto de detalhe.
