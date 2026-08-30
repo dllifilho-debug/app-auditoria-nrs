@@ -218,6 +218,9 @@ class ClienteGroq:
         self.cota = Cota()
         self.tokens_gastos = 0
         self.chamadas = 0
+        # O teto diário da Groq é por modelo, então o total sozinho não diz
+        # quando o lote vai parar: é preciso saber qual balde está enchendo.
+        self.tokens_por_modelo: dict[str, int] = {}
         # Modelos que já recusaram o modo JSON; não insistimos com eles de novo.
         self.sem_json_estrito: set[str] = set()
         # A última resposta foi cortada por atingir o teto de saída? É o sinal
@@ -294,7 +297,9 @@ class ClienteGroq:
 
         self.chamadas += 1
         if resposta.usage:
-            self.tokens_gastos += resposta.usage.total_tokens or 0
+            gasto = resposta.usage.total_tokens or 0
+            self.tokens_gastos += gasto
+            self.tokens_por_modelo[modelo] = self.tokens_por_modelo.get(modelo, 0) + gasto
 
         escolha = resposta.choices[0]
         self.ultimo_corte_por_limite = getattr(escolha, "finish_reason", None) == "length"

@@ -243,33 +243,52 @@ with st.sidebar:
         gasto = consumo_do_dia()
         with st.expander("Consumo do dia", expanded=bool(gasto.tokens)):
             orcamento = st.number_input(
-                "Teto diário de tokens da sua conta",
+                "Teto diário de tokens, por modelo",
                 min_value=10_000, max_value=100_000_000,
                 value=st.session_state.get("orcamento_diario", ORCAMENTO_GRATUITO),
                 step=10_000,
-                help="O plano gratuito da Groq trabalha com 200.000 tokens por dia. "
-                     "Se a sua conta for paga, ajuste aqui para a estimativa fazer sentido.",
+                help="Na Groq o teto diário é de cada modelo, não da conta somada: "
+                     "no plano gratuito são 200.000 tokens por dia para cada um. "
+                     "Confira em Settings → Limits e ajuste aqui se a sua conta for "
+                     "outra — há modelo com teto dez vezes maior.",
             )
             st.session_state.orcamento_diario = orcamento
 
             if gasto.imagens:
                 cabem = gasto.imagens_que_ainda_cabem(orcamento)
-                st.progress(
-                    gasto.fracao_usada(orcamento),
-                    text=f"{gasto.tokens:,} de {orcamento:,} tokens".replace(",", "."),
-                )
+                apertado = gasto.modelo_mais_apertado(orcamento)
+
+                # Uma barra por modelo: é o balde mais cheio que interrompe o
+                # lote, e uma barra só, somando todos, escondia justamente isso.
+                for modelo, gastos in sorted(
+                    gasto.por_modelo.items(), key=lambda p: -p[1]
+                ):
+                    rotulo = f"{gastos:,} de {orcamento:,}".replace(",", ".")
+                    st.progress(
+                        min(gastos / orcamento, 1.0) if orcamento > 0 else 1.0,
+                        text=f"{modelo} — {rotulo} tokens",
+                    )
+                if not gasto.por_modelo:
+                    st.progress(
+                        gasto.fracao_usada(orcamento),
+                        text=f"{gasto.tokens:,} de {orcamento:,} tokens".replace(",", "."),
+                    )
+
                 a, b = st.columns(2)
                 a.metric("Imagens hoje", gasto.imagens)
                 b.metric("Média por imagem", f"{gasto.media_por_imagem:,}".replace(",", "."))
                 if cabem:
+                    limite = f" — quem aperta é `{apertado[0]}`" if apertado else ""
                     st.caption(
-                        f"Ainda cabem cerca de **{cabem} imagem(ns)** hoje, nesse ritmo."
+                        f"Ainda cabem cerca de **{cabem} imagem(ns)** hoje, nesse "
+                        f"ritmo{limite}."
                     )
                 else:
+                    esgotado = f" do modelo `{apertado[0]}`" if apertado else ""
                     st.warning(
-                        "Teto diário atingido pela contagem desta sessão. "
+                        f"Teto diário{esgotado} atingido pela contagem desta sessão. "
                         "A cota volta na virada do dia.",
-                            )
+                    )
             else:
                 st.caption("Nenhuma imagem auditada hoje nesta sessão.")
 
@@ -535,7 +554,10 @@ if executar_agora:
         # tokens de agora pelo total acumulado dá um número sem sentido.
         nesta_execucao = len(st.session_state.resultados) - auditadas_antes
         media = cliente.tokens_gastos // max(nesta_execucao, 1)
-        consumo_do_dia().registrar(cliente.tokens_gastos, nesta_execucao, cliente.chamadas)
+        consumo_do_dia().registrar(
+            cliente.tokens_gastos, nesta_execucao, cliente.chamadas,
+            por_modelo=getattr(cliente, "tokens_por_modelo", None),
+        )
         c1, c2, c3 = st.columns(3)
         c1.metric("Chamadas à API", cliente.chamadas)
         c2.metric("Tokens consumidos", f"{cliente.tokens_gastos:,}".replace(",", "."))

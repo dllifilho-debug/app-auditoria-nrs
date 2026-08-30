@@ -883,6 +883,107 @@ def test_consumo_nao_estima_sem_medicao():
     assert Consumo().imagens_que_ainda_cabem(200_000) is None
 
 
+def test_consumo_conta_o_teto_por_modelo_e_nao_da_conta_somada():
+    """Confirmado no console da Groq: cada modelo tem seu próprio balde diário
+    de 200.000 tokens. Somando os três num só, o app dizia que cabiam 28
+    imagens quando cabiam mais de 40 — mandava parar de auditar com cota
+    sobrando, e a cota é o recurso escasso de um lote de 100 fotos."""
+    from auditoria.consumo import Consumo, ORCAMENTO_GRATUITO
+
+    # Uma foto custa ~7.100 tokens no rigor Padrão, repartidos assim.
+    por_foto = {"qwen/qwen3.6-27b": 2_500, "openai/gpt-oss-120b": 4_600}
+    c = Consumo(dia="2026-08-30")
+    for _ in range(10):
+        c.registrar(sum(por_foto.values()), 1, 3,
+                    hoje=date(2026, 8, 30), por_modelo=por_foto)
+
+    assert c.tokens == 71_000
+    # Somando tudo num balde só: (200.000 − 71.000) / 7.100 = 18.
+    assert c.restante(ORCAMENTO_GRATUITO) // c.media_por_imagem == 18
+    # Por modelo, quem aperta é o 120b: (200.000 − 46.000) / 4.600 = 33.
+    assert c.imagens_que_ainda_cabem(ORCAMENTO_GRATUITO) == 33
+    assert c.modelo_mais_apertado(ORCAMENTO_GRATUITO) == ("openai/gpt-oss-120b", 33)
+
+
+def test_consumo_aponta_o_modelo_que_vai_estourar_primeiro():
+    """Não adianta sobrar cota no balde do Diretor se a do Olho acabou: toda
+    foto passa pelos três, então quem manda é o mais apertado."""
+    from auditoria.consumo import Consumo
+
+    c = Consumo(dia="2026-08-30")
+    c.registrar(30_000, 10, 30, hoje=date(2026, 8, 30), por_modelo={
+        "visao": 25_000,      # 2.500/foto, restam 175.000 → 70 imagens
+        "texto": 5_000,       # 500/foto, restam 195.000 → 390 imagens
+    })
+    assert c.modelo_mais_apertado(200_000) == ("visao", 70)
+    assert c.imagens_que_ainda_cabem(200_000) == 70
+    # A barra tem que refletir o balde mais cheio, não a média dos dois.
+    assert c.fracao_usada(200_000) == 25_000 / 200_000
+
+
+def test_consumo_sem_medicao_por_modelo_cai_no_calculo_antigo():
+    """Errar para baixo aqui custa fotos que caberiam; errar para cima custa um
+    lote interrompido no meio. Sem discriminação por modelo, vale o pessimista."""
+    from auditoria.consumo import Consumo
+
+    c = Consumo(dia="2026-08-30")
+    c.registrar(70_000, 10, 30, hoje=date(2026, 8, 30))
+    assert not c.por_modelo
+    assert c.modelo_mais_apertado(200_000) is None
+    assert c.imagens_que_ainda_cabem(200_000) == 18
+
+
+def test_consumo_zera_os_baldes_por_modelo_na_virada_do_dia():
+    from auditoria.consumo import Consumo
+
+    c = Consumo(dia="2026-08-30")
+    c.registrar(7_100, 1, 3, hoje=date(2026, 8, 30),
+                por_modelo={"visao": 2_500, "texto": 4_600})
+    c.registrar(7_100, 1, 3, hoje=date(2026, 8, 31),
+                por_modelo={"visao": 2_500, "texto": 4_600})
+    assert c.dia == "2026-08-31"
+    assert c.por_modelo == {"visao": 2_500, "texto": 4_600}
+
+
+def test_cliente_groq_discrimina_tokens_por_modelo():
+    """O total sozinho não diz quando o lote para — é preciso saber qual balde
+    está enchendo, porque o teto da Groq é de cada modelo."""
+    from auditoria.modelos import ClienteGroq, Cota
+
+    class _Resposta:
+        def __init__(self, tokens):
+            self.usage = type("U", (), {"total_tokens": tokens})()
+            self.choices = [type("C", (), {
+                "finish_reason": "stop",
+                "message": type("M", (), {"content": "{}"})(),
+            })()]
+
+    cliente = ClienteGroq.__new__(ClienteGroq)
+    cliente.margem_tokens = 1500
+    cliente.aviso = lambda _m: None
+    cliente.cota = Cota()
+    cliente.tokens_gastos = 0
+    cliente.chamadas = 0
+    cliente.tokens_por_modelo = {}
+    cliente.sem_json_estrito = set()
+    cliente.ultimo_corte_por_limite = False
+
+    gastos = iter((2_500, 1_700, 1_500))
+    cliente._chamar_com_degradacao = lambda _p: _Resposta(next(gastos))
+
+    mensagens = [{"role": "user", "content": "oi"}]
+    cliente.conversar("qwen/qwen3.6-27b", mensagens)
+    cliente.conversar("openai/gpt-oss-120b", mensagens)
+    cliente.conversar("openai/gpt-oss-120b", mensagens)
+
+    assert cliente.tokens_gastos == 5_700
+    assert cliente.chamadas == 3
+    assert cliente.tokens_por_modelo == {
+        "qwen/qwen3.6-27b": 2_500,
+        "openai/gpt-oss-120b": 3_200,
+    }
+
+
 def test_consumo_nao_ultrapassa_os_limites_do_orcamento():
     from auditoria.consumo import Consumo
 
