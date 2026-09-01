@@ -310,6 +310,63 @@ def test_anexo_vence_o_texto_ao_classificar_o_ramo(base):
     assert not dossie.setor_pertinente(item, "setor de estamparia com prensa excêntrica")
 
 
+def test_item_generico_entra_no_dossie_sem_rotulo_de_risco(base):
+    """Laudo real de 30/08: a NC saiu intitulada "Andaime sem guarda-corpo e
+    rodapé no perímetro da plataforma" para uma constatação sobre a tela frouxa
+    na borda da laje — enquanto o fato registrado dizia que o andaime TINHA
+    guarda-corpo. Dois modelos de texto diferentes erraram igual, o que mostra
+    que é o mapa e não o modelo: `NR-18 18.9.1` ("proteção coletiva onde houver
+    risco de queda") é reivindicado por mais de um risco, então o rótulo que
+    sobra depende de qual deles roteou primeiro."""
+    visao = Visao(
+        ambiente="Laje de construção civil em fase de estruturação",
+        achados=[Achado(t) for t in (
+            "Tela plástica flexível de malha larga esticada sobre tubos metálicos "
+            "finos, cobrindo a borda da laje.",
+            "Trecho da tela plástica está frouxo e descaído, acumulando-se no piso "
+            "da laje em vez de permanecer esticado na borda.",
+            "Abertura retangular no piso da laje, com bordas de concreto aparente, "
+            "sem cobertura ou fechamento visível.",
+            "Estrutura metálica de andaime suspensa, com guarda-corpo de tubos e "
+            "pneus pretos presos na lateral externa.",
+        )],
+    )
+    dossie, origem = montar_dossie(base, visao, "", HOJE)
+    por_item = {
+        e.item.id: origem[e.rotulo].rotulo
+        for e in dossie.entradas if e.rotulo in origem
+    }
+    assert por_item.get("NR-18 18.9.1") == "", por_item
+    # O item específico de andaime continua nomeando a NC: só o genérico perde.
+    assert por_item.get("NR-18 18.12.15.2"), por_item
+    assert por_item.get("NR-18 18.9.2"), por_item
+
+
+def test_rotulo_perdido_nao_apaga_o_portao_de_pessoa_nem_a_gravidade(base):
+    """Só o rótulo cai. O risco continua inteiro para o que depende dele de
+    verdade — senão o item genérico deixaria de exigir pessoa na cena."""
+    from auditoria.riscos import catalogo as catalogo_riscos, itens_compartilhados
+
+    compartilhados = itens_compartilhados()
+    assert "NR-06 6.5.1" in compartilhados, "EPI genérico deveria ser disputado"
+
+    donos = [r for r in catalogo_riscos().values() if "NR-06 6.5.1" in r.itens]
+    assert any(r.exige_pessoa for r in donos), "o teste perdeu o sentido"
+
+    visao = Visao(
+        ambiente="Frente de serviço em obra",
+        achados=[Achado("Trabalhador sem capacete de segurança, com a cabeça "
+                        "descoberta, junto à alvenaria.")],
+        pessoas_presentes=True, quantidade_pessoas=1,
+    )
+    dossie, origem = montar_dossie(base, visao, "", HOJE)
+    for entrada in dossie.entradas:
+        risco = origem.get(entrada.rotulo)
+        if risco is not None and entrada.item.id in compartilhados:
+            assert risco.rotulo == ""
+            assert risco.gravidade_base, "gravidade base não pode se perder"
+
+
 def test_glossario_extraido_como_item_nao_entra_no_dossie(base):
     """Laudo real: "Glossário Ambiente exclusivo: espaço físico…" da NR-01
     ocupava vaga do dossiê. O PDF não separou o cabeçalho do primeiro item,
@@ -982,6 +1039,74 @@ def test_cliente_groq_discrimina_tokens_por_modelo():
         "qwen/qwen3.6-27b": 2_500,
         "openai/gpt-oss-120b": 3_200,
     }
+
+
+def test_consumo_usa_o_teto_de_cada_modelo_e_nao_um_numero_so():
+    """Os tetos não são iguais entre si: o qwen3.8-27b tem 2.000.000 de tokens
+    por dia contra 200.000 dos demais. Com um número só, o painel diria que a
+    cota dele acabou com nove décimos sobrando."""
+    from auditoria.consumo import Consumo
+
+    tetos = {"qwen/qwen3.8-27b": 2_000_000, "openai/gpt-oss-120b": 200_000}
+    c = Consumo(dia="2026-08-30")
+    c.registrar(20_000, 10, 30, hoje=date(2026, 8, 30), por_modelo={
+        "qwen/qwen3.8-27b": 100_000,     # 10.000/foto, teto 2M → 190 imagens
+        "openai/gpt-oss-120b": 100_000,  # 10.000/foto, teto 200k → 10 imagens
+    })
+    # Mesmo gasto nos dois; quem aperta é o de teto menor, não o de mais tokens.
+    assert c.modelo_mais_apertado(200_000, tetos) == ("openai/gpt-oss-120b", 10)
+    assert c.cabem_no_modelo("qwen/qwen3.8-27b", 200_000, tetos) == 190
+    assert c.imagens_que_ainda_cabem(200_000, tetos) == 10
+    # Sem os tetos por modelo, os dois pareceriam igualmente apertados.
+    assert c.cabem_no_modelo("qwen/qwen3.8-27b", 200_000) == 10
+
+
+def test_fracao_usada_compara_proporcao_e_nao_tokens_absolutos():
+    """Com tetos diferentes, o modelo que gastou mais tokens pode ser o mais
+    folgado — a barra tem que refletir a proporção."""
+    from auditoria.consumo import Consumo
+
+    tetos = {"grande": 2_000_000, "pequeno": 200_000}
+    c = Consumo(dia="2026-08-30")
+    c.registrar(300_000, 10, 30, hoje=date(2026, 8, 30),
+                por_modelo={"grande": 200_000, "pequeno": 100_000})
+    # "grande" gastou o dobro, mas usou 10% do teto contra 50% do "pequeno".
+    assert c.fracao_usada(200_000, tetos) == 0.5
+
+
+def test_modelo_fora_do_registro_cai_no_teto_padrao():
+    """Sem saber o teto de um ID digitado à mão, o palpite conservador é o dos
+    demais — nunca o do modelo mais generoso."""
+    from auditoria.consumo import Consumo
+
+    c = Consumo(dia="2026-08-30")
+    c.registrar(50_000, 10, 30, hoje=date(2026, 8, 30), por_modelo={"digitado": 50_000})
+    assert c.teto_do_modelo("digitado", 200_000, {"outro": 2_000_000}) == 200_000
+    assert c.cabem_no_modelo("digitado", 200_000, {"outro": 2_000_000}) == 30
+
+
+def test_registro_declara_o_teto_diario_de_cada_modelo():
+    """O 3.8 tem dez vezes o teto dos demais; é isso que faz um lote de 100
+    fotos caber num dia."""
+    from auditoria import modelos
+
+    tetos = modelos.tetos_diarios()
+    assert tetos["qwen/qwen3.8-27b"] == 2_000_000
+    assert tetos["openai/gpt-oss-120b"] == 200_000
+    assert "digitado-a-mao" not in tetos
+
+
+def test_qwen38_registrado_com_as_protecoes_da_familia():
+    """Rodou em produção sem registro, portanto sem `reasoning_effort: "none"` e
+    sem a marca de JSON não confiável — as duas condicionais em `conversar`
+    dependem de `por_id` devolver algo. Funcionou por sorte, não por desenho."""
+    from auditoria.modelos import por_id
+
+    m = por_id("qwen/qwen3.8-27b")
+    assert m is not None
+    assert m.visao, "precisa estar disponível como modelo de visão"
+    assert m.raciocinio_desligavel
+    assert not m.json_estrito_confiavel
 
 
 def test_consumo_nao_ultrapassa_os_limites_do_orcamento():

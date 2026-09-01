@@ -57,14 +57,31 @@ class Consumo:
         """Tokens por imagem gastos naquele modelo."""
         return self.por_modelo.get(modelo, 0) // self.imagens if self.imagens else 0
 
-    def cabem_no_modelo(self, modelo: str, orcamento: int) -> int | None:
+    def teto_do_modelo(
+        self, modelo: str, orcamento: int, tetos: dict[str, int] | None = None
+    ) -> int:
+        """Teto diário daquele modelo, ou o padrão quando ele é desconhecido.
+
+        Os tetos não são iguais entre si: o `qwen/qwen3.8-27b` tem 2.000.000 de
+        tokens por dia contra 200.000 dos demais. Tratar todos pelo mesmo número
+        subestimava o balde dele em dez vezes — o painel diria que a cota acabou
+        com nove décimos dela sobrando.
+        """
+        return (tetos or {}).get(modelo, orcamento)
+
+    def cabem_no_modelo(
+        self, modelo: str, orcamento: int, tetos: dict[str, int] | None = None
+    ) -> int | None:
         """Quantas imagens ainda cabem no balde daquele modelo."""
         media = self.media_do_modelo(modelo)
         if not media:
             return None
-        return max(orcamento - self.por_modelo.get(modelo, 0), 0) // media
+        teto = self.teto_do_modelo(modelo, orcamento, tetos)
+        return max(teto - self.por_modelo.get(modelo, 0), 0) // media
 
-    def modelo_mais_apertado(self, orcamento: int) -> tuple[str, int] | None:
+    def modelo_mais_apertado(
+        self, orcamento: int, tetos: dict[str, int] | None = None
+    ) -> tuple[str, int] | None:
         """O modelo que vai bater no teto primeiro, e em quantas imagens.
 
         É ele que decide o lote — não adianta sobrar cota no balde do Diretor
@@ -73,7 +90,7 @@ class Consumo:
         candidatos = [
             (modelo, cabem)
             for modelo in self.por_modelo
-            if (cabem := self.cabem_no_modelo(modelo, orcamento)) is not None
+            if (cabem := self.cabem_no_modelo(modelo, orcamento, tetos)) is not None
         ]
         if not candidatos:
             return None
@@ -86,7 +103,9 @@ class Consumo:
     def restante(self, orcamento: int) -> int:
         return max(orcamento - self.tokens, 0)
 
-    def imagens_que_ainda_cabem(self, orcamento: int) -> int | None:
+    def imagens_que_ainda_cabem(
+        self, orcamento: int, tetos: dict[str, int] | None = None
+    ) -> int | None:
         """Quantas imagens ainda cabem no teto, no ritmo medido até agora.
 
         Com medição por modelo, é o balde mais apertado que responde. Sem ela,
@@ -97,14 +116,27 @@ class Consumo:
         Devolve None enquanto não houver medição nenhuma: estimar sem dado
         próprio seria devolver um palpite com cara de número.
         """
-        if (apertado := self.modelo_mais_apertado(orcamento)) is not None:
+        if (apertado := self.modelo_mais_apertado(orcamento, tetos)) is not None:
             return apertado[1]
         media = self.media_por_imagem
         return self.restante(orcamento) // media if media else None
 
-    def fracao_usada(self, orcamento: int) -> float:
-        """Quanto do teto já foi, medido pelo balde mais cheio."""
+    def fracao_usada(
+        self, orcamento: int, tetos: dict[str, int] | None = None
+    ) -> float:
+        """Quanto do teto já foi, medido pelo balde proporcionalmente mais cheio.
+
+        Proporcionalmente, e não em tokens absolutos: com tetos diferentes, o
+        modelo que gastou mais tokens pode ser o que está mais folgado.
+        """
         if orcamento <= 0:
             return 1.0
-        gasto = max(self.por_modelo.values(), default=self.tokens)
-        return min(gasto / orcamento, 1.0)
+        if not self.por_modelo:
+            return min(self.tokens / orcamento, 1.0)
+        return min(
+            max(
+                gasto / max(self.teto_do_modelo(modelo, orcamento, tetos), 1)
+                for modelo, gasto in self.por_modelo.items()
+            ),
+            1.0,
+        )

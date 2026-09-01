@@ -42,7 +42,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 119 testes
+$VENV -m pytest tests/ -q          # 126 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -81,6 +81,7 @@ próprio comando composto (exit 144).
 | Mesmo vocabulário para reconhecer o ramo no **item** e na **cena** | Os dois lados correm riscos opostos. Dentro da NR-12, "calçado" só aparece em item de máquina calçadista — serve para classificar o item. Mas na cena "calçado" é o que um laudo escreve o tempo todo ("calçado de segurança", EPI da NR-06), e usá-lo ali destrancaria o Anexo X em qualquer foto. Por isso `Setor` tem `no_item` e `na_cena` separados. É a armadilha do sinal por extenso vista de outro ângulo: o que discrimina de um lado não discrimina do outro. |
 | Classificar o ramo de um item pelo texto antes do anexo | Os anexos setoriais se citam entre si ("as disposições deste Anexo não se aplicam às máquinas dispostas no Anexo X"), e item do Anexo X **fala de prensa**. Pelo texto, ele passava como se fosse do Anexo VIII — que uma foto de estamparia legitimamente destranca. O anexo decide primeiro; o texto só para o que a extração deixou fora dele (`12.1`, "máquinas de montar base de calçados", ficou no corpo principal). |
 | Portão que só ABRE, com sinal que aparece em negação | `ha_maquina_na_cena` destrancaria a NR-12 com "**nenhuma máquina** visível na cena" se aceitasse a palavra "máquina" — exatamente a foto que se quer barrar. Por isso a lista é de substantivos concretos ("betoneira", "grua"), e inclui as máquinas dos ramos setoriais: sem elas o portão fecharia numa foto de padaria, trocando erro de enquadramento por buraco de cobertura. |
+| Rótulo do risco curado como nome da não conformidade | O rótulo descreve o risco que trouxe o item ao dossiê, não a situação que o Analista enquadrou. Para item **genérico** — `NR-18 18.9.1` ("proteção coletiva onde houver risco de queda"), `NR-06 6.5.1` (EPI, oito riscos) — qual risco o trouxe é acidente do roteamento. Um laudo real saiu intitulado "Andaime sem guarda-corpo e rodapé" para uma constatação sobre a tela frouxa na borda da laje, enquanto o fato dizia que o andaime TINHA guarda-corpo; dois modelos de texto diferentes erraram igual. Hoje `itens_compartilhados()` marca os 22 itens (de 228) que mais de um risco reivindica, e para eles o rótulo cai — o relatório identifica a linha pela constatação. Só o rótulo: o portão de pessoa e a gravidade base continuam vindo do risco. |
 | `git fetch origin main <branch-que-não-existe-mais>` falha inteiro, silenciosamente | Fetch de múltiplos refs é atômico: se um ref já foi deletado no remoto (branch mergeada), o comando inteiro falha e **nenhum ref é atualizado** — inclusive o `main`, que existia e seria atualizado sozinho. `origin/main` local fica congelado na versão de antes, e comparações feitas contra ele mentem. Já causou uma sessão inteira concluir errado que "a reescrita nunca foi mergeada". Se o histórico parecer suspeito, rode `git fetch origin main` sozinho antes de confiar em qualquer diff. |
 
 ---
@@ -90,7 +91,7 @@ próprio comando composto (exit 144).
 - **6.358 itens** vigentes de **24 NRs** (de 36 vigentes), extraídos dos PDFs em `normas/`
 - **122 riscos** curados mapeando para **228 itens** reais; 25 exigem pessoa na cena e
   3 têm item que só entra com máquina nomeada na cena (`itens_so_com_maquina`)
-- **119 testes**
+- **126 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
@@ -131,7 +132,8 @@ dossie.py     recuperação dos itens candidatos. Três peneiras sobre a busca
               setor_pertinente() tira a parte da norma que é de outro ramo.
               ha_maquina_na_cena() é o portão que a NR-12 precisa atravessar
 pipeline.py   Gauntlet Loop e a aferição determinística
-modelos.py    cliente Groq: cota, degradação por parâmetro, truncamento
+modelos.py    registro dos modelos (teto diário de cada um) e cliente Groq:
+              cota, degradação por parâmetro, truncamento
 relatorio.py  Markdown e HTML imprimível
 consumo.py    contabilidade do teto diário de tokens, um balde por modelo
 lote.py       sincronização entre fotos do lote e laudos emitidos
@@ -179,20 +181,29 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   diferentes. Um botão de emergência danificado foi crítico numa foto e passou
   despercebido em outra do mesmo painel. O app é apoio, não substituto do olho do
   engenheiro — e o rodapé do laudo diz isso a sério.
-- **Cota.** ~7.100 tokens por foto no rigor Padrão. O teto que aperta é o diário, não
-  o por minuto — e ele é **por modelo**, conferido no console em 30/08: 200.000
-  tokens/dia para `gpt-oss-120b`, `gpt-oss-20b` e `qwen/qwen3.6-27b` cada um
-  (`qwen/qwen3.8-27b` tem 2.000.000, ver "Em aberto"). Também por modelo: 8.000
-  TPM e 1.000 requisições/dia, nenhum dos dois limitante hoje.
-  O app somava os três num balde só e por isso anunciava **28 fotos/dia**; o gargalo
-  real é o `120b`, que carrega Analista **e** Diretor, em torno de **43 fotos/dia**.
-  A conta errada mandava parar de auditar com cota sobrando. Corrigido: `consumo.py`
-  guarda um balde por modelo e a barra lateral mostra qual deles vai estourar
-  primeiro. Um lote de 100 ainda não cabe num dia — por isso o app retoma de onde
-  parou. Medido onde a cota vai (entrada, Padrão): Olho ~1.956 tokens (1.600 são só
-  a imagem em 896px), Analista ~1.716 (dossiê sozinho: 921), Diretor ~1.551. A
-  repartição da **saída** por modelo nunca foi medida — agora dá, porque o cliente
-  discrimina; confirmar no próximo lote real antes de confiar nos ~43.
+- **Cota.** O teto que aperta é o diário, não o por minuto — e ele é **por modelo**,
+  conferido no console em 30/08: 200.000 tokens/dia para `gpt-oss-120b`, `gpt-oss-20b`
+  e `qwen/qwen3.6-27b`; **2.000.000 para o `qwen/qwen3.8-27b`**. Também por modelo:
+  8.000 TPM e 1.000 requisições/dia. O registro em `modelos.py` carrega o teto de cada
+  um (`Modelo.tpd`) e `consumo.py` guarda um balde por modelo — antes o app somava os
+  três e comparava com um número só, anunciando 28 fotos/dia e mandando parar de
+  auditar com cota sobrando.
+  **Medido em produção em 30/08, uma foto por configuração** (n=1, com a ressalva
+  abaixo):
+
+  | configuração | tokens/foto | chamadas | fotos/dia |
+  |---|---|---|---|
+  | Olho no 3.8, texto no `120b` | 13.404 (1.946 + 11.458) | 4 | ~16, preso no `120b` |
+  | tudo no `qwen3.8-27b` | **7.060** | 3 | **~283**, preso no TPD |
+
+  A execução de 13.404 teve uma **retentativa** no `120b` — o `_conversar_sem_cortar`
+  refazendo JSON que não parseou, com o dobro do teto de saída. Sem ela seriam ~4.600
+  no texto, ou ~43 fotos/dia. Os dois números são a mesma medição: o que varia é a
+  frequência da retentativa, que uma foto não determina. Entrada por agente, medida
+  antes no 3.6: Olho ~1.956 (1.600 são a imagem em 896px), Analista ~1.716 (dossiê
+  sozinho: 921), Diretor ~1.551.
+  **Com tudo no 3.8, um lote de 100 fotos cabe num dia** e o limite passa a ser tempo
+  de parede pela janela de 8.000 TPM (~1,1 foto/min), não mais a cota diária.
 - **Documento gerado não substitui laudo assinado por profissional habilitado.**
 
 ---
@@ -208,24 +219,16 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   número. Depois, mapear riscos para a norma nova — sem isso ela só entra pela busca
   textual, em modo degradado.
 - **Tier pago da Groq** é o que resolve o lote de 100 fotos de verdade.
-- **Rendimento diário — discutido, não implementado.** Em ordem de retorno:
-  0. **`qwen/qwen3.8-27b` tem 2.000.000 de TPD — dez vezes todos os outros**, com o
-     mesmo RPM/RPD/TPM. Se ele aceitar imagem, o teto do Olho sai de ~80 fotos/dia
-     para a casa das centenas e a cota deixa de ser o problema de uma auditoria de
-     100 fotos; se servir só para texto, Analista e Diretor passariam de ~43 para
-     ~430. Duas incógnitas que só produção responde: se é multimodal (o registro diz
-     que o 3.6 é o único, mas o 3.8 é posterior) e se o JSON dele se comporta — o 3.6
-     está marcado `json_estrito_confiavel=False` e a família provavelmente herda isso.
-     **Testável sem código**: a barra lateral aceita ID digitado à mão.
-  1. Separar o Diretor num modelo diferente do Analista (ex.: `gpt-oss-20b` em vez de
-     `gpt-oss-120b`). Teto por modelo **confirmado** no console em 30/08; hoje
-     Analista e Diretor dividem o balde do `120b`, que por isso é o gargalo. Separando,
-     o teto vai de ~43 para ~80 fotos/dia e o gargalo **passa a ser o Olho** — e não
-     há segundo modelo de visão para dividir, o que é o que torna o item 0 mais
-     importante que este. Ganho secundário independente do diário: os dois hoje
-     dividem uma janela de 8.000 TPM, e é ela que faz a espera adaptativa frear.
-     Como a conferência obrigatória tornou o trabalho do Diretor mais mecânico, um
-     modelo menor deve dar conta.
+- **Rendimento diário — o `qwen3.8-27b` resolveu, falta confirmar.** Ele está
+  registrado em `modelos.py` (visão e texto) com as proteções da família Qwen, mas
+  **não é o padrão** — são duas fotos de teste, uma por configuração. O que falta é
+  rodar o lote de 14 nele, o que agora cabe num dia. Se aguentar, trocar
+  `PADRAO_VISAO`/`PADRAO_TEXTO` é uma linha cada.
+  O que sobra da lista antiga, em ordem de retorno:
+  1. Separar o Diretor num modelo diferente do Analista (`gpt-oss-20b`) — **só faz
+     sentido se o 3.8 não vingar**. Levaria o texto de ~43 para ~80 fotos/dia contra
+     as ~283 do 3.8. Ganho secundário que continua valendo: os dois hoje dividem uma
+     janela de 8.000 TPM, e é ela que faz a espera adaptativa frear.
   2. Resolução padrão 768px em vez de 896px (a imagem é ~31% da entrada) — mas isso
      morde direto na variabilidade da visão, que já é o limite honesto do app. Manter
      896px como opção pra foto de detalhe.
@@ -236,6 +239,21 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
     diferentes (agrupou por composição: duas telas de proteção viraram "iguais" a uma
     betoneira). Com limiar apertado, achado real foi 3 fotos em 100 — não move a
     agulha do rendimento.
+  - **A retentativa custa caro e ninguém está medindo.** Uma retentativa de texto
+    levou a foto de ~7.100 para 13.404 tokens. Se ela for frequente, é um problema de
+    cota maior que a escolha de modelo — e hoje o app não conta quantas aconteceram.
+- **Achados de produção 30/08 ainda não corrigidos.** Do laudo do 3.8:
+  1. **Os pontos de atenção sumiram.** O `120b` mandou o piso irregular com entulho e
+     corda enrolada para "pontos de atenção"; o 3.8, na mesma foto, não emitiu a seção.
+     É a classe de erro 5 (achado que evapora). Uma foto não distingue omissão de
+     julgamento.
+  2. **A gravidade divergiu entre os dois modelos** na mesma foto: a abertura no piso
+     saiu Alta/3 dias no `120b` e Crítica/1 dia no 3.8. O 3.8 parece certo (vão
+     desprotegido em laje elevada), o que sugere que o `120b` subestima — o oposto do
+     item "gravidade inflada" registrado abaixo, e vindo do mesmo lugar.
+  3. **O Diretor do `120b` aparou o que o do 3.8 manteve e fundamentou** ("não atende
+     aos requisitos de proteção coletiva rígida"). Achei o 3.8 certo: tela plástica
+     frouxa não é proteção projetada por habilitado. É o item do aparo, do outro lado.
 - **A NR-12 virava a lixeira do dossiê — três rodadas, ainda sem validação em
   produção.** `d2d92b2` (1ª) tirou `máquina`, `equipamento` e `sem proteção` sozinhos
   das palavras-chave de roteamento textual. `905fdf4` (2ª) foi atrás da taxonomia

@@ -142,7 +142,10 @@ def markdown(
         p.append("")
         for n, nc in enumerate(laudo.nao_conformidades, start=1):
             rotulo = SELOS.get(nc.gravidade, nc.gravidade)
-            cabecalho = nc.rotulo_risco or "Não conformidade constatada"
+            # Sem rótulo de risco (item genérico disputado por mais de um),
+            # quem nomeia a NC é a constatação — "Não conformidade constatada"
+            # não diz nada a quem lê o laudo na obra.
+            cabecalho = nc.rotulo_risco or _resumir(nc.constatacao, 70)
             if nc.rotulo_risco in repetidos:
                 cabecalho += f" — {nc.item.item}"
             p.append(f"#### {n}. {cabecalho} — gravidade {rotulo.lower()}")

@@ -34,13 +34,30 @@ class Modelo:
     # raciocinar: precisa descrever. Deixá-lo pensar consome todo o orçamento de
     # saída antes de a resposta começar a ser escrita.
     raciocinio_desligavel: bool = False
+    # Teto diário de tokens DESTE modelo, lido no console da Groq em 30/08/2026
+    # (plano gratuito). Não é da conta somada: cada modelo tem seu próprio balde,
+    # e um deles tem dez vezes o dos outros. Conta paga muda todos esses números
+    # — por isso a barra lateral deixa ajustar o padrão.
+    tpd: int = 200_000
 
 
 VISAO = [
     Modelo("qwen/qwen3.6-27b", "Qwen 3.6 27B (visão)", True, 262_144, 65_536,
-           "Único modelo multimodal da Groq, e destino de migração oficial dos "
-           "modelos de visão já desligados.",
+           "Padrão. Multimodal, com histórico de uso neste app.",
            json_estrito_confiavel=False, raciocinio_desligavel=True),
+    # Testado em produção em 30/08/2026 com foto de canteiro: leu a cena, e o
+    # laudo saiu com fatos mais detalhados que os do 3.6. Rodava então sem
+    # registro, portanto sem `reasoning_effort: "none"` e sem a marca de JSON
+    # não confiável — funcionou por sorte, não por desenho. Registrado aqui com
+    # as duas proteções da família Qwen.
+    #
+    # Janela e teto de saída são os do 3.6: nenhum dos dois é lido em runtime
+    # hoje, e não havia como confirmar os do 3.8 sem rede à Groq nesta sessão.
+    Modelo("qwen/qwen3.8-27b", "Qwen 3.8 27B (visão)", True, 262_144, 65_536,
+           "Teto diário de 2 milhões de tokens — dez vezes o dos demais. Um "
+           "lote de 100 fotos cabe num dia.",
+           json_estrito_confiavel=False, raciocinio_desligavel=True,
+           tpd=2_000_000),
 ]
 
 TEXTO = [
@@ -51,6 +68,11 @@ TEXTO = [
     Modelo("qwen/qwen3.6-27b", "Qwen 3.6 27B", False, 262_144, 65_536,
            "Contexto maior, com modo de raciocínio.",
            json_estrito_confiavel=False, raciocinio_desligavel=True),
+    Modelo("qwen/qwen3.8-27b", "Qwen 3.8 27B", False, 262_144, 65_536,
+           "Teto diário de 2 milhões de tokens. Numa foto de teste fez Olho, "
+           "Analista e Diretor sozinho por 7.060 tokens, sem retentativa.",
+           json_estrito_confiavel=False, raciocinio_desligavel=True,
+           tpd=2_000_000),
 ]
 
 PADRAO_VISAO = VISAO[0].id
@@ -65,6 +87,16 @@ PAGINA_DEPRECIACOES = "https://console.groq.com/docs/deprecations"
 
 def por_id(modelo_id: str) -> Modelo | None:
     return next((m for m in VISAO + TEXTO if m.id == modelo_id), None)
+
+
+def tetos_diarios() -> dict[str, int]:
+    """Teto diário conhecido de cada modelo registrado, para a contabilidade.
+
+    Modelo digitado à mão não aparece aqui e cai no padrão da barra lateral —
+    é o comportamento certo: sem saber o teto dele, o palpite conservador é o
+    dos demais.
+    """
+    return {m.id: m.tpd for m in VISAO + TEXTO}
 
 
 # --------------------------------------------------------------------------
