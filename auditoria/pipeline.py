@@ -21,7 +21,12 @@ from . import dossie as mod_dossie
 from .catalogo_nr import CATALOGO_NR
 from .kb import BaseNormativa, Item
 from .modelos import Conversador, ErroDeAuditoria
-from .riscos import Risco, catalogo as catalogo_riscos, itens_compartilhados
+from .riscos import (
+    Risco,
+    catalogo as catalogo_riscos,
+    grupo_equivalente,
+    itens_compartilhados,
+)
 
 GRAVIDADE_ORDEM = {"critica": 0, "alta": 1, "media": 2, "baixa": 3}
 PRAZO_SUGERIDO = {"critica": 1, "alta": 7, "media": 30, "baixa": 60}
@@ -68,6 +73,11 @@ class NaoConformidade:
     acao_corretiva: str
     prazo_dias: int
     rotulo_risco: str = ""
+    # Itens de outra NR que impõem a mesma exigência sobre o mesmo objeto.
+    # Preenchido pelo código a partir de `ITENS_EQUIVALENTES`, nunca pelo
+    # modelo, e impresso como citação complementar em vez de virar uma segunda
+    # não conformidade para a mesma abertura.
+    complementos: list[Item] = field(default_factory=list)
 
     @property
     def prioridade(self) -> int:
@@ -894,6 +904,46 @@ def _em_poucas_palavras(texto: str, limite: int = 200) -> str:
     return texto[: corte if corte > 0 else limite].rstrip(" ,.;") + "…"
 
 
+def _fundir_equivalentes(ncs: list[NaoConformidade]) -> list[NaoConformidade]:
+    """Uma abertura, uma não conformidade — com a outra norma citada ao lado.
+
+    A NR-18 18.9.2 e a NR-08 8.3.2.2 impõem a mesma exigência sobre a mesma
+    abertura no piso, então o Analista enquadra as duas e o laudo conta duas.
+    Num lote real de 15 fotos foram 6 das 21 não conformidades: 3 aberturas
+    contadas em dobro, 29% da contagem.
+
+    Um auditor escreve uma, pela norma mais específica, e menciona a outra.
+    A que encabeça é a primeira do grupo que o Analista tiver enquadrado — a
+    ordem em `ITENS_EQUIVALENTES` é a precedência —, e as demais viram citação
+    complementar. Nada se perde: o texto oficial das duas continua no laudo.
+
+    Só funde o que o MESMO laudo enquadrou no mesmo grupo. Duas aberturas
+    diferentes na mesma foto viram duas não conformidades como antes, porque o
+    Analista as enquadra no mesmo item e a fusão não olha para constatação.
+    """
+    fundidas: list[NaoConformidade] = []
+    lider_do_grupo: dict[tuple[str, ...], NaoConformidade] = {}
+    for nc in ncs:
+        grupo = grupo_equivalente(f"{nc.item.nr} {nc.item.item}")
+        if not grupo:
+            fundidas.append(nc)
+            continue
+        if (lider := lider_do_grupo.get(grupo)) is None:
+            lider_do_grupo[grupo] = nc
+            fundidas.append(nc)
+            continue
+        # Quem encabeça é quem vem antes no grupo; o outro vira complemento.
+        atual = grupo.index(f"{lider.item.nr} {lider.item.item}")
+        novo = grupo.index(f"{nc.item.nr} {nc.item.item}")
+        if novo < atual:
+            nc.complementos = [lider.item, *lider.complementos]
+            fundidas[fundidas.index(lider)] = nc
+            lider_do_grupo[grupo] = nc
+        else:
+            lider.complementos.append(nc.item)
+    return fundidas
+
+
 def _descartar(itens: list[str], veredito: dict, chave: str, letra: str) -> list[str]:
     """Remove da lista os índices que o Diretor descartou, pelo rótulo P<n>/C<n>."""
     fora: set[int] = set()
@@ -1108,6 +1158,7 @@ def executar(
                     nc.prazo_dias = min(nc.prazo_dias, PRAZO_SUGERIDO[nc.gravidade])
             sobreviventes.append(nc)
 
+        sobreviventes = _fundir_equivalentes(sobreviventes)
         sobreviventes.sort(key=lambda x: (x.prioridade, x.item.nr, x.item.item))
         laudo.nao_conformidades = sobreviventes
         laudo.vetos = motivos

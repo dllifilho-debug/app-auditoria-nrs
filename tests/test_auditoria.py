@@ -189,6 +189,62 @@ def test_roteamento_nao_deixa_o_ambiente_carregar_o_sinal_sozinho():
     assert any(r.id == "abertura_piso_desprotegida" for r in rotear_riscos(piso))
 
 
+def test_uma_abertura_gera_uma_nc_com_a_outra_norma_de_complemento(base):
+    """NR-18 18.9.2 e NR-08 8.3.2.2 dizem a mesma coisa sobre a mesma abertura.
+    No lote de 01/09, 6 das 21 não conformidades eram 3 aberturas contadas duas
+    vezes — 29% da contagem. Um auditor escreve uma e menciona a outra.
+    """
+    from auditoria.pipeline import NaoConformidade, _fundir_equivalentes
+
+    def nc(nr, item):
+        return NaoConformidade(base.obter(nr, item), "Abertura no piso sem proteção.",
+                               "Queda.", "critica", "Fechar.", 1, "")
+
+    fundidas = _fundir_equivalentes([nc("NR-08", "8.3.2.2"), nc("NR-18", "18.9.2")])
+    assert len(fundidas) == 1, "a abertura continuou contando duas vezes"
+    assert fundidas[0].item.item == "18.9.2", "a norma específica deve encabeçar"
+    assert [c.item for c in fundidas[0].complementos] == ["8.3.2.2"]
+
+    # A precedência não depende da ordem em que o Analista enquadrou.
+    invertido = _fundir_equivalentes([nc("NR-18", "18.9.2"), nc("NR-08", "8.3.2.2")])
+    assert invertido[0].item.item == "18.9.2"
+    assert [c.item for c in invertido[0].complementos] == ["8.3.2.2"]
+
+
+def test_nr08_sozinha_nao_ganha_nr18_de_complemento(base):
+    """Abertura de piso fora de obra — escritório, galpão — é da NR-08. A fusão
+    não pode injetar a NR-18, que é norma da indústria da construção.
+    """
+    from auditoria.pipeline import NaoConformidade, _fundir_equivalentes
+
+    so_nr08 = [NaoConformidade(base.obter("NR-08", "8.3.2.2"), "Abertura no piso elevado.",
+                               "Queda.", "alta", "Fechar.", 1, "")]
+    fundidas = _fundir_equivalentes(so_nr08)
+    assert len(fundidas) == 1
+    assert fundidas[0].item.nr == "NR-08"
+    assert fundidas[0].complementos == []
+
+
+def test_norma_complementar_e_citada_e_declara_a_edicao(base):
+    """O texto da norma complementar sai da base, verbatim, e sua edição entra
+    na trilha: citar sem declarar de que edição saiu desfaria a rastreabilidade.
+    """
+    from auditoria.pipeline import Laudo, NaoConformidade, _fundir_equivalentes
+
+    def nc(nr, item):
+        return NaoConformidade(base.obter(nr, item), "Abertura no piso sem proteção.",
+                               "Queda.", "critica", "Fechar.", 1, "")
+
+    laudo = Laudo(visao=Visao(ambiente="obra"), data_referencia=HOJE)
+    laudo.nao_conformidades = _fundir_equivalentes(
+        [nc("NR-08", "8.3.2.2"), nc("NR-18", "18.9.2")]
+    )
+    md = relatorio.markdown(laudo, base, numero=1)
+    assert "**Também alcançado por.** NR-08" in md
+    assert "As aberturas nos pisos e nas paredes" in md, "texto verbatim ausente"
+    assert "NR-08: edição" in md, "a edição da norma complementar não foi declarada"
+
+
 def test_abertura_em_parede_nao_vira_abertura_de_piso():
     """A NR-08 8.3.2.2 cobre "aberturas nos pisos E NAS PAREDES"; a NR-18 18.9.2,
     só piso. Num laudo real a abertura vertical foi enquadrada nas duas, o

@@ -152,6 +152,36 @@ def itens_compartilhados() -> frozenset[str]:
     return _COMPARTILHADOS
 
 
+# Itens de NRs diferentes que impõem a MESMA exigência sobre o mesmo objeto
+# físico. Não são sinônimos: cada um vale no seu âmbito — a NR-18 é a norma da
+# indústria da construção, a NR-08 vale para edificação em geral. Mas diante de
+# uma única abertura no piso, os dois dizem a mesma coisa, e o Analista enquadra
+# os dois: num lote real de 15 fotos, 6 das 21 não conformidades eram 3 aberturas
+# contadas duas vezes, inflando a contagem em 29%.
+#
+# Um auditor não escreve duas não conformidades para uma abertura: escreve uma,
+# pela norma mais específica, e menciona a outra. É o que o código faz aqui — a
+# primeira ref de cada grupo é a que encabeça a NC, as demais viram citação
+# complementar impressa ao lado. Quem cita continua sendo o código: o texto da
+# norma complementar sai da base, verbatim, nunca da escrita de um agente.
+#
+# Ordem = precedência. NR-18 primeiro por ser a específica do ramo em que este
+# app é usado; quando o Analista enquadra só a NR-08 (uma abertura de piso em
+# escritório, onde a NR-18 não alcança), nada é descartado e é a NR-08 que
+# encabeça, com a NR-18 de complemento.
+ITENS_EQUIVALENTES: tuple[tuple[str, ...], ...] = (
+    ("NR-18 18.9.2", "NR-08 8.3.2.2"),
+)
+
+
+def grupo_equivalente(ref: str) -> tuple[str, ...]:
+    """O grupo de mesma exigência a que o item pertence, ou vazio."""
+    for grupo in ITENS_EQUIVALENTES:
+        if ref in grupo:
+            return grupo
+    return ()
+
+
 def rotulos_para_prompt() -> str:
     """Lista compacta dos riscos, para o modelo de visão etiquetar os achados."""
     return "\n".join(f"- {r.id}: {r.rotulo}" for r in catalogo().values())
