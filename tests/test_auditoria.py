@@ -324,6 +324,40 @@ def test_betoneira_com_transmissao_exposta_aciona_a_nr12(base):
     assert "NR-12 12.5.1" in citados, "a NR-12 não chegou ao dossiê"
 
 
+def test_tambor_sem_tampa_nao_vira_vao_no_piso():
+    """Medido no laudo real da foto (61), depois que o Olho passou a nomear a
+    betoneira: o sinal "vao no piso sem tampa" tinha QUATRO radicais e casava
+    três — "sem" e "tampa" vinham de "Abertura circular do tambor da betoneira
+    SEM TAMPA ou proteção visível", e "piso" vinha do ambiente. Faltava só
+    "vao", o único discriminante, e 0,75 passa do corte de 0,7.
+
+    A âncora no achado não bastou porque um dos dois radicais ancorados era
+    "sem", que não discrimina nada. A correção foi encurtar o sinal, não mexer
+    no limiar: onde nenhum radical pode faltar, não há o que explorar.
+    """
+    betoneira = Visao(
+        ambiente="Interior de um galpão ou oficina com piso de concreto e "
+                 "estruturas metálicas ao fundo.",
+        achados=[
+            Achado("Betoneira com tambor cilíndrico metálico de cor escura, com "
+                   "extensas áreas de corrosão."),
+            Achado("Abertura circular do tambor da betoneira sem tampa ou proteção "
+                   "visível, revelando o interior escuro e a haste central."),
+            Achado("Piso de concreto com manchas escuras e resíduos espalhados ao "
+                   "redor da base da máquina."),
+        ],
+    )
+    ids = [r.id for r in rotear_riscos(betoneira)]
+    assert "abertura_piso_desprotegida" not in ids
+
+    # A contraparte: um vão de verdade no piso continua acionando.
+    vao = Visao(
+        ambiente="Laje em construção.",
+        achados=[Achado("Vão no piso sem tampa, junto à área de circulação.")],
+    )
+    assert "abertura_piso_desprotegida" in [r.id for r in rotear_riscos(vao)]
+
+
 def test_maquina_protegida_nao_aciona_o_risco_de_zona_de_perigo():
     """A contraparte de cada sinal novo. A terceira é a que pegou "sem
     carenagem" sozinho: "sem" conta como radical e não discrimina nada, então o

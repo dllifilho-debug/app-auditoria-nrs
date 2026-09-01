@@ -68,7 +68,14 @@ RISCOS: dict[str, dict] = {
         "sinais": [
             "abertura no piso",
             "buraco no piso",
-            "vao no piso sem tampa",
+            # Era "vao no piso sem tampa" — quatro radicais, e a betoneira da
+            # foto (61) casava três deles: "sem" e "tampa" vinham de "Abertura
+            # circular do tambor da betoneira SEM TAMPA ou proteção visível", e
+            # "piso" do ambiente. Faltava só "vao", o único discriminante, e
+            # 0,75 passa do corte de 0,7. A âncora no achado não protege aqui
+            # porque um dos dois radicais ancorados é "sem", que não discrimina
+            # nada — a mesma lição dos sinais da NR-12.
+            "vao no piso",
             "tampa solta sobre o buraco",
             "placa apoiada sobre abertura",
             "caixa de passagem aberta",
