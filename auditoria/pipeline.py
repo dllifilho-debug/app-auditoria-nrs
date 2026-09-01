@@ -205,7 +205,14 @@ aberto, altura ante o corpo (joelho, cintura, peito) e estado (íntegro, rasgado
 Máquina, painel elétrico, andaime, escada, cinta, cabo ou gancho: diga o estado da superfície
 (corroído, amassado, queimado, esfiapado, fios rompidos) e as peças que vê e as que não vê
 (trava do gancho, guarda-corpo e rodapé do andaime, tampa do painel, proteção de partes móveis).
-Só escreva "sem <peça> visível" quando o lugar dela aparece vazio na foto; senão, "não dá para ver"."""
+Só escreva "sem <peça> visível" quando o lugar dela aparece vazio na foto; senão, "não dá para ver".
+
+NOMEIE o equipamento quando a forma o identifica sem ambiguidade: betoneira, serra circular,
+policorte, martelete, esmerilhadeira, guincho, grua, andaime, quadro elétrico. Nomear o que uma
+máquina É descreve; atribuir a ela uma FUNÇÃO DE SEGURANÇA conclui — por isso "betoneira" se
+escreve e "rede de proteção" não: a primeira é o nome do objeto, a segunda é uma afirmação sobre
+o que a tela faz. Se a forma não bastar para identificar, descreva a forma ("tambor cilíndrico
+metálico montado em chassi sobre rodas") e não invente o nome."""
 
 
 def agente_olho(cliente: Conversador, imagem_b64: str, modelo: str, contexto: str = "") -> Visao:

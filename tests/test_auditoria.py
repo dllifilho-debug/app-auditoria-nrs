@@ -296,6 +296,64 @@ def test_rotulo_de_abertura_cai_por_ser_item_compartilhado():
     assert "NR-08 8.3.2.2" in itens_compartilhados()
 
 
+def test_betoneira_com_transmissao_exposta_aciona_a_nr12(base):
+    """Medido na foto (61) do acervo — uma betoneira inequívoca, tambor amarelo
+    descascado sobre chassi. O laudo real saiu com ZERO não conformidades, e a
+    causa era dupla: o Olho não nomeou a máquina (portão fechado) e, mesmo
+    nomeando e descrevendo o defeito clássico, nenhum sinal casava.
+
+    "correia sem protecao" contra "correia … sem carenagem" cobre 2 de 3
+    radicais, e 0,67 não passa do corte de 0,7 — o vocabulário curado era de
+    máquina industrial, e um laudo de canteiro escreve outra coisa.
+    """
+    visao = Visao(
+        ambiente="Área de preparo de concreto em canteiro, com betoneira sob cobertura.",
+        achados=[
+            Achado("Betoneira com coroa e pinhão expostos, sem proteção sobre a "
+                   "engrenagem de acionamento do tambor."),
+            Achado("Correia de transmissão da betoneira aparente, sem carenagem."),
+        ],
+    )
+    ids = [r.id for r in rotear_riscos(visao)]
+    assert "maquina_sem_protecao_zona_perigo" in ids
+
+    dossie = _dossie_da_cena(
+        base, visao.ambiente, [a.fato for a in visao.achados]
+    )
+    citados = {f"{e.item.nr} {e.item.item}" for e in dossie.entradas}
+    assert "NR-12 12.5.1" in citados, "a NR-12 não chegou ao dossiê"
+
+
+def test_maquina_protegida_nao_aciona_o_risco_de_zona_de_perigo():
+    """A contraparte de cada sinal novo. A terceira é a que pegou "sem
+    carenagem" sozinho: "sem" conta como radical e não discrimina nada, então o
+    sinal casava com uma carenagem ÍNTEGRA — o oposto do risco.
+    """
+    protegidas = [
+        "Betoneira com proteção metálica instalada sobre a coroa e o pinhão.",
+        "Correia de transmissão protegida por carenagem metálica fixada com parafusos.",
+        "Carenagem do motor íntegra e fixada, sem folgas visíveis.",
+        "Linha de transmissão aérea exposta sobre o canteiro.",
+    ]
+    for fato in protegidas:
+        visao = Visao(ambiente="Canteiro de obra com betoneira.", achados=[Achado(fato)])
+        ids = [r.id for r in rotear_riscos(visao)]
+        assert "maquina_sem_protecao_zona_perigo" not in ids, fato
+
+
+def test_prompt_do_olho_pede_o_nome_da_maquina():
+    """A regra que proíbe "afirmar finalidade que não se verifica" existe por
+    bom motivo — foi ela que tirou "rede de proteção" de uma tela de plástico.
+    Mas ela também fazia o Olho descrever uma betoneira como "tambor cilíndrico
+    metálico", e sem o nome o portão da NR-12 nunca abre. O prompt precisa
+    separar nomear (descrição) de atribuir função de segurança (conclusão).
+    """
+    from auditoria.pipeline import PROMPT_OLHO
+
+    assert "betoneira" in PROMPT_OLHO.lower()
+    assert "rede de proteção" in PROMPT_OLHO, "a contraparte precisa continuar no prompt"
+
+
 def test_roteamento_deixa_o_ambiente_nomear_o_equipamento():
     """A isenção do sinal de um radical: são nomes inequívocos, e é do ambiente
     que se espera o nome do equipamento quando o achado fala só do defeito.

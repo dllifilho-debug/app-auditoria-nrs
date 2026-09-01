@@ -43,6 +43,25 @@ RISCOS: dict[str, dict] = {
             "ponto de operacao aberto",
             "corrente de transmissao exposta",
             "cardan sem protecao",
+            # Medido numa betoneira real do acervo (foto 61): mesmo com a
+            # máquina nomeada e o defeito clássico descrito — "coroa e pinhão
+            # expostos", "correia de transmissão aparente, sem carenagem" —
+            # este risco não pontuava. Os sinais acima nomeiam a peça no
+            # vocabulário de máquina industrial; um laudo de canteiro escreve
+            # a mesma coisa com outras palavras, e a cobertura parcial não
+            # salva: "correia sem protecao" contra "correia … sem carenagem"
+            # casa 2 de 3 radicais, e 0,67 não passa do corte de 0,7.
+            #
+            # "coroa e pinhão" é o par que a betoneira expõe, e não aparece em
+            # nenhum outro lugar de um laudo de obra.
+            # "sem carenagem" sozinho ficou de fora, e o motivo vale para toda
+            # a lista: "sem" conta como radical mas não discrimina nada, então
+            # um sinal de dois radicais em que um deles é "sem" vale por um só.
+            # Medido: casava com "Carenagem do motor íntegra e fixada, SEM
+            # folgas visíveis" — carenagem em ordem, que é o oposto do risco.
+            "coroa e pinhao expostos",
+            "engrenagem sem protecao",
+            "correia sem carenagem",
         ],
         "itens": ["NR-12 12.5.1", "NR-12 12.5.9", "NR-12 12.5.11"],
         "gravidade_base": "critica",
