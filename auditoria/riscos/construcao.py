@@ -79,6 +79,46 @@ RISCOS: dict[str, dict] = {
         "itens": ["NR-18 18.9.2", "NR-08 8.3.2.2"],
         "gravidade_base": "critica",
     },
+    # A NR-08 8.3.2.2 fala de "aberturas nos pisos E NAS PAREDES"; a NR-18
+    # 18.9.2 fala só de piso. Num laudo real a distinção decidiu o caso: uma
+    # abertura vertical em parede foi enquadrada nas duas, e o Diretor vetou a
+    # de piso — corretamente — mas a NC ficou intitulada "Abertura no piso",
+    # porque o rótulo vinha do único risco que reivindicava o item. Separar o
+    # risco de parede resolve os dois lados: a citação certa continua chegando
+    # ao dossiê, e 8.3.2.2 passa a ter dois donos, então `itens_compartilhados`
+    # derruba o rótulo e a NC é nomeada pela constatação.
+    "abertura_parede_desprotegida": {
+        "rotulo": "Abertura na parede sem proteção contra queda de pessoas ou objetos",
+        "descricao": (
+            "Vão vertical em parede, peitoril ou fachada — janela sem peitoril, passagem "
+            "sem fechamento — sem proteção que impeça a queda de pessoas ou objetos por ele."
+        ),
+        "sinais": [
+            # Sinais curtos e ancorados: os dois radicais têm de vir do mesmo
+            # achado. "abertura" sozinha, completada por "parede" vinda do
+            # ambiente, não pode disparar — é o falso positivo do tambor.
+            #
+            # Curtos porque a primeira versão destes sinais caiu na armadilha
+            # do sinal por extenso, medida aqui mesmo: "abertura vertical sem
+            # fechamento" são QUATRO radicais ("sem" conta), e uma abertura de
+            # PISO "sem cobertura ou fechamento visível" casava três deles —
+            # faltando "vertical", que é o único que discrimina.
+            #
+            # Quatro é o número que importa: a cobertura parcial exige 0,7, e
+            # num sinal de três radicais faltar um dá 0,67 — não passa. De três
+            # para baixo, todo radical é obrigatório; de quatro para cima, um
+            # pode faltar, e o que falta costuma ser justamente o discriminante.
+            #
+            # "vao na parede" ficou de fora por um terceiro motivo, também
+            # medido: casa com "vigas apoiadas no VÃO entre as PAREDES", que é
+            # descrição de estrutura, não de abertura desprotegida.
+            "abertura na parede",
+            "abertura vertical",
+            "janela sem peitoril",
+        ],
+        "itens": ["NR-08 8.3.2.2"],
+        "gravidade_base": "alta",
+    },
     "vao_caixa_elevador_sem_fechamento": {
         "rotulo": "Vão de acesso à caixa de elevador sem fechamento provisório",
         "descricao": (

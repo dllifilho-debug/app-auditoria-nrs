@@ -159,6 +159,98 @@ def test_roteamento_nao_combina_palavras_de_achados_diferentes():
     assert not any("escada" in i for i in ids)
 
 
+def test_roteamento_nao_deixa_o_ambiente_carregar_o_sinal_sozinho():
+    """Bug medido no lote de 01/09: o ambiente completa, mas não pode carregar.
+
+    A foto (61) mostra uma máquina — nenhuma abertura de piso em lugar nenhum.
+    O achado deu "abertura" (do tambor) e o ambiente deu "piso" (de concreto,
+    do galpão), e o sinal "abertura no piso" casou inteiro com um radical de
+    cada lado. Como quase todo ambiente de obra menciona "piso", o falso
+    positivo era sistemático, não acidental.
+
+    O par abaixo é o que importa: nenhum dos dois textos dispara o sinal
+    sozinho, e a soma também não deve.
+    """
+    maquina = Visao(
+        ambiente="Interior de um galpão ou oficina com piso de concreto e "
+                 "estruturas metálicas ao fundo.",
+        achados=[Achado("Abertura circular na extremidade do tambor, com borda "
+                        "metálica visível e interior escuro.")],
+    )
+    assert not any(
+        r.id == "abertura_piso_desprotegida" for r in rotear_riscos(maquina)
+    )
+
+    # A contraparte que DEVE continuar disparando: os dois radicais no achado.
+    piso = Visao(
+        ambiente="Interior de um galpão ou oficina com piso de concreto.",
+        achados=[Achado("Abertura retangular no piso, sem tampa nem guarda-corpo.")],
+    )
+    assert any(r.id == "abertura_piso_desprotegida" for r in rotear_riscos(piso))
+
+
+def test_abertura_em_parede_nao_vira_abertura_de_piso():
+    """A NR-08 8.3.2.2 cobre "aberturas nos pisos E NAS PAREDES"; a NR-18 18.9.2,
+    só piso. Num laudo real a abertura vertical foi enquadrada nas duas, o
+    Diretor vetou a de piso — certo — e a NC sobrou intitulada "Abertura no
+    piso", porque o rótulo vinha do único risco que reivindicava o item.
+    """
+    parede = Visao(
+        ambiente="Interior de estrutura em construção, com paredes de alvenaria "
+                 "de tijolo aparente e piso de madeira.",
+        achados=[Achado("Abertura vertical sem fechamento visível, delimitada por "
+                        "uma borda de tijolo à esquerda e uma parede lisa à direita.")],
+    )
+    ids = [r.id for r in rotear_riscos(parede)]
+    assert "abertura_parede_desprotegida" in ids
+    assert "abertura_piso_desprotegida" not in ids
+
+    # E a recíproca: abertura de piso não passa a acionar o risco de parede.
+    piso = Visao(
+        ambiente="Laje de construção civil em fase de estruturação.",
+        achados=[Achado("Abertura retangular no piso da laje, com bordas de "
+                        "concreto aparente, sem cobertura ou fechamento visível.")],
+    )
+    ids_piso = [r.id for r in rotear_riscos(piso)]
+    assert "abertura_piso_desprotegida" in ids_piso
+    assert "abertura_parede_desprotegida" not in ids_piso
+
+
+def test_sinal_de_parede_nao_casa_com_vao_estrutural():
+    """"vão" e "parede" no mesmo achado descrevem estrutura o tempo todo — é a
+    armadilha do vocabulário de engenharia, e foi por isso que "vao na parede"
+    não entrou na lista de sinais.
+    """
+    visao = Visao(
+        ambiente="Interior de obra com paredes de alvenaria.",
+        achados=[Achado("Vigas de concreto apoiadas no vão entre as paredes, "
+                        "com armadura exposta na extremidade.")],
+    )
+    assert not any(
+        r.id == "abertura_parede_desprotegida" for r in rotear_riscos(visao)
+    )
+
+
+def test_rotulo_de_abertura_cai_por_ser_item_compartilhado():
+    """8.3.2.2 passou a ter dois donos (piso e parede), então o rótulo do risco
+    deixa de nomear a NC — quem nomeia é a constatação do Analista.
+    """
+    from auditoria.riscos import itens_compartilhados
+
+    assert "NR-08 8.3.2.2" in itens_compartilhados()
+
+
+def test_roteamento_deixa_o_ambiente_nomear_o_equipamento():
+    """A isenção do sinal de um radical: são nomes inequívocos, e é do ambiente
+    que se espera o nome do equipamento quando o achado fala só do defeito.
+    """
+    visao = Visao(
+        ambiente="Casa de máquinas com uma caldeira a vapor",
+        achados=[Achado("Manômetro com o visor trincado e leitura ilegível")],
+    )
+    assert any("caldeira" in r.id for r in rotear_riscos(visao))
+
+
 def _dossie_da_cena(base, ambiente, fatos, quando=HOJE):
     visao = Visao(ambiente=ambiente, achados=[Achado(f) for f in fatos])
     return montar_dossie(base, visao, "", quando)[0]
@@ -1795,6 +1887,7 @@ def test_aparo_salva_o_enquadramento_que_o_fato_sustenta(base):
             "acao_corretiva": "Reposicionar a escada sobre piso estável e nivelado.",
             "gravidade": "alta",
             "retirado": "ausência de sapata antiderrapante, não observável no fato",
+            "exigencia": "deve ser apoiada em piso estável",
         }],
         "vetados": [], "ajustes": [], "pontos_descartados": [],
         "conformidades_descartadas": [], "parecer": "Apoio instável da escada.",
@@ -1841,6 +1934,89 @@ def test_prompt_do_diretor_traz_o_texto_oficial_para_decidir_o_aparo(base):
     assert "apoiada em piso estável" in duble.prompt_diretor
 
 
+def test_retirado_nao_leva_o_raciocinio_do_modelo_para_o_laudo(base):
+    """No lote de 01/09 o campo "retirado" — que sai impresso no laudo do
+    cliente — veio com 674 caracteres de deliberação em primeira pessoa: "Vou
+    manter a lógica de que…", "Vou usar 'alta' para ser conservador". O prompt
+    pede uma frase; isto garante uma frase.
+    """
+    monologo = (
+        "A afirmação de que a abertura está em desacordo com a exigência de proteção "
+        "de aberturas em paredes, o que é interpretação e não fato. Na verdade, a "
+        "principal razão do 'aparado' é outra. Vou manter a lógica de que a "
+        "constatação original tinha suposições. Vou usar 'alta' para ser conservador."
+    )
+    laudo, _ = _rodar(base, "NR-35 Anexo III 5.2.2.5", lambda: {
+        "conferencia": [{"ref": "V1", "fato": FATO, "decisao": "aparado"}],
+        "aparados": [{
+            "ref": "V1",
+            "constatacao": "A escada portátil está apoiada sobre entulho, com a base fora do nível.",
+            "acao_corretiva": "Reposicionar a escada sobre piso estável e nivelado.",
+            "gravidade": "alta",
+            "retirado": monologo,
+            "exigencia": "deve ser apoiada em piso estável",
+        }],
+        "vetados": [], "ajustes": [], "pontos_descartados": [],
+        "conformidades_descartadas": [], "parecer": "p",
+    })
+    trilha = " ".join(laudo.aparos)
+    assert "Vou manter" not in trilha and "Vou usar" not in trilha
+    assert "Na verdade" not in trilha
+    assert "em desacordo com a exigência" in trilha, "cortou a resposta junto"
+
+
+def test_aparo_sem_exigencia_no_texto_oficial_vira_veto(base):
+    """O caso do lote de 01/09: painel empoeirado enquadrado em item de
+    SINALIZAÇÃO. O aparo tirou a parte da sinalização — a foto mostrava a placa
+    'PERIGO' legível — e deixou só a poeira, que NR-10 10.10.1 não exige em
+    lugar nenhum. Era veto, e o aparo o salvou.
+
+    Aqui o Diretor apara sem conseguir copiar do texto oficial nada que a
+    versão aparada descumpra; o pipeline converte em veto.
+    """
+    laudo, _ = _rodar(base, "NR-35 Anexo III 5.2.2.5", lambda: {
+        "conferencia": [{"ref": "V1", "fato": FATO, "decisao": "aparado"}],
+        "aparados": [{
+            "ref": "V1",
+            "constatacao": "A escada apresenta acúmulo de poeira nos degraus.",
+            "acao_corretiva": "Realizar a limpeza dos degraus.",
+            "gravidade": "baixa",
+            "retirado": "apoio instável",
+            # Exigência que NÃO está no texto oficial do item.
+            "exigencia": "os degraus devem ser mantidos limpos e desobstruídos",
+        }],
+        "vetados": [], "ajustes": [], "pontos_descartados": [],
+        "conformidades_descartadas": [], "parecer": "p",
+    })
+    assert not laudo.nao_conformidades, "o aparo sem lastro no item sobreviveu"
+    # Classe de erro 5: o veto derruba o enquadramento, não a observação — e a
+    # observação que sobrevive é a do Analista, não a versão aparada, porque foi
+    # justamente o aparo que se rejeitou.
+    assert laudo.sem_enquadramento
+    observacao = " ".join(laudo.sem_enquadramento).lower()
+    assert "entulho" in observacao
+    assert "recusado na supervisão" in observacao
+
+
+def test_aparo_com_exigencia_recopiada_sem_acento_continua_valendo(base):
+    """O modelo recopia o texto, não o clona — acento e caixa não podem vetar
+    um aparo legítimo."""
+    laudo, _ = _rodar(base, "NR-35 Anexo III 5.2.2.5", lambda: {
+        "conferencia": [{"ref": "V1", "fato": FATO, "decisao": "aparado"}],
+        "aparados": [{
+            "ref": "V1",
+            "constatacao": "A escada portátil está apoiada sobre entulho, com a base fora do nível.",
+            "acao_corretiva": "Reposicionar a escada sobre piso estável e nivelado.",
+            "gravidade": "alta",
+            "retirado": "ausência de sapata antiderrapante",
+            "exigencia": "DEVE SER APOIADA EM PISO ESTAVEL",
+        }],
+        "vetados": [], "ajustes": [], "pontos_descartados": [],
+        "conformidades_descartadas": [], "parecer": "p",
+    })
+    assert len(laudo.nao_conformidades) == 1, "o aparo legítimo foi vetado"
+
+
 def test_aparo_nao_deixa_o_modelo_escrever_citacao(base):
     laudo, _ = _rodar(base, "NR-35 Anexo III 5.2.2.5", lambda: {
         "conferencia": [], "aparados": [{
@@ -1848,6 +2024,7 @@ def test_aparo_nao_deixa_o_modelo_escrever_citacao(base):
             "constatacao": "Escada apoiada sobre entulho, em desacordo com a NR-35, item 5.2.2.5.",
             "acao_corretiva": "Reposicionar conforme NR-18 18.8.6.12.",
             "retirado": "cláusula da NR-18 18.8.6.12 sobre sapatas",
+            "exigencia": "deve ser apoiada em piso estável",
         }], "vetados": [], "ajustes": [], "pontos_descartados": [],
         "conformidades_descartadas": [], "parecer": "p",
     })
@@ -2088,7 +2265,7 @@ def test_analista_e_diretor_refazem_a_chamada_cortada_no_teto(base):
     assert not laudo.visao_falhou
     # cada agente foi chamado duas vezes, a segunda com o dobro de espaço
     assert 3600 in cliente.tetos, cliente.tetos      # Analista 1800 → 3600
-    assert 4400 in cliente.tetos, cliente.tetos      # Diretor 2200 → 4400
+    assert 5200 in cliente.tetos, cliente.tetos      # Diretor 2600 → 5200
 
 
 class _ClienteQueDevolveJsonInvalidoUmaVez:
