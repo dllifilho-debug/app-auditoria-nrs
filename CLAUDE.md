@@ -10,7 +10,8 @@ do `main` do repositório GitHub `dllifilho-debug/app-auditoria-nrs`.
 Fluxo de trabalho agora passa por PR: branch `claude/...`, testes, navegador, PR contra
 `main`, e só mergear — nesse ponto ou quando o usuário pedir — depois disso o Streamlit
 Cloud redeploya sozinho em ~1-2 min (confirme pelo hash em "Versão em execução" na
-barra lateral). **Antes desta sessão, `main` estava travado num protótipo antigo e a
+barra lateral). O repositório tem **"Automatically delete head branches" ligado** desde
+01/09: a branch some sozinha no merge, não precisa limpar depois. **Antes desta sessão, `main` estava travado num protótipo antigo e a
 reescrita inteira vivia numa branch nunca mergeada** — se `git diff main...HEAD` um dia
 mostrar milhares de linhas de novo, desconfie do `main` local antes de concluir que o
 `main` remoto está desatualizado (ver armadilha do `git fetch` abaixo).
@@ -20,6 +21,37 @@ pela política de egress do container (403 no proxy) — confirmado, não é int
 Isso significa: nada de `ClienteGroq` real aqui, só `ClienteDemonstracao` e testes da
 camada determinística (roteador, dossiê, aferição). Testar com o modelo de visão de
 verdade é sempre com o usuário, em produção, com fotos e laudos que ele manda de volta.
+
+---
+
+## Onde a coisa parou (01/09/2026)
+
+Três PRs mergeados em sequência — #9 (portão de máquina e filtro de anexo setorial da
+NR-12), #10 (cota contada por modelo) e #11 (rótulo de item genérico, registro do
+Qwen 3.8, teto diário por modelo). **Nenhum dos três foi validado num lote real.**
+
+**O próximo passo é um só, e só o usuário pode fazer: rodar o lote de 14 fotos com o
+`Qwen 3.8 27B` selecionado nos DOIS campos** — "Visão (leitura da foto)" e "Texto
+(enquadramento e supervisão)". Ele já aparece nomeado nos dois seletores; não precisa
+mais digitar o ID à mão. Isso agora cabe numa sessão (~1h30, limitado pela janela de
+8.000 TPM, não mais pela cota diária).
+
+Esse lote responde quatro coisas de uma vez:
+
+1. **O 3.8 vira o padrão?** Duas fotos deram resultado melhor que o `gpt-oss-120b`
+   (ver "Cota" e os achados de 30/08); catorze decidem. Se vingar, é trocar
+   `PADRAO_VISAO` e `PADRAO_TEXTO` em `modelos.py`, uma linha cada.
+2. **Com que frequência a retentativa acontece?** É o número que separa 16 de 283
+   fotos/dia, e ninguém está medindo (ver "Em aberto").
+3. **A frente da NR-12 funcionou?** Linha de base: **19 NCs** no lote de 14 de 29/08.
+   O que vigiar é item de máquina **sumindo** onde deveria aparecer — o portão fecha
+   por nome de máquina, e se o Olho descrever sem nomear, a NR-12 não entra.
+4. **A seção "pontos de atenção" reaparece?** Sumiu na única foto do 3.8, e uma foto
+   não distingue omissão de julgamento.
+
+Ao receber os laudos: o HTML traz o "Ambiente registrado" e a lista de fatos do Olho,
+então dá para **reproduzir o dossiê aqui sem rede** — `montar_dossie` é determinístico.
+Foi assim que os defeitos desta sessão foram diagnosticados.
 
 ---
 
@@ -86,7 +118,7 @@ próprio comando composto (exit 144).
 
 ---
 
-## Estado atual (commit `b21ffce`)
+## Estado atual (commit `20765ce`)
 
 - **6.358 itens** vigentes de **24 NRs** (de 36 vigentes), extraídos dos PDFs em `normas/`
 - **122 riscos** curados mapeando para **228 itens** reais; 25 exigem pessoa na cena e
