@@ -104,6 +104,10 @@ APARO_DEMO = [{
                       "delimitado, fora da via de circulação.",
     "gravidade": "alta",
     "retirado": "afirmação de que os pregos não foram retirados antes do empilhamento",
+    # O aparo tem de provar que o que sobrou ainda descumpre ESTE item — copiando
+    # do texto oficial o trecho descumprido. Sem isso o pipeline converte o aparo
+    # em veto, que é o comportamento correto para um aparo sem lastro.
+    "exigencia": "devem ser empilhadas após retirados ou rebatidos os pregos",
 }]
 
 PARECER_DEMO = (

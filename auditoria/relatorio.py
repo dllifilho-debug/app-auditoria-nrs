@@ -162,6 +162,17 @@ def markdown(
             p.append("")
             p.append(f"> {nc.item.texto}")
             p.append("")
+            # A mesma exigência em outra NR. Vale como reforço do enquadramento,
+            # não como segunda não conformidade — é uma abertura só. O texto sai
+            # da base, verbatim, como o da norma que encabeça.
+            for extra in nc.complementos:
+                p.append(
+                    f"**Também alcançado por.** {extra.nr} — {_titulo_nr(extra.nr)}, "
+                    f"item {extra.item}:"
+                )
+                p.append("")
+                p.append(f"> {extra.texto}")
+                p.append("")
             p.append(f"**Ação corretiva.** {nc.acao_corretiva}")
             p.append("")
             p.append(f"**Prazo sugerido.** {nc.prazo_dias} dia(s) — gravidade {rotulo.lower()}.")
@@ -237,7 +248,13 @@ def markdown(
         f"- Base normativa: {len(base.itens)} itens extraídos de "
         f"{len(base.por_nr)} NRs, edição consolidada em {base.gerado_em}."
     )
-    citadas = sorted({nc.item.nr for nc in laudo.nao_conformidades})
+    # Toda NR cujo texto aparece no laudo declara sua edição aqui — inclusive a
+    # que entrou só como citação complementar. Citar verbatim sem dizer de que
+    # edição saiu desfaria a rastreabilidade que esta trilha existe para dar.
+    citadas = sorted(
+        {nc.item.nr for nc in laudo.nao_conformidades}
+        | {e.nr for nc in laudo.nao_conformidades for e in nc.complementos}
+    )
     for nr in citadas:
         linha = f"  - {nr}: edição `{base.edicoes.get(nr, '?')}`"
         if (futura := base.edicoes_futuras.get(nr)):

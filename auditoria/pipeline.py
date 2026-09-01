@@ -21,7 +21,12 @@ from . import dossie as mod_dossie
 from .catalogo_nr import CATALOGO_NR
 from .kb import BaseNormativa, Item
 from .modelos import Conversador, ErroDeAuditoria
-from .riscos import Risco, catalogo as catalogo_riscos, itens_compartilhados
+from .riscos import (
+    Risco,
+    catalogo as catalogo_riscos,
+    grupo_equivalente,
+    itens_compartilhados,
+)
 
 GRAVIDADE_ORDEM = {"critica": 0, "alta": 1, "media": 2, "baixa": 3}
 PRAZO_SUGERIDO = {"critica": 1, "alta": 7, "media": 30, "baixa": 60}
@@ -68,6 +73,11 @@ class NaoConformidade:
     acao_corretiva: str
     prazo_dias: int
     rotulo_risco: str = ""
+    # Itens de outra NR que impõem a mesma exigência sobre o mesmo objeto.
+    # Preenchido pelo código a partir de `ITENS_EQUIVALENTES`, nunca pelo
+    # modelo, e impresso como citação complementar em vez de virar uma segunda
+    # não conformidade para a mesma abertura.
+    complementos: list[Item] = field(default_factory=list)
 
     @property
     def prioridade(self) -> int:
@@ -304,13 +314,33 @@ def rotear_riscos(visao: Visao, contexto: str = "") -> list[Risco]:
 
     Ambiente e contexto não formam fragmento à parte: entram junto de CADA
     achado, porque descrevem a cena inteira e legitimamente completam um sinal
-    ao lado de qualquer fato específico (ex.: ambiente "portão de acesso ao
-    elevador" + achado "painel com fiação" formam "acesso ao elevador... com").
+    ao lado de qualquer fato específico — o ambiente é quem costuma nomear a
+    máquina ("área de preparo de concreto com betoneira") quando o achado fala
+    só da peça defeituosa.
+
+    Mas completar não é carregar. O sinal precisa estar ANCORADO no achado: de
+    um sinal de duas ou mais palavras, pelo menos duas têm de vir do próprio
+    achado. Sem essa âncora o bag-of-words voltava pela porta que o ambiente
+    deixa aberta — e voltava sistematicamente, porque quase todo ambiente de
+    obra menciona "piso". Medido num lote real: o achado "Abertura circular na
+    extremidade do TAMBOR" mais o ambiente "galpão com PISO de concreto"
+    casavam o sinal "abertura no piso" com um radical de cada lado, e uma foto
+    de máquina saía enquadrada em abertura de piso. Nenhum dos dois textos
+    dispara o sinal sozinho; só a soma, que é justamente o que não se quer.
+
+    Sinal de um radical só é isento: são oito, todos nomes inequívocos
+    ("caldeira", "gambiarra", "glp"), e é deles que se espera exatamente isso —
+    que o ambiente nomeie o equipamento que o achado não repete.
     """
     extra = _radicais(" | ".join(t for t in (visao.ambiente, contexto) if t))
-    fragmentos = [f | extra for f in (_radicais(t) for t in visao.textos()) if f]
+    # Cada fragmento guarda as duas metades separadas: o que o próprio achado
+    # traz e o que a cena inteira acrescenta. A cobertura soma as duas; a
+    # âncora exigida abaixo olha só a primeira.
+    fragmentos = [(f, f | extra) for f in (_radicais(t) for t in visao.textos()) if f]
     if not fragmentos and extra:
-        fragmentos = [extra]
+        # Sem nenhum achado, a cena é tudo o que há — e aí ela é a própria
+        # âncora, senão uma foto descrita só no ambiente não routearia nada.
+        fragmentos = [(extra, extra)]
 
     encontrados: list[tuple[float, Risco]] = []
 
@@ -320,7 +350,14 @@ def rotear_riscos(visao: Visao, contexto: str = "") -> list[Risco]:
             termos = _radicais(sinal)
             if not termos:
                 continue
-            cobertura = max((len(termos & f) / len(termos) for f in fragmentos), default=0.0)
+            cobertura = max(
+                (
+                    len(termos & completo) / len(termos)
+                    for proprio, completo in fragmentos
+                    if len(termos) < 2 or len(termos & proprio) >= 2
+                ),
+                default=0.0,
+            )
             # Sinal de uma palavra precisa bater inteiro; sinal composto aceita
             # que uma peça falte, desde que o essencial esteja lá.
             if cobertura == 1.0:
@@ -620,6 +657,38 @@ RE_ORFA = re.compile(r"\b(?:na|no|da|do|de|a|o|em|com|conforme|segundo|pela|pelo
                      re.IGNORECASE)
 
 
+def _exigencia_ancorada(trecho: str, item: Item) -> bool:
+    """O aparo conseguiu apontar, no texto oficial, o que ainda é descumprido?
+
+    Mesma ideia que já deu certo com o fato: transformar julgamento em cópia.
+    A conferência do fato virou mecânica — copie o trecho, não avalie se
+    convence — e foi o que fez o Diretor parar de aprovar no atacado. A segunda
+    metade da decisão, "o que sobrou ainda descumpre ESTE item?", continuava
+    sendo julgamento, e num lote real errou o lado: um painel empoeirado ficou
+    enquadrado em item de SINALIZAÇÃO depois que o aparo tirou justamente a
+    parte da sinalização — que a foto mostrava em ordem.
+
+    Aqui só se verifica o que é verificável: o trecho existe mesmo no texto
+    oficial. Isso pega a exigência inventada, não o trecho verdadeiro citado
+    fora de propósito — contra esse continua agindo o prompt. Tolerância a
+    acento, caixa e espaço, porque o modelo recopia o texto e não o clona.
+    """
+    from .kb import normalizar
+
+    alvo = normalizar(trecho)
+    if len(alvo) < 12:  # trecho curto demais não prova nada
+        return False
+    oficial = normalizar(item.texto)
+    if alvo in oficial:
+        return True
+    # Recópia imperfeita ainda vale, desde que quase tudo esteja lá; invenção,
+    # não. O corte é alto de propósito: na dúvida, vetar é o lado seguro.
+    radicais = _radicais(trecho)
+    if not radicais:
+        return False
+    return len(radicais & _radicais(item.texto)) / len(radicais) >= 0.8
+
+
 def _limpar_citacoes(texto: str) -> str:
     """Remove citação escrita à mão pelo modelo — quem cita aqui é o renderizador.
 
@@ -690,6 +759,15 @@ VETADO — nenhum trecho sustenta a constatação; OU a versão aparada já não
   sobrou o descumpre. Se o item exigia justamente a parte que você cortou, vete —
   situação errada num item verdadeiro é o pior erro, porque sobrevive à conferência.
 
+  Todo aparo prova isso do mesmo jeito mecânico que a conferência do fato: em
+  "exigencia", COPIE do TEXTO OFICIAL do bloco [V<n>] o trecho literal que a versão
+  aparada ainda descumpre. Copiar, não parafrasear. Se você não achar no texto oficial
+  um trecho que a constatação aparada descumpra, é porque não sobrou não conformidade:
+  vete em vez de aparar. Exemplo real: um painel empoeirado foi enquadrado num item que
+  exige SINALIZAÇÃO; o aparo tirou a parte da sinalização — que a foto mostrava em
+  ordem — e deixou só a poeira, que aquele item não exige em lugar nenhum. Não havia
+  trecho a copiar, e era veto.
+
 MOLDURA — a constatação só pode afirmar que algo NÃO existe se aquilo apareceria neste
 recorte fotográfico caso existisse. Ancoragem na cobertura, aterramento dentro do quadro,
 projeto na pasta do engenheiro, sapata sob entulho: fora da moldura, "sem evidência de X"
@@ -727,7 +805,7 @@ o mesmo objeto.
 Responda SOMENTE com este JSON:
 {{
   "conferencia": [{{"ref": "V<n>", "fato": "<trecho literal que sustenta, ou vazio>", "decisao": "aprovado|aparado|vetado"}}],
-  "aparados": [{{"ref": "V<n>", "constatacao": "<reescrita, restrita ao trecho copiado>", "acao_corretiva": "<reescrita compatível>", "gravidade": "critica|alta|media|baixa", "retirado": "<a cláusula sem lastro que saiu, em poucas palavras>"}}],
+  "aparados": [{{"ref": "V<n>", "constatacao": "<reescrita, restrita ao trecho copiado>", "acao_corretiva": "<reescrita compatível>", "gravidade": "critica|alta|media|baixa", "retirado": "<a cláusula sem lastro que saiu, em UMA frase curta — este campo vai impresso no laudo do cliente, não delibere aqui>", "exigencia": "<trecho literal do TEXTO OFICIAL que a versão aparada ainda descumpre>"}}],
   "vetados": [{{"ref": "V<n>", "motivo": "<por que não se sustenta>", "observacao": "<a condição reescrita como verificação, ou vazio>"}}],
   "ajustes": [{{"ref": "V<n>", "constatacao": "<reescrita, ou omita>", "acao_corretiva": "<reescrita, ou omita>", "gravidade": "critica|alta|media|baixa"}}],
   "pontos_descartados": [{{"ref": "P<n>", "motivo": "<por que sai>"}}],
@@ -774,8 +852,9 @@ def agente_diretor(
     )
     # O veredito ficou mais longo quando ganhou o aparo: cada enquadramento
     # devolve o fato copiado, a decisão e, quando aparado, a constatação
-    # reescrita. 1600 deixou de bastar num laudo com muitos achados.
-    return _conversar_sem_cortar(cliente, modelo, prompt, 2200, 0.0, "Diretor")
+    # reescrita. 1600 deixou de bastar num laudo com muitos achados, e o
+    # trecho da exigência oficial copiado em cada aparo cresceu de novo.
+    return _conversar_sem_cortar(cliente, modelo, prompt, 2600, 0.0, "Diretor")
 
 
 # Rótulo interno da conversa com o Diretor que vazou para o parecer de um laudo
@@ -797,6 +876,72 @@ def _sem_rotulo_interno(texto: str) -> str:
     limpo = re.sub(r"\s{2,}", " ", limpo)
     limpo = re.sub(r"\s+([,.;:])", r"\1", limpo)
     return limpo.strip()
+
+
+def _em_poucas_palavras(texto: str, limite: int = 200) -> str:
+    """Corta a deliberação do modelo, mantendo só a resposta.
+
+    O campo pede "em poucas palavras" e sai impresso no laudo que vai ao
+    cliente. Num lote real o Qwen 3.8 devolveu ali a própria cadeia de
+    raciocínio — "Vou manter a lógica de que…", "Vou usar 'alta' para ser
+    conservador" — mil e quinhentos caracteres deliberando, quando a resposta
+    era a primeira oração. O prompt pede curto; isto garante curto.
+
+    A primeira sentença é a resposta em praticamente todo caso observado; o
+    resto é o modelo pensando em voz alta depois de já ter respondido.
+    """
+    texto = " ".join(texto.split())
+    if not texto:
+        return ""
+    primeira = re.split(r"(?<=[.;])\s+(?=[A-ZÀ-Ú])", texto)[0]
+    # Uma primeira sentença curta demais costuma ser um fragmento ("Retirado:"),
+    # e aí é melhor ficar com o texto todo até o limite.
+    if len(primeira) >= 30:
+        texto = primeira
+    if len(texto) <= limite:
+        return texto.rstrip(" .;")
+    corte = texto.rfind(" ", 0, limite)
+    return texto[: corte if corte > 0 else limite].rstrip(" ,.;") + "…"
+
+
+def _fundir_equivalentes(ncs: list[NaoConformidade]) -> list[NaoConformidade]:
+    """Uma abertura, uma não conformidade — com a outra norma citada ao lado.
+
+    A NR-18 18.9.2 e a NR-08 8.3.2.2 impõem a mesma exigência sobre a mesma
+    abertura no piso, então o Analista enquadra as duas e o laudo conta duas.
+    Num lote real de 15 fotos foram 6 das 21 não conformidades: 3 aberturas
+    contadas em dobro, 29% da contagem.
+
+    Um auditor escreve uma, pela norma mais específica, e menciona a outra.
+    A que encabeça é a primeira do grupo que o Analista tiver enquadrado — a
+    ordem em `ITENS_EQUIVALENTES` é a precedência —, e as demais viram citação
+    complementar. Nada se perde: o texto oficial das duas continua no laudo.
+
+    Só funde o que o MESMO laudo enquadrou no mesmo grupo. Duas aberturas
+    diferentes na mesma foto viram duas não conformidades como antes, porque o
+    Analista as enquadra no mesmo item e a fusão não olha para constatação.
+    """
+    fundidas: list[NaoConformidade] = []
+    lider_do_grupo: dict[tuple[str, ...], NaoConformidade] = {}
+    for nc in ncs:
+        grupo = grupo_equivalente(f"{nc.item.nr} {nc.item.item}")
+        if not grupo:
+            fundidas.append(nc)
+            continue
+        if (lider := lider_do_grupo.get(grupo)) is None:
+            lider_do_grupo[grupo] = nc
+            fundidas.append(nc)
+            continue
+        # Quem encabeça é quem vem antes no grupo; o outro vira complemento.
+        atual = grupo.index(f"{lider.item.nr} {lider.item.item}")
+        novo = grupo.index(f"{nc.item.nr} {nc.item.item}")
+        if novo < atual:
+            nc.complementos = [lider.item, *lider.complementos]
+            fundidas[fundidas.index(lider)] = nc
+            lider_do_grupo[grupo] = nc
+        else:
+            lider.complementos.append(nc.item)
+    return fundidas
 
 
 def _descartar(itens: list[str], veredito: dict, chave: str, letra: str) -> list[str]:
@@ -954,6 +1099,25 @@ def executar(
             str(a.get("ref", "")).strip().upper(): a for a in veredito.get("aparados", [])
         }
 
+        # Aparo que não ancora a exigência no texto oficial vira veto. É a
+        # metade mecânica da regra "apare, mas só se o que sobrou ainda
+        # descumpre ESTE item": quando o Diretor não consegue copiar do item o
+        # trecho que continua descumprido, o que sobrou não é não conformidade
+        # aparada — é enquadramento errado que o aparo estava salvando.
+        for n, nc in enumerate(aprovadas, start=1):
+            ref = f"V{n}"
+            aparo = aparados.get(ref)
+            if not aparo or ref in vetados:
+                continue
+            if not str(aparo.get("constatacao", "")).strip():
+                continue
+            if not _exigencia_ancorada(str(aparo.get("exigencia", "")), nc.item):
+                aparados.pop(ref)
+                vetados[ref] = (
+                    "a constatação restrita ao fato já não descumpre o texto oficial "
+                    "deste item"
+                )
+
         sobreviventes: list[NaoConformidade] = []
         motivos: list[str] = []
         for n, nc in enumerate(aprovadas, start=1):
@@ -971,7 +1135,9 @@ def executar(
                 )
                 continue
             if (aparo := aparados.get(ref)) and str(aparo.get("constatacao", "")).strip():
-                retirado = _limpar_citacoes(str(aparo.get("retirado", "")).strip()).rstrip(".")
+                retirado = _em_poucas_palavras(
+                    _limpar_citacoes(str(aparo.get("retirado", "")).strip())
+                )
                 laudo.aparos.append(
                     f"{nc.item.nr} {nc.item.item}: constatação restrita ao fato registrado"
                     + (f" — retirado: {retirado}" if retirado else "")
@@ -992,6 +1158,7 @@ def executar(
                     nc.prazo_dias = min(nc.prazo_dias, PRAZO_SUGERIDO[nc.gravidade])
             sobreviventes.append(nc)
 
+        sobreviventes = _fundir_equivalentes(sobreviventes)
         sobreviventes.sort(key=lambda x: (x.prioridade, x.item.nr, x.item.item))
         laudo.nao_conformidades = sobreviventes
         laudo.vetos = motivos
