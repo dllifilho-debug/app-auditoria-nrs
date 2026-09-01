@@ -13,7 +13,7 @@ Alucinar uma citação deixa de ser improvável e passa a ser impossível.
 
 import json
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date
 from typing import Callable
 
@@ -21,7 +21,7 @@ from . import dossie as mod_dossie
 from .catalogo_nr import CATALOGO_NR
 from .kb import BaseNormativa, Item
 from .modelos import Conversador, ErroDeAuditoria
-from .riscos import Risco, catalogo as catalogo_riscos
+from .riscos import Risco, catalogo as catalogo_riscos, itens_compartilhados
 
 GRAVIDADE_ORDEM = {"critica": 0, "alta": 1, "media": 2, "baixa": 3}
 PRAZO_SUGERIDO = {"critica": 1, "alta": 7, "media": 30, "baixa": 60}
@@ -359,7 +359,9 @@ def montar_dossie(
                     continue
                 nr, _, num = ref.partition(" ")
                 item = base.obter(nr, num)
-                if item is not None and item.id not in vistos and item.vigente_em(quando):
+                if item is None or not item.vigente_em(quando):
+                    continue
+                if item.id not in vistos:
                     vistos.add(item.id)
                     curados.append((item, risco))
 
@@ -370,10 +372,19 @@ def montar_dossie(
 
     entradas: list[mod_dossie.Entrada] = []
     origem: dict[str, Risco] = {}
+    compartilhados = itens_compartilhados()
     for item, risco in curados[:teto]:
         rotulo = f"D{len(entradas) + 1}"
         entradas.append(mod_dossie.Entrada(rotulo, item, risco.rotulo))
-        origem[rotulo] = risco
+        # Item genérico (ver `itens_compartilhados`) não tem dono: o rótulo do
+        # risco que o trouxe ao dossiê não descreve a situação que o Analista
+        # enquadrou. O risco continua inteiro para o que depende dele de verdade
+        # — o portão de pessoa na cena e a gravidade base; só o rótulo cai.
+        # Rótulo vazio faz o relatório identificar a linha pela própria
+        # constatação, que é o que descreve a NC de fato.
+        origem[rotulo] = (
+            replace(risco, rotulo="") if item.id in compartilhados else risco
+        )
     for entrada in complemento.entradas:
         if len(entradas) >= teto:
             break

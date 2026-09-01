@@ -125,6 +125,33 @@ def catalogo() -> dict[str, Risco]:
     return _CACHE
 
 
+_COMPARTILHADOS: frozenset[str] | None = None
+
+
+def itens_compartilhados() -> frozenset[str]:
+    """Itens que mais de um risco reivindica — 22 dos 228 mapeados.
+
+    São os genéricos: `NR-06 6.5.1` (EPI, oito riscos), `NR-26 26.3.1`
+    (sinalização, cinco), `NR-18 18.9.1` ("proteção coletiva onde houver risco
+    de queda", dois). Para eles o rótulo do risco não serve de nome da não
+    conformidade: quem escolheu o item foi o Analista, olhando a situação, e
+    qual risco o trouxe ao dossiê é acidente do roteamento.
+
+    Um laudo real saiu com a NC intitulada "Andaime sem guarda-corpo e rodapé"
+    para uma constatação sobre a tela frouxa na borda da laje, enquanto o fato
+    registrado dizia que o andaime TINHA guarda-corpo. Dois modelos de texto
+    diferentes erraram igual — é o mapa, não o modelo.
+    """
+    global _COMPARTILHADOS
+    if _COMPARTILHADOS is None:
+        contagem: dict[str, int] = {}
+        for risco in catalogo().values():
+            for ref in risco.itens:
+                contagem[ref] = contagem.get(ref, 0) + 1
+        _COMPARTILHADOS = frozenset(r for r, n in contagem.items() if n > 1)
+    return _COMPARTILHADOS
+
+
 def rotulos_para_prompt() -> str:
     """Lista compacta dos riscos, para o modelo de visão etiquetar os achados."""
     return "\n".join(f"- {r.id}: {r.rotulo}" for r in catalogo().values())

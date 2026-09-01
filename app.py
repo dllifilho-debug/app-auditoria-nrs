@@ -243,34 +243,38 @@ with st.sidebar:
         gasto = consumo_do_dia()
         with st.expander("Consumo do dia", expanded=bool(gasto.tokens)):
             orcamento = st.number_input(
-                "Teto diário de tokens, por modelo",
+                "Teto diário de tokens (padrão)",
                 min_value=10_000, max_value=100_000_000,
                 value=st.session_state.get("orcamento_diario", ORCAMENTO_GRATUITO),
                 step=10_000,
-                help="Na Groq o teto diário é de cada modelo, não da conta somada: "
-                     "no plano gratuito são 200.000 tokens por dia para cada um. "
-                     "Confira em Settings → Limits e ajuste aqui se a sua conta for "
-                     "outra — há modelo com teto dez vezes maior.",
+                help="Na Groq o teto diário é de cada modelo, não da conta somada. "
+                     "Os modelos do registro usam o teto próprio deles, lido no "
+                     "console em 30/08 (200.000 para quase todos, 2.000.000 para o "
+                     "Qwen 3.8). Este campo vale para modelo digitado à mão, e para "
+                     "ajustar se a sua conta não for a gratuita.",
             )
             st.session_state.orcamento_diario = orcamento
+            tetos = modelos.tetos_diarios()
 
             if gasto.imagens:
-                cabem = gasto.imagens_que_ainda_cabem(orcamento)
-                apertado = gasto.modelo_mais_apertado(orcamento)
+                cabem = gasto.imagens_que_ainda_cabem(orcamento, tetos)
+                apertado = gasto.modelo_mais_apertado(orcamento, tetos)
 
-                # Uma barra por modelo: é o balde mais cheio que interrompe o
-                # lote, e uma barra só, somando todos, escondia justamente isso.
+                # Uma barra por modelo, cada uma contra o teto DAQUELE modelo: é
+                # o balde proporcionalmente mais cheio que interrompe o lote, e
+                # uma barra só, somando todos, escondia justamente isso.
                 for modelo, gastos in sorted(
                     gasto.por_modelo.items(), key=lambda p: -p[1]
                 ):
-                    rotulo = f"{gastos:,} de {orcamento:,}".replace(",", ".")
+                    teto = gasto.teto_do_modelo(modelo, orcamento, tetos)
+                    rotulo = f"{gastos:,} de {teto:,}".replace(",", ".")
                     st.progress(
-                        min(gastos / orcamento, 1.0) if orcamento > 0 else 1.0,
+                        min(gastos / teto, 1.0) if teto > 0 else 1.0,
                         text=f"{modelo} — {rotulo} tokens",
                     )
                 if not gasto.por_modelo:
                     st.progress(
-                        gasto.fracao_usada(orcamento),
+                        gasto.fracao_usada(orcamento, tetos),
                         text=f"{gasto.tokens:,} de {orcamento:,} tokens".replace(",", "."),
                     )
 
