@@ -2508,3 +2508,207 @@ def test_analista_e_diretor_refazem_a_chamada_com_json_invalido_nao_sinalizado(b
     )
     assert laudo.nao_conformidades, "o laudo se perdeu no JSON inválido não sinalizado"
     assert not laudo.visao_falhou
+
+
+# ---------------------------------------------------------------------------
+# O dossiê da `foto (59)`: 9 das 10 vagas eram obrigação de papel
+# ---------------------------------------------------------------------------
+
+# Reconstruída do laudo real de 02/09/2026 — o painel elétrico empoeirado que
+# resistiu a três correções. Os fatos são os que o Olho registrou, copiados do
+# HTML emitido em produção.
+FATOS_PAINEL_59 = [
+    "Painel elétrico de cor clara fixado em pilar de concreto, apresentando "
+    "superfície com acúmulo de poeira e resíduos.",
+    "Etiqueta de sinalização com o texto 'PERIGO' e 'ELETRICIDADE' colada na "
+    "face frontal do painel.",
+    "Botão de emergência vermelho montado em base amarela, posicionado na "
+    "lateral direita do painel.",
+    "Entrada de energia elétrica protegida por um tubo corrugado amarelo, "
+    "conectando uma tomada branca ao painel.",
+    "Interruptor de chave tipo 'chave de faca' com acabamento vermelho e "
+    "verde, montado na face frontal do painel.",
+    "Cabo elétrico preto saindo da parte inferior do painel, parcialmente "
+    "envolvido por uma corda verde.",
+    "Pilar de concreto com marcas de desgaste, manchas e uma faixa de fita "
+    "adesiva azul na base.",
+]
+AMBIENTE_PAINEL_59 = (
+    "Interior de um ambiente de trabalho industrial ou de construção, "
+    "caracterizado por superfícies de concreto e presença de equipamentos "
+    "elétricos."
+)
+
+
+def test_dossie_do_painel_empoeirado_nao_e_so_obrigacao_de_papel(base):
+    """A `foto (59)` saiu com 0 NC porque a supervisão vetou o único
+    enquadramento — mas a causa está antes, no dossiê: das 10 vagas, NOVE eram
+    obrigação de papel (treinamento de eletricista, memorial descritivo do
+    projeto, plano de emergência, ficha de dados de segurança de mistura
+    química, metodologia da taxa metabólica da NR-09). Sobrava um item físico,
+    `NR-10 10.10.1`, que exige SINALIZAÇÃO — e foi nele que a poeira foi
+    enquadrada, com a etiqueta "PERIGO" legível na própria foto.
+
+    Dossiê pobre força escolha ruim: é a classe de erro 1 na forma pura."""
+    visao = Visao(
+        ambiente=AMBIENTE_PAINEL_59,
+        achados=[Achado(fato=f) for f in FATOS_PAINEL_59],
+    )
+    d, _ = montar_dossie(base, visao, "", HOJE)
+    papel = [
+        f"{e.item.nr} {e.item.item}"
+        for e in d.entradas
+        if not dossie.comprovavel_em_foto(e.item)
+    ]
+    assert not papel, f"obrigação de papel no dossiê da foto (59): {papel}"
+
+    # E o dossiê tem de continuar oferecendo elétrica de verdade: sem itens de
+    # proteção contra contato, 10.10.1 volta a ser a única escolha possível.
+    eletricos = {e.item.item for e in d.entradas if e.item.nr == "NR-10"}
+    assert len(eletricos) >= 3, sorted(eletricos)
+    assert eletricos - {"10.10.1"}, "só sobrou o item de sinalização"
+
+
+def test_foto_de_documento_nao_gera_dossie_nenhum(base):
+    """Controle negativo: a foto de um POP impresso sobre a mesa não é achado
+    de campo, e o dossiê tem de vir vazio. Antes vinham três itens — exercício
+    simulado de emergência, canal de comunicação de dúvidas e cessão de uso do
+    CA — todos obrigação que uma fotografia não comprova nem desmente, e o
+    Analista é obrigado a escolher do dossiê."""
+    d = dossie.montar(
+        base,
+        ["Folha de papel impressa com o título 'Procedimento Operacional "
+         "Padrão' apoiada sobre uma mesa.",
+         "Assinaturas manuscritas preenchidas em campos de uma lista."],
+        quando=HOJE,
+    )
+    assert not d.entradas, [f"{e.item.nr} {e.item.item}" for e in d.entradas]
+
+
+@pytest.mark.parametrize("nr,num", [
+    # A contraparte do filtro: itens que falam de papel na superfície mas
+    # descrevem coisa que a foto mostra. Barrá-los seria trocar erro de
+    # enquadramento por buraco de cobertura.
+    ("NR-35", "Anexo II 3.3"),        # "o dispositivo de ancoragem deve ser certificado"
+    ("NR-17", "17.6.3"),              # "os planos de trabalho" é a bancada, não um documento
+    ("NR-12", "12.12.7"),             # placa de identificação da máquina, em local visível
+    ("NR-35", "Anexo III 5.2.2.2.1"), # marcação visível com dados do fabricante
+    ("NR-18", "18.9.2"),              # fechamento de abertura no piso
+    ("NR-10", "10.10.1"),             # sinalização de segurança na instalação elétrica
+])
+def test_filtro_documental_nao_alcanca_condicao_visivel(base, nr, num):
+    item = base.obter(nr, num)
+    assert item is not None, f"{nr} {num}"
+    assert dossie.comprovavel_em_foto(item), item.texto[:160]
+
+
+def test_filtro_documental_nao_alcanca_a_taxonomia_curada(base):
+    """Mesma regra que já vale para `prescritivo`: item documental mapeado à
+    mão (quadro de avisos da CIPA, ficha de entrega de EPI) é curadoria, e
+    entra por `montar_dossie` sem passar pelo filtro."""
+    visao = Visao(
+        ambiente="Canteiro de obra",
+        pessoas_presentes=True,
+        achados=[Achado(fato="Trabalhador sobre a laje sem capacete de segurança.")],
+    )
+    d, origem = montar_dossie(base, visao, "", HOJE)
+    curados = {e.item.id for e in d.entradas if e.origem}
+    assert curados, "nenhum item curado chegou ao dossiê"
+
+
+# ---------------------------------------------------------------------------
+# Roteamento: plural curto e sinal que vira só palavra-cola
+# ---------------------------------------------------------------------------
+
+def test_plural_de_radical_curto_casa_com_o_singular():
+    """"fios" tem 4 letras e a guarda de 5 o deixava intacto, enquanto "fio"
+    chegava como "fio". O sinal "fio desencapado" foi cadastrado justamente
+    porque o Olho escreve "fios desencapados" — e era esse o par que não
+    casava."""
+    from auditoria.kb import radical
+
+    for plural, singular in (("fios", "fio"), ("vaos", "vao"), ("cabos", "cabo"),
+                             ("materiais", "material"), ("pisos", "piso")):
+        assert radical(plural) == radical(singular), (plural, singular)
+
+
+def test_fios_desencapados_routeia_partes_vivas_expostas():
+    """A frase é a que o Olho escreve num quadro de tomadas aberto. Sem o
+    casamento do plural, o achado não routeava risco nenhum e o dossiê saía com
+    um único item de NR-01 sobre divulgação de informações digitais."""
+    visao = Visao(
+        ambiente="Área interna do pavimento, parede de alvenaria",
+        achados=[Achado(fato="Fios desencapados pendurados na parede junto ao quadro.")],
+    )
+    rotulos = [r.id for r in rotear_riscos(visao, "")]
+    assert "partes_vivas_expostas" in rotulos, rotulos
+
+
+def test_nenhum_sinal_vira_so_palavra_cola():
+    """`"t em cima de t"` tem cinco palavras e quatro delas têm duas letras: o
+    filtro de radicais as descarta e sobra `cima` sozinho, com cobertura 1.0 em
+    "pregos expostos voltados para cima". A guarda vive no validador da
+    taxonomia, então este teste falha no import — mas deixa o motivo escrito."""
+    from auditoria.kb import radicais
+    from auditoria.riscos import _radicais_cola
+
+    cola = _radicais_cola()
+    nus = [
+        (chave, sinal)
+        for chave, risco in catalogo_riscos().items()
+        for sinal in risco.sinais
+        if not (radicais(sinal) - cola)
+    ]
+    assert not nus, nus
+
+
+def test_madeira_com_pregos_nao_routeia_gambiarra():
+    """A contraparte do sinal removido: nada de elétrico nesta foto."""
+    visao = Visao(
+        ambiente="Pavimento em obra, área de desforma",
+        achados=[Achado(fato="Peças de madeira de fôrma empilhadas no piso com "
+                             "pregos expostos voltados para cima.")],
+    )
+    rotulos = [r.id for r in rotear_riscos(visao, "")]
+    assert "ligacao_eletrica_improvisada" not in rotulos, rotulos
+    assert rotulos == ["madeira_com_prego_exposto"], rotulos
+
+
+# ---------------------------------------------------------------------------
+# O padrão dos modelos é o 3.8 nos dois campos
+# ---------------------------------------------------------------------------
+
+def test_o_padrao_dos_dois_campos_e_o_modelo_de_teto_alto():
+    """A ordem das listas em `modelos.py` define o padrão, e o 3.8 assumiu os
+    dois postos depois da medição do lote de 15 (15/15 laudos, 7.804
+    tokens/foto, teto diário de 2 milhões). O usuário já o selecionava à mão;
+    um clique esquecido custava um lote inteiro medido no modelo errado."""
+    from auditoria import modelos
+
+    assert modelos.PADRAO_VISAO == "qwen/qwen3.8-27b"
+    assert modelos.PADRAO_TEXTO == "qwen/qwen3.8-27b"
+    assert modelos.tetos_diarios()["qwen/qwen3.8-27b"] == 2_000_000
+
+
+def test_o_mesmo_id_tem_rotulo_proprio_em_cada_lista():
+    """`por_id` varria `VISAO + TEXTO` e devolvia o primeiro, então o campo de
+    TEXTO rotulava o 3.8 como "(visão)" e imprimia a mesma legenda duas vezes.
+    Ficou invisível enquanto os padrões eram modelos diferentes."""
+    from auditoria import modelos
+
+    visao = modelos.por_id("qwen/qwen3.8-27b", modelos.VISAO)
+    texto = modelos.por_id("qwen/qwen3.8-27b", modelos.TEXTO)
+    assert visao is not None and texto is not None
+    assert visao.rotulo != texto.rotulo, visao.rotulo
+    assert "(visão)" in visao.rotulo and "(visão)" not in texto.rotulo
+    # Sem `entre`, o comportamento antigo continua — é o que os chamadores que
+    # só querem o teto diário do ID usam.
+    assert modelos.por_id("qwen/qwen3.8-27b") is visao
+
+
+def test_o_padrao_de_visao_le_imagem_e_o_de_texto_esta_registrado():
+    """Padrão de visão que não aceita imagem quebra o app na primeira foto."""
+    from auditoria import modelos
+
+    assert modelos.por_id(modelos.PADRAO_VISAO, modelos.VISAO).visao
+    assert modelos.por_id(modelos.PADRAO_TEXTO, modelos.TEXTO) is not None

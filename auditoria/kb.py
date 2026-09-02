@@ -40,6 +40,44 @@ def normalizar(texto: str) -> str:
     return desacentuar(texto.translate(HIFENS)).lower()
 
 
+RE_PALAVRA = re.compile(r"[a-z0-9]+")
+
+PLURAIS = (("ais", "al"), ("eis", "el"), ("ois", "ol"), ("uis", "ul"),
+           ("oes", "ao"), ("aes", "ao"), ("ns", "m"))
+
+
+def radical(palavra: str) -> str:
+    """Radical aproximado, só para casar singular com plural e masculino com feminino.
+
+    Não é um stemmer de verdade — e nem precisa ser. Precisa apenas ser
+    *consistente*: "materiais" e "material" têm de chegar ao mesmo radical, ou
+    o roteador perde o risco. Era exatamente aí que ele falhava.
+    """
+    if len(palavra) > 4:
+        for plural, singular in PLURAIS:
+            if palavra.endswith(plural):
+                palavra = palavra[: -len(plural)] + singular
+                break
+        else:
+            if palavra.endswith("s"):
+                palavra = palavra[:-1]
+    elif len(palavra) == 4 and palavra.endswith("s"):
+        # Plural de radical curto: "fios" tem 4 letras e a guarda de 5 o
+        # deixava intacto, enquanto "fio" chegava como "fio" — dois radicais
+        # diferentes para a mesma palavra. O sinal "fio desencapado" existe
+        # justamente porque o Olho escreve "fios desencapados", e era esse o
+        # par que não casava. Vale só para o "s" simples: aplicar PLURAIS aqui
+        # transformaria "mais" em "mal".
+        palavra = palavra[:-1]
+    if len(palavra) > 4 and palavra[-1] in "aeo":
+        palavra = palavra[:-1]
+    return palavra
+
+
+def radicais(texto: str) -> set[str]:
+    return {radical(p) for p in RE_PALAVRA.findall(normalizar(texto)) if len(p) > 2}
+
+
 def tokenizar(texto: str) -> list[str]:
     """Unigramas + bigramas.
 
