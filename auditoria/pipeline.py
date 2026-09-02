@@ -766,14 +766,14 @@ VETADO — nenhum trecho sustenta a constatação; OU a versão aparada já não
   sobrou o descumpre. Se o item exigia justamente a parte que você cortou, vete —
   situação errada num item verdadeiro é o pior erro, porque sobrevive à conferência.
 
-  Todo aparo prova isso do mesmo jeito mecânico que a conferência do fato: em
-  "exigencia", COPIE do TEXTO OFICIAL do bloco [V<n>] o trecho literal que a versão
-  aparada ainda descumpre. Copiar, não parafrasear. Se você não achar no texto oficial
-  um trecho que a constatação aparada descumpra, é porque não sobrou não conformidade:
-  vete em vez de aparar. Exemplo real: um painel empoeirado foi enquadrado num item que
-  exige SINALIZAÇÃO; o aparo tirou a parte da sinalização — que a foto mostrava em
-  ordem — e deixou só a poeira, que aquele item não exige em lugar nenhum. Não havia
-  trecho a copiar, e era veto.
+  Isto se prova do mesmo jeito mecânico que a conferência do fato, e vale para TODO
+  enquadramento que você não vetar — aprovado ou aparado. Em "exigencia", COPIE do
+  TEXTO OFICIAL do bloco [V<n>] o trecho literal que a constatação descumpre. Copiar,
+  não parafrasear. Se você não achar no texto oficial um trecho que ela descumpra, não
+  há não conformidade: vete. Exemplo real: um painel empoeirado foi enquadrado num item
+  que exige SINALIZAÇÃO, com a etiqueta "PERIGO" legível na própria foto. Não havia
+  trecho a copiar sobre limpeza, e era veto — mas o enquadramento passou por APROVADO,
+  sem aparo nenhum, e a não conformidade falsa foi impressa no laudo do cliente.
 
 MOLDURA — a constatação só pode afirmar que algo NÃO existe se aquilo apareceria neste
 recorte fotográfico caso existisse. Ancoragem na cobertura, aterramento dentro do quadro,
@@ -811,8 +811,8 @@ o mesmo objeto.
 
 Responda SOMENTE com este JSON:
 {{
-  "conferencia": [{{"ref": "V<n>", "fato": "<trecho literal que sustenta, ou vazio>", "decisao": "aprovado|aparado|vetado"}}],
-  "aparados": [{{"ref": "V<n>", "constatacao": "<reescrita, restrita ao trecho copiado>", "acao_corretiva": "<reescrita compatível>", "gravidade": "critica|alta|media|baixa", "retirado": "<a cláusula sem lastro que saiu, em UMA frase curta — este campo vai impresso no laudo do cliente, não delibere aqui>", "exigencia": "<trecho literal do TEXTO OFICIAL que a versão aparada ainda descumpre>"}}],
+  "conferencia": [{{"ref": "V<n>", "fato": "<trecho literal da lista de fatos que sustenta, ou vazio>", "exigencia": "<trecho literal do TEXTO OFICIAL que a constatação descumpre; vazio só se vetado>", "decisao": "aprovado|aparado|vetado"}}],
+  "aparados": [{{"ref": "V<n>", "constatacao": "<reescrita, restrita ao trecho copiado>", "acao_corretiva": "<reescrita compatível>", "gravidade": "critica|alta|media|baixa", "retirado": "<a cláusula sem lastro que saiu, em UMA frase curta — este campo vai impresso no laudo do cliente, não delibere aqui>"}}],
   "vetados": [{{"ref": "V<n>", "motivo": "<por que não se sustenta>", "observacao": "<a condição reescrita como verificação, ou vazio>"}}],
   "ajustes": [{{"ref": "V<n>", "constatacao": "<reescrita, ou omita>", "acao_corretiva": "<reescrita, ou omita>", "gravidade": "critica|alta|media|baixa"}}],
   "pontos_descartados": [{{"ref": "P<n>", "motivo": "<por que sai>"}}],
@@ -860,8 +860,9 @@ def agente_diretor(
     # O veredito ficou mais longo quando ganhou o aparo: cada enquadramento
     # devolve o fato copiado, a decisão e, quando aparado, a constatação
     # reescrita. 1600 deixou de bastar num laudo com muitos achados, e o
-    # trecho da exigência oficial copiado em cada aparo cresceu de novo.
-    return _conversar_sem_cortar(cliente, modelo, prompt, 2600, 0.0, "Diretor")
+    # trecho da exigência oficial, agora copiado em CADA enquadramento e não
+    # só nos aparados, cresceu de novo.
+    return _conversar_sem_cortar(cliente, modelo, prompt, 3000, 0.0, "Diretor")
 
 
 # Rótulo interno da conversa com o Diretor que vazou para o parecer de um laudo
@@ -1106,24 +1107,41 @@ def executar(
             str(a.get("ref", "")).strip().upper(): a for a in veredito.get("aparados", [])
         }
 
-        # Aparo que não ancora a exigência no texto oficial vira veto. É a
-        # metade mecânica da regra "apare, mas só se o que sobrou ainda
-        # descumpre ESTE item": quando o Diretor não consegue copiar do item o
-        # trecho que continua descumprido, o que sobrou não é não conformidade
-        # aparada — é enquadramento errado que o aparo estava salvando.
+        # Enquadramento que não ancora a exigência no texto oficial vira veto.
+        # É a metade mecânica da regra "só é não conformidade se descumprir
+        # ESTE item": quando o Diretor não consegue copiar do item o trecho
+        # descumprido, não há o que enquadrar.
+        #
+        # Vale para aprovado e para aparado. Nasceu olhando só o aparo, e o
+        # lote seguinte mostrou por que isso não bastava: o painel empoeirado
+        # em NR-10 10.10.1 — item de SINALIZAÇÃO, com a etiqueta "PERIGO"
+        # legível na foto — voltou a ser enquadrado, desta vez APROVADO sem
+        # aparo nenhum. A rede estava armada no caminho errado, e o mesmo laudo
+        # saiu se contradizendo: acusava a sinalização de comprometida e a
+        # listava em "conformidades observadas".
+        conferido = {
+            str(c.get("ref", "")).strip().upper(): c
+            for c in veredito.get("conferencia", [])
+        }
         for n, nc in enumerate(aprovadas, start=1):
             ref = f"V{n}"
+            if ref in vetados:
+                continue
             aparo = aparados.get(ref)
-            if not aparo or ref in vetados:
+            # A exigência mora na conferência; o aparo antigo a trazia no
+            # próprio bloco, e continua aceito para não depender da forma exata
+            # que o modelo escolheu devolver.
+            exigencia = str(
+                conferido.get(ref, {}).get("exigencia")
+                or (aparo or {}).get("exigencia")
+                or ""
+            )
+            if _exigencia_ancorada(exigencia, nc.item):
                 continue
-            if not str(aparo.get("constatacao", "")).strip():
-                continue
-            if not _exigencia_ancorada(str(aparo.get("exigencia", "")), nc.item):
-                aparados.pop(ref)
-                vetados[ref] = (
-                    "a constatação restrita ao fato já não descumpre o texto oficial "
-                    "deste item"
-                )
+            aparados.pop(ref, None)
+            vetados[ref] = (
+                "a constatação não descumpre o texto oficial deste item"
+            )
 
         sobreviventes: list[NaoConformidade] = []
         motivos: list[str] = []

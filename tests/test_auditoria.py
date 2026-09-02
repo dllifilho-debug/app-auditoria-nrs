@@ -324,6 +324,40 @@ def test_betoneira_com_transmissao_exposta_aciona_a_nr12(base):
     assert "NR-12 12.5.1" in citados, "a NR-12 não chegou ao dossiê"
 
 
+def test_tambor_sem_tampa_nao_vira_vao_no_piso():
+    """Medido no laudo real da foto (61), depois que o Olho passou a nomear a
+    betoneira: o sinal "vao no piso sem tampa" tinha QUATRO radicais e casava
+    três — "sem" e "tampa" vinham de "Abertura circular do tambor da betoneira
+    SEM TAMPA ou proteção visível", e "piso" vinha do ambiente. Faltava só
+    "vao", o único discriminante, e 0,75 passa do corte de 0,7.
+
+    A âncora no achado não bastou porque um dos dois radicais ancorados era
+    "sem", que não discrimina nada. A correção foi encurtar o sinal, não mexer
+    no limiar: onde nenhum radical pode faltar, não há o que explorar.
+    """
+    betoneira = Visao(
+        ambiente="Interior de um galpão ou oficina com piso de concreto e "
+                 "estruturas metálicas ao fundo.",
+        achados=[
+            Achado("Betoneira com tambor cilíndrico metálico de cor escura, com "
+                   "extensas áreas de corrosão."),
+            Achado("Abertura circular do tambor da betoneira sem tampa ou proteção "
+                   "visível, revelando o interior escuro e a haste central."),
+            Achado("Piso de concreto com manchas escuras e resíduos espalhados ao "
+                   "redor da base da máquina."),
+        ],
+    )
+    ids = [r.id for r in rotear_riscos(betoneira)]
+    assert "abertura_piso_desprotegida" not in ids
+
+    # A contraparte: um vão de verdade no piso continua acionando.
+    vao = Visao(
+        ambiente="Laje em construção.",
+        achados=[Achado("Vão no piso sem tampa, junto à área de circulação.")],
+    )
+    assert "abertura_piso_desprotegida" in [r.id for r in rotear_riscos(vao)]
+
+
 def test_maquina_protegida_nao_aciona_o_risco_de_zona_de_perigo():
     """A contraparte de cada sinal novo. A terceira é a que pegou "sem
     carenagem" sozinho: "sem" conta como radical e não discrimina nada, então o
@@ -1628,6 +1662,25 @@ def test_roteamento_reconhece_o_vocabulario_tecnico_do_agente_de_visao():
 # Supervisão do laudo inteiro — o Diretor auditava só as não conformidades
 # ---------------------------------------------------------------------------
 
+def _conferencia_do_prompt(prompt: str) -> list[dict]:
+    """Conferência que copia a exigência do TEXTO OFICIAL de cada bloco [V<n>].
+
+    É o que o pipeline verifica antes de aceitar um enquadramento: sem trecho
+    do item que a constatação descumpra, a NC vira veto. Um dublê que devolvesse
+    conferência vazia veria tudo ser vetado — correto, mas inútil para testar
+    outra coisa.
+    """
+    import re as _re
+
+    return [
+        {"ref": ref, "fato": FATO, "exigencia": " ".join(oficial.split()[:12]),
+         "decisao": "aprovado"}
+        for ref, oficial in _re.findall(
+            r"\[(V\d+)\][^\n]*\n\s*TEXTO OFICIAL: ([^\n]+)", prompt
+        )
+    ]
+
+
 class _DiretorQueDescarta(ClienteDemonstracao):
     """Supervisor que exerce os poderes novos: derruba P1 e C1."""
 
@@ -1640,7 +1693,7 @@ class _DiretorQueDescarta(ClienteDemonstracao):
             self.prompt_visto = prompt
             import json as _json
             return _json.dumps({
-                "conferencia": [],
+                "conferencia": _conferencia_do_prompt(prompt),
                 "vetados": [],
                 "ajustes": [],
                 "pontos_descartados": [{"ref": "P1", "motivo": "inventário da foto"}],
@@ -2079,6 +2132,45 @@ def test_retirado_nao_leva_o_raciocinio_do_modelo_para_o_laudo(base):
     assert "em desacordo com a exigência" in trilha, "cortou a resposta junto"
 
 
+def test_enquadramento_aprovado_sem_exigencia_no_item_vira_veto(base):
+    """O caso que escapou da primeira versão desta rede.
+
+    O painel empoeirado foi enquadrado em NR-10 10.10.1 — item de SINALIZAÇÃO,
+    com a etiqueta "PERIGO" legível na própria foto. Na primeira rodada o
+    Diretor APAROU e a rede pegou. Na rodada seguinte ele APROVOU direto, sem
+    aparo nenhum, e a não conformidade falsa foi impressa: a verificação só
+    olhava aparos. O mesmo laudo saiu se contradizendo — acusava a sinalização
+    de comprometida e a listava em "conformidades observadas".
+
+    A exigência agora é cobrada de todo enquadramento que sobrevive, aprovado
+    ou aparado.
+    """
+    laudo, _ = _rodar(base, "NR-35 Anexo III 5.2.2.5", lambda: {
+        "conferencia": [{
+            "ref": "V1", "fato": FATO, "decisao": "aprovado",
+            # Exigência que NÃO existe no texto oficial do item.
+            "exigencia": "os degraus devem ser mantidos limpos e desobstruídos",
+        }],
+        "aparados": [], "vetados": [], "ajustes": [], "pontos_descartados": [],
+        "conformidades_descartadas": [], "parecer": "p",
+    })
+    assert not laudo.nao_conformidades, "a NC aprovada sem lastro no item sobreviveu"
+    assert laudo.sem_enquadramento, "o achado evaporou em vez de virar observação"
+
+
+def test_enquadramento_aprovado_com_exigencia_do_item_sobrevive(base):
+    """A contraparte: aprovado com trecho real do item continua no laudo."""
+    laudo, _ = _rodar(base, "NR-35 Anexo III 5.2.2.5", lambda: {
+        "conferencia": [{
+            "ref": "V1", "fato": FATO, "decisao": "aprovado",
+            "exigencia": "deve ser apoiada em piso estável",
+        }],
+        "aparados": [], "vetados": [], "ajustes": [], "pontos_descartados": [],
+        "conformidades_descartadas": [], "parecer": "p",
+    })
+    assert len(laudo.nao_conformidades) == 1, "vetou um enquadramento legítimo"
+
+
 def test_aparo_sem_exigencia_no_texto_oficial_vira_veto(base):
     """O caso do lote de 01/09: painel empoeirado enquadrado em item de
     SINALIZAÇÃO. O aparo tirou a parte da sinalização — a foto mostrava a placa
@@ -2154,7 +2246,7 @@ def test_aparo_nao_deixa_o_modelo_escrever_citacao(base):
 def test_gravidade_reescrita_nunca_deixa_prazo_incoerente(base):
     """Ajuste que SOBE a gravidade deixava 'crítica' com prazo de 7 dias."""
     laudo, _ = _rodar(base, "NR-35 Anexo III 5.2.2.5", lambda: {
-        "conferencia": [], "aparados": [],
+        "conferencia": [{"ref": "V1", "fato": FATO, "exigencia": "deve ser apoiada em piso estável", "decisao": "aprovado"}], "aparados": [],
         "vetados": [], "ajustes": [{"ref": "V1", "gravidade": "critica"}],
         "pontos_descartados": [], "conformidades_descartadas": [], "parecer": "p",
     })
@@ -2379,7 +2471,7 @@ def test_analista_e_diretor_refazem_a_chamada_cortada_no_teto(base):
     assert not laudo.visao_falhou
     # cada agente foi chamado duas vezes, a segunda com o dobro de espaço
     assert 3600 in cliente.tetos, cliente.tetos      # Analista 1800 → 3600
-    assert 5200 in cliente.tetos, cliente.tetos      # Diretor 2600 → 5200
+    assert 6000 in cliente.tetos, cliente.tetos      # Diretor 3000 → 6000
 
 
 class _ClienteQueDevolveJsonInvalidoUmaVez:
