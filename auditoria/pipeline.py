@@ -619,6 +619,16 @@ RE_CITACAO_SOLTA = re.compile(
     # Cauda de lista abreviada de subitens ("18.9.4.1/2", "18.9.4.1 ou .2").
     # Sem ela a regex comia o miolo e deixava ".1/2." pendurado — visto em laudo real.
     r"(?:\s*(?:/|ou|e)\s*\.?\d{1,3}(?:\.\d{1,3})*)*"
+    r"[)\]]?(?=[\s,.;:)\]]|$)"
+    # "Anexo III 5.2.2.5" sem a NR na frente. A citação de anexo escapava
+    # inteira: o padrão acima exige "NR-nn" para ancorar, e o modelo escreve
+    # "Isso descumpre a NR-35 Anexo III 5.2.2.5" — a NR saía e o anexo com o
+    # número do item ficava, que é o pior dos dois mundos (o renderizador
+    # relê o resto como citação legítima). O numeral romano é obrigatório,
+    # para não comer "documento anexo".
+    r"|\s*[(\[]?\bAnexos?\s+[IVXLC]{1,5}\b"
+    r"(?:\s*[-,;:]?\s*(?:sub)?ite(?:m|ns))?"
+    r"(?:\s*\d{1,2}(?:\.\d{1,3})*)?"
     r"[)\]]?(?=[\s,.;:)\]]|$)",
     re.IGNORECASE,
 )
@@ -664,6 +674,54 @@ def _exigencia_ancorada(trecho: str, item: Item) -> bool:
     return len(radicais & _radicais(item.texto)) / len(radicais) >= 0.8
 
 
+# Palavras que só existem na frase para APRESENTAR a citação. Tirada a citação,
+# elas não dizem mais nada — "violando a", "conforme o disposto em".
+#
+# Por que isto existe: um parecer real saiu impresso como "…impede a correta
+# identificação de circuitos e a advertência de perigo, **violando a e.**
+# Recomenda-se…". O Diretor escrevera "violando a NR-10 e a NR-26"; a remoção
+# tirou as duas citações e a limpeza de órfãs, que trata preposição encostada na
+# pontuação ("conforme."), não alcança preposição no MEIO do trecho ("a e").
+# Nenhuma regra de pontuação conserta isso: o que sobrou é um verbo sem objeto.
+# Vírgula, ponto-e-vírgula e fim de sentença. O lookbehind/lookahead do fim de
+# sentença evita quebrar "18.9.2" e "1,20 m" — o número não é seguido de espaço
+# mais maiúscula.
+MARCA_CITACAO = "\x00"
+
+# Preposição e artigo que introduziam a citação e ficam pendurados quando ela
+# some do MEIO de um trecho que tem conteúdo próprio — "está fora do <cit.> e
+# por isso deve parar" virava "está fora do e por isso deve parar". `RE_ORFA`
+# não alcança: ela trata preposição encostada na pontuação, não no meio.
+RE_ANTES_DA_MARCA = re.compile(
+    r"\b(?:de|do|da|dos|das|no|na|nos|nas|em|ao|aos|a|o|as|os|com|pelo|pela|"
+    r"conforme|segundo)\s*(?=" + MARCA_CITACAO + r")",
+    re.IGNORECASE,
+)
+
+RE_SEPARADOR = re.compile(r"([,;]|(?<=[.!?])\s+(?=[A-ZÀ-Ú]))")
+
+PALAVRAS_DE_CITACAO = frozenset((
+    "violando", "violacao", "violam", "viola", "descumprindo", "descumpre",
+    "descumprem", "contrariando", "contraria", "infringindo", "infringe",
+    "previsto", "prevista", "previstos", "previstas", "estabelecido",
+    "estabelecida", "disposto", "disposta", "exigido", "exigida", "determinado",
+    "determinada", "fundamento", "base", "termos", "conforme", "segundo",
+    "desacordo", "acordo", "observado", "observada", "citado", "citada",
+    "isso", "isto", "aquilo",
+    "regulamentadora", "regulamentadoras",
+))
+
+
+def _so_apresentava_citacao(fragmento: str) -> bool:
+    """O que sobrou do fragmento ainda diz alguma coisa sem a citação?"""
+    from .kb import PALAVRAS_VAZIAS, normalizar
+
+    palavras = re.findall(r"[a-z]+", normalizar(fragmento))
+    return not any(
+        p not in PALAVRAS_VAZIAS and p not in PALAVRAS_DE_CITACAO for p in palavras
+    )
+
+
 def _limpar_citacoes(texto: str) -> str:
     """Remove citação escrita à mão pelo modelo — quem cita aqui é o renderizador.
 
@@ -671,9 +729,42 @@ def _limpar_citacoes(texto: str) -> str:
     Qualquer referência normativa que o modelo tenha digitado no meio da prosa
     é apagada aqui, junto com o número do item, antes de chegar ao documento.
     """
-    limpo = RE_CITACAO_SOLTA.sub("", texto)
-    if limpo == texto:
+    # A citação é MARCADA antes de fatiar, não removida: ela atravessa vírgula
+    # ("NR-35, item 5.2.2.5", "NR-18, itens 18.9.2 e 18.9.4.1") e fatiar antes a
+    # partiria em dois, deixando o número do item para trás — que é pior do que
+    # não limpar, porque o renderizador voltaria a lê-lo como citação legítima.
+    marcado = RE_CITACAO_SOLTA.sub(MARCA_CITACAO, texto)
+    if marcado == texto:
         return texto.strip()
+    for _ in range(4):                        # "conforme o disposto na <cit.>"
+        if (encolhido := RE_ANTES_DA_MARCA.sub("", marcado)) == marcado:
+            break
+        marcado = encolhido
+
+    # Fragmento a fragmento — por vírgula, por ponto-e-vírgula e por fim de
+    # sentença: o trecho que existia só para apresentar a citação sai inteiro,
+    # em vez de virar "violando a e". Fragmento com conteúdo próprio ("…, o que
+    # impede a identificação de circuitos") fica, e é a limpeza de órfãs abaixo
+    # que arruma o que sobrou dele.
+    partes = RE_SEPARADOR.split(marcado)
+    mantidos: list[str] = []
+    for posicao, pedaco in enumerate(partes):
+        if posicao % 2:                       # separador capturado pelo split
+            mantidos.append(pedaco)
+            continue
+        if MARCA_CITACAO in pedaco and _so_apresentava_citacao(pedaco):
+            # A vírgula que anunciava o fragmento morre com ele.
+            while mantidos and mantidos[-1].strip() in (",", ";"):
+                mantidos.pop()
+            # Se ele fechava a frase, o ponto volta para o que ficou antes —
+            # a menos que o que ficou já termine em pontuação.
+            anterior = next((m for m in reversed(mantidos) if m.strip()), "")
+            if (re.search(r"[.!?]\s*$", pedaco) and anterior
+                    and not re.search(r"[.!?]$", anterior.rstrip())):
+                mantidos.append(".")
+            continue
+        mantidos.append(pedaco.replace(MARCA_CITACAO, ""))
+    limpo = "".join(mantidos)
 
     # Uma passada só não basta: tirar a citação de "conforme a NR-18, …" deixa
     # "conforme a," e, removido o "a", sobra o "conforme" — que só então fica
@@ -694,8 +785,11 @@ def _limpar_citacoes(texto: str) -> str:
     # órfã na frente; a maiúscula perdida volta com a palavra que assumiu o início.
     if (sem_borda := re.sub(r"^[\s,;:.]+", "", limpo)) != limpo:
         limpo = sem_borda[:1].upper() + sem_borda[1:] if sem_borda else ""
+    # Sem fallback para o texto original: ele contém a citação que o modelo
+    # escreveu à mão, e reintroduzi-la é exatamente o que esta função existe
+    # para impedir. Quando não sobra nada, não sobra nada.
     if not limpo:
-        return texto.strip()
+        return ""
     return limpo if limpo[-1] in ".!?" else limpo + "."
 
 
@@ -1057,14 +1151,24 @@ def executar(
         # pontos de atenção quanto na trilha de auditoria. Passa pela mesma
         # limpeza das constatações: a citação que acompanha o veto é a que o
         # código emite ao lado, nunca a que o supervisor digitou.
+        # O motivo e a observação saem impressos no laudo do cliente — no
+        # ponto de atenção e na trilha — e passam pelo mesmo corte que o
+        # `retirado` do aparo ganhou no #13. Num lote real o Diretor devolveu
+        # aqui 470 caracteres de argumentação ("Além disso, a alegação de que
+        # isso 'compromete a integridade da sinalização' é uma suposição,
+        # pois…"), enquanto a resposta era a primeira oração. Foi a mesma
+        # coisa entrando por outra porta: fechada no aparo, ficou aberta no
+        # veto, que naquele momento só produzia motivo escrito pelo código.
         vetados = {
             str(v.get("ref", "")).strip().upper():
-                _limpar_citacoes(str(v.get("motivo", "")).strip())
+                _em_poucas_palavras(_limpar_citacoes(str(v.get("motivo", "")).strip()))
             for v in veredito.get("vetados", [])
         }
         observacoes = {
             str(v.get("ref", "")).strip().upper():
-                _limpar_citacoes(str(v.get("observacao", "")).strip())
+                _em_poucas_palavras(
+                    _limpar_citacoes(str(v.get("observacao", "")).strip())
+                )
             for v in veredito.get("vetados", [])
             if str(v.get("observacao", "")).strip()
         }

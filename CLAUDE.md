@@ -24,43 +24,57 @@ verdade é sempre com o usuário, em produção, com fotos e laudos que ele mand
 
 ---
 
-## Onde a coisa parou (02/09/2026, fim do dia)
+## Onde a coisa parou (02/09/2026, noite) — o lote de 12 validou o #17
 
-**A `foto (59)` rodou e o #15 está validado.** O painel elétrico empoeirado saiu com
-`NR-10 10.10.1` **VETADO** — não aparado, não aprovado — a poeira reapareceu nos pontos
-de atenção com o motivo da recusa ("a constatação não descumpre o texto oficial deste
-item") e o laudo fechou com 0 NC. Era exatamente o comportamento esperado. Os PRs
-#13/#14/#15 estão todos validados em produção.
+**As três apostas do #17 se confirmaram em produção, no commit `0c7ac83`.**
 
-**Mas o laudo dessa foto ainda tem duas coisas erradas, e são conhecidas:**
+1. **Controle negativo: 7 de 7 documentos deram 0 NC**, todos "aprovado sem vetos" —
+   registro de empregado (PIS/PASEP, Data Admissão, Função), lista de treinamentos com
+   carga horária, três certificados de NR-06/NR-01/NR-18, termo de anuência de trabalho
+   em altura e um LAUDO DE ENSAIO DE ARRANCAMENTO EM DISPOSITIVO DE ANCORAGEM com ART
+   do CREA. É a classe de erro que já tinha aparecido (o registro de empregado
+   enquadrado em item de avaliação de aprendizagem) e nunca fora testada de propósito.
+   Os dois pareceres que saíram são o raciocínio certo: *"a foto isolada não permite
+   verificar a validade temporal ou a adequação do conteúdo do termo"*.
+2. **A `foto (59)` trocou de item — e para o item certo.** Antes: `NR-10 10.10.1`
+   (sinalização) → vetado → 0 NC. Agora: **`NR-10 10.4.2`**, que nomeia "poeira"
+   literalmente entre os riscos adicionais a controlar. Aprovado com aparo, Média,
+   7 dias. **É a hipótese central do #17 respondida**: o item certo não estava no
+   dossiê antigo, e o Analista o escolheu assim que passou a estar.
+3. **"Fiação elétrica exposta … sem proteção de canaleta ou conduíte"** saiu como
+   `NR-10 10.2.8.2.1`, crítica, 1 dia — o item que `partes_vivas_expostas` mapeia e que
+   só routeia depois da correção do plural de 4 letras. Na mesma foto, a abertura na
+   parede com armadura exposta saiu como `NR-08 8.3.2.2` (o risco novo do #13).
 
-1. **O laudo se contradiz** (classe de erro 4). O ponto de atenção diz que a poeira
-   está "comprometendo a legibilidade e a eficácia da sinalização", e as conformidades
-   observadas listam a mesma etiqueta como "atendendo à identificação básica do risco".
-   O texto do ponto de atenção é a constatação do Analista copiada tal como estava — o
-   caminho do veto (`observacoes.get(ref) or nc.constatacao`, em `pipeline.py`) não a
-   revisa. **O Diretor vê as duas listas e podia ter descartado uma.**
-2. **A constatação afirma mais que o fato** (classe de erro 2). O Olho registrou
-   "acúmulo de poeira e resíduos na superfície" do painel e, num fato separado, LEU o
-   texto da etiqueta ("PERIGO", "ELETRICIDADE") — ou seja, ela está legível. Dizer que
-   a poeira compromete a legibilidade contradiz o próprio fato. A conferência mecânica
-   do Diretor confere a **exigência** contra o item (`_exigencia_ancorada`), mas o
-   **`fato` copiado segue sem verificação automática** — é a metade que falta.
+**E o veto melhorou.** Na `foto (60)` — quase a mesma cena da 59 — a abertura circular
+sem tampa foi proposta em `10.10.1` e vetada com um motivo que o Diretor fundamentou
+usando OUTRO fato: *"a etiqueta de sinalização está descrita como presente e legível em
+outro fato"*. **Não houve contradição**: o ponto de atenção virou "não é possível
+determinar pela imagem", e a etiqueta ficou nas conformidades sem briga. É o defeito
+que a `foto (59)` da rodada anterior tinha, e ele não se repetiu.
 
-**A causa de fundo estava uma camada antes, e foi corrigida nesta sessão.** Reproduzir
-o dossiê da `foto (59)` aqui (sem rede, `montar_dossie` é determinístico) mostrou que
-**9 das 10 vagas eram obrigação de papel**: treinamento de eletricista, memorial
-descritivo do projeto, plano de emergência, ficha de dados de segurança de mistura
-química, metodologia da taxa metabólica da NR-09. Sobrava um item físico — `10.10.1`,
-que exige SINALIZAÇÃO — e o Analista, obrigado a escolher do dossiê, escolheu esse.
-Classe de erro 1 na forma pura. Ver "Dossiê sem obrigação de papel" abaixo.
+**Mas duas coisas saíram impressas quebradas no laudo do cliente:**
 
-**O próximo passo é rodar de novo a `foto (59)` e o quadro de tomadas** depois que este
-PR entrar: o dossiê do painel agora traz cinco itens de proteção elétrica da NR-10 em
-vez de só o de sinalização, e o quadro de tomadas passou de 1 item de NR-01 sobre
-divulgação de informações digitais para `NR-10 10.2.8.2`/`10.2.8.2.1`. **A pergunta é
-se o Analista enquadra melhor com dossiê melhor** — é a hipótese que a correção assume
-e que só a produção responde.
+1. **`"violando a e."`** — no parecer do laudo 1. O Diretor escreveu "violando a NR-10 e
+   a NR-26"; `_limpar_citacoes` tirou as duas citações e sobrou um verbo sem objeto.
+   A limpeza de órfãs trata preposição encostada na pontuação ("conforme."), não no
+   meio do trecho, e **nenhuma regra de pontuação conserta isso**. Corrigido fatiando o
+   texto por vírgula/ponto-e-vírgula/fim de sentença e descartando o fragmento inteiro
+   quando o que sobra dele são só palavras que existiam para apresentar a citação.
+2. **493 caracteres de argumentação do Diretor** dentro do ponto de atenção do laudo 12:
+   *"Além disso, a alegação de que isso 'compromete a integridade da sinalização' é uma
+   suposição, pois…"*. É a mesma coisa do campo `retirado` que o #13 fechou, entrando
+   por outra porta — o corte de `_em_poucas_palavras` estava no aparo e não no veto,
+   porque na época o veto só produzia motivo escrito pelo código. Agora o motivo e a
+   observação passam pelo mesmo corte: 493 → 85 caracteres, e o que sobra é a razão.
+
+**O que o lote deixou em aberto:** a `foto (59)` e a `foto (60)` são a mesma cena —
+painel elétrico empoeirado — e **discordaram**: a 59 enquadrou a poeira em `10.4.2`, a
+60 não enquadrou a poeira em lugar nenhum (foi atrás da abertura sem tampa e levou
+veto), fechando com 0 NC apesar do fato "superfície coberta por poeira e resíduos de
+cimento". Não é divergência de item para o mesmo achado — é o Analista escolhendo
+**achados diferentes** para enquadrar. É a variabilidade da visão vista de um ângulo
+novo, e o próximo lote deve olhar para isso.
 
 **O 3.8 é o padrão do código desde 02/09.** `PADRAO_VISAO`/`PADRAO_TEXTO` são o
 primeiro item de `VISAO`/`TEXTO` em `modelos.py`, e o 3.8 foi para o topo das duas
@@ -121,7 +135,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 158 testes
+$VENV -m pytest tests/ -q          # 169 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -167,6 +181,8 @@ próprio comando composto (exit 144).
 | Verificação mecânica no caminho errado | O aparo do Diretor ganhou verificação de lastro no #13; no lote seguinte, o mesmo enquadramento falso voltou por **aprovado**, sem aparo, e passou inteiro. Ao fechar uma porta num agente, pergunte por quais outras a mesma coisa entra — decisão de modelo muda de caminho de uma rodada para outra. Hoje a exigência é cobrada de todo enquadramento que sobrevive. |
 | **Plural de radical curto não reduzia** | `radical()` só singularizava palavra com mais de 4 letras, então `"fios"` ficava `"fios"` e `"fio"` ficava `"fio"` — dois radicais para a mesma palavra. O sinal `"fio desencapado"` foi cadastrado justamente porque o Olho escreve **"fios desencapados"**, e o par nunca casou: um quadro de tomadas aberto routeava **zero** riscos. Corrigido; a regra do `s` simples agora vale de 4 letras para cima, mas `PLURAIS` continua em 5 — aplicá-la a 4 transformaria `"mais"` em `"mal"`. |
 | **Sinal cujas palavras somem no filtro de radicais** | `"t em cima de t"` tem cinco palavras e quatro têm duas letras: `radicais()` descarta todas e sobra `cima` sozinho, com cobertura 1.0 em "pregos expostos voltados **para cima**". Uma foto de madeira de fôrma routeava gambiarra. É a armadilha do `sem` levada ao extremo — o sinal inteiro vira cola. Hoje o validador da taxonomia quebra no import se um sinal não tiver radical discriminante (`PALAVRAS_COLA` em `riscos/__init__.py`). |
+| **Citação removida do meio da frase deixa verbo sem objeto** | `_limpar_citacoes` tira a citação e a limpeza de órfãs arruma preposição encostada na pontuação ("conforme."). No MEIO do trecho ela não alcança: "violando a NR-10 e a NR-26" virou **"violando a e."** num parecer impresso. Nenhuma regra de pontuação conserta — o que sobra não é pontuação órfã, é um verbo sem objeto. Hoje o texto é fatiado por vírgula/ponto-e-vírgula/fim de sentença e o fragmento que só apresentava a citação sai inteiro. **A citação é MARCADA antes de fatiar**, nunca removida: ela atravessa vírgula ("NR-35, item 5.2.2.5") e fatiar antes a partiria em duas, deixando o número do item para trás — pior que não limpar, porque o renderizador o relê como citação legítima. |
+| **Corte de verbosidade aplicado a um campo só** | O `retirado` do aparo ganhou `_em_poucas_palavras` no #13, quando o `motivo` do veto ainda era sempre escrito pelo código. Quando o veto passou a carregar o texto do Diretor, os 493 caracteres de argumentação voltaram por ali — dentro do ponto de atenção que vai ao cliente. É a irmã da armadilha "verificação mecânica no caminho errado": ao pôr uma trava num campo, liste os outros campos por onde o mesmo texto sai. |
 | `git fetch origin main <branch-que-não-existe-mais>` falha inteiro, silenciosamente | Fetch de múltiplos refs é atômico: se um ref já foi deletado no remoto (branch mergeada), o comando inteiro falha e **nenhum ref é atualizado** — inclusive o `main`, que existia e seria atualizado sozinho. `origin/main` local fica congelado na versão de antes, e comparações feitas contra ele mentem. Já causou uma sessão inteira concluir errado que "a reescrita nunca foi mergeada". Se o histórico parecer suspeito, rode `git fetch origin main` sozinho antes de confiar em qualquer diff. |
 
 ---
@@ -176,7 +192,7 @@ próprio comando composto (exit 144).
 - **6.358 itens** vigentes de **24 NRs** (de 36 vigentes), extraídos dos PDFs em `normas/`
 - **123 riscos** curados mapeando para itens reais; 25 exigem pessoa na cena e
   3 têm item que só entra com máquina nomeada na cena (`itens_so_com_maquina`)
-- **158 testes**
+- **169 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
@@ -437,12 +453,20 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   — o mesmo `_exigencia_ancorada`, mirando a lista de fatos do Olho em vez do item —
   mas o fato é texto livre e a régua de 0,8 pode ser apertada demais. **Merece medição
   antes de implementar.**
-- **O texto do ponto de atenção que nasce de um veto não passa por revisão.** Em
-  `pipeline.py`, `observacoes.get(ref) or nc.constatacao`: quando o Diretor não escreve
-  uma observação, a constatação vetada vai inteira para os pontos de atenção. Foi assim
-  que a `foto (59)` saiu acusando a sinalização de comprometida três linhas acima de
-  listá-la em "conformidades observadas" — classe de erro 4, que o Diretor **podia**
-  ter pego porque vê as duas listas.
+- **O texto do ponto de atenção que nasce de um veto não passa por revisão de
+  CONTEÚDO.** Em `pipeline.py`, `observacoes.get(ref) or nc.constatacao`: sem observação
+  do Diretor, a constatação vetada vai inteira. O tamanho já foi resolvido (o motivo e a
+  observação passam por `_em_poucas_palavras`), mas o conteúdo não: na `foto (59)` da
+  rodada anterior isso pôs "a poeira compromete a legibilidade da sinalização" três
+  linhas acima de a etiqueta aparecer nas conformidades. **No lote de 12 não se repetiu**
+  — o Diretor escreveu observação própria na `foto (60)` — então o defeito depende de ele
+  se dar ao trabalho, o que não é garantia.
+- **Fotos da mesma cena enquadram achados diferentes.** As fotos (59) e (60) são o mesmo
+  painel empoeirado: a 59 enquadrou a poeira em `NR-10 10.4.2`, a 60 foi atrás da
+  abertura sem tampa, levou veto e fechou com 0 NC — com o fato "superfície coberta por
+  poeira e resíduos de cimento" registrado e não usado. Não é divergência de item para o
+  mesmo achado (isso o dossiê resolve); é escolha de qual achado enquadrar. **Nada no
+  pipeline pede que todo achado de risco seja endereçado**, e essa é a porta.
 - **O Olho nomeia a máquina mas não inspeciona as proteções.** Na betoneira ele
   descreveu corrosão, pintura descascada e o tambor aberto; nunca coroa, pinhão ou
   correia. O prompt já pede "as peças que vê e as que não vê (… proteção de partes
