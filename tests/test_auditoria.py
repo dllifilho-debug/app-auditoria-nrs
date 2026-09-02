@@ -2820,3 +2820,78 @@ def test_motivo_do_veto_nao_leva_a_argumentacao_para_o_laudo(base):
     # E o achado não evapora: a observação continua indo para os pontos de
     # atenção, que é a razão de o veto não derrubar a informação junto.
     assert laudo.sem_enquadramento
+
+
+# ---------------------------------------------------------------------------
+# Cronômetro por foto
+# ---------------------------------------------------------------------------
+
+def test_laudo_registra_o_tempo_da_foto(base):
+    """Com o teto diário de 2 milhões de tokens, o que limita um lote de 100
+    fotos deixou de ser a cota e passou a ser o relógio (~45 s/foto medidos em
+    produção). Sem número no app, planejar lote é chute."""
+    laudo = executar(
+        ClienteDemonstracao(), base, "imagem-falsa", "",
+        Configuracao(modelo_visao="d", modelo_texto="d", data_referencia=HOJE),
+    )
+    assert laudo.duracao_s > 0
+    # O dublê não dorme por cota, então a espera é zero — e não negativa.
+    assert laudo.espera_s == 0
+
+
+def test_o_tempo_e_medido_tambem_quando_a_visao_falha(base):
+    """`executar` tem mais de uma saída: a foto sem fato utilizável volta antes
+    do dossiê. É por isso que o cronômetro mora no pipeline e não no app."""
+    class _SemFatos:
+        ultimo_corte_por_limite = False
+
+        def conversar(self, modelo, mensagens, teto_saida=1200, temperatura=0.0,
+                      json_estrito=False):
+            return '{"ambiente": "obra", "achados": [], "pessoas": {"presentes": false}}'
+
+    laudo = executar(
+        _SemFatos(), base, "imagem-falsa", "",
+        Configuracao(modelo_visao="d", modelo_texto="d", data_referencia=HOJE),
+    )
+    assert laudo.visao_falhou
+    assert laudo.duracao_s > 0
+
+
+def test_a_espera_por_cota_entra_no_laudo_separada(base):
+    """A espera pela janela de TPM não melhora com modelo mais rápido — só com
+    tier pago. Somá-la ao tempo de chamada esconderia qual dos dois é o
+    gargalo, que é justamente a pergunta."""
+    class _QueDorme(ClienteDemonstracao):
+        segundos_esperando = 0.0
+
+        def conversar(self, *a, **k):
+            self.segundos_esperando += 12.0     # sem dormir de verdade
+            return super().conversar(*a, **k)
+
+    laudo = executar(
+        _QueDorme(), base, "imagem-falsa", "",
+        Configuracao(modelo_visao="d", modelo_texto="d", data_referencia=HOJE),
+    )
+    assert laudo.espera_s >= 12.0
+    assert laudo.espera_s <= laudo.duracao_s + 60   # é uma fatia, não um extra
+
+
+def test_o_cliente_groq_conta_o_tempo_que_dormiu(monkeypatch):
+    """O contador vive no cliente porque é lá que está o único `time.sleep`."""
+    import auditoria.modelos as mod
+
+    dormido = []
+    monkeypatch.setattr(mod.time, "sleep", lambda s: dormido.append(s))
+    cliente = mod.ClienteGroq.__new__(mod.ClienteGroq)
+    cliente.margem_tokens = 1500
+    cliente.aviso = lambda _m: None
+    cliente.segundos_esperando = 0.0
+    cliente.cota = mod.Cota(tokens_restantes=100, tokens_limite=8000, reset_tokens=20.0)
+
+    cliente.aguardar_cota(5_000)
+    assert dormido and cliente.segundos_esperando == dormido[0]
+    # Cota folgada não dorme nem conta.
+    cliente.cota = mod.Cota(tokens_restantes=8000, tokens_limite=8000)
+    antes = cliente.segundos_esperando
+    cliente.aguardar_cota(1_000)
+    assert cliente.segundos_esperando == antes

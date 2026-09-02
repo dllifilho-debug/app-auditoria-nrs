@@ -13,6 +13,7 @@ Alucinar uma citação deixa de ser improvável e passa a ser impossível.
 
 import json
 import re
+import time
 from dataclasses import dataclass, field, replace
 from datetime import date
 from typing import Callable
@@ -99,6 +100,11 @@ class Laudo:
     afericoes: list[str] = field(default_factory=list)
     data_referencia: date = field(default_factory=date.today)
     tokens: int = 0
+    # Tempo de parede desta foto, e quanto dele foi espera pela janela de TPM.
+    # O limite prático do lote deixou de ser a cota diária e passou a ser o
+    # relógio; medir os dois separados é o que diz se a espera domina.
+    duracao_s: float = 0.0
+    espera_s: float = 0.0
     # O agente de visão devolveu resposta sem nenhum fato utilizável.
     visao_falhou: bool = False
 
@@ -1067,7 +1073,28 @@ def executar(
     config: Configuracao,
     progresso: Callable[[str], None] | None = None,
 ) -> Laudo:
-    """Roda o loop completo para uma foto e devolve o laudo aferido."""
+    """Roda o loop completo para uma foto, cronometrando a passagem.
+
+    O cronômetro fica aqui, e não no `app.py`, porque `_executar` tem mais de
+    uma saída (a foto sem fato utilizável volta antes do dossiê) e medir por
+    fora significaria lembrar de todas elas.
+    """
+    inicio = time.monotonic()
+    esperando_antes = getattr(cliente, "segundos_esperando", 0.0)
+    laudo = _executar(cliente, base, imagem_b64, contexto, config, progresso)
+    laudo.duracao_s = time.monotonic() - inicio
+    laudo.espera_s = getattr(cliente, "segundos_esperando", 0.0) - esperando_antes
+    return laudo
+
+
+def _executar(
+    cliente: Conversador,
+    base: BaseNormativa,
+    imagem_b64: str,
+    contexto: str,
+    config: Configuracao,
+    progresso: Callable[[str], None] | None = None,
+) -> Laudo:
     avisar = progresso or (lambda _m: None)
     quando = config.data_referencia
 

@@ -276,6 +276,11 @@ class ClienteGroq:
         self.cota = Cota()
         self.tokens_gastos = 0
         self.chamadas = 0
+        # Quanto tempo o lote passou DORMINDO à espera da janela de TPM virar.
+        # Sem separar isso do tempo de chamada, "a foto leva 45 s" não diz se o
+        # gargalo é a rede, o modelo ou o freio da cota — e são consertos
+        # diferentes: modelo mais rápido não move a espera, tier pago move.
+        self.segundos_esperando = 0.0
         # O teto diário da Groq é por modelo, então o total sozinho não diz
         # quando o lote vai parar: é preciso saber qual balde está enchendo.
         self.tokens_por_modelo: dict[str, int] = {}
@@ -314,6 +319,7 @@ class ClienteGroq:
             f"Aguardando {espera:.0f}s até a janela reabrir."
         )
         time.sleep(espera)
+        self.segundos_esperando += espera
         self.cota.tokens_restantes = self.cota.tokens_limite
 
     # -- chamada ------------------------------------------------------------
