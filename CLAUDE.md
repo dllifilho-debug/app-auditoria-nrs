@@ -26,19 +26,10 @@ verdade é sempre com o usuário, em produção, com fotos e laudos que ele mand
 
 ## Onde a coisa parou (02/09/2026, fim da sessão)
 
-**`main` está em `57aaefe`.** Os PRs #17 e #18 foram mergeados e validados; o 3.8 é o
-padrão nos dois campos; o app tem cronômetro por foto.
-
-### PENDENTE: mergear o PR #19 (cronômetro) — mas NÃO durante um lote
-
-O #19 está aberto, testado e verificado no navegador; ficou sem merge porque o usuário
-começou a rodar o lote de içamento e **o redeploy do Streamlit Cloud reinicia o app,
-apagando o `st.session_state` — ou seja, o lote em andamento**. Espere o lote terminar
-e os laudos serem baixados. Vale para qualquer merge daqui em diante: **nunca mergear
-com lote rodando.**
-
-Consequência aceita: o lote de içamento roda **sem** cronômetro. Tudo bem — ele existe
-para medir roteamento, não tempo. O número de tempo sai no lote seguinte.
+**O `main` carrega os PRs #17, #18 e #19.** O dossiê não oferece mais obrigação de
+papel, os textos do Diretor não saem quebrados no laudo, o 3.8 é o padrão nos dois
+campos e o app cronometra cada foto. Confira o hash em "Versão em execução" na barra
+lateral antes de rodar qualquer lote — laudo medido contra a versão errada não vale.
 
 ### O próximo passo é um só: o LOTE DE IÇAMENTO
 
@@ -191,11 +182,12 @@ próprio comando composto (exit 144).
 | **Citação removida do meio da frase deixa verbo sem objeto** | `_limpar_citacoes` tira a citação e a limpeza de órfãs arruma preposição encostada na pontuação ("conforme."). No MEIO do trecho ela não alcança: "violando a NR-10 e a NR-26" virou **"violando a e."** num parecer impresso. Nenhuma regra de pontuação conserta — o que sobra não é pontuação órfã, é um verbo sem objeto. Hoje o texto é fatiado por vírgula/ponto-e-vírgula/fim de sentença e o fragmento que só apresentava a citação sai inteiro. **A citação é MARCADA antes de fatiar**, nunca removida: ela atravessa vírgula ("NR-35, item 5.2.2.5") e fatiar antes a partiria em duas, deixando o número do item para trás — pior que não limpar, porque o renderizador o relê como citação legítima. |
 | **Corte de verbosidade aplicado a um campo só** | O `retirado` do aparo ganhou `_em_poucas_palavras` no #13, quando o `motivo` do veto ainda era sempre escrito pelo código. Quando o veto passou a carregar o texto do Diretor, os 493 caracteres de argumentação voltaram por ali — dentro do ponto de atenção que vai ao cliente. É a irmã da armadilha "verificação mecânica no caminho errado": ao pôr uma trava num campo, liste os outros campos por onde o mesmo texto sai. |
 | **Medir tempo por fora de uma função com várias saídas** | `executar` volta cedo quando o Olho não devolve fato utilizável. Cronometrar no `app.py`, em volta da chamada, funcionaria — até alguém acrescentar a próxima saída antecipada e o número virar zero em silêncio. Por isso `executar` virou um invólucro fino que cronometra e delega a `_executar`: existe **um** ponto de saída para medir. **Há teste guardando o caminho da visão que falha.** |
+| **Mergear PR com lote rodando** | O merge dispara o redeploy do Streamlit Cloud, que **reinicia o app e apaga o `st.session_state`** — onde o lote em andamento vive. No plano gratuito um lote é de horas de parede, e o usuário recomeça do zero. Vale para qualquer merge: **pergunte se há lote rodando antes**, e espere os laudos serem baixados. |
 | `git fetch origin main <branch-que-não-existe-mais>` falha inteiro, silenciosamente | Fetch de múltiplos refs é atômico: se um ref já foi deletado no remoto (branch mergeada), o comando inteiro falha e **nenhum ref é atualizado** — inclusive o `main`, que existia e seria atualizado sozinho. `origin/main` local fica congelado na versão de antes, e comparações feitas contra ele mentem. Já causou uma sessão inteira concluir errado que "a reescrita nunca foi mergeada". Se o histórico parecer suspeito, rode `git fetch origin main` sozinho antes de confiar em qualquer diff. |
 
 ---
 
-## Estado atual (commit `57aaefe`)
+## Estado atual (o `main` de 02/09, com os PRs #17, #18 e #19)
 
 - **6.358 itens** vigentes de **24 NRs** (de 36 vigentes), extraídos dos PDFs em `normas/`
 - **123 riscos** curados mapeando para itens reais; 25 exigem pessoa na cena e
