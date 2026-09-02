@@ -2712,3 +2712,111 @@ def test_o_padrao_de_visao_le_imagem_e_o_de_texto_esta_registrado():
 
     assert modelos.por_id(modelos.PADRAO_VISAO, modelos.VISAO).visao
     assert modelos.por_id(modelos.PADRAO_TEXTO, modelos.TEXTO) is not None
+
+
+# ---------------------------------------------------------------------------
+# Texto do modelo que saiu impresso quebrado no laudo do cliente (lote de 12)
+# ---------------------------------------------------------------------------
+
+def test_citacao_no_meio_da_frase_nao_deixa_preposicao_pendurada():
+    """Parecer real do lote de 02/09, laudo 1: o Diretor escreveu "violando a
+    NR-10 e a NR-26" e o laudo saiu com "…advertência de perigo, **violando a
+    e.** Recomenda-se…". A limpeza de órfãs trata preposição encostada na
+    pontuação ("conforme."), não no meio do trecho — e o que sobra ali é um
+    verbo sem objeto, que nenhuma regra de pontuação conserta."""
+    from auditoria.pipeline import _limpar_citacoes
+
+    limpo = _limpar_citacoes(
+        "O principal risco identificado é a ausência de sinalização de segurança "
+        "no painel elétrico, o que impede a correta identificação de circuitos e "
+        "a advertência de perigo, violando a NR-10 e a NR-26. Recomenda-se a "
+        "instalação imediata da sinalização adequada."
+    )
+    assert "violando a e" not in limpo, limpo
+    assert " a e." not in limpo, limpo
+    # O que o fragmento descartado não levava junto: o resto da frase fica.
+    assert "advertência de perigo" in limpo
+    assert limpo.startswith("O principal risco") and "Recomenda-se" in limpo
+    assert extrair_citacoes(limpo) == []
+
+
+@pytest.mark.parametrize("escrito,esperado", [
+    # Fragmento que só existia para apresentar a citação sai inteiro.
+    ("violando a NR-10 10.10.1 e a NR-26 26.1.1. Recomenda-se a limpeza.",
+     "Recomenda-se a limpeza."),
+    ("Escada apoiada sobre entulho, em desacordo com a NR-35, item 5.2.2.5.",
+     "Escada apoiada sobre entulho."),
+    ("A escada está apoiada em piso irregular. Isso descumpre a NR-35 "
+     "Anexo III 5.2.2.5. O risco é de queda.",
+     "A escada está apoiada em piso irregular. O risco é de queda."),
+    # Fragmento com conteúdo próprio fica; só a citação sai.
+    ("A abertura no piso não tem fechamento, violando a NR-18 18.9.2, e expõe "
+     "o trabalhador a queda.",
+     "A abertura no piso não tem fechamento, e expõe o trabalhador a queda."),
+    # A vírgula do número não é separador de fragmento.
+    ("O guarda-corpo deve ter 1,20 m de altura conforme NR-18 18.9.4.1.",
+     "O guarda-corpo deve ter 1,20 m de altura."),
+    # Sem citação, nada acontece.
+    ("Texto sem citação nenhuma, que deve passar intacto.",
+     "Texto sem citação nenhuma, que deve passar intacto."),
+    # "anexo" sem numeral romano é palavra comum, não citação.
+    ("O documento anexo mostra a planta do pavimento.",
+     "O documento anexo mostra a planta do pavimento."),
+])
+def test_limpeza_de_citacao_por_fragmento(escrito, esperado):
+    from auditoria.pipeline import _limpar_citacoes
+
+    assert _limpar_citacoes(escrito) == esperado
+
+
+def test_citacao_de_anexo_escrita_a_mao_tambem_sai():
+    """A regex exigia "NR-nn" para ancorar, então "NR-35 Anexo III 5.2.2.5"
+    perdia a NR e mantinha "Anexo III 5.2.2.5" — o pior dos dois mundos, porque
+    o renderizador relê o resto como citação legítima."""
+    from auditoria.pipeline import _limpar_citacoes
+
+    for escrito in ("Isso descumpre a NR-35 Anexo III 5.2.2.5.",
+                    "Reposicionar conforme o Anexo III, item 5.2.2.5.",
+                    "A cesta está fora do Anexo XII 4.18."):
+        limpo = _limpar_citacoes(escrito)
+        assert "Anexo" not in limpo and "5.2.2.5" not in limpo, limpo
+        assert "4.18" not in limpo, limpo
+
+
+def test_limpeza_que_esvazia_tudo_nao_devolve_a_citacao():
+    """O fallback antigo devolvia o texto original quando a limpeza esvaziava —
+    reintroduzindo justamente a citação que o modelo escreveu à mão, que é o que
+    esta função existe para impedir."""
+    from auditoria.pipeline import _limpar_citacoes
+
+    assert _limpar_citacoes("violando a NR-10 e a NR-26.") == ""
+
+
+def test_motivo_do_veto_nao_leva_a_argumentacao_para_o_laudo(base):
+    """Laudo 12 do lote de 02/09: o motivo do veto saiu com 493 caracteres de
+    argumentação dentro do ponto de atenção que vai ao cliente. O `retirado` do
+    aparo ganhou esse corte no #13; o veto ficou de fora porque naquele momento
+    só produzia motivo escrito pelo código. Mesma coisa, outra porta."""
+    motivo = (
+        "O item trata exclusivamente de sinalização de segurança (advertência e "
+        "identificação). A constatação descreve uma falha de integridade "
+        "física/vedação (abertura sem tampa), o que não é coberto por este item "
+        "específico. Além disso, a alegação de que isso 'compromete a integridade "
+        "da sinalização' é uma suposição, pois a etiqueta de sinalização está "
+        "descrita como presente e legível em outro fato. Não há trecho no texto "
+        "oficial que exija vedação física de aberturas sob a rubrica de sinalização"
+    )
+    laudo, _ = _rodar(base, "NR-18 18.8.6.12", lambda: {
+        "conferencia": [], "aparados": [],
+        "vetados": [{"ref": "V1", "motivo": motivo}],
+        "ajustes": [], "pontos_descartados": [],
+        "conformidades_descartadas": [], "parecer": "p",
+    })
+    assert not laudo.nao_conformidades
+    inteiro = " ".join(laudo.vetos + laudo.sem_enquadramento)
+    assert "Além disso" not in inteiro, inteiro
+    assert "O item trata exclusivamente de sinalização" in inteiro
+    assert len(laudo.vetos[0]) < 200, laudo.vetos[0]
+    # E o achado não evapora: a observação continua indo para os pontos de
+    # atenção, que é a razão de o veto não derrubar a informação junto.
+    assert laudo.sem_enquadramento
