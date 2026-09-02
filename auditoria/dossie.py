@@ -56,10 +56,61 @@ MARCADORES_DOCUMENTAIS = (
 )
 
 
+# A lista acima cresceu um marcador de cada vez, atrás de um laudo ruim. Medir
+# o dossiê da `foto (59)` mostrou que remendar frase a frase não alcança o
+# problema: das 10 vagas do dossiê de um painel elétrico empoeirado, NOVE eram
+# obrigação de papel — treinamento de eletricista, memorial descritivo do
+# projeto, plano de emergência, ficha de dados de segurança de mistura química,
+# e ainda a metodologia de estimativa da taxa metabólica da NR-09. Sobrava UM
+# item físico, `NR-10 10.10.1` (sinalização), e foi nele que o Analista
+# enquadrou a poeira — o enquadramento que a supervisão vetou.
+#
+# É a classe de erro 1 na sua forma pura: dossiê pobre força escolha ruim. O
+# veto do Diretor limpa o laudo, mas não devolve ao Analista o item certo, que
+# nunca chegou a caber.
+#
+# Estas famílias são o que o remendo frase a frase não pegava. Todas descrevem
+# obrigação que uma fotografia não comprova nem desmente — nem para acusar, nem
+# para inocentar. Valem, como os marcadores acima, SÓ para a recuperação
+# textual: item documental mapeado à mão na taxonomia curada entra por
+# `pipeline.montar_dossie` e não passa por aqui.
+RE_OBRIGACAO_DE_PAPEL = re.compile(
+    # 1) Treinamento e capacitação de pessoas. "certificado" sozinho fica de
+    #    fora do padrão como particípio: "o dispositivo de ancoragem deve ser
+    #    certificado" é condição do equipamento, que a etiqueta na foto
+    #    evidencia. Só o substantivo ("O certificado deve ser disponibilizado")
+    #    é papel, e é ele que entra.
+    r"\btreinament|\bcapacitac|\breciclagem\b|\bcarga horaria|\b(o|os) certificados?\b"
+    r"|\bavaliacao da aprendizagem|\binstrutor|\bqualificacao profissional"
+    # 2) Documento, plano, programa, procedimento, registro. "planos de trabalho"
+    #    fica de fora: na NR-17 é a superfície da bancada, não um documento.
+    r"|\bmemorial descritivo|\bficha (com|de) dados de seguranca|\bordem de servico"
+    r"|\bordens de servico|\bprontuario|\blaudo\b|\brelatorio\b|\bdocumentacao\b"
+    r"|\binventario de risco|\bprograma de [a-z]|\bprojeto executivo"
+    r"|\bdeve ser documentad|\bdeve constar do|\bregistro[s]? de [a-z]"
+    r"|\bprocedimento[s]? de [a-z]|\bplanos? de\b(?! trabalho)|\bpgr\b|\bpcmso\b"
+    r"|\bo projeto deve\b"
+    # 3) Metodologia de avaliação de risco: como estimar probabilidade,
+    #    severidade, nível de risco e taxa metabólica. Diz como medir, não o que
+    #    a cena tem de errado.
+    r"|\btaxa metabolica|\bprobabilidade deve|\bseveridade\b|\bnivel de risco"
+    r"|\bgradacao\b|\bcomo criterio\b|\bdeve ser estimad"
+    r"|\bprobabilidade de ocorrencia|\bavaliacao preliminar"
+    # 4) Competência institucional e dever de comunicar: quem fiscaliza, quem
+    #    emite CA, a quem avisar. Nada disso está na foto.
+    r"|\bsecretaria de trabalho|\borgao de ambito nacional|\bcompetente em materia"
+    r"|\bobservancia obrigatoria|\bcessao de uso|\bcanal de comunicacao"
+    r"|\bdevem? comunicar|\bser divulgad|\bsesmt\b|\bdevem? orientar\b"
+    r"|\brecebe[r]? informacoes\b|\bna ocorrencia de acidente"
+)
+
+
 def comprovavel_em_foto(item: Item) -> bool:
     """O item descreve condição física observável, e não obrigação de papel?"""
     texto = normalizar(item.texto)
-    return not any(marcador in texto for marcador in MARCADORES_DOCUMENTAIS)
+    if any(marcador in texto for marcador in MARCADORES_DOCUMENTAIS):
+        return False
+    return not RE_OBRIGACAO_DE_PAPEL.search(texto)
 
 
 # Seções que dizem para que a norma serve, a quem ela se aplica, o que cada

@@ -433,7 +433,14 @@ RISCOS: dict[str, dict] = {
             "benjamim",
             "puxadinho eletrico",
             "fio torcido",
-            "t em cima de t",
+            # "t em cima de t" saiu daqui: das cinco palavras, quatro têm duas
+            # letras e caem no filtro de `radicais`, sobrando o radical `cima`
+            # sozinho — que casa 100% em qualquer "voltados para cima". Uma foto
+            # de madeira de fôrma com pregos expostos routeava gambiarra por
+            # causa dele. O conceito continua coberto por "benjamim", que é o
+            # nome do adaptador, e pelos dois sinais abaixo.
+            "adaptadores encadeados",
+            "varios adaptadores na tomada",
         ],
         # "Gambiarra" e "benjamim sobrecarregado" são achado de tomada e
         # extensão comuns, não de máquina especificamente. NR-12 12.3.6 é

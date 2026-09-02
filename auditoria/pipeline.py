@@ -20,6 +20,7 @@ from typing import Callable
 from . import dossie as mod_dossie
 from .catalogo_nr import CATALOGO_NR
 from .kb import BaseNormativa, Item
+from .kb import radicais as _radicais   # usado também por riscos._validar
 from .modelos import Conversador, ErroDeAuditoria
 from .riscos import (
     Risco,
@@ -271,39 +272,6 @@ def agente_olho(cliente: Conversador, imagem_b64: str, modelo: str, contexto: st
 # ---------------------------------------------------------------------------
 # Etapa 2 — Roteamento e dossiê (100% determinístico)
 # ---------------------------------------------------------------------------
-
-RE_PALAVRA = re.compile(r"[a-z0-9]+")
-
-
-PLURAIS = (("ais", "al"), ("eis", "el"), ("ois", "ol"), ("uis", "ul"),
-           ("oes", "ao"), ("aes", "ao"), ("ns", "m"))
-
-
-def _radical(palavra: str) -> str:
-    """Radical aproximado, só para casar singular com plural e masculino com feminino.
-
-    Não é um stemmer de verdade — e nem precisa ser. Precisa apenas ser
-    *consistente*: "materiais" e "material" têm de chegar ao mesmo radical, ou
-    o roteador perde o risco. Era exatamente aí que ele falhava.
-    """
-    if len(palavra) > 4:
-        for plural, singular in PLURAIS:
-            if palavra.endswith(plural):
-                palavra = palavra[: -len(plural)] + singular
-                break
-        else:
-            if palavra.endswith("s") and len(palavra) > 4:
-                palavra = palavra[:-1]
-    if len(palavra) > 4 and palavra[-1] in "aeo":
-        palavra = palavra[:-1]
-    return palavra
-
-
-def _radicais(texto: str) -> set[str]:
-    from .kb import normalizar
-
-    return {_radical(p) for p in RE_PALAVRA.findall(normalizar(texto)) if len(p) > 2}
-
 
 def rotear_riscos(visao: Visao, contexto: str = "") -> list[Risco]:
     """Casa os fatos observados com a taxonomia curada de riscos.

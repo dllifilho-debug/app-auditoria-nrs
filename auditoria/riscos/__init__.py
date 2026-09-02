@@ -41,6 +41,30 @@ class Risco:
     itens_so_com_maquina: tuple[str, ...] = ()
 
 
+# Radicais que contam para a cobertura do sinal mas não discriminam nada:
+# preposições, advérbios de posição e quantificadores. Um sinal feito só deles
+# casa com qualquer texto.
+#
+# Por que isto existe: `"t em cima de t"` (gambiarra) tem cinco palavras, e
+# quatro delas têm duas letras — o filtro de `radicais` as descarta e sobra
+# `cima` sozinho, com cobertura 1.0 em "pregos expostos voltados para cima".
+# Uma foto de madeira de fôrma routeava ligação elétrica improvisada por isso.
+# É a armadilha do `sem` (radical que conta e não discrimina) na sua forma
+# extrema: o sinal inteiro vira cola.
+PALAVRAS_COLA = (
+    "sem", "com", "para", "por", "nao", "que", "uma", "seu", "sua",
+    "cima", "baixo", "lado", "dentro", "fora", "junto", "perto", "sobre",
+    "entre", "apos", "ate", "mais", "menos", "muito", "pouco", "todo",
+    "outro", "mesmo", "dois", "duas", "tres", "aqui", "ali", "onde",
+)
+
+
+def _radicais_cola() -> frozenset[str]:
+    from ..kb import radicais
+
+    return frozenset().union(*(radicais(p) for p in PALAVRAS_COLA))
+
+
 def _reunir() -> dict[str, dict]:
     from . import ambiental, construcao, industria
 
@@ -58,9 +82,10 @@ def _reunir() -> dict[str, dict]:
 
 
 def _validar(cru: dict[str, dict]) -> dict[str, Risco]:
-    from ..kb import carregar_base
+    from ..kb import carregar_base, radicais
 
     base = carregar_base()
+    cola = _radicais_cola()
     problemas: list[str] = []
     riscos: dict[str, Risco] = {}
 
@@ -74,6 +99,13 @@ def _validar(cru: dict[str, dict]) -> dict[str, Risco]:
             problemas.append(f"{chave}: gravidade_base '{dados['gravidade_base']}' inválida")
         if len(dados["sinais"]) < 3:
             problemas.append(f"{chave}: precisa de ao menos 3 sinais visuais")
+
+        for sinal in dados["sinais"]:
+            if not (radicais(sinal) - cola):
+                problemas.append(
+                    f"{chave}: o sinal '{sinal}' não tem radical discriminante — "
+                    "sobra só palavra-cola depois do filtro de radicais"
+                )
         if not dados["itens"]:
             problemas.append(f"{chave}: nenhum item de NR mapeado")
 
