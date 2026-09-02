@@ -24,26 +24,43 @@ verdade é sempre com o usuário, em produção, com fotos e laudos que ele mand
 
 ---
 
-## Onde a coisa parou (02/09/2026)
+## Onde a coisa parou (02/09/2026, fim do dia)
 
-O lote de 15 fotos rodou inteiro no `Qwen 3.8 27B` nos dois campos, e a partir dele
-saíram os PRs #13 (cinco defeitos do lote) e #14 (a NR-12 alcança a betoneira). Uma
-segunda rodada, de 4 fotos, validou o #14 e revelou o defeito que virou o #15
-(exigência cobrada de todo enquadramento). **O #15 é o único ainda sem validação em
-produção.**
+**A `foto (59)` rodou e o #15 está validado.** O painel elétrico empoeirado saiu com
+`NR-10 10.10.1` **VETADO** — não aparado, não aprovado — a poeira reapareceu nos pontos
+de atenção com o motivo da recusa ("a constatação não descumpre o texto oficial deste
+item") e o laudo fechou com 0 NC. Era exatamente o comportamento esperado. Os PRs
+#13/#14/#15 estão todos validados em produção.
 
-**O próximo passo é um só, e só o usuário pode fazer: rodar de novo a `foto (59)`** —
-o painel elétrico empoeirado. Ela é o caso que resistiu a duas correções seguidas e
-diz se a terceira pegou:
+**Mas o laudo dessa foto ainda tem duas coisas erradas, e são conhecidas:**
 
-- **Esperado:** a NC de `NR-10 10.10.1` **desaparece** e a poeira reaparece em pontos
-  de atenção, com o motivo do veto. A trilha deve registrar um **veto**, não um aparo.
-- **Se persistir uma terceira vez:** significa que o Diretor copiou um trecho
-  *verdadeiro* de `10.10.1` (provavelmente "identificação de circuitos elétricos") e o
-  aplicou à poeira. Aí a verificação mecânica fez o que podia — o trecho existe no item
-  — e o que resta é erro de pertinência, o limite conhecido desde o #13. **Nesse caso,
-  ler a `exigencia` que o Diretor copiou**: ela está na resposta dele e diz exatamente
-  qual trecho foi usado.
+1. **O laudo se contradiz** (classe de erro 4). O ponto de atenção diz que a poeira
+   está "comprometendo a legibilidade e a eficácia da sinalização", e as conformidades
+   observadas listam a mesma etiqueta como "atendendo à identificação básica do risco".
+   O texto do ponto de atenção é a constatação do Analista copiada tal como estava — o
+   caminho do veto (`observacoes.get(ref) or nc.constatacao`, em `pipeline.py`) não a
+   revisa. **O Diretor vê as duas listas e podia ter descartado uma.**
+2. **A constatação afirma mais que o fato** (classe de erro 2). O Olho registrou
+   "acúmulo de poeira e resíduos na superfície" do painel e, num fato separado, LEU o
+   texto da etiqueta ("PERIGO", "ELETRICIDADE") — ou seja, ela está legível. Dizer que
+   a poeira compromete a legibilidade contradiz o próprio fato. A conferência mecânica
+   do Diretor confere a **exigência** contra o item (`_exigencia_ancorada`), mas o
+   **`fato` copiado segue sem verificação automática** — é a metade que falta.
+
+**A causa de fundo estava uma camada antes, e foi corrigida nesta sessão.** Reproduzir
+o dossiê da `foto (59)` aqui (sem rede, `montar_dossie` é determinístico) mostrou que
+**9 das 10 vagas eram obrigação de papel**: treinamento de eletricista, memorial
+descritivo do projeto, plano de emergência, ficha de dados de segurança de mistura
+química, metodologia da taxa metabólica da NR-09. Sobrava um item físico — `10.10.1`,
+que exige SINALIZAÇÃO — e o Analista, obrigado a escolher do dossiê, escolheu esse.
+Classe de erro 1 na forma pura. Ver "Dossiê sem obrigação de papel" abaixo.
+
+**O próximo passo é rodar de novo a `foto (59)` e o quadro de tomadas** depois que este
+PR entrar: o dossiê do painel agora traz cinco itens de proteção elétrica da NR-10 em
+vez de só o de sinalização, e o quadro de tomadas passou de 1 item de NR-01 sobre
+divulgação de informações digitais para `NR-10 10.2.8.2`/`10.2.8.2.1`. **A pergunta é
+se o Analista enquadra melhor com dossiê melhor** — é a hipótese que a correção assume
+e que só a produção responde.
 
 O 3.8 **virou o padrão de fato** na prática do usuário (ele seleciona nos dois campos),
 mas `PADRAO_VISAO`/`PADRAO_TEXTO` em `modelos.py` **ainda não foram trocados** — é uma
@@ -97,7 +114,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 143 testes
+$VENV -m pytest tests/ -q          # 155 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -141,6 +158,8 @@ próprio comando composto (exit 144).
 | **Quatro radicais é onde a cobertura parcial abre** | O corte é 0,7. Com três radicais, faltar um dá 0,67 e **não passa** — todo radical é obrigatório. Com quatro, faltar um dá 0,75 e **passa**, e o que falta costuma ser justo o discriminante. `"abertura vertical sem fechamento"` casava uma abertura de PISO "sem cobertura ou fechamento visível", faltando só `vertical`. Sinal de até três radicais é seguro por construção; de quatro para cima, escreva sabendo que um pode faltar. **272 dos 866 sinais têm 4+ radicais** e correm esse risco. |
 | Regra global para a cobertura parcial — **tentada e descartada** | A saída óbvia (excluir palavras-cola do conjunto que pode ancorar) **quebra 25 sinais legítimos**: `"sem capacete"`, `"sem luva"`, `"sem bota"`, `"sem placa"`, `"sem manometro"` — onde a cola e o discriminante são tudo o que existe. Também não adianta exigir que o radical faltante seja cola (deixa "escada COM sapata" casar "escada sem sapata") nem que seja não-cola (devolve o caso da betoneira). **Não há regra simples**: é encurtar sinal a sinal, com medição. Não gaste a sessão reinventando isto. |
 | Verificação mecânica no caminho errado | O aparo do Diretor ganhou verificação de lastro no #13; no lote seguinte, o mesmo enquadramento falso voltou por **aprovado**, sem aparo, e passou inteiro. Ao fechar uma porta num agente, pergunte por quais outras a mesma coisa entra — decisão de modelo muda de caminho de uma rodada para outra. Hoje a exigência é cobrada de todo enquadramento que sobrevive. |
+| **Plural de radical curto não reduzia** | `radical()` só singularizava palavra com mais de 4 letras, então `"fios"` ficava `"fios"` e `"fio"` ficava `"fio"` — dois radicais para a mesma palavra. O sinal `"fio desencapado"` foi cadastrado justamente porque o Olho escreve **"fios desencapados"**, e o par nunca casou: um quadro de tomadas aberto routeava **zero** riscos. Corrigido; a regra do `s` simples agora vale de 4 letras para cima, mas `PLURAIS` continua em 5 — aplicá-la a 4 transformaria `"mais"` em `"mal"`. |
+| **Sinal cujas palavras somem no filtro de radicais** | `"t em cima de t"` tem cinco palavras e quatro têm duas letras: `radicais()` descarta todas e sobra `cima` sozinho, com cobertura 1.0 em "pregos expostos voltados **para cima**". Uma foto de madeira de fôrma routeava gambiarra. É a armadilha do `sem` levada ao extremo — o sinal inteiro vira cola. Hoje o validador da taxonomia quebra no import se um sinal não tiver radical discriminante (`PALAVRAS_COLA` em `riscos/__init__.py`). |
 | `git fetch origin main <branch-que-não-existe-mais>` falha inteiro, silenciosamente | Fetch de múltiplos refs é atômico: se um ref já foi deletado no remoto (branch mergeada), o comando inteiro falha e **nenhum ref é atualizado** — inclusive o `main`, que existia e seria atualizado sozinho. `origin/main` local fica congelado na versão de antes, e comparações feitas contra ele mentem. Já causou uma sessão inteira concluir errado que "a reescrita nunca foi mergeada". Se o histórico parecer suspeito, rode `git fetch origin main` sozinho antes de confiar em qualquer diff. |
 
 ---
@@ -150,7 +169,7 @@ próprio comando composto (exit 144).
 - **6.358 itens** vigentes de **24 NRs** (de 36 vigentes), extraídos dos PDFs em `normas/`
 - **123 riscos** curados mapeando para itens reais; 25 exigem pessoa na cena e
   3 têm item que só entra com máquina nomeada na cena (`itens_so_com_maquina`)
-- **143 testes**
+- **155 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
@@ -193,6 +212,21 @@ próprio comando composto (exit 144).
   nunca entra. **Validado em produção em 01/09**: a mesma foto que dava "tambor
   cilíndrico de metal escuro" passou a dar "Betoneira com tambor cilíndrico…", quatro
   vezes no mesmo laudo.
+- **Dossiê sem obrigação de papel.** `RE_OBRIGACAO_DE_PAPEL` (em `dossie.py`) filtra
+  **686 dos 6.358 itens (10,8%)** por famílias, e não frase a frase como os
+  `MARCADORES_DOCUMENTAIS` que vieram antes: treinamento e capacitação; documento,
+  plano, programa, procedimento e registro; metodologia de avaliação de risco
+  (probabilidade, severidade, nível de risco, taxa metabólica); competência
+  institucional e dever de comunicar. Vale, como os marcadores e como
+  `prescritivo()`, **só para a recuperação textual** — item documental curado à mão
+  (quadro da CIPA, ficha de EPI) entra por `montar_dossie` e não passa por aqui.
+  Medido em 14 cenas reconstruídas de fotos reais: a `foto (59)` foi de 10 entradas
+  (9 de papel) para 7, cinco delas de proteção elétrica da NR-10; o **controle
+  negativo** (foto de um POP impresso) foi de 3 para **0**. As contrapartes estão em
+  teste: "o dispositivo de ancoragem deve **ser certificado**" e "os **planos de
+  trabalho**" da NR-17 (a bancada, não o documento) continuam passando — por isso
+  `certificado` só entra no padrão como substantivo (`o certificado`), não como
+  particípio.
 - **Laudo e interface sem pictograma.** Gravidade é texto (`Crítica`, `Alta`…), não
   emoji — sobrevive a laudo impresso em preto e branco. Mensagens de progresso não
   expõem nome de agente ("Leitura da imagem", não "Agente Olho"); os nomes continuam
@@ -232,9 +266,14 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
    Reapareceu num laudo real como fio desencapado enquadrado no item que manda o
    inventário de riscos ocupacionais listar informações — o roteamento curado não
    reconheceu o vocabulário técnico do Olho, a busca textual só tinha item documental
-   pra oferecer, e o Analista escolheu o menos ruim dos nove. Corrigido dos dois lados
-   (taxonomia + filtro documental na busca), mas o padrão de fundo — dossiê pobre força
-   escolha ruim — pode reaparecer noutro domínio se o roteamento não pegar o achado.
+   pra oferecer, e o Analista escolheu o menos ruim dos nove. Foi dado por corrigido
+   dos dois lados (taxonomia + filtro documental na busca) — e **não estava**: o sinal
+   `"fio desencapado"` da taxonomia nunca casou com o "fios desencapados" que o Olho
+   escreve, por causa do plural de 4 letras, e o filtro documental era uma lista de
+   frases que não alcançava as famílias inteiras. Os dois lados foram refeitos em
+   02/09. O padrão de fundo — dossiê pobre força escolha ruim — reaparece em qualquer
+   domínio em que o roteamento não pegue o achado; **medir o dossiê da foto é o jeito
+   de ver isso**, e é barato: `montar_dossie` é determinístico e roda sem rede.
 2. **Constatação afirmando mais que o fato.** "tampa quebrada" virando "expondo partes
    energizadas"; "escada apoiada" virando "sem sapata antiderrapante"; "madeira
    empilhada" virando "sem retirada de pregos". O Diretor pega isso quando julga — o
@@ -380,13 +419,26 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   2. Uma cena de panificação (masseira, cilindro de massa) não pontua NR-12 nenhuma em
      `_pontuar_nrs` — e ainda dispara `atmosfera_ipvs_sem_protecao_respiratoria`, que
      não tem nada a ver. Fora do domínio do usuário (construção), mas é o mesmo padrão.
-- **Enquadramento que não descumpre o item — duas correções, a segunda sem validar.**
-  O caso vive na `foto (59)`: painel empoeirado em `NR-10 10.10.1`, que exige
-  SINALIZAÇÃO, com a etiqueta "PERIGO" legível na própria foto. Apareceu primeiro pelo
-  aparo (o #13 fechou essa porta) e voltou pelo **aprovado sem aparo** (o #15 fechou a
-  outra). **Rodar a `foto (59)` é o próximo passo.** O que a verificação NÃO alcança:
-  o Diretor copiar um trecho verdadeiro do item e aplicá-lo fora de propósito — contra
-  isso só o prompt age.
+- **Enquadramento que não descumpre o item — RESOLVIDO e validado.** O painel
+  empoeirado em `NR-10 10.10.1` (item de SINALIZAÇÃO, com a etiqueta "PERIGO" legível
+  na foto) apareceu pelo aparo, o #13 fechou essa porta; voltou pelo aprovado sem
+  aparo, o #15 fechou a outra; e a `foto (59)` de 02/09 **saiu vetada**, como se
+  esperava. O que a verificação NÃO alcança continua igual: o Diretor copiar um trecho
+  verdadeiro do item e aplicá-lo fora de propósito — contra isso só o prompt age.
+- **O `fato` copiado pelo Diretor não é conferido por código.** `_exigencia_ancorada`
+  confere a **exigência** contra o texto do item; o **fato** que sustenta a constatação
+  segue sem verificação automática, e é por aí que a classe de erro 2 ainda passa. Na
+  `foto (59)`, "acúmulo de poeira na superfície" virou "comprometendo a legibilidade da
+  sinalização" numa foto em que o Olho **leu** o texto da etiqueta. A simetria é óbvia
+  — o mesmo `_exigencia_ancorada`, mirando a lista de fatos do Olho em vez do item —
+  mas o fato é texto livre e a régua de 0,8 pode ser apertada demais. **Merece medição
+  antes de implementar.**
+- **O texto do ponto de atenção que nasce de um veto não passa por revisão.** Em
+  `pipeline.py`, `observacoes.get(ref) or nc.constatacao`: quando o Diretor não escreve
+  uma observação, a constatação vetada vai inteira para os pontos de atenção. Foi assim
+  que a `foto (59)` saiu acusando a sinalização de comprometida três linhas acima de
+  listá-la em "conformidades observadas" — classe de erro 4, que o Diretor **podia**
+  ter pego porque vê as duas listas.
 - **O Olho nomeia a máquina mas não inspeciona as proteções.** Na betoneira ele
   descreveu corrosão, pintura descascada e o tambor aberto; nunca coroa, pinhão ou
   correia. O prompt já pede "as peças que vê e as que não vê (… proteção de partes
