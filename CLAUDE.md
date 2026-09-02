@@ -29,6 +29,17 @@ verdade é sempre com o usuário, em produção, com fotos e laudos que ele mand
 **`main` está em `57aaefe`.** Os PRs #17 e #18 foram mergeados e validados; o 3.8 é o
 padrão nos dois campos; o app tem cronômetro por foto.
 
+### PENDENTE: mergear o PR #19 (cronômetro) — mas NÃO durante um lote
+
+O #19 está aberto, testado e verificado no navegador; ficou sem merge porque o usuário
+começou a rodar o lote de içamento e **o redeploy do Streamlit Cloud reinicia o app,
+apagando o `st.session_state` — ou seja, o lote em andamento**. Espere o lote terminar
+e os laudos serem baixados. Vale para qualquer merge daqui em diante: **nunca mergear
+com lote rodando.**
+
+Consequência aceita: o lote de içamento roda **sem** cronômetro. Tudo bem — ele existe
+para medir roteamento, não tempo. O número de tempo sai no lote seguinte.
+
 ### O próximo passo é um só: o LOTE DE IÇAMENTO
 
 Cinco fotos, já identificadas no acervo — `GRUA`, `19 PAV. POÇO GRUA SEM PROTEÇÃO`,
