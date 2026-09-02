@@ -24,80 +24,55 @@ verdade é sempre com o usuário, em produção, com fotos e laudos que ele mand
 
 ---
 
-## Onde a coisa parou (02/09/2026, noite) — o lote de 12 validou o #17
+## Onde a coisa parou (02/09/2026, fim da sessão)
 
-**As três apostas do #17 se confirmaram em produção, no commit `0c7ac83`.**
+**O `main` carrega os PRs #17, #18 e #19.** O dossiê não oferece mais obrigação de
+papel, os textos do Diretor não saem quebrados no laudo, o 3.8 é o padrão nos dois
+campos e o app cronometra cada foto. Confira o hash em "Versão em execução" na barra
+lateral antes de rodar qualquer lote — laudo medido contra a versão errada não vale.
 
-1. **Controle negativo: 8 de 8 documentos deram 0 NC**, todos "aprovado sem vetos" —
-   registro de empregado (PIS/PASEP, Data Admissão, Função), lista de treinamentos com
-   carga horária, três certificados de NR-06/NR-01/NR-18, termo de anuência de trabalho
-   em altura e um LAUDO DE ENSAIO DE ARRANCAMENTO EM DISPOSITIVO DE ANCORAGEM com ART
-   do CREA. É a classe de erro que já tinha aparecido (o registro de empregado
-   enquadrado em item de avaliação de aprendizagem) e nunca fora testada de propósito.
-   Os dois pareceres que saíram são o raciocínio certo: *"a foto isolada não permite
-   verificar a validade temporal ou a adequação do conteúdo do termo"*. (Sete foram
-   lidos no HTML; o oitavo fecha pela conta do sumário — 12 imagens, 4 NCs, e as 4
-   estão todas no plano de ação, em outras três fotos.)
-2. **A `foto (59)` trocou de item — e para o item certo.** Antes: `NR-10 10.10.1`
-   (sinalização) → vetado → 0 NC. Agora: **`NR-10 10.4.2`**, que nomeia "poeira"
-   literalmente entre os riscos adicionais a controlar. Aprovado com aparo, Média,
-   7 dias. **É a hipótese central do #17 respondida**: o item certo não estava no
-   dossiê antigo, e o Analista o escolheu assim que passou a estar.
-3. **"Fiação elétrica exposta … sem proteção de canaleta ou conduíte"** saiu como
-   `NR-10 10.2.8.2.1`, crítica, 1 dia — o item que `partes_vivas_expostas` mapeia e que
-   só routeia depois da correção do plural de 4 letras. Na mesma foto, a abertura na
-   parede com armadura exposta saiu como `NR-08 8.3.2.2` (o risco novo do #13).
+### O próximo passo é um só: o LOTE DE IÇAMENTO
 
-**O `10.10.1` finalmente aparece dos DOIS lados, e isso é a prova de que ele está
-sendo usado no propósito certo.** No laudo 1 (painel com etiqueta só do logotipo
-comercial "FERI", sem placa de perigo) ele foi **usado** — falta sinalização, e é
-exatamente o que o item exige. Na `foto (60)` (etiqueta "PERIGO / ELETRICIDADE
-SOMENTE PESSOAL AUTORIZADO" presente e legível) ele foi **vetado**. Usar onde falta e
-recusar onde existe é o comportamento que as três correções perseguiam desde o #13.
-O dossiê do laudo 1, reproduzido aqui, tem 8 entradas e **zero obrigação de papel** —
-`10.10.1` era a escolha certa entre as disponíveis, não a menos ruim.
+Cinco fotos, já identificadas no acervo — `GRUA`, `19 PAV. POÇO GRUA SEM PROTEÇÃO`,
+`17 PAV PROTEÇÃO FOSSO GRUA`, `CANCELA CREMALHEIRA`, `CINTAS DE ELEVAÇÃO`. **Confira a
+imagem antes de subir**: o nome do arquivo nem sempre descreve a foto.
 
-**E o lote deu a primeira medição do buraco de içamento.** O laudo 1 registra
-*"Estrutura metálica pintada de amarela, com formato de funil ou caçamba, **suspensa
-no alto do ambiente**"* — e **nada routeia**. Os seis riscos de carga/elevação foram
-medidos contra esse fato: cobertura máxima de 0,40, nenhum acima do corte de 0,7.
+É o único domínio inteiro que o app nunca viu, e o lote de 12 mediu o buraco com dado
+real. O laudo 1 registra *"Estrutura metálica pintada de amarela, com formato de funil
+ou caçamba, **suspensa no alto do ambiente**"* — e **nada routeia**. Os seis riscos de
+carga/elevação foram medidos contra esse fato: cobertura máxima **0,40**, corte 0,7.
 `carga_suspensa_sobre_trabalhadores` exige pessoa em todos os sinais ("trabalhador
 embaixo da carga"), o que é certo para ele; `equipamento_movimentacao_sem_carga_maxima`
 fala "talha", "guincho", "ponte rolante", e o Olho escreveu "caçamba". É o padrão do
 "fios desencapados" outra vez: o vocabulário do Olho não está em nenhum sinal.
-**Não foi corrigido de propósito** — caçamba suspensa numa foto sem ninguém embaixo
-pode ser operação normal de concretagem, e inventar sinal sem foto para validar a
-contraparte é a armadilha do sinal por extenso. É o lote de içamento que responde.
 
-**E o veto melhorou.** Na `foto (60)` — quase a mesma cena da 59 — a abertura circular
-sem tampa foi proposta em `10.10.1` e vetada com um motivo que o Diretor fundamentou
-usando OUTRO fato: *"a etiqueta de sinalização está descrita como presente e legível em
-outro fato"*. **Não houve contradição**: o ponto de atenção virou "não é possível
-determinar pela imagem", e a etiqueta ficou nas conformidades sem briga. É o defeito
-que a `foto (59)` da rodada anterior tinha, e ele não se repetiu.
+**Não foi corrigido de propósito.** Caçamba suspensa numa foto sem ninguém embaixo pode
+ser operação normal de concretagem — inventar sinal sem foto para validar a contraparte
+é a armadilha do sinal por extenso, e enquadrar operação normal é a classe de erro 6.
+**O lote responde; o palpite não.** Ao receber os laudos, reproduza o dossiê aqui
+(`montar_dossie` é determinístico, roda sem rede) e separe: buraco de sinal, de
+taxonomia, ou dos dois.
 
-**Mas duas coisas saíram impressas quebradas no laudo do cliente:**
+### Cronômetro por foto — implementado, à espera de número real
 
-1. **`"violando a e."`** — no parecer do laudo 1. O Diretor escreveu "violando a NR-10 e
-   a NR-26"; `_limpar_citacoes` tirou as duas citações e sobrou um verbo sem objeto.
-   A limpeza de órfãs trata preposição encostada na pontuação ("conforme."), não no
-   meio do trecho, e **nenhuma regra de pontuação conserta isso**. Corrigido fatiando o
-   texto por vírgula/ponto-e-vírgula/fim de sentença e descartando o fragmento inteiro
-   quando o que sobra dele são só palavras que existiam para apresentar a citação.
-2. **493 caracteres de argumentação do Diretor** dentro do ponto de atenção do laudo 12:
-   *"Além disso, a alegação de que isso 'compromete a integridade da sinalização' é uma
-   suposição, pois…"*. É a mesma coisa do campo `retirado` que o #13 fechou, entrando
-   por outra porta — o corte de `_em_poucas_palavras` estava no aparo e não no veto,
-   porque na época o veto só produzia motivo escrito pelo código. Agora o motivo e a
-   observação passam pelo mesmo corte: 493 → 85 caracteres, e o que sobra é a razão.
+O usuário cronometrou **~45 s por foto** no relógio e pediu o número dentro do app.
+`Laudo.duracao_s` e `Laudo.espera_s` são preenchidos em `pipeline.executar`, que virou
+um invólucro fino sobre `_executar` — o corpo tem mais de uma saída (a foto sem fato
+utilizável volta antes do dossiê) e medir por fora significaria lembrar de todas elas.
 
-**O que o lote deixou em aberto:** a `foto (59)` e a `foto (60)` são a mesma cena —
-painel elétrico empoeirado — e **discordaram**: a 59 enquadrou a poeira em `10.4.2`, a
-60 não enquadrou a poeira em lugar nenhum (foi atrás da abertura sem tampa e levou
-veto), fechando com 0 NC apesar do fato "superfície coberta por poeira e resíduos de
-cimento". Não é divergência de item para o mesmo achado — é o Analista escolhendo
-**achados diferentes** para enquadrar. É a variabilidade da visão vista de um ângulo
-novo, e o próximo lote deve olhar para isso.
+**A espera pela cota é contada separada, e essa é a parte que interessa.**
+`ClienteGroq.segundos_esperando` acumula no único `time.sleep` do projeto
+(`aguardar_cota`). Sem separar, "a foto leva 45 s" não diz se o gargalo é a rede, o
+modelo ou o freio da janela de 8.000 TPM — e são consertos **opostos**: modelo mais
+rápido não move a espera, tier pago move. A previsão do CLAUDE.md era ~1,1 foto/min
+(~55 s) preso no TPM; os 45 s medidos batem, mas **até agora ninguém sabe qual fatia é
+espera**. O primeiro lote com o app novo responde — é só ler a linha "Tempo:" abaixo
+das métricas.
+
+Na interface: o tempo sai no rótulo de cada foto (`— 3 não conformidade(s) · 47s`, com
+`(32s de espera de cota)` quando houver) e, no rodapé das métricas, o agregado com a
+projeção — *"média de 47s por foto, 68% disso é espera pela cota. Nesse ritmo, 100
+fotos levam ~1 h 18 min."*
 
 **O 3.8 é o padrão do código desde 02/09.** `PADRAO_VISAO`/`PADRAO_TEXTO` são o
 primeiro item de `VISAO`/`TEXTO` em `modelos.py`, e o 3.8 foi para o topo das duas
@@ -158,7 +133,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 169 testes
+$VENV -m pytest tests/ -q          # 173 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -206,16 +181,18 @@ próprio comando composto (exit 144).
 | **Sinal cujas palavras somem no filtro de radicais** | `"t em cima de t"` tem cinco palavras e quatro têm duas letras: `radicais()` descarta todas e sobra `cima` sozinho, com cobertura 1.0 em "pregos expostos voltados **para cima**". Uma foto de madeira de fôrma routeava gambiarra. É a armadilha do `sem` levada ao extremo — o sinal inteiro vira cola. Hoje o validador da taxonomia quebra no import se um sinal não tiver radical discriminante (`PALAVRAS_COLA` em `riscos/__init__.py`). |
 | **Citação removida do meio da frase deixa verbo sem objeto** | `_limpar_citacoes` tira a citação e a limpeza de órfãs arruma preposição encostada na pontuação ("conforme."). No MEIO do trecho ela não alcança: "violando a NR-10 e a NR-26" virou **"violando a e."** num parecer impresso. Nenhuma regra de pontuação conserta — o que sobra não é pontuação órfã, é um verbo sem objeto. Hoje o texto é fatiado por vírgula/ponto-e-vírgula/fim de sentença e o fragmento que só apresentava a citação sai inteiro. **A citação é MARCADA antes de fatiar**, nunca removida: ela atravessa vírgula ("NR-35, item 5.2.2.5") e fatiar antes a partiria em duas, deixando o número do item para trás — pior que não limpar, porque o renderizador o relê como citação legítima. |
 | **Corte de verbosidade aplicado a um campo só** | O `retirado` do aparo ganhou `_em_poucas_palavras` no #13, quando o `motivo` do veto ainda era sempre escrito pelo código. Quando o veto passou a carregar o texto do Diretor, os 493 caracteres de argumentação voltaram por ali — dentro do ponto de atenção que vai ao cliente. É a irmã da armadilha "verificação mecânica no caminho errado": ao pôr uma trava num campo, liste os outros campos por onde o mesmo texto sai. |
+| **Medir tempo por fora de uma função com várias saídas** | `executar` volta cedo quando o Olho não devolve fato utilizável. Cronometrar no `app.py`, em volta da chamada, funcionaria — até alguém acrescentar a próxima saída antecipada e o número virar zero em silêncio. Por isso `executar` virou um invólucro fino que cronometra e delega a `_executar`: existe **um** ponto de saída para medir. **Há teste guardando o caminho da visão que falha.** |
+| **Mergear PR com lote rodando** | O merge dispara o redeploy do Streamlit Cloud, que **reinicia o app e apaga o `st.session_state`** — onde o lote em andamento vive. No plano gratuito um lote é de horas de parede, e o usuário recomeça do zero. Vale para qualquer merge: **pergunte se há lote rodando antes**, e espere os laudos serem baixados. |
 | `git fetch origin main <branch-que-não-existe-mais>` falha inteiro, silenciosamente | Fetch de múltiplos refs é atômico: se um ref já foi deletado no remoto (branch mergeada), o comando inteiro falha e **nenhum ref é atualizado** — inclusive o `main`, que existia e seria atualizado sozinho. `origin/main` local fica congelado na versão de antes, e comparações feitas contra ele mentem. Já causou uma sessão inteira concluir errado que "a reescrita nunca foi mergeada". Se o histórico parecer suspeito, rode `git fetch origin main` sozinho antes de confiar em qualquer diff. |
 
 ---
 
-## Estado atual (commit `ae28fcc`)
+## Estado atual (o `main` de 02/09, com os PRs #17, #18 e #19)
 
 - **6.358 itens** vigentes de **24 NRs** (de 36 vigentes), extraídos dos PDFs em `normas/`
 - **123 riscos** curados mapeando para itens reais; 25 exigem pessoa na cena e
   3 têm item que só entra com máquina nomeada na cena (`itens_so_com_maquina`)
-- **169 testes**
+- **173 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
@@ -273,6 +250,14 @@ próprio comando composto (exit 144).
   trabalho**" da NR-17 (a bancada, não o documento) continuam passando — por isso
   `certificado` só entra no padrão como substantivo (`o certificado`), não como
   particípio.
+- **Cronômetro por foto.** `Laudo.duracao_s` e `Laudo.espera_s`, preenchidos em
+  `pipeline.executar` — que é um invólucro fino sobre `_executar` justamente porque o
+  corpo tem mais de uma saída. A espera pela janela de 8.000 TPM é contada separada
+  (`ClienteGroq.segundos_esperando`, no único `time.sleep` do projeto): sem separar,
+  "a foto leva 45 s" não diz se o gargalo é rede, modelo ou o freio da cota — e são
+  consertos opostos. Sai no rótulo de cada foto e no agregado abaixo das métricas,
+  com projeção para 100 fotos. **Não entra no laudo**: tempo de processamento não é
+  informação de documento de segurança do trabalho.
 - **Laudo e interface sem pictograma.** Gravidade é texto (`Crítica`, `Alta`…), não
   emoji — sobrevive a laudo impresso em preto e branco. Mensagens de progresso não
   expõem nome de agente ("Leitura da imagem", não "Agente Olho"); os nomes continuam
@@ -516,6 +501,55 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
 - **Efeito colateral a vigiar em produção**: o Olho começar a inventar ausência ("sem
   rodapé") de peça que está fora do enquadramento. É o preço de risco da mudança do
   Olho, e a razão da cláusula "não dá para ver". Até aqui não apareceu.
+
+---
+
+## Validação em produção de 02/09/2026 — o lote de 12 (o #17 e o #18)
+
+**12 fotos, 4 NCs.** Rodado no commit `0c7ac83`, com o 3.8 nos dois campos. Tudo abaixo
+foi lido nos laudos reais e reproduzido aqui sem rede.
+
+As três apostas do #17 se confirmaram:
+
+1. **Controle negativo: 8 de 8 documentos deram 0 NC**, todos "aprovado sem vetos" —
+   registro de empregado (PIS/PASEP, Data Admissão, Função), lista de treinamentos com
+   carga horária, três certificados de NR-06/NR-01/NR-18, termo de anuência de trabalho
+   em altura e um LAUDO DE ENSAIO DE ARRANCAMENTO EM DISPOSITIVO DE ANCORAGEM com ART
+   do CREA. É a classe de erro que já tinha aparecido (o registro de empregado
+   enquadrado em item de avaliação de aprendizagem) e nunca fora testada de propósito.
+   Os pareceres que saíram são o raciocínio certo: *"a foto isolada não permite
+   verificar a validade temporal ou a adequação do conteúdo do termo"*. (Sete foram
+   lidos no HTML; o oitavo fecha pela conta do sumário — e o sumário sinalizaria foto
+   não auditada se alguma tivesse falhado, o que ele não faz.)
+2. **A `foto (59)` trocou de item — e para o item certo.** Antes: `NR-10 10.10.1`
+   (sinalização) → vetado → 0 NC. Depois: **`NR-10 10.4.2`**, que nomeia "poeira"
+   literalmente entre os riscos adicionais a controlar. **É a hipótese central do #17
+   respondida**: o item certo não estava no dossiê antigo, e o Analista o escolheu
+   assim que passou a estar.
+3. **"Fiação elétrica exposta … sem proteção de canaleta ou conduíte"** saiu como
+   `NR-10 10.2.8.2.1`, crítica, 1 dia — o item que `partes_vivas_expostas` mapeia e que
+   só routeia depois da correção do plural de 4 letras. Na mesma foto, a abertura na
+   parede com armadura exposta saiu como `NR-08 8.3.2.2` (o risco novo do #13).
+
+**O `10.10.1` apareceu dos DOIS lados no mesmo lote, e é isso que fecha a história que
+vem do #13.** No laudo 1 (painel com etiqueta só do logotipo comercial "FERI", sem
+placa de perigo) ele foi **usado** — falta sinalização, e é o que o item exige. Na
+`foto (60)` (etiqueta "PERIGO / ELETRICIDADE SOMENTE PESSOAL AUTORIZADO" presente e
+legível) ele foi **vetado**. Usar onde falta e recusar onde existe era o objetivo. O
+dossiê do laudo 1, reproduzido aqui, tem 8 entradas e **zero obrigação de papel**.
+
+**E o veto melhorou.** Na `foto (60)` o Diretor fundamentou a recusa usando OUTRO fato:
+*"a etiqueta de sinalização está descrita como presente e legível em outro fato"*. **Não
+houve contradição** — o ponto de atenção virou "não é possível determinar pela imagem" e
+a etiqueta ficou nas conformidades sem briga. É o defeito que a `foto (59)` da rodada
+anterior tinha, e ele não se repetiu.
+
+Dois textos saíram impressos quebrados no laudo do cliente, e viraram o **#18**:
+
+1. **`"violando a e."`** no parecer do laudo 1 — ver a armadilha "citação removida do
+   meio da frase deixa verbo sem objeto".
+2. **493 caracteres de argumentação do Diretor** dentro do ponto de atenção do laudo 12
+   — ver "corte de verbosidade aplicado a um campo só". 493 → 85 caracteres.
 
 ---
 

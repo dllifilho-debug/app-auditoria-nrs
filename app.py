@@ -103,6 +103,16 @@ def preparar_imagem(bytes_imagem: bytes, lado: int) -> tuple[str, bytes]:
     return base64.b64encode(dados).decode("ascii"), dados
 
 
+def _duracao(segundos: float) -> str:
+    """Segundos em algo legível: "48s", "6 min", "1 h 18 min"."""
+    if segundos < 90:
+        return f"{segundos:.0f}s"
+    minutos = round(segundos / 60)
+    if minutos < 90:
+        return f"{minutos} min"
+    return f"{minutos // 60} h {minutos % 60:02d} min"
+
+
 def consumo_do_dia() -> Consumo:
     """Acumulado do dia, guardado na sessão do navegador."""
     estado = st.session_state.get("consumo")
@@ -527,9 +537,13 @@ if executar_agora:
                     )
                     with st.expander("Ver o que o modelo de visão respondeu"):
                         st.code(laudo.visao.bruto or "(resposta vazia)", language="json")
+                gasto = f" · {laudo.duracao_s:.0f}s" + (
+                    f" ({laudo.espera_s:.0f}s de espera de cota)"
+                    if laudo.espera_s >= 1 else ""
+                )
                 painel.update(
-                    label=(f"{rotulo} — leitura da imagem falhou" if laudo.visao_falhou
-                           else f"{rotulo} — {achadas} não conformidade(s)"),
+                    label=(f"{rotulo} — leitura da imagem falhou{gasto}" if laudo.visao_falhou
+                           else f"{rotulo} — {achadas} não conformidade(s){gasto}"),
                     state="error" if laudo.visao_falhou else "complete",
                     expanded=laudo.visao_falhou,
                 )
@@ -624,6 +638,22 @@ if resultados:
     m3.metric("Críticas", criticas, delta="ação imediata" if criticas else None,
               delta_color="inverse" if criticas else "off")
     m4.metric("Normas acionadas", len(normas))
+
+    # Tempo de parede: com o teto diário de 2 milhões de tokens, o que limita um
+    # lote de 100 fotos deixou de ser a cota e passou a ser o relógio. A média
+    # sozinha não ajuda a planejar — o que ajuda é saber quanto dela é espera
+    # pela janela de TPM, porque essa parte não melhora com modelo mais rápido.
+    cronometrados = [l for _, l, _ in resultados if l.duracao_s > 0]
+    if cronometrados:
+        segundos = sum(l.duracao_s for l in cronometrados)
+        espera = sum(l.espera_s for l in cronometrados)
+        media = segundos / len(cronometrados)
+        fatia = f" — **{espera / segundos:.0%}** disso é espera pela cota" if espera else ""
+        st.caption(
+            f"**Tempo:** {_duracao(segundos)} em {len(cronometrados)} imagem(ns), "
+            f"média de **{media:.0f}s por foto**{fatia}. "
+            f"Nesse ritmo, 100 fotos levam ~{_duracao(media * 100)}."
+        )
 
     if st.button("Limpar todos os resultados", help="Recomeça o lote do zero."):
         st.session_state.resultados = []
