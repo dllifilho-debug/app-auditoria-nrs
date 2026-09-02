@@ -28,14 +28,16 @@ verdade é sempre com o usuário, em produção, com fotos e laudos que ele mand
 
 **As três apostas do #17 se confirmaram em produção, no commit `0c7ac83`.**
 
-1. **Controle negativo: 7 de 7 documentos deram 0 NC**, todos "aprovado sem vetos" —
+1. **Controle negativo: 8 de 8 documentos deram 0 NC**, todos "aprovado sem vetos" —
    registro de empregado (PIS/PASEP, Data Admissão, Função), lista de treinamentos com
    carga horária, três certificados de NR-06/NR-01/NR-18, termo de anuência de trabalho
    em altura e um LAUDO DE ENSAIO DE ARRANCAMENTO EM DISPOSITIVO DE ANCORAGEM com ART
    do CREA. É a classe de erro que já tinha aparecido (o registro de empregado
    enquadrado em item de avaliação de aprendizagem) e nunca fora testada de propósito.
    Os dois pareceres que saíram são o raciocínio certo: *"a foto isolada não permite
-   verificar a validade temporal ou a adequação do conteúdo do termo"*.
+   verificar a validade temporal ou a adequação do conteúdo do termo"*. (Sete foram
+   lidos no HTML; o oitavo fecha pela conta do sumário — 12 imagens, 4 NCs, e as 4
+   estão todas no plano de ação, em outras três fotos.)
 2. **A `foto (59)` trocou de item — e para o item certo.** Antes: `NR-10 10.10.1`
    (sinalização) → vetado → 0 NC. Agora: **`NR-10 10.4.2`**, que nomeia "poeira"
    literalmente entre os riscos adicionais a controlar. Aprovado com aparo, Média,
@@ -45,6 +47,27 @@ verdade é sempre com o usuário, em produção, com fotos e laudos que ele mand
    `NR-10 10.2.8.2.1`, crítica, 1 dia — o item que `partes_vivas_expostas` mapeia e que
    só routeia depois da correção do plural de 4 letras. Na mesma foto, a abertura na
    parede com armadura exposta saiu como `NR-08 8.3.2.2` (o risco novo do #13).
+
+**O `10.10.1` finalmente aparece dos DOIS lados, e isso é a prova de que ele está
+sendo usado no propósito certo.** No laudo 1 (painel com etiqueta só do logotipo
+comercial "FERI", sem placa de perigo) ele foi **usado** — falta sinalização, e é
+exatamente o que o item exige. Na `foto (60)` (etiqueta "PERIGO / ELETRICIDADE
+SOMENTE PESSOAL AUTORIZADO" presente e legível) ele foi **vetado**. Usar onde falta e
+recusar onde existe é o comportamento que as três correções perseguiam desde o #13.
+O dossiê do laudo 1, reproduzido aqui, tem 8 entradas e **zero obrigação de papel** —
+`10.10.1` era a escolha certa entre as disponíveis, não a menos ruim.
+
+**E o lote deu a primeira medição do buraco de içamento.** O laudo 1 registra
+*"Estrutura metálica pintada de amarela, com formato de funil ou caçamba, **suspensa
+no alto do ambiente**"* — e **nada routeia**. Os seis riscos de carga/elevação foram
+medidos contra esse fato: cobertura máxima de 0,40, nenhum acima do corte de 0,7.
+`carga_suspensa_sobre_trabalhadores` exige pessoa em todos os sinais ("trabalhador
+embaixo da carga"), o que é certo para ele; `equipamento_movimentacao_sem_carga_maxima`
+fala "talha", "guincho", "ponte rolante", e o Olho escreveu "caçamba". É o padrão do
+"fios desencapados" outra vez: o vocabulário do Olho não está em nenhum sinal.
+**Não foi corrigido de propósito** — caçamba suspensa numa foto sem ninguém embaixo
+pode ser operação normal de concretagem, e inventar sinal sem foto para validar a
+contraparte é a armadilha do sinal por extenso. É o lote de içamento que responde.
 
 **E o veto melhorou.** Na `foto (60)` — quase a mesma cena da 59 — a abertura circular
 sem tampa foi proposta em `10.10.1` e vetada com um motivo que o Diretor fundamentou
@@ -105,7 +128,7 @@ Lotes temáticos que valem, com as fotos já identificadas:
 | Lote | Fotos | Por quê |
 |---|---|---|
 | NR-12 | `SERRA DE BANCADA`, `SERRALHERIA SEM BARREIRA DE ACESSO` | as duas únicas com máquina de verdade no acervo novo |
-| Içamento | `GRUA`, `19 PAV. POÇO GRUA SEM PROTEÇÃO`, `17 PAV PROTEÇÃO FOSSO GRUA`, `CANCELA CREMALHEIRA`, `CINTAS DE ELEVAÇÃO` | domínio inteiro que o app nunca viu |
+| Içamento | `GRUA`, `19 PAV. POÇO GRUA SEM PROTEÇÃO`, `17 PAV PROTEÇÃO FOSSO GRUA`, `CANCELA CREMALHEIRA`, `CINTAS DE ELEVAÇÃO` | **agora medido**: a caçamba suspensa do laudo 1 do lote de 12 não routeou nenhum dos seis riscos de carga (cobertura máxima 0,40, corte 0,7). É o próximo lote |
 | Poço de elevador | 6 das 19 disponíveis | achado mais repetido do acervo; `vao_caixa_elevador_sem_fechamento` existe e nunca disparou em produção |
 | Controle negativo | 5 documentos (POP, lista de presença, CREA, crachá) | devem dar **0 NC**; é a classe de erro que já apareceu e nunca foi testada de propósito |
 
