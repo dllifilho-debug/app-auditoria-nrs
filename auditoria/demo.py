@@ -141,9 +141,20 @@ class ClienteDemonstracao:
         if "Diretor Técnico" in prompt:
             return json.dumps(
                 {
+                    # A conferência copia, de cada bloco [V<n>], um trecho do
+                    # próprio TEXTO OFICIAL — é o que o pipeline verifica antes
+                    # de aceitar o enquadramento. Um dublê que devolvesse texto
+                    # inventado aqui veria tudo virar veto, que é exatamente o
+                    # comportamento correto para exigência sem lastro.
                     "conferencia": [
-                        {"ref": rotulo, "fato": "Abertura quadrada no piso"}
-                        for rotulo in re.findall(r"\[(V\d+)\]", prompt)
+                        {
+                            "ref": rotulo,
+                            "fato": "Abertura quadrada no piso",
+                            "exigencia": " ".join(oficial.split()[:12]),
+                        }
+                        for rotulo, oficial in re.findall(
+                            r"\[(V\d+)\][^\n]*\n\s*TEXTO OFICIAL: ([^\n]+)", prompt
+                        )
                     ],
                     "vetados": [],
                     "aparados": APARO_DEMO,
