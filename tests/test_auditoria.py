@@ -2672,3 +2672,43 @@ def test_madeira_com_pregos_nao_routeia_gambiarra():
     rotulos = [r.id for r in rotear_riscos(visao, "")]
     assert "ligacao_eletrica_improvisada" not in rotulos, rotulos
     assert rotulos == ["madeira_com_prego_exposto"], rotulos
+
+
+# ---------------------------------------------------------------------------
+# O padrão dos modelos é o 3.8 nos dois campos
+# ---------------------------------------------------------------------------
+
+def test_o_padrao_dos_dois_campos_e_o_modelo_de_teto_alto():
+    """A ordem das listas em `modelos.py` define o padrão, e o 3.8 assumiu os
+    dois postos depois da medição do lote de 15 (15/15 laudos, 7.804
+    tokens/foto, teto diário de 2 milhões). O usuário já o selecionava à mão;
+    um clique esquecido custava um lote inteiro medido no modelo errado."""
+    from auditoria import modelos
+
+    assert modelos.PADRAO_VISAO == "qwen/qwen3.8-27b"
+    assert modelos.PADRAO_TEXTO == "qwen/qwen3.8-27b"
+    assert modelos.tetos_diarios()["qwen/qwen3.8-27b"] == 2_000_000
+
+
+def test_o_mesmo_id_tem_rotulo_proprio_em_cada_lista():
+    """`por_id` varria `VISAO + TEXTO` e devolvia o primeiro, então o campo de
+    TEXTO rotulava o 3.8 como "(visão)" e imprimia a mesma legenda duas vezes.
+    Ficou invisível enquanto os padrões eram modelos diferentes."""
+    from auditoria import modelos
+
+    visao = modelos.por_id("qwen/qwen3.8-27b", modelos.VISAO)
+    texto = modelos.por_id("qwen/qwen3.8-27b", modelos.TEXTO)
+    assert visao is not None and texto is not None
+    assert visao.rotulo != texto.rotulo, visao.rotulo
+    assert "(visão)" in visao.rotulo and "(visão)" not in texto.rotulo
+    # Sem `entre`, o comportamento antigo continua — é o que os chamadores que
+    # só querem o teto diário do ID usam.
+    assert modelos.por_id("qwen/qwen3.8-27b") is visao
+
+
+def test_o_padrao_de_visao_le_imagem_e_o_de_texto_esta_registrado():
+    """Padrão de visão que não aceita imagem quebra o app na primeira foto."""
+    from auditoria import modelos
+
+    assert modelos.por_id(modelos.PADRAO_VISAO, modelos.VISAO).visao
+    assert modelos.por_id(modelos.PADRAO_TEXTO, modelos.TEXTO) is not None

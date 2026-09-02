@@ -41,10 +41,23 @@ class Modelo:
     tpd: int = 200_000
 
 
+# A ORDEM DESTAS LISTAS DEFINE O PADRÃO: `PADRAO_VISAO`/`PADRAO_TEXTO` são o
+# primeiro item de cada uma, e é o primeiro que a barra lateral pré-seleciona.
+#
+# O 3.8 assumiu os dois postos em 02/09/2026, depois de medição em produção, não
+# por ser o mais novo:
+#
+#   | medida (lote de 15 fotos, 01-02/09)      | 3.8      | anterior       |
+#   |------------------------------------------|----------|----------------|
+#   | laudos emitidos                          | 15/15    | 11/14          |
+#   | tokens por foto (n=15)                   | 7.804    | 13.404 (n=1)   |
+#   | teto diário de tokens                    | 2.000.000| 200.000        |
+#   | fotos por dia                            | ~256     | ~16, preso     |
+#
+# O usuário já selecionava o 3.8 nos dois campos à mão; o padrão do código é que
+# tinha ficado para trás, e um clique esquecido custava um lote inteiro medido no
+# modelo errado. Os outros continuam na lista — a barra lateral escolhe.
 VISAO = [
-    Modelo("qwen/qwen3.6-27b", "Qwen 3.6 27B (visão)", True, 262_144, 65_536,
-           "Padrão. Multimodal, com histórico de uso neste app.",
-           json_estrito_confiavel=False, raciocinio_desligavel=True),
     # Testado em produção em 30/08/2026 com foto de canteiro: leu a cena, e o
     # laudo saiu com fatos mais detalhados que os do 3.6. Rodava então sem
     # registro, portanto sem `reasoning_effort: "none"` e sem a marca de JSON
@@ -54,25 +67,30 @@ VISAO = [
     # Janela e teto de saída são os do 3.6: nenhum dos dois é lido em runtime
     # hoje, e não havia como confirmar os do 3.8 sem rede à Groq nesta sessão.
     Modelo("qwen/qwen3.8-27b", "Qwen 3.8 27B (visão)", True, 262_144, 65_536,
-           "Teto diário de 2 milhões de tokens — dez vezes o dos demais. Um "
-           "lote de 100 fotos cabe num dia.",
+           "Padrão. Teto diário de 2 milhões de tokens — dez vezes o dos "
+           "demais. Um lote de 100 fotos cabe num dia.",
            json_estrito_confiavel=False, raciocinio_desligavel=True,
            tpd=2_000_000),
+    Modelo("qwen/qwen3.6-27b", "Qwen 3.6 27B (visão)", True, 262_144, 65_536,
+           "Multimodal, com histórico de uso neste app. Teto diário de 200 mil "
+           "tokens.",
+           json_estrito_confiavel=False, raciocinio_desligavel=True),
 ]
 
 TEXTO = [
+    Modelo("qwen/qwen3.8-27b", "Qwen 3.8 27B", False, 262_144, 65_536,
+           "Padrão. Teto diário de 2 milhões de tokens. Fez Olho, Analista e "
+           "Diretor sozinho num lote de 15 fotos, a 7.804 tokens por foto.",
+           json_estrito_confiavel=False, raciocinio_desligavel=True,
+           tpd=2_000_000),
     Modelo("openai/gpt-oss-120b", "GPT-OSS 120B", False, 131_072, 65_536,
-           "Produção. Melhor raciocínio normativo disponível na Groq."),
+           "Raciocínio normativo forte, mas preso a 200 mil tokens por dia — "
+           "cerca de 16 fotos, e perdeu 3 laudos em 14 por JSON inutilizável."),
     Modelo("openai/gpt-oss-20b", "GPT-OSS 20B", False, 131_072, 65_536,
            "Mais rápido e barato; use quando a cota estiver apertada."),
     Modelo("qwen/qwen3.6-27b", "Qwen 3.6 27B", False, 262_144, 65_536,
            "Contexto maior, com modo de raciocínio.",
            json_estrito_confiavel=False, raciocinio_desligavel=True),
-    Modelo("qwen/qwen3.8-27b", "Qwen 3.8 27B", False, 262_144, 65_536,
-           "Teto diário de 2 milhões de tokens. Numa foto de teste fez Olho, "
-           "Analista e Diretor sozinho por 7.060 tokens, sem retentativa.",
-           json_estrito_confiavel=False, raciocinio_desligavel=True,
-           tpd=2_000_000),
 ]
 
 PADRAO_VISAO = VISAO[0].id
@@ -85,8 +103,16 @@ PADRAO_TEXTO = TEXTO[0].id
 PAGINA_DEPRECIACOES = "https://console.groq.com/docs/deprecations"
 
 
-def por_id(modelo_id: str) -> Modelo | None:
-    return next((m for m in VISAO + TEXTO if m.id == modelo_id), None)
+def por_id(modelo_id: str, entre: list[Modelo] | None = None) -> Modelo | None:
+    """Registro de um modelo pelo ID, opcionalmente restrito a uma das listas.
+
+    O mesmo ID vive nas duas: o `qwen/qwen3.8-27b` é o padrão de visão E o de
+    texto, com rótulo e nota diferentes em cada uma. Sem o `entre`, a busca
+    devolve sempre a entrada de VISAO — e a barra lateral rotulava o modelo de
+    TEXTO como "(visão)", imprimindo a mesma legenda duas vezes.
+    """
+    return next((m for m in (entre if entre is not None else VISAO + TEXTO)
+                 if m.id == modelo_id), None)
 
 
 def tetos_diarios() -> dict[str, int]:

@@ -176,14 +176,18 @@ with st.sidebar:
     st.markdown("### Modelos")
     OUTRO = "Outro (digitar o ID)"
 
-    def _rotulo(identificador: str) -> str:
-        conhecido = modelos.por_id(identificador)
-        return conhecido.rotulo if conhecido else identificador
+    def _rotulo(catalogo: list[modelos.Modelo]):
+        """Rótulo dentro de UMA das listas: o mesmo ID tem rótulo diferente em
+        cada uma, e uma busca global devolveria sempre o de visão."""
+        def formatar(identificador: str) -> str:
+            conhecido = modelos.por_id(identificador, catalogo)
+            return conhecido.rotulo if conhecido else identificador
+        return formatar
 
     escolha_visao = st.selectbox(
         "Visão (leitura da foto)",
         [m.id for m in modelos.VISAO] + [OUTRO],
-        format_func=_rotulo,
+        format_func=_rotulo(modelos.VISAO),
         disabled=modo_demo,
     )
     modelo_visao = (
@@ -195,7 +199,7 @@ with st.sidebar:
     escolha_texto = st.selectbox(
         "Texto (enquadramento e supervisão)",
         [m.id for m in modelos.TEXTO] + [OUTRO],
-        format_func=_rotulo,
+        format_func=_rotulo(modelos.TEXTO),
         disabled=modo_demo,
     )
     modelo_texto = (
@@ -204,8 +208,9 @@ with st.sidebar:
         if escolha_texto == OUTRO else escolha_texto
     )
 
-    for identificador in (modelo_visao, modelo_texto):
-        if (m := modelos.por_id(identificador)) and m.nota:
+    for identificador, catalogo in ((modelo_visao, modelos.VISAO),
+                                    (modelo_texto, modelos.TEXTO)):
+        if (m := modelos.por_id(identificador, catalogo)) and m.nota:
             st.caption(f"**{m.rotulo}** — {m.nota}")
     if OUTRO in (escolha_visao, escolha_texto):
         # A Groq desliga modelos a cada um ou dois meses; quando isso acontecer,

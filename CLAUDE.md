@@ -62,10 +62,17 @@ divulgação de informações digitais para `NR-10 10.2.8.2`/`10.2.8.2.1`. **A p
 se o Analista enquadra melhor com dossiê melhor** — é a hipótese que a correção assume
 e que só a produção responde.
 
-O 3.8 **virou o padrão de fato** na prática do usuário (ele seleciona nos dois campos),
-mas `PADRAO_VISAO`/`PADRAO_TEXTO` em `modelos.py` **ainda não foram trocados** — é uma
-linha cada, e a medição já justifica: 15/15 laudos emitidos (contra 11/14 antes),
-7.804 tokens/foto medidos com n=15 contra 7.060 previstos com n=1, ~256 fotos/dia.
+**O 3.8 é o padrão do código desde 02/09.** `PADRAO_VISAO`/`PADRAO_TEXTO` são o
+primeiro item de `VISAO`/`TEXTO` em `modelos.py`, e o 3.8 foi para o topo das duas
+listas depois da medição: 15/15 laudos emitidos (contra 11/14 no `120b`), 7.804
+tokens/foto com n=15, teto diário de 2 milhões, ~256 fotos/dia. Os outros modelos
+continuam na lista; a barra lateral escolhe. **Há teste travando isso.**
+
+Ao mexer nas listas: `por_id()` aceita `entre=` para restringir a busca a uma delas.
+O mesmo ID vive nas duas com rótulo e nota diferentes, e a busca global devolve
+sempre a entrada de VISAO — era assim que o campo de TEXTO rotulava o 3.8 como
+"(visão)" e imprimia a mesma legenda duas vezes na barra lateral. Só apareceu quando
+o padrão dos dois campos virou o mesmo modelo.
 
 **O acervo de fotos triplicou e ganhou um gabarito.** O repositório
 `dllifilho-debug/auditoria-nrs-fixtures` tem agora **353 fotos** (106 MB), e **138 das
@@ -114,7 +121,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 155 testes
+$VENV -m pytest tests/ -q          # 158 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -169,7 +176,7 @@ próprio comando composto (exit 144).
 - **6.358 itens** vigentes de **24 NRs** (de 36 vigentes), extraídos dos PDFs em `normas/`
 - **123 riscos** curados mapeando para itens reais; 25 exigem pessoa na cena e
   3 têm item que só entra com máquina nomeada na cena (`itens_so_com_maquina`)
-- **155 testes**
+- **158 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
@@ -338,11 +345,8 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   número. Depois, mapear riscos para a norma nova — sem isso ela só entra pela busca
   textual, em modo degradado.
 - **Tier pago da Groq** é o que resolve o lote de 100 fotos de verdade.
-- **Trocar `PADRAO_VISAO`/`PADRAO_TEXTO` para o `qwen3.8-27b` — uma linha cada, e a
-  medição já justifica.** O lote de 15 confirmou: 15/15 laudos emitidos, 7.804
-  tokens/foto, ~256 fotos/dia. O usuário já seleciona o 3.8 nos dois campos à mão; o
-  padrão do código é que ficou para trás. **Não feito por não ter sido pedido.**
-  O que sobra da lista antiga, em ordem de retorno:
+- **Ganhos de cota que sobraram**, em ordem de retorno (a troca do padrão para o
+  3.8 já foi feita em 02/09):
   1. Separar o Diretor num modelo diferente do Analista (`gpt-oss-20b`) — **só faz
      sentido se o 3.8 não vingar**. Levaria o texto de ~43 para ~80 fotos/dia contra
      as ~283 do 3.8. Ganho secundário que continua valendo: os dois hoje dividem uma
