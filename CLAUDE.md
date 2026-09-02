@@ -24,34 +24,57 @@ verdade é sempre com o usuário, em produção, com fotos e laudos que ele mand
 
 ---
 
-## Onde a coisa parou (01/09/2026)
+## Onde a coisa parou (02/09/2026)
 
-Três PRs mergeados em sequência — #9 (portão de máquina e filtro de anexo setorial da
-NR-12), #10 (cota contada por modelo) e #11 (rótulo de item genérico, registro do
-Qwen 3.8, teto diário por modelo). **Nenhum dos três foi validado num lote real.**
+O lote de 15 fotos rodou inteiro no `Qwen 3.8 27B` nos dois campos, e a partir dele
+saíram os PRs #13 (cinco defeitos do lote) e #14 (a NR-12 alcança a betoneira). Uma
+segunda rodada, de 4 fotos, validou o #14 e revelou o defeito que virou o #15
+(exigência cobrada de todo enquadramento). **O #15 é o único ainda sem validação em
+produção.**
 
-**O próximo passo é um só, e só o usuário pode fazer: rodar o lote de 14 fotos com o
-`Qwen 3.8 27B` selecionado nos DOIS campos** — "Visão (leitura da foto)" e "Texto
-(enquadramento e supervisão)". Ele já aparece nomeado nos dois seletores; não precisa
-mais digitar o ID à mão. Isso agora cabe numa sessão (~1h30, limitado pela janela de
-8.000 TPM, não mais pela cota diária).
+**O próximo passo é um só, e só o usuário pode fazer: rodar de novo a `foto (59)`** —
+o painel elétrico empoeirado. Ela é o caso que resistiu a duas correções seguidas e
+diz se a terceira pegou:
 
-Esse lote responde quatro coisas de uma vez:
+- **Esperado:** a NC de `NR-10 10.10.1` **desaparece** e a poeira reaparece em pontos
+  de atenção, com o motivo do veto. A trilha deve registrar um **veto**, não um aparo.
+- **Se persistir uma terceira vez:** significa que o Diretor copiou um trecho
+  *verdadeiro* de `10.10.1` (provavelmente "identificação de circuitos elétricos") e o
+  aplicou à poeira. Aí a verificação mecânica fez o que podia — o trecho existe no item
+  — e o que resta é erro de pertinência, o limite conhecido desde o #13. **Nesse caso,
+  ler a `exigencia` que o Diretor copiou**: ela está na resposta dele e diz exatamente
+  qual trecho foi usado.
 
-1. **O 3.8 vira o padrão?** Duas fotos deram resultado melhor que o `gpt-oss-120b`
-   (ver "Cota" e os achados de 30/08); catorze decidem. Se vingar, é trocar
-   `PADRAO_VISAO` e `PADRAO_TEXTO` em `modelos.py`, uma linha cada.
-2. **Com que frequência a retentativa acontece?** É o número que separa 16 de 283
-   fotos/dia, e ninguém está medindo (ver "Em aberto").
-3. **A frente da NR-12 funcionou?** Linha de base: **19 NCs** no lote de 14 de 29/08.
-   O que vigiar é item de máquina **sumindo** onde deveria aparecer — o portão fecha
-   por nome de máquina, e se o Olho descrever sem nomear, a NR-12 não entra.
-4. **A seção "pontos de atenção" reaparece?** Sumiu na única foto do 3.8, e uma foto
-   não distingue omissão de julgamento.
+O 3.8 **virou o padrão de fato** na prática do usuário (ele seleciona nos dois campos),
+mas `PADRAO_VISAO`/`PADRAO_TEXTO` em `modelos.py` **ainda não foram trocados** — é uma
+linha cada, e a medição já justifica: 15/15 laudos emitidos (contra 11/14 antes),
+7.804 tokens/foto medidos com n=15 contra 7.060 previstos com n=1, ~256 fotos/dia.
+
+**O acervo de fotos triplicou e ganhou um gabarito.** O repositório
+`dllifilho-debug/auditoria-nrs-fixtures` tem agora **353 fotos** (106 MB), e **138 das
+253 novas trazem o achado no próprio nome do arquivo**, escrito pelo engenheiro na
+inspeção: `10 PAV. ABERTURA NA PROTEÇÃO PISO A PISO.jpg`, `19 PAV. PREGOS EXPOSTOS.jpg`,
+`13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO.jpg`. Isso permite medir **acerto contra o que o
+engenheiro viu**, e não só o app contra ele mesmo.
+
+Cuidado ao usar esse gabarito: **o nome nem sempre descreve a imagem**. `OPERADOR
+BETONEIRA.jpg` é a placa "BETONEIRA — FUNCIONÁRIOS HABILITADOS", e `OPERADOR BETONEIRA
+(2).jpg` é o crachá do operador. Nenhuma das duas mostra a máquina. Confira a foto antes
+de montar lote a partir do nome.
+
+Lotes temáticos que valem, com as fotos já identificadas:
+
+| Lote | Fotos | Por quê |
+|---|---|---|
+| NR-12 | `SERRA DE BANCADA`, `SERRALHERIA SEM BARREIRA DE ACESSO` | as duas únicas com máquina de verdade no acervo novo |
+| Içamento | `GRUA`, `19 PAV. POÇO GRUA SEM PROTEÇÃO`, `17 PAV PROTEÇÃO FOSSO GRUA`, `CANCELA CREMALHEIRA`, `CINTAS DE ELEVAÇÃO` | domínio inteiro que o app nunca viu |
+| Poço de elevador | 6 das 19 disponíveis | achado mais repetido do acervo; `vao_caixa_elevador_sem_fechamento` existe e nunca disparou em produção |
+| Controle negativo | 5 documentos (POP, lista de presença, CREA, crachá) | devem dar **0 NC**; é a classe de erro que já apareceu e nunca foi testada de propósito |
 
 Ao receber os laudos: o HTML traz o "Ambiente registrado" e a lista de fatos do Olho,
 então dá para **reproduzir o dossiê aqui sem rede** — `montar_dossie` é determinístico.
-Foi assim que os defeitos desta sessão foram diagnosticados.
+Foi assim que todos os defeitos das duas últimas sessões foram diagnosticados, e é o
+único jeito de separar erro do mapa de erro do modelo.
 
 ---
 
@@ -74,7 +97,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 126 testes
+$VENV -m pytest tests/ -q          # 143 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -114,16 +137,20 @@ próprio comando composto (exit 144).
 | Classificar o ramo de um item pelo texto antes do anexo | Os anexos setoriais se citam entre si ("as disposições deste Anexo não se aplicam às máquinas dispostas no Anexo X"), e item do Anexo X **fala de prensa**. Pelo texto, ele passava como se fosse do Anexo VIII — que uma foto de estamparia legitimamente destranca. O anexo decide primeiro; o texto só para o que a extração deixou fora dele (`12.1`, "máquinas de montar base de calçados", ficou no corpo principal). |
 | Portão que só ABRE, com sinal que aparece em negação | `ha_maquina_na_cena` destrancaria a NR-12 com "**nenhuma máquina** visível na cena" se aceitasse a palavra "máquina" — exatamente a foto que se quer barrar. Por isso a lista é de substantivos concretos ("betoneira", "grua"), e inclui as máquinas dos ramos setoriais: sem elas o portão fecharia numa foto de padaria, trocando erro de enquadramento por buraco de cobertura. |
 | Rótulo do risco curado como nome da não conformidade | O rótulo descreve o risco que trouxe o item ao dossiê, não a situação que o Analista enquadrou. Para item **genérico** — `NR-18 18.9.1` ("proteção coletiva onde houver risco de queda"), `NR-06 6.5.1` (EPI, oito riscos) — qual risco o trouxe é acidente do roteamento. Um laudo real saiu intitulado "Andaime sem guarda-corpo e rodapé" para uma constatação sobre a tela frouxa na borda da laje, enquanto o fato dizia que o andaime TINHA guarda-corpo; dois modelos de texto diferentes erraram igual. Hoje `itens_compartilhados()` marca os 22 itens (de 228) que mais de um risco reivindica, e para eles o rótulo cai — o relatório identifica a linha pela constatação. Só o rótulo: o portão de pessoa e a gravidade base continuam vindo do risco. |
+| **`sem` é radical-cola: conta, mas não discrimina** | Ele tem 3 letras, então passa o filtro de `_radicais` e vira um radical como outro qualquer. Só que não distingue nada: um sinal de dois radicais em que um é `sem` vale por um. Custou dois defeitos no mesmo dia. `"sem carenagem"` casou com "Carenagem do motor íntegra e fixada, **sem** folgas visíveis" — carenagem em ordem, o oposto do risco. E `"vao no piso sem tampa"` casou numa foto de betoneira porque `sem` e `tampa` vieram de "Abertura circular do tambor **sem tampa**". Ao escrever ou revisar sinal, conte os radicais **discriminantes**, não os radicais. |
+| **Quatro radicais é onde a cobertura parcial abre** | O corte é 0,7. Com três radicais, faltar um dá 0,67 e **não passa** — todo radical é obrigatório. Com quatro, faltar um dá 0,75 e **passa**, e o que falta costuma ser justo o discriminante. `"abertura vertical sem fechamento"` casava uma abertura de PISO "sem cobertura ou fechamento visível", faltando só `vertical`. Sinal de até três radicais é seguro por construção; de quatro para cima, escreva sabendo que um pode faltar. **272 dos 866 sinais têm 4+ radicais** e correm esse risco. |
+| Regra global para a cobertura parcial — **tentada e descartada** | A saída óbvia (excluir palavras-cola do conjunto que pode ancorar) **quebra 25 sinais legítimos**: `"sem capacete"`, `"sem luva"`, `"sem bota"`, `"sem placa"`, `"sem manometro"` — onde a cola e o discriminante são tudo o que existe. Também não adianta exigir que o radical faltante seja cola (deixa "escada COM sapata" casar "escada sem sapata") nem que seja não-cola (devolve o caso da betoneira). **Não há regra simples**: é encurtar sinal a sinal, com medição. Não gaste a sessão reinventando isto. |
+| Verificação mecânica no caminho errado | O aparo do Diretor ganhou verificação de lastro no #13; no lote seguinte, o mesmo enquadramento falso voltou por **aprovado**, sem aparo, e passou inteiro. Ao fechar uma porta num agente, pergunte por quais outras a mesma coisa entra — decisão de modelo muda de caminho de uma rodada para outra. Hoje a exigência é cobrada de todo enquadramento que sobrevive. |
 | `git fetch origin main <branch-que-não-existe-mais>` falha inteiro, silenciosamente | Fetch de múltiplos refs é atômico: se um ref já foi deletado no remoto (branch mergeada), o comando inteiro falha e **nenhum ref é atualizado** — inclusive o `main`, que existia e seria atualizado sozinho. `origin/main` local fica congelado na versão de antes, e comparações feitas contra ele mentem. Já causou uma sessão inteira concluir errado que "a reescrita nunca foi mergeada". Se o histórico parecer suspeito, rode `git fetch origin main` sozinho antes de confiar em qualquer diff. |
 
 ---
 
-## Estado atual (commit `20765ce`)
+## Estado atual (commit `ae28fcc`)
 
 - **6.358 itens** vigentes de **24 NRs** (de 36 vigentes), extraídos dos PDFs em `normas/`
-- **122 riscos** curados mapeando para **228 itens** reais; 25 exigem pessoa na cena e
+- **123 riscos** curados mapeando para itens reais; 25 exigem pessoa na cena e
   3 têm item que só entra com máquina nomeada na cena (`itens_so_com_maquina`)
-- **126 testes**
+- **143 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
@@ -137,6 +164,21 @@ próprio comando composto (exit 144).
   item. A distinção é o coração disso: a NR-35 exige piso estável *e* sapata (cortada a
   sapata, ainda descumpre → aparar); a NR-18 18.8.6.12 trata só de sapata (cortada a
   sapata, não descumpre mais nada → vetar).
+- **A segunda metade da conferência também é mecânica.** Em `conferencia`, o Diretor
+  copia por enquadramento DOIS trechos literais: o **fato** que sustenta a constatação e
+  o trecho do **TEXTO OFICIAL** que ela descumpre. `_exigencia_ancorada` confere o
+  segundo contra o item, e o que não ancora vira veto — em aprovado e em aparado. Pega
+  exigência **inventada**; não pega trecho verdadeiro citado fora de propósito, e contra
+  esse continua agindo só o prompt. Este é o único uso em código do bloco `conferencia`:
+  o `fato` copiado segue sem verificação automática.
+- **Uma abertura, uma não conformidade.** `ITENS_EQUIVALENTES` (em `riscos/__init__.py`)
+  declara os itens que impõem a MESMA exigência sobre o mesmo objeto —
+  `NR-18 18.9.2` e `NR-08 8.3.2.2`. O primeiro do grupo que o Analista enquadrar
+  encabeça; os demais viram **citação complementar** ("Também alcançado por"), impressa
+  pelo código com texto verbatim da base. A fusão não injeta a NR-18 quando só a NR-08
+  foi enquadrada — abertura de piso em escritório ou galpão é da NR-08, e a NR-18 é
+  norma da construção. A trilha declara a edição de toda NR citada, complementar
+  inclusive.
 - **Regra da moldura.** A constatação só afirma que algo não existe se aquilo apareceria
   no recorte da foto. Ancoragem na cobertura, aterramento dentro do quadro: fora da
   moldura vira verificação ("não é possível determinar pela imagem"), não afirmação. É
@@ -145,6 +187,12 @@ próprio comando composto (exit 144).
   tela plástica de sinalização é conclusão, não descrição. O prompt exige material,
   rigidez, fixação, continuidade, altura e estado; "sem <peça> visível" só quando o lugar
   dela aparece vazio na foto.
+- **Mas o Olho NOMEIA a máquina.** Nomear o que uma máquina é descreve; atribuir a ela
+  função de segurança conclui. "Betoneira" é o nome do objeto, "rede de proteção" é uma
+  afirmação sobre o que a tela faz. Sem o nome, `ha_maquina_na_cena` fecha e a NR-12
+  nunca entra. **Validado em produção em 01/09**: a mesma foto que dava "tambor
+  cilíndrico de metal escuro" passou a dar "Betoneira com tambor cilíndrico…", quatro
+  vezes no mesmo laudo.
 - **Laudo e interface sem pictograma.** Gravidade é texto (`Crítica`, `Alta`…), não
   emoji — sobrevive a laudo impresso em preto e branco. Mensagens de progresso não
   expõem nome de agente ("Leitura da imagem", não "Agente Olho"); os nomes continuam
@@ -251,11 +299,10 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   número. Depois, mapear riscos para a norma nova — sem isso ela só entra pela busca
   textual, em modo degradado.
 - **Tier pago da Groq** é o que resolve o lote de 100 fotos de verdade.
-- **Rendimento diário — o `qwen3.8-27b` resolveu, falta confirmar.** Ele está
-  registrado em `modelos.py` (visão e texto) com as proteções da família Qwen, mas
-  **não é o padrão** — são duas fotos de teste, uma por configuração. O que falta é
-  rodar o lote de 14 nele, o que agora cabe num dia. Se aguentar, trocar
-  `PADRAO_VISAO`/`PADRAO_TEXTO` é uma linha cada.
+- **Trocar `PADRAO_VISAO`/`PADRAO_TEXTO` para o `qwen3.8-27b` — uma linha cada, e a
+  medição já justifica.** O lote de 15 confirmou: 15/15 laudos emitidos, 7.804
+  tokens/foto, ~256 fotos/dia. O usuário já seleciona o 3.8 nos dois campos à mão; o
+  padrão do código é que ficou para trás. **Não feito por não ter sido pedido.**
   O que sobra da lista antiga, em ordem de retorno:
   1. Separar o Diretor num modelo diferente do Analista (`gpt-oss-20b`) — **só faz
      sentido se o 3.8 não vingar**. Levaria o texto de ~43 para ~80 fotos/dia contra
@@ -275,10 +322,11 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
     levou a foto de ~7.100 para 13.404 tokens. Se ela for frequente, é um problema de
     cota maior que a escolha de modelo — e hoje o app não conta quantas aconteceram.
 - **Achados de produção 30/08 ainda não corrigidos.** Do laudo do 3.8:
-  1. **Os pontos de atenção sumiram.** O `120b` mandou o piso irregular com entulho e
-     corda enrolada para "pontos de atenção"; o 3.8, na mesma foto, não emitiu a seção.
-     É a classe de erro 5 (achado que evapora). Uma foto não distingue omissão de
-     julgamento.
+  1. **Os pontos de atenção quase não saem — agora medido com n=15.** Apareceram em
+     **1 de 15 laudos**, e só onde o veto forçou. O `120b` mandava piso irregular e
+     corda enrolada para a seção; o 3.8 é seco. Não é omissão de uma foto: é o
+     comportamento dele. O inverso da classe de erro 6 (inventário da foto) — e o
+     risco agora é a classe 5, achado que evapora sem deixar rastro.
   2. **A gravidade divergiu entre os dois modelos** na mesma foto: a abertura no piso
      saiu Alta/3 dias no `120b` e Crítica/1 dia no 3.8. O 3.8 parece certo (vão
      desprotegido em laje elevada), o que sugere que o `120b` subestima — o oposto do
@@ -317,12 +365,14 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
     norma. Vai como `aceitar` de `buscar_pontuado`, portanto **antes** do corte relativo.
   Medido em 10 cenas de canteiro reconstruídas do lote real: **10 itens de anexo setorial
   → 0**, e de quebra sumiram as duas vagas que o glossário da NR-01 ocupava.
-  **Sem validação em produção ainda** — precisa rodar o lote de 14 de novo (linha de
-  base: 19 NCs) e comparar. O que vigiar no retorno: item de máquina **sumindo** onde
-  deveria aparecer (o portão fecha por nome de máquina; se o Olho descrever a máquina
-  sem nomeá-la, a NR-12 não entra).
-- **Duas lacunas de roteamento achadas ao medir, não corrigidas.** São de recall, não da
-  frente da lixeira, e mexer em sinal pede validação em produção:
+  **Validado no lote de 15 de 01/09: zero itens de anexo setorial.** O filtro funciona.
+  Mas a validação também mostrou que o portão fechava demais — e que abri-lo não
+  bastava, porque o roteamento não tinha sinal para o vocabulário de canteiro. As duas
+  metades foram corrigidas nos #14/#15 (o Olho nomeia; `coroa e pinhao expostos`,
+  `engrenagem sem protecao`, `correia sem carenagem`). **O que falta agora é o Olho
+  inspecionar a proteção, não só nomear a máquina** — ver "Em aberto".
+- **Duas lacunas de roteamento achadas ao medir. A primeira foi corrigida no #14**
+  (a betoneira com coroa e pinhão expostos agora routeia); a segunda continua aberta:
   1. A betoneira com **coroa e pinhão expostos** não bate em
      `maquina_sem_protecao_zona_perigo` — os sinais são "polia exposta", "engrenagem a
      mostra", "correia sem protecao", e nenhum cobre o vocabulário do Olho. É a NC mais
@@ -330,12 +380,29 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   2. Uma cena de panificação (masseira, cilindro de massa) não pontua NR-12 nenhuma em
      `_pontuar_nrs` — e ainda dispara `atmosfera_ipvs_sem_protecao_respiratoria`, que
      não tem nada a ver. Fora do domínio do usuário (construção), mas é o mesmo padrão.
-- **O aparo pode salvar enquadramento que devia ser vetado.** Visto em produção: NC em
-  `NR-12 12.3.8` (partes energizadas expostas) com a trilha dizendo
-  `retirado: partes energizadas expostas`. Cortado justamente o que o item exige, o que
-  sobrou ("cabo amarelo pendurado na parede") não descumpre mais nada — era veto. A regra
-  está escrita no prompt (a distinção NR-35 apara / NR-18 18.8.6.12 veta) e o modelo
-  errou o lado. Reforçar depois da frente da NR-12.
+- **Enquadramento que não descumpre o item — duas correções, a segunda sem validar.**
+  O caso vive na `foto (59)`: painel empoeirado em `NR-10 10.10.1`, que exige
+  SINALIZAÇÃO, com a etiqueta "PERIGO" legível na própria foto. Apareceu primeiro pelo
+  aparo (o #13 fechou essa porta) e voltou pelo **aprovado sem aparo** (o #15 fechou a
+  outra). **Rodar a `foto (59)` é o próximo passo.** O que a verificação NÃO alcança:
+  o Diretor copiar um trecho verdadeiro do item e aplicá-lo fora de propósito — contra
+  isso só o prompt age.
+- **O Olho nomeia a máquina mas não inspeciona as proteções.** Na betoneira ele
+  descreveu corrosão, pintura descascada e o tambor aberto; nunca coroa, pinhão ou
+  correia. O prompt já pede "as peças que vê e as que não vê (… proteção de partes
+  móveis)" e ele não faz. **É a próxima frente da NR-12** — os sinais existem e
+  funcionam, falta o Olho fornecer o que casar. Mexer nesse prompt afeta todas as
+  fotos, então merece um lote só para validar.
+- **O Gauntlet Loop não faz loop no modo Padrão.** `app.py` define `max_ciclos=1` para
+  "Padrão" (e 3 para "Máximo"). O laço roda uma vez e cai em
+  `if ciclo >= config.max_ciclos: break` — a linha "Devolvendo para novo ciclo de
+  enquadramento…" é **inalcançável** no padrão. Consequência: todo veto é perda
+  definitiva, o Analista nunca recebe o motivo e nunca tenta de novo. Aquele
+  "1 ciclo" que aparece em todos os laudos **não é o supervisor aprovando de primeira,
+  é o teto** — o critério de aceite nunca foi exercido. O segundo ciclo só rodaria
+  quando há veto: no lote de 15, teria custado **+7%** de chamadas (e talvez 13–20%
+  agora que o #15 veta mais). Decisão do usuário, porque mexe na cota. Se ficar em 1,
+  a mensagem "Ciclos esgotados" está mentindo.
 - **Gravidade inflada e constatação inventada ainda passam.** Entulho no chão como
   crítica com prazo de 1 dia; e "os degraus não apresentam fixação aos montantes" quando
   o Olho escrevera "sem fixação visível na base ou no topo" — sobre o apoio, não sobre os
@@ -346,6 +413,54 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
 - **Efeito colateral a vigiar em produção**: o Olho começar a inventar ausência ("sem
   rodapé") de peça que está fora do enquadramento. É o preço de risco da mudança do
   Olho, e a razão da cláusula "não dá para ver". Até aqui não apareceu.
+
+---
+
+## Validação em produção de 01–02/09/2026 — o lote de 15 no Qwen 3.8
+
+Primeiro lote inteiro no `Qwen 3.8 27B` nos dois campos. **15 fotos, 21 NCs, 15 laudos
+emitidos.** Tudo abaixo foi lido nos laudos reais e reproduzido aqui sem rede.
+
+O que ficou provado:
+
+- **O 3.8 emite onde o `120b` falhava.** 15/15 laudos contra 11/14 antes. As 3 fotos
+  que morriam com "não devolveu JSON utilizável" saíram. Valida a correção do
+  `_conversar_sem_cortar` (refazer também quando o parser falha, não só quando a API
+  sinaliza corte).
+- **Custo confirmado com n=15**: 7.804 tokens/foto, contra 7.060 previstos com n=1.
+  ~256 fotos/dia; um lote de 100 cabe num dia. O excesso de ~11.200 tokens no lote
+  sugere **~2 retentativas em 15 fotos (~12%)** — a retentativa não é o problema de
+  cota que se temia.
+- **`itens_compartilhados()` funcionou no caso que o motivou**: a tela frouxa na borda
+  da laje saiu nomeada pela constatação, não como "Andaime sem guarda-corpo".
+- **O balde por modelo aparece na barra lateral** (`qwen/qwen3.8-27b — 117.069 de
+  2.000.000`).
+
+O que o lote revelou de defeito, e virou os PRs #13/#14/#15:
+
+1. **O ambiente carregava o sinal sozinho** — "abertura" do achado do tambor mais
+   "piso" do ambiente casavam `"abertura no piso"` inteiro. Sistemático, porque quase
+   todo ambiente de obra menciona "piso". Corrigido com a âncora (dois radicais do
+   próprio achado).
+2. **Abertura em parede saía intitulada "Abertura no piso"** — `NR-08 8.3.2.2` cobre
+   piso E parede; a NR-18 18.9.2 só piso. Novo risco `abertura_parede_desprotegida`.
+3. **O aparo salvava enquadramento que era veto** — painel empoeirado em item de
+   sinalização. Virou a verificação de exigência.
+4. **O campo `retirado` vazava raciocínio** — 674 caracteres de "Vou manter a lógica
+   de que…" impressos no laudo do cliente.
+5. **Uma abertura contada duas vezes** — 6 das 21 NCs eram 3 aberturas em dobro.
+
+**Segunda rodada, 4 fotos, depois dos merges** — o que se aprendeu:
+
+- **O Olho passou a nomear a máquina** ("Betoneira…", "Martelete…"). O portão abre.
+  Foi a correção mais bem-sucedida da sessão.
+- **A betoneira ainda deu 0 NC**, e por um motivo novo: o Olho **nomeia mas não
+  inspeciona as proteções**. Descreveu corrosão, pintura descascada e o tambor aberto;
+  nunca coroa, pinhão ou correia. Os sinais existem e funcionam — não há o que casar.
+- **O painel empoeirado voltou por outro caminho**: desta vez APROVADO sem aparo, com
+  gravidade subida de baixa para média. E o laudo saiu se contradizendo — acusava a
+  sinalização de comprometida e a listava em "conformidades observadas". Foi o que
+  motivou o #15. **Sem validação ainda.**
 
 ---
 
@@ -385,8 +500,9 @@ retentativa acima já estava em produção, então não era truncamento (`finish
 "length"`) de novo; era JSON malformado por outro motivo (suspeita: aspas de citação
 oficial não escapadas) que a API não sinaliza. `_conversar_sem_cortar` só refazia a
 chamada quando a API confirmava o corte; agora refaz também sempre que o parser falha,
-sinalizado ou não. Sem validação em produção ainda — o lote de 14 tem 3 fotos que nunca
-saíram de jeito nenhum, então qualquer redução nesse número já é sinal de progresso.
+sinalizado ou não. **Validado no lote de 15 de 01/09: 15 de 15 laudos saíram**, contra
+11 de 14 antes. As 3 fotos que morriam com "não devolveu JSON utilizável" foram
+embora.
 
 ---
 
