@@ -203,6 +203,28 @@ histórico — antes de inventar cenário sintético para testar algo, veja se u
 já serve; é mais convincente e já foi conferida contra o laudo de verdade pelo menos
 uma vez.
 
+**Duas skills de revisão vivem no repositório** (`.claude/skills/`), commitadas
+justamente porque sessão remota é efêmera e skill fora do repo morre com o
+container:
+
+- **`/conferir`** — conferência factual exaustiva. Extrai TODA afirmação de um
+  artefato e devolve CONFERE / DIVERGE / NÃO VERIFICÁVEL, 100% delas, sem
+  amostrar. Rode em todo commit que toca este arquivo e em todo corpo de PR com
+  número dentro. A fonte de verdade aqui é o **código executado**, não o texto:
+  `123 riscos` não está escrito em lugar nenhum, sai de `len(catalogo())`.
+- **`/critico`** — julgamento de design a frio. Devolve APROVA ou
+  REJEITA — maior gap, em uma linha; não corrige nem sugere. Lê só por
+  `git show`, nunca o working tree, e não pode escrever nada. Use antes de
+  mergear decisão que só um lote de produção validaria (sinal novo, risco novo,
+  prompt de agente); não use em conserto mecânico já coberto por teste.
+
+Não são substitutos: medido em 03/09, o `/conferir` achou cinco divergências
+que quatro PRs de revisão não pegaram, e nenhuma delas é julgamento de design.
+Se a medição que sustenta uma decisão não estiver no artefato — corpo do
+commit, comentário do código, corpo do PR — o `/critico` a trata como
+inexistente, e isso é de propósito: é o que impede a evidência de morrer no
+scratchpad.
+
 **Verificação no navegador é obrigatória antes de dar algo por pronto.** Chromium em
 `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`, com `--no-sandbox`. Vários bugs
 desta sessão passaram nos testes unitários e só apareceram na tela.
