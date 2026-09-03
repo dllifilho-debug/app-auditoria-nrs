@@ -82,7 +82,17 @@ RISCOS: dict[str, dict] = {
             "protetor auricular pendurado no pescoco",
             "mascara no queixo",
             "capacete sem jugular",
-            "cinto solto",
+            # "cinto" e "cinta" caem no MESMO radical (`cint`), e este sinal
+            # tinha só dois radicais — bastava um achado com "cinta … solto"
+            # para cobrir os dois. Numa foto de cinta de içamento desgastada
+            # (lote de içamento, 02/09) o fato "Trecho de tecido da CINTA com
+            # bordas desfiadas e material SOLTO" deu cobertura 1,0 aqui, o
+            # roteador classificou o acessório de içamento como EPI e o laudo
+            # saiu enquadrando a cinta em NR-06 6.9.3 (marcação de EPI).
+            # "cinturao" reduz a `cintura` e não colide; a perda é o laudo que
+            # escreve "cinto", e é a troca certa — nenhum radical adicional
+            # separa cinto de cinta, porque o discriminante pode vir da cena.
+            "cinturao solto",
             "epi pendurado",
         ],
         "itens": ["NR-06 6.5.1", "NR-06 6.6.1"],
@@ -162,7 +172,15 @@ RISCOS: dict[str, dict] = {
         "sinais": [
             "extintor sem placa",
             "sem sinalizacao do extintor",
-            "piso sem faixa vermelha",
+            # Era "piso sem faixa vermelha": quatro radicais, um deles `sem` de
+            # cola, e a cobertura parcial abre a 0,75 — foi assim que a foto de
+            # uma cancela de cremalheira ("Grade metálica … pintada de VERMELHO,
+            # aberta e apoiada no PISO, SEM fechamento lateral") acionou risco de
+            # extintor e levou NR-26 e NR-23 para o dossiê. O que faltava era
+            # `faix`, justamente o discriminante. Com três radicais nenhum pode
+            # faltar, e a forma negativa fica preservada: um sinal que casasse a
+            # faixa PRESENTE dispararia o risco de ausência dela.
+            "sem faixa vermelha",
             "extintor escondido na parede",
             "sem placa de incendio",
             "extintor sem identificacao",
