@@ -211,7 +211,7 @@ container:
   artefato e devolve CONFERE / DIVERGE / NÃO VERIFICÁVEL, 100% delas, sem
   amostrar. Rode em todo commit que toca este arquivo e em todo corpo de PR com
   número dentro. A fonte de verdade aqui é o **código executado**, não o texto:
-  `123 riscos` não está escrito em lugar nenhum, sai de `len(catalogo())`.
+  `126 riscos` não está escrito em lugar nenhum, sai de `len(catalogo())`.
 - **`/critico`** — julgamento de design a frio. Devolve APROVA ou
   REJEITA — maior gap, em uma linha; não corrige nem sugere. Lê só por
   `git show`, nunca o working tree, e não pode escrever nada. Use antes de
