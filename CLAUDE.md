@@ -26,10 +26,11 @@ verdade é sempre com o usuário, em produção, com fotos e laudos que ele mand
 
 ## Onde a coisa parou (03/09/2026, fim da sessão)
 
-**O `main` carrega os PRs #17, #18, #19 e #20.** O dossiê não oferece mais obrigação de
+**O `main` carrega os PRs #17 a #25.** O dossiê não oferece mais obrigação de
 papel, os textos do Diretor não saem quebrados no laudo, o 3.8 é o padrão nos dois
-campos, o app cronometra cada foto e os dois falsos positivos de roteamento que o lote
-de içamento revelou estão fechados. Confira o hash em "Versão em execução" na barra
+campos, o app cronometra cada foto, os dois falsos positivos de roteamento que o lote
+de içamento revelou estão fechados, os equipamentos de guindar da NR-18 entraram na
+taxonomia curada e as skills `/conferir` e `/critico` vivem no repositório. Confira o hash em "Versão em execução" na barra
 lateral antes de rodar qualquer lote — laudo medido contra a versão errada não vale.
 
 ### O lote de içamento foi rodado. Gabarito: 2 de 5
@@ -231,7 +232,7 @@ commitado, antes do merge. O que muda é *se* cada um roda, não *quando*:
 - `/conferir` tem gatilho **largo**: qualquer artefato que afirme fato. Na
   prática, quase todo PR.
 - `/critico` tem gatilho **estreito**: decisão que só um lote de produção
-  validaria. Dos cinco PRs de 03/09 (#20 a #24) ele valeria em um ou dois. Num
+  validaria. Dos PRs de 03/09 (#20 em diante) ele valeria em um ou dois. Num
   conserto medido, com contraparte testada e teste travando, ele devolve APROVA
   e custou uma sessão à toa.
 
@@ -293,7 +294,7 @@ próprio comando composto (exit 144).
 
 ---
 
-## Estado atual (o `main` de 03/09, com os PRs #17, #18, #19 e #20)
+## Estado atual (o `main` de 03/09, com os PRs #17 a #25)
 
 - **6.358 itens** vigentes de **24 NRs** (de 36 vigentes), extraídos dos PDFs em `normas/`
 - **126 riscos** curados mapeando para itens reais; 25 exigem pessoa na cena e
@@ -466,16 +467,18 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
 
 ## Em aberto
 
-- **Taxonomia de içamento — o buraco maior, medido no lote de 02/09.** A NR-18 tem 33
-  itens vigentes de equipamento de guindar (`18.10.1.15`–`.44`) e nenhum risco os
-  alcança; os seis riscos de içamento vivem em `industria.py` apontando para NR-11/NR-12
-  de fábrica. Enquanto isso não existir, a cinta continua sem item curado e o Analista
-  pode escolher `NR-06 6.9.3` de novo — o #20 tirou o risco de EPI do roteamento, mas
-  `6.9.3` **continua no dossiê** pela busca textual (a NR-06 entra sempre por
-  `NRS_TRANSVERSAIS`, e ela é o único item que pontua ali, com 7,42). Itens a mapear:
-  `18.10.1.21`, `.24`, `.26`, `.27`, mais `18.11.13` para a cancela. Sinais medidos
-  contra as fotos que já temos, com a contraparte pronta: a plataforma **com**
-  guarda-corpo da foto `GRUA` é o que não pode disparar.
+- **Taxonomia de içamento — FEITA no #22, à espera de lote.** Três riscos novos em
+  `construcao.py`: `dispositivo_icamento_deteriorado` (`NR-18 18.10.1.27`,
+  `NR-11 11.1.3.1`), `carga_suspensa_area_sem_isolamento` (`18.10.1.21`, sem exigir
+  pessoa) e `equipamento_guindar_sem_itens_seguranca` (`18.10.1.24`, `.26`). O resto dos
+  33 itens de guindar ficou de fora de propósito: é obrigação de papel, que foto não
+  comprova. Medido: a cinta passa a trazer `18.10.1.27` e `11.1.3.1` como D1 e D2
+  **curados**, e o `NR-06 6.9.3` cai para D4 — ele **não sai** do dossiê, porque a NR-06
+  entra sempre por `NRS_TRANSVERSAIS` e é o único item dela que pontua ali (7,42). A
+  escolha final segue do Analista, e **só um lote diz se ele troca**. Duas ressalvas:
+  `equipamento_guindar_sem_itens_seguranca` não tem foto positiva neste histórico (só
+  contrapartes), e `18.11.13` para a cancela já estava mapeado em
+  `torre_elevador_sem_cancela` — lá o problema nunca foi taxonomia, é o Olho não nomear.
 - **O Olho não nomeia o equipamento de canteiro.** Nomeou a betoneira depois do #14, mas
   na grua escreveu "Estrutura metálica elevada de cor amarela, com cabine e contrapesos"
   (sem "grua", sem "guindaste" — e aí a NR-11 nem pontua em `_pontuar_nrs`) e na torre
