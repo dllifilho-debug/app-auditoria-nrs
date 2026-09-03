@@ -2662,6 +2662,71 @@ def test_nenhum_sinal_vira_so_palavra_cola():
     assert not nus, nus
 
 
+def test_cinta_de_icamento_nao_routeia_risco_de_epi():
+    """"cinto" e "cinta" caem no mesmo radical `cint`, e o sinal `"cinto solto"`
+    tinha só dois radicais: o fato abaixo — copiado do laudo 7 do lote de
+    içamento de 02/09 — cobria os dois e classificava o acessório de içamento
+    como EPI. O laudo saiu enquadrando a cinta em NR-06 6.9.3, marcação de EPI,
+    quando o item da cinta é NR-18 18.10.1.27 (dispositivo auxiliar de
+    içamento)."""
+    visao = Visao(
+        ambiente="Piso de obra coberto por camada de pó e detritos de construção",
+        achados=[
+            Achado(fato="Cinta de içamento de tecido laranja com costuras visíveis, "
+                        "apresentando sujidade escura e desgaste na superfície, está "
+                        "amontoada e enrolada sobre o piso"),
+            Achado(fato="Trecho de tecido da cinta com bordas desfiadas e material "
+                        "solto, indicando desgaste estrutural"),
+        ],
+    )
+    rotulos = [r.id for r in rotear_riscos(visao, "")]
+    assert "epi_usado_de_forma_incorreta" not in rotulos, rotulos
+
+
+def test_cinturao_solto_de_verdade_continua_routeando():
+    """A contraparte: trocar "cinto" por "cinturao" não pode custar o achado que
+    o sinal existe para pegar."""
+    visao = Visao(
+        ambiente="Laje de cobertura de edifício em construção",
+        pessoas_presentes=True,
+        quantidade_pessoas=1,
+        achados=[Achado(fato="Trabalhador junto à borda com cinturao solto na "
+                             "cintura, sem conexão a ponto de ancoragem")],
+    )
+    rotulos = [r.id for r in rotear_riscos(visao, "")]
+    assert "epi_usado_de_forma_incorreta" in rotulos, rotulos
+
+
+def test_grade_vermelha_no_piso_nao_routeia_risco_de_extintor():
+    """`"piso sem faixa vermelha"` tem quatro radicais e um deles é `sem`, de
+    cola: a cobertura parcial abre a 0,75 faltando `faix`, que é o único
+    discriminante. O fato abaixo é o laudo 6 do lote de içamento — uma cancela
+    de cremalheira que acionou risco de extintor e levou NR-26 e NR-23 para o
+    dossiê."""
+    visao = Visao(
+        ambiente="Interior de edificação em fase de construção, com piso de "
+                 "concreto aparente e estrutura de vigas exposta.",
+        pessoas_presentes=True,
+        quantidade_pessoas=1,
+        achados=[Achado(fato="Grade metálica de malha quadrada com estrutura "
+                             "tubular pintada de vermelho, aberta e apoiada no "
+                             "piso, sem fechamento lateral visível.")],
+    )
+    rotulos = [r.id for r in rotear_riscos(visao, "")]
+    assert "extintor_sem_sinalizacao" not in rotulos, rotulos
+
+
+def test_extintor_sem_demarcacao_de_piso_continua_routeando():
+    """A contraparte do encurtamento: a demarcação ausente ainda é achado."""
+    visao = Visao(
+        ambiente="Galpão de apoio da obra",
+        achados=[Achado(fato="Extintor de pó químico pendurado na coluna, sem "
+                             "faixa vermelha demarcada no piso à frente")],
+    )
+    rotulos = [r.id for r in rotear_riscos(visao, "")]
+    assert "extintor_sem_sinalizacao" in rotulos, rotulos
+
+
 def test_madeira_com_pregos_nao_routeia_gambiarra():
     """A contraparte do sinal removido: nada de elétrico nesta foto."""
     visao = Visao(
