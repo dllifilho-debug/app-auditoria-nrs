@@ -24,34 +24,90 @@ verdade é sempre com o usuário, em produção, com fotos e laudos que ele mand
 
 ---
 
-## Onde a coisa parou (02/09/2026, fim da sessão)
+## Onde a coisa parou (03/09/2026, fim da sessão)
 
-**O `main` carrega os PRs #17, #18 e #19.** O dossiê não oferece mais obrigação de
+**O `main` carrega os PRs #17, #18, #19 e #20.** O dossiê não oferece mais obrigação de
 papel, os textos do Diretor não saem quebrados no laudo, o 3.8 é o padrão nos dois
-campos e o app cronometra cada foto. Confira o hash em "Versão em execução" na barra
+campos, o app cronometra cada foto e os dois falsos positivos de roteamento que o lote
+de içamento revelou estão fechados. Confira o hash em "Versão em execução" na barra
 lateral antes de rodar qualquer lote — laudo medido contra a versão errada não vale.
 
-### O próximo passo é um só: o LOTE DE IÇAMENTO
+### O lote de içamento foi rodado. Gabarito: 2 de 5
 
-Cinco fotos, já identificadas no acervo — `GRUA`, `19 PAV. POÇO GRUA SEM PROTEÇÃO`,
-`17 PAV PROTEÇÃO FOSSO GRUA`, `CANCELA CREMALHEIRA`, `CINTAS DE ELEVAÇÃO`. **Confira a
-imagem antes de subir**: o nome do arquivo nem sempre descreve a foto.
+Sete fotos, 4 NCs. Medido contra o achado que o **engenheiro** escreveu no nome do
+arquivo, não contra o app ele mesmo:
 
-É o único domínio inteiro que o app nunca viu, e o lote de 12 mediu o buraco com dado
-real. O laudo 1 registra *"Estrutura metálica pintada de amarela, com formato de funil
-ou caçamba, **suspensa no alto do ambiente**"* — e **nada routeia**. Os seis riscos de
-carga/elevação foram medidos contra esse fato: cobertura máxima **0,40**, corte 0,7.
-`carga_suspensa_sobre_trabalhadores` exige pessoa em todos os sinais ("trabalhador
-embaixo da carga"), o que é certo para ele; `equipamento_movimentacao_sem_carga_maxima`
-fala "talha", "guincho", "ponte rolante", e o Olho escreveu "caçamba". É o padrão do
-"fios desencapados" outra vez: o vocabulário do Olho não está em nenhum sinal.
+| Foto | O engenheiro escreveu | O app entregou |
+|---|---|---|
+| `19 PAV. POÇO GRUA SEM PROTEÇÃO` | poço sem proteção | ✅ `NR-18 18.9.2` |
+| `17 PAV PROTEÇÃO FOSSO GRUA` | fosso | ✅ `NR-08 8.3.2.2` (abertura de parede) |
+| `9 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO` | cancela sem sinalização | ❌ achou **outro** vão no piso |
+| `8 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO` | cancela sem sinalização | ❌ **0 NC**, com 1 trabalhador na cena |
+| `19 PAV. CINTAS DE ELEVAÇÃO` | cinta desgastada | ❌ item errado (**EPI**) |
+| `GRUA`, `GRUAAA` | — | 0 NC (aceitável) |
 
-**Não foi corrigido de propósito.** Caçamba suspensa numa foto sem ninguém embaixo pode
-ser operação normal de concretagem — inventar sinal sem foto para validar a contraparte
-é a armadilha do sinal por extenso, e enquadrar operação normal é a classe de erro 6.
-**O lote responde; o palpite não.** Ao receber os laudos, reproduza o dossiê aqui
-(`montar_dossie` é determinístico, roda sem rede) e separe: buraco de sinal, de
-taxonomia, ou dos dois.
+As duas NCs certas são as duas de abertura — o domínio que o app já dominava antes.
+**O lote de içamento não produziu um único enquadramento de içamento.**
+
+**O buraco principal é de TAXONOMIA, e é maior do que a hipótese anterior.** Os 42
+riscos de construção não têm nenhum sobre grua, equipamento de guindar ou dispositivo
+de içamento; os seis riscos de içamento moram em `industria.py` e apontam para
+NR-11/NR-12 — vocabulário de fábrica (talha, ponte rolante, monta-carga, empilhadeira).
+Enquanto isso a NR-18 tem **33 itens vigentes só de equipamento de guindar**
+(`18.10.1.15` a `18.10.1.44`) e **nenhum é citado por risco nenhum**:
+
+- `18.10.1.15` define nominalmente: *"consideram-se equipamentos de guindar as gruas…"*
+- `18.10.1.21` — isolamento e sinalização da área sob carga suspensa (a contraparte de
+  canteiro do `carga_suspensa_sobre_trabalhadores`, **sem exigir pessoa na cena**)
+- `18.10.1.24` / `18.10.1.26` — itens de segurança; limitador de momento de gruas
+- **`18.10.1.27` — dispositivos auxiliares de içamento: marcação indelével com razão
+  social, capacidade de carga e número de série. É o item da CINTA.**
+
+Encurtar sinal não alcança isso: mesmo casando, o risco levaria o Analista para a
+NR-11 de fábrica. E a busca textual não supre — com o vocabulário jurídico o
+`18.10.1.27` sai com 39,98 no BM25, mas com o texto do Olho ("cinta de içamento
+desgastada, bordas desfiadas") o topo é NR-12 Anexo XII, manutenção de linha de
+transmissão.
+
+**A cinta virou EPI por colisão de radical, e isso o #20 fechou.** `radical("cinta") ==
+radical("cinto") == "cint"`, e o sinal `"cinto solto"` tinha dois radicais: o fato
+*"Trecho de tecido da CINTA com bordas desfiadas e material SOLTO"* deu cobertura 1,0
+em `epi_usado_de_forma_incorreta`. Ver a armadilha nova na tabela. O risco certo,
+`cabo_aco_ou_lingada_deteriorados`, deu **0,00 nos sete sinais** — não só por
+vocabulário: os sinais de dois radicais ("cinta rasgada", "gancho aberto") chegam a
+0,50 sem âncora e caem a **0,00 com ela**.
+
+**As cancelas: o risco certo existe, tem o item certo, e não dispara.**
+`torre_elevador_sem_cancela` cita `NR-18 18.11.13` — literalmente *"Em todos os acessos
+de entrada à torre do elevador deve ser instalada barreira (cancela)…"*. Cobertura
+**0,50 nas duas fotos**. Os sete sinais dependem de `elevador`, `cancela` ou `tapume`, e
+o Olho escreveu *"Grade metálica … pintada de vermelho, aberta"* e *"Estrutura metálica
+vermelha de grande porte, com configuração de torre"*. **É a betoneira outra vez — o
+Olho não nomeia o equipamento de canteiro** — e desta vez sem o consolo da NR-12: o
+item e o risco já existem, falta só o nome. É a próxima frente, e mexe em todas as
+fotos, então merece lote só para validar.
+
+**O `vao_caixa_elevador_sem_fechamento` continua devendo, e agora com um alerta.**
+Máximo **0,50** nas sete fotos, e neste lote ele **não devia** disparar mesmo: o poço da
+grua é a base atravessando a laje (abertura de piso, `18.9.2`, correto) e o fosso é
+abertura de parede (`8.3.2.2`, correto). A favor dele: `NR-18 18.9.3` chegou ao dossiê
+de duas fotos pela busca textual e o Analista **recusou as duas vezes**. Mas cinco dos
+seus sete sinais dependem da palavra `elevador`, e este lote mostrou que o Olho não a
+escreve nem diante de uma torre de elevador de cremalheira — **o lote de poço de
+elevador tem chance alta de repetir 0,50**. Meça o sinal antes de gastar o lote.
+
+Dois achados menores, medidos e não corrigidos:
+
+1. **O aparo apagou o achado grave na foto das cintas.** O Diretor retirou a parte do
+   desfiamento — o desgaste estrutural, que é o risco real — e deixou de pé só a
+   sujidade que compromete a legibilidade. Não mandou nada para pontos de atenção. Ver
+   a armadilha nova.
+2. **Cinco vagas do dossiê do fosso foram para mergulho.** `NR-15 Anexo 6` — inspeção
+   médica antes da jornada, balizamento, câmaras hiperbáricas, sinos do mergulho — numa
+   foto de parede de alvenaria. A palavra-chave `umidade` da NR-15 casou com *"manchas
+   escuras de umidade ou sujeira"*, e dentro da NR-15 o BM25 não tinha nada melhor. A
+   `umidade` da NR-15 é o Anexo 10 (locais alagados/encharcados) e pede qualificação,
+   não a palavra solta.
 
 ### Cronômetro por foto — implementado, à espera de número real
 
@@ -103,8 +159,8 @@ Lotes temáticos que valem, com as fotos já identificadas:
 | Lote | Fotos | Por quê |
 |---|---|---|
 | NR-12 | `SERRA DE BANCADA`, `SERRALHERIA SEM BARREIRA DE ACESSO` | as duas únicas com máquina de verdade no acervo novo |
-| Içamento | `GRUA`, `19 PAV. POÇO GRUA SEM PROTEÇÃO`, `17 PAV PROTEÇÃO FOSSO GRUA`, `CANCELA CREMALHEIRA`, `CINTAS DE ELEVAÇÃO` | **agora medido**: a caçamba suspensa do laudo 1 do lote de 12 não routeou nenhum dos seis riscos de carga (cobertura máxima 0,40, corte 0,7). É o próximo lote |
-| Poço de elevador | 6 das 19 disponíveis | achado mais repetido do acervo; `vao_caixa_elevador_sem_fechamento` existe e nunca disparou em produção |
+| ~~Içamento~~ | 7 fotos | **RODADO em 02/09** — 2 de 5 achados do engenheiro. Ver acima. Só volta a valer depois de existir taxonomia de guindar e de o Olho nomear o equipamento |
+| Poço de elevador | 6 das 19 disponíveis | achado mais repetido do acervo; `vao_caixa_elevador_sem_fechamento` existe e nunca disparou em produção. **Meça o sinal antes de gastar o lote**: no lote de içamento ele parou em 0,50, e cinco dos seus sete sinais exigem a palavra `elevador`, que o Olho não escreve |
 | Controle negativo | 5 documentos (POP, lista de presença, CREA, crachá) | devem dar **0 NC**; é a classe de erro que já apareceu e nunca foi testada de propósito |
 
 Ao receber os laudos: o HTML traz o "Ambiente registrado" e a lista de fatos do Olho,
@@ -133,7 +189,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 173 testes
+$VENV -m pytest tests/ -q          # 177 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -181,18 +237,20 @@ próprio comando composto (exit 144).
 | **Sinal cujas palavras somem no filtro de radicais** | `"t em cima de t"` tem cinco palavras e quatro têm duas letras: `radicais()` descarta todas e sobra `cima` sozinho, com cobertura 1.0 em "pregos expostos voltados **para cima**". Uma foto de madeira de fôrma routeava gambiarra. É a armadilha do `sem` levada ao extremo — o sinal inteiro vira cola. Hoje o validador da taxonomia quebra no import se um sinal não tiver radical discriminante (`PALAVRAS_COLA` em `riscos/__init__.py`). |
 | **Citação removida do meio da frase deixa verbo sem objeto** | `_limpar_citacoes` tira a citação e a limpeza de órfãs arruma preposição encostada na pontuação ("conforme."). No MEIO do trecho ela não alcança: "violando a NR-10 e a NR-26" virou **"violando a e."** num parecer impresso. Nenhuma regra de pontuação conserta — o que sobra não é pontuação órfã, é um verbo sem objeto. Hoje o texto é fatiado por vírgula/ponto-e-vírgula/fim de sentença e o fragmento que só apresentava a citação sai inteiro. **A citação é MARCADA antes de fatiar**, nunca removida: ela atravessa vírgula ("NR-35, item 5.2.2.5") e fatiar antes a partiria em duas, deixando o número do item para trás — pior que não limpar, porque o renderizador o relê como citação legítima. |
 | **Corte de verbosidade aplicado a um campo só** | O `retirado` do aparo ganhou `_em_poucas_palavras` no #13, quando o `motivo` do veto ainda era sempre escrito pelo código. Quando o veto passou a carregar o texto do Diretor, os 493 caracteres de argumentação voltaram por ali — dentro do ponto de atenção que vai ao cliente. É a irmã da armadilha "verificação mecânica no caminho errado": ao pôr uma trava num campo, liste os outros campos por onde o mesmo texto sai. |
+| **Dois radicais é tudo-ou-nada, e o radical pode colidir** | A irmã invertida da armadilha dos quatro. A âncora exige dois radicais do PRÓPRIO achado, então num sinal de dois radicais nenhum pode vir da cena: ou o achado traz os dois, ou a cobertura é 0,00, não 0,50. Isso corta nos dois sentidos. Perde: `"cinta rasgada"` e `"gancho aberto"` deram **0,00** na foto de uma cinta de içamento rasgada de verdade. E dispara: com dois radicais só, uma colisão de radical basta para acionar o risco inteiro — `radical("cinta") == radical("cinto") == "cint"` fez `"cinto solto"` casar *"tecido da CINTA … material SOLTO"* com cobertura 1,0, e o acessório de içamento saiu no laudo enquadrado como EPI (`NR-06 6.9.3`). Não adianta acrescentar o discriminante: `"cinto de seguranca solto"` também casaria, porque `seguranc` pode vir do ambiente e a âncora já está satisfeita pelos outros dois. **Sinal de dois radicais só é seguro se nenhum dos dois for ambíguo por radical** — corrigido em #20 trocando por `"cinturao solto"` (reduz a `cintura`, não colide). Ao escrever sinal curto, rode o radical das duas palavras e procure por vizinho de outro gênero. |
+| **O aparo pode apagar o achado grave e deixar a metade irrelevante** | O aparo existe para restringir a constatação ao que o fato sustenta, e nisso funciona. Mas ele escolhe QUAL parte sobrevive, e pode escolher errado: na foto das cintas o Diretor aparou o desfiamento — o desgaste estrutural, que é o risco de ruptura — e manteve só a sujidade que compromete a legibilidade das marcações. O laudo saiu tecnicamente correto e materialmente inútil, e **nada foi para os pontos de atenção**. É a classe de erro 5 (achado que evapora) por um caminho que não estava mapeado: não pelo veto, pelo aparo. Ao revisar o aparo, pergunte se o que sobrou é o achado ou o resto dele. |
 | **Medir tempo por fora de uma função com várias saídas** | `executar` volta cedo quando o Olho não devolve fato utilizável. Cronometrar no `app.py`, em volta da chamada, funcionaria — até alguém acrescentar a próxima saída antecipada e o número virar zero em silêncio. Por isso `executar` virou um invólucro fino que cronometra e delega a `_executar`: existe **um** ponto de saída para medir. **Há teste guardando o caminho da visão que falha.** |
 | **Mergear PR com lote rodando** | O merge dispara o redeploy do Streamlit Cloud, que **reinicia o app e apaga o `st.session_state`** — onde o lote em andamento vive. No plano gratuito um lote é de horas de parede, e o usuário recomeça do zero. Vale para qualquer merge: **pergunte se há lote rodando antes**, e espere os laudos serem baixados. |
 | `git fetch origin main <branch-que-não-existe-mais>` falha inteiro, silenciosamente | Fetch de múltiplos refs é atômico: se um ref já foi deletado no remoto (branch mergeada), o comando inteiro falha e **nenhum ref é atualizado** — inclusive o `main`, que existia e seria atualizado sozinho. `origin/main` local fica congelado na versão de antes, e comparações feitas contra ele mentem. Já causou uma sessão inteira concluir errado que "a reescrita nunca foi mergeada". Se o histórico parecer suspeito, rode `git fetch origin main` sozinho antes de confiar em qualquer diff. |
 
 ---
 
-## Estado atual (o `main` de 02/09, com os PRs #17, #18 e #19)
+## Estado atual (o `main` de 03/09, com os PRs #17, #18, #19 e #20)
 
 - **6.358 itens** vigentes de **24 NRs** (de 36 vigentes), extraídos dos PDFs em `normas/`
 - **123 riscos** curados mapeando para itens reais; 25 exigem pessoa na cena e
   3 têm item que só entra com máquina nomeada na cena (`itens_so_com_maquina`)
-- **173 testes**
+- **177 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
@@ -360,6 +418,33 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
 
 ## Em aberto
 
+- **Taxonomia de içamento — o buraco maior, medido no lote de 02/09.** A NR-18 tem 33
+  itens vigentes de equipamento de guindar (`18.10.1.15`–`.44`) e nenhum risco os
+  alcança; os seis riscos de içamento vivem em `industria.py` apontando para NR-11/NR-12
+  de fábrica. Enquanto isso não existir, a cinta continua sem item curado e o Analista
+  pode escolher `NR-06 6.9.3` de novo — o #20 tirou o risco de EPI do roteamento, mas
+  `6.9.3` **continua no dossiê** pela busca textual (a NR-06 entra sempre por
+  `NRS_TRANSVERSAIS`, e ela é o único item que pontua ali, com 7,42). Itens a mapear:
+  `18.10.1.21`, `.24`, `.26`, `.27`, mais `18.11.13` para a cancela. Sinais medidos
+  contra as fotos que já temos, com a contraparte pronta: a plataforma **com**
+  guarda-corpo da foto `GRUA` é o que não pode disparar.
+- **O Olho não nomeia o equipamento de canteiro.** Nomeou a betoneira depois do #14, mas
+  na grua escreveu "Estrutura metálica elevada de cor amarela, com cabine e contrapesos"
+  (sem "grua", sem "guindaste" — e aí a NR-11 nem pontua em `_pontuar_nrs`) e na torre
+  do elevador escreveu "Grade metálica … aberta" e "estrutura com configuração de
+  torre". É o que trava as duas cancelas, onde o risco e o item já existem. Mexe em
+  todas as fotos: **lote só para validar**.
+- **A palavra-chave `umidade` da NR-15 destranca o Anexo 6 (hiperbárico).** "Manchas
+  escuras de umidade" numa parede de alvenaria levou cinco itens de mergulho ao dossiê.
+  A `umidade` da NR-15 é o Anexo 10, locais alagados/encharcados — pede qualificação,
+  não a palavra solta. Conserto barato em `catalogo_nr.py`.
+- **Nada pede que todo achado de risco seja endereçado — agora com dois casos.** Já
+  estava registrado nas fotos (59)/(60); no lote de içamento reapareceu duas vezes na
+  mesma foto: o laudo 5 enquadrou um vão no piso e deixou a cancela (o achado que o
+  engenheiro nomeou no arquivo) sem tratamento, e o laudo 6 fechou com 0 NC tendo
+  registrado "Abertura retangular no teto de concreto, sem cobertura ou fechamento
+  visível" e uma cancela aberta, com 1 trabalhador na cena. **Nenhum sinal cobre
+  "abertura no teto"** — a laje do pavimento de cima vista de baixo.
 - **Autenticação.** Discutida, não implementada. Recomendação: app privado no
   Streamlit Cloud (Settings → Sharing), que não cria segredo novo. Alternativas:
   `st.login()` (OIDC, disponível na versão instalada) ou senha nos Secrets com
