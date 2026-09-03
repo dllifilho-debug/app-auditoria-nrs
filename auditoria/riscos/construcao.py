@@ -346,6 +346,100 @@ RISCOS: dict[str, dict] = {
         "gravidade_base": "alta",
     },
     # ------------------------------------------------------------------
+    # Equipamentos de guindar (NR-18 18.10.1.15 a 18.10.1.44)
+    #
+    # A NR-18 dedica 33 itens vigentes a grua, guindaste, pórtico e ponte
+    # rolante — e até 03/09 nenhum risco os alcançava. Os riscos de içamento
+    # que existiam moravam todos em `industria.py`, apontando para NR-11/NR-12
+    # com vocabulário de fábrica (talha, ponte rolante, monta-carga,
+    # empilhadeira). Consequência medida no lote de içamento de 02/09: uma
+    # cinta de içamento desgastada saiu enquadrada em NR-06 6.9.3, marcação de
+    # EPI, porque nenhum item de canteiro chegou ao dossiê para competir.
+    #
+    # A maior parte dos 33 é obrigação de papel — plano de carga, análise de
+    # risco, termo de entrega técnica, registro de inspeção diária — e fica de
+    # fora de propósito: uma fotografia não comprova nem desmente nenhuma
+    # delas. Entram só os itens cujo objeto aparece na foto.
+    # ------------------------------------------------------------------
+    "dispositivo_icamento_deteriorado": {
+        "rotulo": "Dispositivo auxiliar de içamento deteriorado ou sem identificação legível",
+        "descricao": (
+            "Cinta têxtil, eslinga, estropo ou cabo de içamento com desgaste, tecido "
+            "desfiado, sujidade que encobre as marcações ou sem a identificação indelével "
+            "de fabricante, capacidade de carga e número de série que permita rastreá-lo."
+        ),
+        # "desgaste na cinta de icamento" e "tecido da cinta desfiado" são os
+        # dois medidos contra a foto real (laudo 7 do lote de içamento); os
+        # demais são vocabulário técnico inequívoco — `esling`, `estrop` e
+        # `icament` não existem fora deste domínio. Nenhum deles tem quatro
+        # radicais, e nenhum casa a cinta com o CINTURÃO de segurança: o
+        # discriminante `icament`/`tecid` é o que separa os dois, já que
+        # "cinta" e "cinto" caem no mesmo radical (ver a armadilha).
+        "sinais": [
+            "desgaste na cinta de icamento",
+            "tecido da cinta desfiado",
+            "cabo de icamento desfiado",
+            "eslinga desgastada",
+            "estropo desfiado",
+        ],
+        "itens": ["NR-18 18.10.1.27", "NR-11 11.1.3.1"],
+        "gravidade_base": "alta",
+    },
+    "carga_suspensa_area_sem_isolamento": {
+        "rotulo": "Área sob carga suspensa sem isolamento e sinalização",
+        "descricao": (
+            "Carga içada por grua, guindaste ou pórtico mantida suspensa sobre área de "
+            "canteiro sem o isolamento e a sinalização que delimitem a região sob o "
+            "percurso da carga."
+        ),
+        # Deliberadamente SEM `exige_pessoa`, e é essa a diferença para o
+        # `carga_suspensa_sobre_trabalhadores` de `industria.py`, cujos sinais
+        # todos exigem alguém embaixo. A NR-18 18.10.1.21 cobra o isolamento da
+        # área, não a presença de vítima — e foi justamente uma caçamba
+        # suspensa numa foto sem ninguém embaixo (laudo 1 do lote de 12) que
+        # não routeou nada.
+        #
+        # Os sinais casam a carga suspensa PRESENTE, não a ausência do
+        # isolamento: o Olho descreve o que vê, e em nenhum laudo deste
+        # histórico ele escreveu "sem isolamento" por conta própria. É o mesmo
+        # papel de `ha_maquina_na_cena` — o objeto na cena traz o item ao
+        # dossiê, e quem decide se há não conformidade é o Analista, com o
+        # Diretor aparando pela regra da moldura se o isolamento estiver fora
+        # do quadro.
+        "sinais": [
+            "cacamba suspensa",
+            "carga suspensa",
+            "balde de concreto suspenso",
+            "carga pendurada no gancho",
+            "carga icada no alto",
+        ],
+        "itens": ["NR-18 18.10.1.21"],
+        "gravidade_base": "alta",
+    },
+    "equipamento_guindar_sem_itens_seguranca": {
+        "rotulo": "Equipamento de guindar sem os itens de segurança exigidos",
+        "descricao": (
+            "Grua, guindaste, pórtico ou ponte rolante sem limitador de carga máxima, sem "
+            "alarme sonoro, sem trava de segurança no gancho do moitão ou — no caso de "
+            "guindastes e gruas — sem anemômetro indicando a velocidade do vento."
+        ),
+        # Sem foto positiva neste histórico: nenhum laudo mostrou moitão,
+        # anemômetro ou limitador. Os sinais foram escolhidos por serem curtos
+        # e inequívocos (`moita` e `anemometr` não existem fora deste domínio)
+        # e medidos contra as 13 cenas reais do acervo — nenhum falso positivo.
+        # É menos garantia que os dois riscos acima; se um lote com grua de
+        # perto nunca acionar isto, o defeito está aqui.
+        "sinais": [
+            "moitao sem trava",
+            "gancho do moitao aberto",
+            "grua sem anemometro",
+            "sem limitador de carga",
+            "guindaste sem alarme",
+        ],
+        "itens": ["NR-18 18.10.1.24", "NR-18 18.10.1.26"],
+        "gravidade_base": "alta",
+    },
+    # ------------------------------------------------------------------
     # Escadas, rampas e passarelas
     # ------------------------------------------------------------------
     "escada_mao_irregular": {

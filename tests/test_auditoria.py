@@ -2662,6 +2662,92 @@ def test_nenhum_sinal_vira_so_palavra_cola():
     assert not nus, nus
 
 
+def test_cinta_de_icamento_routeia_dispositivo_de_icamento():
+    """O outro lado do defeito do lote de içamento: tirar o risco de EPI não
+    bastava, porque a cinta ficava sem item curado nenhum e o `NR-06 6.9.3`
+    continuava sendo o menos ruim do dossiê textual. Fatos verbatim do laudo 7
+    de 02/09."""
+    visao = Visao(
+        ambiente="Piso de obra coberto por camada de pó e detritos de construção",
+        achados=[
+            Achado(fato="Cinta de içamento de tecido laranja com costuras visíveis, "
+                        "apresentando sujidade escura e desgaste na superfície, está "
+                        "amontoada e enrolada sobre o piso"),
+            Achado(fato="Trecho de tecido da cinta com bordas desfiadas e material "
+                        "solto, indicando desgaste estrutural"),
+        ],
+    )
+    rotulos = [r.id for r in rotear_riscos(visao, "")]
+    assert "dispositivo_icamento_deteriorado" in rotulos, rotulos
+
+
+def test_dossie_da_cinta_traz_o_item_de_dispositivo_de_icamento(base):
+    """`NR-18 18.10.1.27` é o item que exige do dispositivo auxiliar de içamento
+    a marcação indelével com fabricante, capacidade de carga e rastreabilidade.
+    Antes desta taxonomia ele nunca chegava ao dossiê: com o texto do Olho o
+    BM25 devolve NR-12 Anexo XII (manutenção de linha de transmissão), e só o
+    vocabulário jurídico o alcança."""
+    visao = Visao(
+        ambiente="Piso de obra coberto por camada de pó e detritos de construção",
+        achados=[
+            Achado(fato="Cinta de içamento de tecido laranja com costuras visíveis, "
+                        "apresentando sujidade escura e desgaste na superfície, está "
+                        "amontoada e enrolada sobre o piso"),
+        ],
+    )
+    dossie, _ = montar_dossie(base, visao, "", date(2026, 9, 2))
+    refs = [f"{e.item.nr} {e.item.item}" for e in dossie.entradas]
+    assert "NR-18 18.10.1.27" in refs, refs
+    assert "NR-11 11.1.3.1" in refs, refs
+
+
+def test_cinturao_desgastado_nao_routeia_dispositivo_de_icamento():
+    """A contraparte da colisão `cint`: o EPI de altura não pode entrar pelos
+    riscos de içamento. O discriminante é `icament`/`tecid`, nunca `cint`."""
+    visao = Visao(
+        ambiente="Laje de cobertura de edifício em construção",
+        pessoas_presentes=True,
+        quantidade_pessoas=1,
+        achados=[Achado(fato="Trabalhador com cinturao de seguranca apresentando "
+                             "desgaste nas fitas")],
+    )
+    rotulos = [r.id for r in rotear_riscos(visao, "")]
+    assert "dispositivo_icamento_deteriorado" not in rotulos, rotulos
+
+
+def test_cacamba_suspensa_routeia_sem_pessoa_na_cena():
+    """O fato é do laudo 1 do lote de 12, e foi ele que mediu o buraco: nenhum
+    dos seis riscos de carga passava do corte. `carga_suspensa_sobre_trabalhadores`
+    exige pessoa em todos os sinais, o que é certo para ele — a NR-18 18.10.1.21
+    cobra o isolamento da ÁREA, não a presença de vítima, e por isso o risco novo
+    não exige pessoa."""
+    visao = Visao(
+        ambiente="Área interna de pavimento em obra, com piso de concreto",
+        achados=[Achado(fato="Estrutura metálica pintada de amarela, com formato de "
+                             "funil ou caçamba, suspensa no alto do ambiente")],
+    )
+    rotulos = [r.id for r in rotear_riscos(visao, "")]
+    assert "carga_suspensa_area_sem_isolamento" in rotulos, rotulos
+    assert not catalogo_riscos()["carga_suspensa_area_sem_isolamento"].exige_pessoa
+
+
+def test_plataforma_da_grua_com_guarda_corpo_nao_routeia_icamento():
+    """Contraparte real, do laudo 2: o guarda-corpo da plataforma da grua está
+    PRESENTE. Nenhum risco de içamento pode nascer de um fato que descreve a
+    proteção existindo."""
+    visao = Visao(
+        ambiente="Estrutura metálica elevada de cor amarela, com cabine e "
+                 "contrapesos, vista de baixo para cima contra o céu.",
+        achados=[Achado(fato="Plataforma aberta com guarda-corpo metálico de tubos "
+                             "finos e um poste vertical com uma luz vermelha no topo, "
+                             "localizada acima da cabine.")],
+    )
+    rotulos = [r.id for r in rotear_riscos(visao, "")]
+    novos = {"dispositivo_icamento_deteriorado", "carga_suspensa_area_sem_isolamento",
+             "equipamento_guindar_sem_itens_seguranca"}
+    assert not (set(rotulos) & novos), rotulos
+
+
 def test_cinta_de_icamento_nao_routeia_risco_de_epi():
     """"cinto" e "cinta" caem no mesmo radical `cint`, e o sinal `"cinto solto"`
     tinha só dois radicais: o fato abaixo — copiado do laudo 7 do lote de
