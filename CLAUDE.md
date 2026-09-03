@@ -225,6 +225,31 @@ commit, comentário do código, corpo do PR — o `/critico` a trata como
 inexistente, e isso é de propósito: é o que impede a evidência de morrer no
 scratchpad.
 
+**Não são etapas de um mesmo ritual.** Os dois rodam no MESMO momento — artefato
+commitado, antes do merge. O que muda é *se* cada um roda, não *quando*:
+
+- `/conferir` tem gatilho **largo**: qualquer artefato que afirme fato. Na
+  prática, quase todo PR.
+- `/critico` tem gatilho **estreito**: decisão que só um lote de produção
+  validaria. Dos cinco PRs de 03/09 (#20 a #24) ele valeria em um ou dois. Num
+  conserto medido, com contraparte testada e teste travando, ele devolve APROVA
+  e custou uma sessão à toa.
+
+**Quando os dois rodam, `/conferir` primeiro** — e isto não é preferência. O
+`/critico` lê o artefato e **acredita nele**: julga a decisão a partir dos fatos
+que ela apresenta. Um PR que dissesse *"cobertura máxima 0,40, bem abaixo do
+corte"* para justificar não mexer num sinal passaria tranquilo — mas se o valor
+real fosse 0,67, colado no corte de 0,7, a decisão que parecia sensata não é. Só
+o `/conferir` pega isso. Corrija os DIVERGE, e rode o `/critico` sobre o hash
+final.
+
+**Nenhum dos dois** em PR de conserto mecânico sem número no corpo e com teste
+travando o comportamento: não há fato a conferir nem decisão a julgar.
+
+O #21 é a prova do gatilho: ele tocou este arquivo e não passou pelo
+`/conferir`. O #24 inteiro — um PR só de correção — foi consertar o que aquela
+passada de dois minutos teria pego.
+
 **Verificação no navegador é obrigatória antes de dar algo por pronto.** Chromium em
 `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`, com `--no-sandbox`. Vários bugs
 desta sessão passaram nos testes unitários e só apareceram na tela.
