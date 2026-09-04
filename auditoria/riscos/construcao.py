@@ -371,6 +371,15 @@ RISCOS: dict[str, dict] = {
         # aberto, e "torre do elevador aberta" o pega. Falso negativo custa
         # cobertura; falso positivo é a classe de erro 1 e vai ao cliente.
         #
+        # E TODO sinal que fala de torre ou base exige `elevador`, porque no
+        # canteiro há outra torre: a da GRUA. "base da torre aberta" e "vao da
+        # torre aberto" casavam "Base da torre da GRUA aberta" e "Poço da GRUA
+        # aberto junto à base da torre" — a foto `19 PAV. POÇO GRUA SEM
+        # PROTEÇÃO` do lote de içamento sairia enquadrada em cancela de
+        # elevador. O `vao da torre aberto` saiu de vez: "vão da torre do
+        # elevador aberto" já casa `torre do elevador aberta`, então ele não
+        # cobria nada que sobrasse, só o que não devia.
+        #
         # "acesso so com corrente", a primeira tentativa de encurtar o terceiro,
         # casava "quadro elétrico com CORRENTE de alimentação exposta junto ao
         # ACESSO da obra" — `corrente` de elo e `corrente` elétrica têm o mesmo
@@ -381,9 +390,8 @@ RISCOS: dict[str, dict] = {
             "cancela faltando",
             "cancela quebrada",
             "torre do elevador aberta",
-            "base da torre aberta",
+            "base do elevador aberta",
             "elevador so com corrente",
-            "vao da torre aberto",
             "pessoa passando embaixo do elevador de obra",
         ],
         "itens": ["NR-18 18.11.13", "NR-18 18.11.14"],

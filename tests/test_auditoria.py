@@ -484,6 +484,14 @@ def test_protecao_instalada_nao_aciona_o_risco_de_protecao_ausente():
         "Caixa do elevador com fechamento de madeira travado, sem sinalização",
         "Poço de elevador fechado com tapume, sem placa de identificação",
         "Torre do elevador com cancela fechada, sem trava de intertravamento visível",
+        # No canteiro há OUTRA torre: a da grua. "base da torre aberta" e "vao
+        # da torre aberto" não pediam `elevador`, e a foto `19 PAV. POÇO GRUA
+        # SEM PROTEÇÃO` do lote de içamento sairia enquadrada em cancela de
+        # elevador — item verdadeiro, equipamento errado.
+        "Base da torre da grua aberta, delimitada apenas por cones",
+        "Poço da grua aberto no piso, junto à base da torre",
+        "Torre da grua aberta na base, com a fundação exposta",
+        "Base da torre da grua com o poço aberto, sem fechamento lateral",
     )
     for fato in instaladas:
         ids = [r.id for r in rotear_riscos(
