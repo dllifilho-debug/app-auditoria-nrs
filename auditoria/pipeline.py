@@ -309,7 +309,7 @@ def rotear_riscos(visao: Visao, contexto: str = "") -> list[Risco]:
     de máquina saía enquadrada em abertura de piso. Nenhum dos dois textos
     dispara o sinal sozinho; só a soma, que é justamente o que não se quer.
 
-    Sinal de um radical só é isento: são oito, todos nomes inequívocos
+    Sinal de um radical só é isento: são sete, todos nomes inequívocos
     ("caldeira", "gambiarra", "glp"), e é deles que se espera exatamente isso —
     que o ambiente nomeie o equipamento que o achado não repete.
     """
@@ -430,15 +430,21 @@ def _conversar_sem_cortar(cliente, modelo, prompt, teto, temperatura, quem):
     """Conversa de texto que refaz a chamada quando a resposta bateu no teto —
     ou quando o JSON simplesmente não veio parseável, truncado ou não.
 
-    O Olho já fazia isso desde que um laudo se perdeu por resposta cortada; o
-    Analista e o Diretor não, e a conta chegou quando o veredito ganhou as
-    chaves do aparo: num lote real de 14 fotos, três laudos morreram com "não
-    devolveu JSON utilizável". A primeira correção só refazia a chamada quando
-    a própria API sinalizava truncamento (`finish_reason == "length"`); um
-    lote seguinte perdeu três fotos de novo com a mesma mensagem, sem esse
-    sinal — JSON inválido por outro motivo (aspas de citação oficial não
-    escapadas, por exemplo), não truncamento. Refazer sempre que o parser
-    falhar, e não só quando a API confirma corte, cobre os dois casos.
+    Quem passa por aqui é o Analista e o Diretor. A conta chegou quando o
+    veredito ganhou as chaves do aparo: num lote real de 14 fotos, três laudos
+    morreram com "não devolveu JSON utilizável". A primeira correção só refazia
+    a chamada quando a própria API sinalizava truncamento (`finish_reason ==
+    "length"`); um lote seguinte perdeu três fotos de novo com a mesma
+    mensagem, sem esse sinal — JSON inválido por outro motivo (aspas de citação
+    oficial não escapadas, por exemplo), não truncamento. Refazer sempre que o
+    parser falhar, e não só quando a API confirma corte, cobre os dois casos.
+
+    **O Olho ficou fora.** `agente_olho` tem retentativa própria, escrita antes
+    desta e nunca migrada: ela só cobre o caso sinalizado pela API. JSON
+    malformado sem sinal ainda mata a foto lá, e aí não há laudo nenhum. Migrar
+    não é gratuito — a chamada do Olho carrega a imagem e refazê-la com o dobro
+    do teto mexe na cota de todo lote —, então está registrado em "Em aberto"
+    no CLAUDE.md, não consertado às escondidas.
 
     Quem paga o dobro de saída é só a chamada que de fato precisar de uma
     segunda tentativa, e ainda sai mais barato do que perder a foto: a imagem

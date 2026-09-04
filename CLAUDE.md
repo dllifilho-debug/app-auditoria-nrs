@@ -26,7 +26,7 @@ verdade é sempre com o usuário, em produção, com fotos e laudos que ele mand
 
 ## Onde a coisa parou (03/09/2026, fim da sessão)
 
-**O `main` carrega os PRs #17 a #25.** O dossiê não oferece mais obrigação de
+**O `main` carrega os PRs #17 em diante.** O dossiê não oferece mais obrigação de
 papel, os textos do Diretor não saem quebrados no laudo, o 3.8 é o padrão nos dois
 campos, o app cronometra cada foto, os dois falsos positivos de roteamento que o lote
 de içamento revelou estão fechados, os equipamentos de guindar da NR-18 entraram na
@@ -50,12 +50,14 @@ arquivo, não contra o app ele mesmo:
 As duas NCs certas são as duas de abertura — o domínio que o app já dominava antes.
 **O lote de içamento não produziu um único enquadramento de içamento.**
 
-**O buraco principal é de TAXONOMIA, e é maior do que a hipótese anterior.** Os 42
-riscos de construção não têm nenhum sobre grua, equipamento de guindar ou dispositivo
-de içamento; os seis riscos de içamento moram em `industria.py` e apontam para
-NR-11/NR-12 — vocabulário de fábrica (talha, ponte rolante, monta-carga, empilhadeira).
-Enquanto isso a NR-18 tem **33 itens vigentes só de equipamento de guindar**
-(`18.10.1.15` a `18.10.1.44`) e **nenhum é citado por risco nenhum**:
+**O buraco principal era de TAXONOMIA, e era maior do que a hipótese anterior**
+(diagnóstico do lote, medido no `main` de então — o #22 fechou a parte de taxonomia;
+ver "Em aberto"). Os 42 riscos de construção de então não tinham nenhum sobre grua,
+equipamento de guindar ou dispositivo de içamento; os seis riscos de içamento moram em
+`industria.py` e apontam para NR-11/NR-12 — vocabulário de fábrica (talha, ponte
+rolante, monta-carga, empilhadeira). Enquanto isso a NR-18 tem **33 itens vigentes só
+de equipamento de guindar** (`18.10.1.15` a `18.10.1.44`) e **nenhum era citado por
+risco nenhum** (hoje são quatro, por três riscos de `construcao.py`):
 
 - `18.10.1.15` define nominalmente: *"consideram-se equipamentos de guindar as gruas…"*
 - `18.10.1.21` — isolamento e sinalização da área sob carga suspensa (a contraparte de
@@ -161,7 +163,7 @@ Lotes temáticos que valem, com as fotos já identificadas:
 |---|---|---|
 | NR-12 | `SERRA DE BANCADA`, `SERRALHERIA SEM BARREIRA DE ACESSO` | as duas únicas com máquina de verdade no acervo novo |
 | ~~Içamento~~ | 7 fotos | **RODADO em 02/09** — 2 de 5 achados do engenheiro. Ver acima. Só volta a valer depois de existir taxonomia de guindar e de o Olho nomear o equipamento |
-| Poço de elevador | 6 das 19 disponíveis | achado mais repetido do acervo; `vao_caixa_elevador_sem_fechamento` existe e nunca disparou em produção. **Meça o sinal antes de gastar o lote**: no lote de içamento ele parou em 0,50, e os sete sinais dele exigem a palavra `elevador`, que o Olho não escreve |
+| Poço de elevador | 6 das 17 disponíveis | achado mais repetido do acervo; `vao_caixa_elevador_sem_fechamento` existe e nunca disparou em produção. **Meça o sinal antes de gastar o lote**: no lote de içamento ele parou em 0,50, e os sete sinais dele exigem a palavra `elevador`, que o Olho não escreve |
 | Controle negativo | 5 documentos (POP, lista de presença, CREA, crachá) | devem dar **0 NC**; é a classe de erro que já apareceu e nunca foi testada de propósito |
 
 Ao receber os laudos: o HTML traz o "Ambiente registrado" e a lista de fatos do Olho,
@@ -287,14 +289,14 @@ próprio comando composto (exit 144).
 | **Corte de verbosidade aplicado a um campo só** | O `retirado` do aparo ganhou `_em_poucas_palavras` no #13, quando o `motivo` do veto ainda era sempre escrito pelo código. Quando o veto passou a carregar o texto do Diretor, os 493 caracteres de argumentação voltaram por ali — dentro do ponto de atenção que vai ao cliente. É a irmã da armadilha "verificação mecânica no caminho errado": ao pôr uma trava num campo, liste os outros campos por onde o mesmo texto sai. |
 | **Dois radicais é tudo-ou-nada, e o radical pode colidir** | A irmã invertida da armadilha dos quatro. A âncora exige dois radicais do PRÓPRIO achado, então num sinal de dois radicais nenhum pode vir da cena: ou o achado traz os dois, ou a cobertura é 0,00, não 0,50. Isso corta nos dois sentidos. Perde: `"cinta rasgada"` e `"gancho aberto"` deram **0,00** na foto de uma cinta de içamento rasgada de verdade. E dispara: com dois radicais só, uma colisão de radical basta para acionar o risco inteiro — `radical("cinta") == radical("cinto") == "cint"` fez `"cinto solto"` casar *"tecido da CINTA … material SOLTO"* com cobertura 1,0, e o acessório de içamento saiu no laudo enquadrado como EPI (`NR-06 6.9.3`). Não adianta acrescentar o discriminante: `"cinto de seguranca solto"` também casaria, porque `seguranc` pode vir do ambiente e a âncora já está satisfeita pelos outros dois. **Sinal de dois radicais só é seguro se nenhum dos dois for ambíguo por radical** — corrigido em #20 trocando por `"cinturao solto"` (reduz a `cintura`, não colide). Ao escrever sinal curto, rode o radical das duas palavras e procure por vizinho de outro gênero. |
 | **O aparo pode apagar o achado grave e deixar a metade irrelevante** | O aparo existe para restringir a constatação ao que o fato sustenta, e nisso funciona. Mas ele escolhe QUAL parte sobrevive, e pode escolher errado: na foto das cintas o Diretor aparou o desfiamento — o desgaste estrutural, que é o risco de ruptura — e manteve só a sujidade que compromete a legibilidade das marcações. O laudo saiu tecnicamente correto e materialmente inútil, e **nada foi para os pontos de atenção**. É a classe de erro 5 (achado que evapora) por um caminho que não estava mapeado: não pelo veto, pelo aparo. Ao revisar o aparo, pergunte se o que sobrou é o achado ou o resto dele. |
-| **Número deste arquivo envelhece em silêncio** | Os números daqui não estão escritos em lugar nenhum do código — são computados (`123 riscos` saía de `len(catalogo())`, `6.358 itens` de `carregar_base()`). Quando um PR muda o catálogo, o texto continua afirmando o valor velho e ninguém recorre à fonte, porque o entorno parece conferido. Medido em 03/09 rodando `/conferir` contra este arquivo: **cinco divergências**. Três nasceram de PRs desta mesma sessão (`123 riscos` → 126, `177 testes` → 182 em dois lugares); uma era herdada e desatualizada (`22 de 228` → 24 de 232); e uma **nasceu errada** — `272 dos 866 sinais` foi escrito quando o valor real era 271 de 867, e sobreviveu a três sessões e quatro PRs. A pior delas (`cinco dos sete sinais`, quando são sete de sete) estava num commit cuja própria mensagem dizia "números conferidos contra o código": seis números foram conferidos, e o sétimo escapou por estar no meio de um parágrafo em vez de numa lista. **Ao mexer aqui, rode `/conferir`** — e note que `grep` não pega nenhuma dessas: só executar o catálogo pega. |
+| **Número deste arquivo envelhece em silêncio** | Os números daqui não estão escritos em lugar nenhum do código — são computados (`123 riscos` saía de `len(catalogo())`, `6.358 itens` de `carregar_base()`). Quando um PR muda o catálogo, o texto continua afirmando o valor velho e ninguém recorre à fonte, porque o entorno parece conferido. Medido em 03/09 rodando `/conferir` contra este arquivo: **cinco divergências**. Três nasceram de PRs desta mesma sessão (`123 riscos` → 126, `177 testes` → 182 em dois lugares); uma era herdada e desatualizada (`22 de 228` → 24 de 232); e uma **nasceu errada** — `272 dos 866 sinais` foi escrito quando o valor real era 271 de 866 (só o numerador; o denominador estava certo), e sobreviveu a três sessões e quatro PRs. A pior delas (`cinco dos sete sinais`, quando são sete de sete) estava num commit cuja própria mensagem dizia "números conferidos contra o código": seis números foram conferidos, e o sétimo escapou por estar no meio de um parágrafo em vez de numa lista. **A correção também erra**: a mensagem do #24 anunciou "off-by-one nos DOIS números" e o texto daqui copiou o `867`, que nunca existiu — conferir o conserto contra o código custa o mesmo que conferir o original, e ninguém fez. **Ao mexer aqui, rode `/conferir`** — e note que `grep` não pega nenhuma dessas: só executar o catálogo pega. |
 | **Medir tempo por fora de uma função com várias saídas** | `executar` volta cedo quando o Olho não devolve fato utilizável. Cronometrar no `app.py`, em volta da chamada, funcionaria — até alguém acrescentar a próxima saída antecipada e o número virar zero em silêncio. Por isso `executar` virou um invólucro fino que cronometra e delega a `_executar`: existe **um** ponto de saída para medir. **Há teste guardando o caminho da visão que falha.** |
 | **Mergear PR com lote rodando** | O merge dispara o redeploy do Streamlit Cloud, que **reinicia o app e apaga o `st.session_state`** — onde o lote em andamento vive. No plano gratuito um lote é de horas de parede, e o usuário recomeça do zero. Vale para qualquer merge: **pergunte se há lote rodando antes**, e espere os laudos serem baixados. |
 | `git fetch origin main <branch-que-não-existe-mais>` falha inteiro, silenciosamente | Fetch de múltiplos refs é atômico: se um ref já foi deletado no remoto (branch mergeada), o comando inteiro falha e **nenhum ref é atualizado** — inclusive o `main`, que existia e seria atualizado sozinho. `origin/main` local fica congelado na versão de antes, e comparações feitas contra ele mentem. Já causou uma sessão inteira concluir errado que "a reescrita nunca foi mergeada". Se o histórico parecer suspeito, rode `git fetch origin main` sozinho antes de confiar em qualquer diff. |
 
 ---
 
-## Estado atual (o `main` de 03/09, com os PRs #17 a #25)
+## Estado atual (o `main` de 03/09, com os PRs #17 em diante)
 
 - **6.358 itens** vigentes de **24 NRs** (de 36 vigentes), extraídos dos PDFs em `normas/`
 - **126 riscos** curados mapeando para itens reais; 25 exigem pessoa na cena e
@@ -467,6 +469,17 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
 
 ## Em aberto
 
+- **O Olho ficou fora da segunda correção de JSON.** `agente_olho` não usa
+  `_conversar_sem_cortar`: tem retentativa própria, e ela só refaz a chamada quando a
+  API sinaliza o corte (`ultimo_corte_por_limite`) — que é exatamente a primeira
+  correção, a que o lote de 29/08 provou insuficiente. JSON malformado sem sinal de
+  truncamento (a suspeita de então: aspas de citação não escapadas) ainda mata a foto
+  no Olho, e aí não há laudo nenhum, porque o pipeline para antes do dossiê. Achado
+  pelo `/conferir` de 04/09, não por lote — nenhuma medição diz com que frequência
+  acontece na visão. **Não é conserto de uma linha**: a chamada do Olho carrega a
+  imagem, é a mais cara do pipeline, e refazer com o dobro do teto de saída mexe na
+  cota de todas as fotos. A docstring de `_conversar_sem_cortar` também afirma que o
+  Olho já faz isso, e não faz.
 - **Taxonomia de içamento — FEITA no #22, à espera de lote.** Três riscos novos em
   `construcao.py`: `dispositivo_icamento_deteriorado` (`NR-18 18.10.1.27`,
   `NR-11 11.1.3.1`), `carga_suspensa_area_sem_isolamento` (`18.10.1.21`, sem exigir
@@ -764,8 +777,10 @@ Funcionou, com evidência no laudo:
 Regressão introduzida e corrigida na mesma sessão: o schema do Diretor cresceu com as
 chaves do aparo, a resposta passou do teto de saída e **três laudos morreram com JSON
 truncado** — não inválido, truncado. O Olho já refazia a chamada nesse caso; o Analista
-e o Diretor não. Hoje os três compartilham `_conversar_sem_cortar`. **Toda vez que
-crescer o que se pede a um agente, verificar o teto de saída dele.**
+e o Diretor não. Hoje **o Analista e o Diretor** compartilham `_conversar_sem_cortar`;
+o Olho **não** — `agente_olho` tem retentativa própria, e ela ficou na versão antiga.
+Ver "Em aberto". **Toda vez que crescer o que se pede a um agente, verificar o teto de
+saída dele.**
 
 **A mesma mensagem voltou no lote de 29/08, com outra causa.** O sumário do lote de 14
 listou 3 fotos não auditadas com "Diretor/Analista não devolveu JSON utilizável" — a
@@ -775,7 +790,7 @@ oficial não escapadas) que a API não sinaliza. `_conversar_sem_cortar` só ref
 chamada quando a API confirmava o corte; agora refaz também sempre que o parser falha,
 sinalizado ou não. **Validado no lote de 15 de 01/09: 15 de 15 laudos saíram**, contra
 11 de 14 antes. As 3 fotos que morriam com "não devolveu JSON utilizável" foram
-embora.
+embora. **Mas a segunda correção não alcançou o Olho** — ver "Em aberto".
 
 ---
 
