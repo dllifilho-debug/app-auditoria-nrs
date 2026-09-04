@@ -133,11 +133,19 @@ RISCOS: dict[str, dict] = {
             "a abertura, em material resistente travado ou fixado à estrutura, enquanto as "
             "portas definitivas não são colocadas."
         ),
+        # Três sinais tinham quatro radicais com `sem` ou `com` entre eles, e
+        # disparavam com o fechamento INSTALADO — "caixa do elevador COM
+        # fechamento de madeira" cobria 3 de 4 de "caixa do elevador sem
+        # fechamento". Mesmo defeito e mesma correção do risco da cancela: o
+        # negador não pode ser `sem` (ver o comentário longo lá), e sim a
+        # abertura, que é o que a foto mostra e o que o Olho escreve. Vale a
+        # pena aqui porque este é o risco do lote de poço de elevador, o achado
+        # mais repetido do acervo.
         "sinais": [
             "poco de elevador aberto",
-            "caixa do elevador sem fechamento",
-            "vao do elevador so com fita",
-            "buraco do elevador sem tapume",
+            "caixa de elevador aberta",
+            "vao do elevador aberto",
+            "tapume do elevador faltando",
             "porta do elevador faltando",
             "shaft do elevador aberto",
             "tabua atravessada no vao do elevador",
@@ -333,13 +341,66 @@ RISCOS: dict[str, dict] = {
             "intertravamento, ou base da torre sem fechamento de pelo menos 2 m em todos os "
             "lados com proteção e sinalização."
         ),
+        # Quatro destes sinais eram longos e disparavam com a proteção PRESENTE.
+        # Enquanto o Olho não escrevia "cancela" nem "elevador" isso era latente;
+        # ao ensiná-lo a nomear o elemento de canteiro, o falso positivo passa a
+        # ser o caso comum — e o próximo lote é justamente o de poço de elevador.
+        # Medido: 5 de 5 fatos com a proteção instalada acionavam o risco de
+        # proteção ausente, sempre a 0,75, sempre faltando só o negador:
+        #
+        #   "elevador de obra sem cancela"        falta `sem`     → "cancela … fechada e travada"
+        #   "base do elevador sem tapume"         falta `sem`     → "base … fechada com tapume"
+        #   "acesso ao elevador so com corrente"  falta `corrent` → "acesso … fechado com porta"
+        #   "vao da torre do elevador aberto"     falta `abert`   → "vão … fechado por chapa"
+        #
+        # Encurtar não bastou, e a primeira tentativa ensinou por quê: trocar
+        # "elevador de obra sem cancela" por "sem cancela" mantém o `sem` como
+        # radical OBRIGATÓRIO — e `sem` não nega nada, só conta. O fato "Cancela
+        # metálica vermelha, fechada e travada, SEM sinalização de advertência"
+        # dava cobertura 1,0. Pior: o PROMPT_OLHO manda escrever "sem <peça>
+        # visível" quando o lugar dela aparece vazio, então esse é o formato de
+        # fato mais provável que o Olho produz. `sem` num sinal é sempre um
+        # radical a menos; como NEGADOR ele é inútil.
+        #
+        # O que nega, numa foto, é a abertura — e é o que o Olho de fato
+        # descreve. Os sinais passam a ancorar em `aberta`, `ausente`,
+        # `faltando` e `quebrada`, todos discriminantes, nenhum de quatro
+        # radicais. O caso "entrada da torre SEM CANCELA instalada" deixa de
+        # casar pela letra, e é uma perda aceita: sem cancela, o acesso está
+        # aberto, e "torre do elevador aberta" o pega. Falso negativo custa
+        # cobertura; falso positivo é a classe de erro 1 e vai ao cliente.
+        #
+        # E TODO sinal que fala de torre ou base exige `elevador`, porque no
+        # canteiro há outra torre: a da GRUA. "base da torre aberta" e "vao da
+        # torre aberto" casavam "Base da torre da GRUA aberta" e "Poço da GRUA
+        # aberto junto à base da torre" — a foto `19 PAV. POÇO GRUA SEM
+        # PROTEÇÃO` do lote de içamento sairia enquadrada em cancela de
+        # elevador. O `vao da torre aberto` saiu de vez: "vão da torre do
+        # elevador aberto" já casa `torre do elevador aberta`, então ele não
+        # cobria nada que sobrasse, só o que não devia.
+        #
+        # Os sinais de proteção INADEQUADA — "acesso ao elevador so com
+        # corrente", "vao do elevador so com fita" — saíram, e a razão vale para
+        # o próximo que for tentado. Eles precisam do conceito de SUBSTITUIÇÃO
+        # ("só com", "no lugar de"), e o que sobra dele depois de `radicais()` é
+        # a palavra-cola `com`: um sinal de três radicais em que um é cola tem
+        # dois discriminantes, e "vão do elevador fechado com chapa aparafusada
+        # E FITA ZEBRADA de sinalização" — proteção rígida instalada, fita ao
+        # lado, cena comum de canteiro — dava cobertura 1,0. `corrente` ainda
+        # somava a colisão com a corrente ELÉTRICA: "quadro elétrico com
+        # CORRENTE de alimentação exposta junto ao ACESSO da obra".
+        #
+        # A perda é pequena porque a foto que motivava esses sinais também
+        # dispara os de abertura: um vão isolado só por fita É um vão aberto, e
+        # o Olho o descreve assim. Proteção inadequada não é representável por
+        # sobreposição de radicais; é caso para o Analista ler o dossiê.
         "sinais": [
-            "elevador de obra sem cancela",
-            "torre do elevador aberta",
-            "base do elevador sem tapume",
-            "acesso ao elevador so com corrente",
+            "cancela aberta",
+            "cancela ausente",
+            "cancela faltando",
             "cancela quebrada",
-            "vao da torre do elevador aberto",
+            "torre do elevador aberta",
+            "base do elevador aberta",
             "pessoa passando embaixo do elevador de obra",
         ],
         "itens": ["NR-18 18.11.13", "NR-18 18.11.14"],

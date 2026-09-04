@@ -388,6 +388,184 @@ def test_prompt_do_olho_pede_o_nome_da_maquina():
     assert "rede de proteção" in PROMPT_OLHO, "a contraparte precisa continuar no prompt"
 
 
+def test_prompt_do_olho_pede_tambem_o_nome_do_elemento_de_canteiro():
+    """A regra de nomear valia só para máquina, e a cancela não é máquina.
+
+    No lote de içamento o Olho descreveu a cancela de uma torre de elevador como
+    "Grade metálica … pintada de vermelho, aberta" — e estava OBEDECENDO: o
+    parágrafo da barreira lista "grade" e manda qualificar material, rigidez e
+    fixação, enquanto o parágrafo de nomear falava de "equipamento" e não
+    mencionava cancela. Duas regras competindo, e o Olho seguiu a mais
+    específica. A grua saiu igual: "Estrutura metálica elevada de cor amarela,
+    com cabine e contrapesos".
+
+    O conserto é dizer que as duas se SOMAM — nome mais atributos — e estender a
+    lista ao vocabulário de canteiro de que o roteamento depende.
+    """
+    from auditoria.pipeline import PROMPT_OLHO
+
+    for nome in ("cancela", "grua", "torre de elevador", "tapume", "bandeja"):
+        assert nome in PROMPT_OLHO.lower(), nome
+    assert "NÃO dispensa os atributos" in PROMPT_OLHO
+    # A cláusula de escape continua existindo, mas com o critério apertado.
+    assert "ambígua de verdade" in PROMPT_OLHO
+    assert "tambor cilíndrico" in PROMPT_OLHO
+
+
+def test_o_nome_do_elemento_de_canteiro_e_o_que_faz_a_cancela_rotear():
+    """Por que mexer no prompt do Olho vale a mudança: medido sem rede.
+
+    O risco `torre_elevador_sem_cancela` e o item `NR-18 18.11.13` ("Em todos os
+    acessos de entrada à torre do elevador deve ser instalada barreira
+    (cancela)…") já existiam quando o lote de içamento rodou. Faltava só o nome:
+    os sete sinais do risco dependem de `elevador`, `cancela` ou `tapume`, e
+    nenhuma das duas fotos de cancela produziu qualquer um deles.
+
+    Este teste trava o ganho nos dois sentidos — o fato como o Olho escreveu
+    não routeia; o mesmo fato com o nome routeia o risco certo.
+    """
+    ambiente = ("Canteiro de obras em edificação de múltiplos pavimentos, "
+                "laje de concreto")
+    sem_nome = Visao(ambiente=ambiente, achados=[
+        Achado("Grade metálica vermelha, aberta, apoiada no piso, sem fechamento lateral"),
+        Achado("Estrutura metálica de grande porte, com configuração de torre, junto à fachada"),
+    ])
+    com_nome = Visao(ambiente=ambiente, achados=[
+        Achado("Cancela metálica vermelha na entrada da torre do elevador de obra, "
+               "aberta, presa por uma dobradiça"),
+        Achado("Torre de elevador de obra de cremalheira junto à fachada, com "
+               "estrutura metálica treliçada"),
+    ])
+
+    assert "torre_elevador_sem_cancela" not in [r.id for r in rotear_riscos(sem_nome)]
+    assert "torre_elevador_sem_cancela" in [r.id for r in rotear_riscos(com_nome)]
+
+
+def test_protecao_instalada_nao_aciona_o_risco_de_protecao_ausente():
+    """A contraparte que o prompt novo tornou obrigatória, e o falso positivo
+    que ela achou.
+
+    Ensinar o Olho a nomear o elemento de canteiro faz os fatos passarem a
+    conter `cancela`, `elevador`, `torre` e `tapume` — que é o que estes dois
+    riscos casam. Antes disso o defeito era latente; depois, seria o caso comum,
+    e o próximo lote é justamente o de poço de elevador.
+
+    Medido antes da correção: 5 de 5 fatos com a proteção INSTALADA acionavam o
+    risco de proteção ausente, e 3 de 6 no risco do vão da caixa. Sempre a 0,75,
+    sempre por sinal de quatro radicais em que o que faltava era só o negador —
+    "caixa do elevador COM fechamento de madeira" cobrindo "caixa do elevador
+    sem fechamento". É a armadilha dos quatro radicais somada à do `sem`.
+
+    Uma contraparte só vale se ela PUDER falhar: os fatos abaixo trazem as
+    palavras dos sinais de propósito. Uma lista de fatos sem `elevador` nem
+    `cancela` passaria com qualquer taxonomia, inclusive a defeituosa.
+    """
+    ambiente = "Canteiro de obras em edificação de múltiplos pavimentos"
+    instaladas = (
+        "Cancela metálica fechada e travada na entrada da torre do elevador de obra",
+        "Base da torre do elevador fechada com tapume de madeira compensada, íntegro",
+        "Acesso ao elevador fechado com porta metálica de correr, com trava",
+        "Torre do elevador de obra com cancela instalada em todos os acessos, fechada",
+        "Vão da torre do elevador fechado por chapa metálica aparafusada",
+        "Caixa do elevador com fechamento de madeira compensada em toda a abertura, travado",
+        "Poço de elevador fechado por tapume de madeira em toda a altura, íntegro",
+        "Buraco do elevador fechado com tapume aparafusado à estrutura",
+        "Porta do elevador instalada e travada no pavimento",
+        # `corrente` de elo e `corrente` elétrica têm o mesmo radical: foi por
+        # aqui que a primeira tentativa de encurtar o sinal vazou.
+        "Quadro elétrico com corrente de alimentação exposta junto ao acesso da obra",
+        # E estes cinco são a SEGUNDA tentativa vazando: encurtar para "sem
+        # cancela" mantinha o `sem` como radical obrigatório, e `sem` não nega
+        # nada. Pior, o PROMPT_OLHO manda escrever "sem <peça> visível" quando o
+        # lugar dela aparece vazio — este é o formato de fato mais provável que
+        # o Olho produz, e ele casava com a cancela INSTALADA.
+        "Cancela metálica vermelha, fechada e travada, sem sinalização de advertência visível",
+        "Cancela instalada e fechada, sem placa de aviso no acesso",
+        "Caixa do elevador com fechamento de madeira travado, sem sinalização",
+        "Poço de elevador fechado com tapume, sem placa de identificação",
+        "Torre do elevador com cancela fechada, sem trava de intertravamento visível",
+        # No canteiro há OUTRA torre: a da grua. "base da torre aberta" e "vao
+        # da torre aberto" não pediam `elevador`, e a foto `19 PAV. POÇO GRUA
+        # SEM PROTEÇÃO` do lote de içamento sairia enquadrada em cancela de
+        # elevador — item verdadeiro, equipamento errado.
+        "Base da torre da grua aberta, delimitada apenas por cones",
+        "Poço da grua aberto no piso, junto à base da torre",
+        "Torre da grua aberta na base, com a fundação exposta",
+        "Base da torre da grua com o poço aberto, sem fechamento lateral",
+        # Proteção rígida instalada COM fita ou corrente ao lado — cena comum de
+        # canteiro, e o que derrubou os sinais de proteção inadequada: o `com`
+        # deles é cola, e sobravam dois discriminantes.
+        "Vão do elevador fechado com chapa metálica aparafusada e fita zebrada de sinalização",
+        "Caixa do elevador fechada com tapume de madeira e fita zebrada colada na borda",
+        "Acesso à torre do elevador com porta metálica travada e corrente de segurança adicional",
+    )
+    for fato in instaladas:
+        ids = [r.id for r in rotear_riscos(
+            Visao(ambiente=ambiente, achados=[Achado(fato)]))]
+        assert "torre_elevador_sem_cancela" not in ids, fato
+        assert "vao_caixa_elevador_sem_fechamento" not in ids, fato
+
+
+def test_protecao_ausente_continua_acionando_o_risco_certo():
+    """O outro lado do encurtamento: cada caso tem de cair no risco certo dos
+    dois — a cancela e a base da torre são o `NR-18 18.11.13`/`18.11.14`; o vão
+    da caixa é o `18.9.3`.
+
+    Duas perdas aceitas e deliberadas. A segunda é a proteção INADEQUADA — "vão
+    fechado só com fita", "acesso só com corrente": esses sinais precisam do
+    conceito de substituição, o que sobra dele em radicais é a cola `com`, e o
+    preço eram os três últimos negativos da lista acima. A foto que os motivava
+    dispara os sinais de abertura, porque um vão isolado só por fita é um vão
+    aberto e o Olho o descreve assim.
+
+    A primeira: "entrada da torre SEM CANCELA instalada" não
+    casa mais pela letra, porque nenhum sinal depende de `sem`. Não há como
+    manter esse caso sem trazer de volta "cancela fechada, SEM sinalização", que
+    é o mesmo par de radicais. A perda é pequena — sem cancela, o acesso está
+    aberto, e "torre do elevador aberta" o pega —, e a troca é a certa: falso
+    negativo custa cobertura, falso positivo é a classe de erro 1 e vai ao
+    cliente com um item verdadeiro descrevendo a situação oposta.
+    """
+    ambiente = "Canteiro de obras em edificação de múltiplos pavimentos"
+    casos = [
+        ("torre_elevador_sem_cancela",
+         "Cancela metálica vermelha na entrada da torre do elevador de obra, "
+         "aberta, presa por uma dobradiça"),
+        ("torre_elevador_sem_cancela",
+         "Cancela ausente na entrada da torre do elevador de obra"),
+        ("torre_elevador_sem_cancela",
+         "Cancela faltando no acesso ao elevador de obra"),
+        ("torre_elevador_sem_cancela",
+         "Cancela quebrada, pendurada por uma dobradiça, na entrada da torre"),
+        ("torre_elevador_sem_cancela",
+         "Torre do elevador de obra aberta no décimo segundo pavimento"),
+        ("torre_elevador_sem_cancela",
+         "Base da torre do elevador aberta, sem qualquer fechamento lateral"),
+        ("torre_elevador_sem_cancela",
+         "Vão da torre do elevador aberto no décimo segundo pavimento"),
+        ("vao_caixa_elevador_sem_fechamento",
+         "Poço de elevador aberto no quinto pavimento, sem qualquer barreira"),
+        ("vao_caixa_elevador_sem_fechamento",
+         "Caixa do elevador aberta, vão livre para o poço"),
+        ("vao_caixa_elevador_sem_fechamento",
+         "Vão do elevador aberto na altura do peito"),
+        ("vao_caixa_elevador_sem_fechamento",
+         "Tapume do elevador faltando no pavimento"),
+        ("vao_caixa_elevador_sem_fechamento",
+         "Porta do elevador faltando no pavimento, vão aberto"),
+        ("vao_caixa_elevador_sem_fechamento",
+         "Shaft do elevador aberto, sem tampa"),
+        # A prova da segunda perda aceita: a foto que motivava "vao do elevador
+        # so com fita" continua routeando, pelo sinal de abertura.
+        ("vao_caixa_elevador_sem_fechamento",
+         "Vão do elevador aberto, delimitado apenas por fita zebrada"),
+    ]
+    for esperado, fato in casos:
+        ids = [r.id for r in rotear_riscos(
+            Visao(ambiente=ambiente, achados=[Achado(fato)]))]
+        assert esperado in ids, fato
+
+
 def test_roteamento_deixa_o_ambiente_nomear_o_equipamento():
     """A isenção do sinal de um radical: são nomes inequívocos, e é do ambiente
     que se espera o nome do equipamento quando o achado fala só do defeito.
@@ -1017,6 +1195,70 @@ def test_visao_repete_quando_a_resposta_foi_cortada_no_limite():
     visao = agente_olho(CortaNaPrimeira(), "imagem", "modelo-x")
     assert len(tentativas) == 2 and tentativas[1] > tentativas[0]
     assert [a.fato for a in visao.achados] == ["painel elétrico sem tampa"]
+
+
+def test_visao_repete_quando_o_json_nao_parseia_sem_a_api_sinalizar():
+    """O caso que faltava no Olho, e que já estava fechado no Analista e no Diretor.
+
+    A primeira correção só refazia a chamada quando a API confirmava
+    truncamento (`finish_reason == "length"`). Um lote real perdeu três fotos
+    de novo com "não devolveu JSON utilizável" SEM esse sinal — JSON inválido
+    por outro motivo. A segunda correção cobriu isso em `_conversar_sem_cortar`,
+    mas o Olho tinha retentativa própria e ficou de fora por meses.
+
+    A falha do Olho é a mais cara do pipeline: nada segue sem os fatos, então a
+    foto sai sem laudo nenhum, e não com um laudo pior.
+    """
+    from auditoria.pipeline import agente_olho
+
+    tentativas: list[int] = []
+
+    class QuebraOJsonSemAvisar:
+        # A API não sinaliza nada: do ponto de vista dela, a resposta terminou.
+        ultimo_corte_por_limite = False
+
+        def conversar(self, modelo, mensagens, teto_saida=1200, temperatura=0.0,
+                      json_estrito=False):
+            tentativas.append(teto_saida)
+            if len(tentativas) == 1:
+                return '{"ambiente": "canteiro", "achados": [{"fato": "aspa " nao escapada"}]}'
+            return (
+                '{"ambiente": "canteiro de obra", "pessoas": {"presentes": false},'
+                ' "achados": [{"fato": "poço de elevador aberto", "onde": "centro"}]}'
+            )
+
+    visao = agente_olho(QuebraOJsonSemAvisar(), "imagem", "modelo-x")
+    assert len(tentativas) == 2, "o Olho não refez a chamada"
+    # O teto dobra porque a temperatura é 0,0: repetir a chamada idêntica
+    # devolveria a mesma resposta, e portanto o mesmo JSON quebrado.
+    assert tentativas[1] == tentativas[0] * 2
+    assert [a.fato for a in visao.achados] == ["poço de elevador aberto"]
+
+
+def test_visao_guarda_o_bruto_tambem_quando_o_json_e_valido():
+    """O `bruto` do caminho de SUCESSO não é decoração.
+
+    Quando o Olho devolve JSON válido sem achado nenhum, `visao_falhou` também
+    fica verdadeiro, e a tela mostra a resposta crua. É o que distingue "o
+    modelo não viu nada" de "o modelo respondeu num formato que não soubemos
+    ler" — dois consertos opostos. Ao migrar o Olho para
+    `_conversar_sem_cortar`, que devolvia só o dicionário, esse texto quase se
+    perdeu; por isso a função devolve o par.
+    """
+    from auditoria.pipeline import agente_olho
+
+    resposta = '{"ambiente": "escritório", "pessoas": {"presentes": false}, "achados": []}'
+
+    class SemAchados:
+        ultimo_corte_por_limite = False
+
+        def conversar(self, modelo, mensagens, teto_saida=1200, temperatura=0.0,
+                      json_estrito=False):
+            return resposta
+
+    visao = agente_olho(SemAchados(), "imagem", "modelo-x")
+    assert visao.achados == []
+    assert visao.bruto == resposta
 
 
 def test_visao_preserva_resposta_crua_quando_nao_da_para_ler():

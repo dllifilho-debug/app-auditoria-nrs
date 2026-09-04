@@ -26,7 +26,7 @@ verdade é sempre com o usuário, em produção, com fotos e laudos que ele mand
 
 ## Onde a coisa parou (03/09/2026, fim da sessão)
 
-**O `main` carrega os PRs #17 a #25.** O dossiê não oferece mais obrigação de
+**O `main` carrega os PRs #17 em diante.** O dossiê não oferece mais obrigação de
 papel, os textos do Diretor não saem quebrados no laudo, o 3.8 é o padrão nos dois
 campos, o app cronometra cada foto, os dois falsos positivos de roteamento que o lote
 de içamento revelou estão fechados, os equipamentos de guindar da NR-18 entraram na
@@ -50,12 +50,14 @@ arquivo, não contra o app ele mesmo:
 As duas NCs certas são as duas de abertura — o domínio que o app já dominava antes.
 **O lote de içamento não produziu um único enquadramento de içamento.**
 
-**O buraco principal é de TAXONOMIA, e é maior do que a hipótese anterior.** Os 42
-riscos de construção não têm nenhum sobre grua, equipamento de guindar ou dispositivo
-de içamento; os seis riscos de içamento moram em `industria.py` e apontam para
-NR-11/NR-12 — vocabulário de fábrica (talha, ponte rolante, monta-carga, empilhadeira).
-Enquanto isso a NR-18 tem **33 itens vigentes só de equipamento de guindar**
-(`18.10.1.15` a `18.10.1.44`) e **nenhum é citado por risco nenhum**:
+**O buraco principal era de TAXONOMIA, e era maior do que a hipótese anterior**
+(diagnóstico do lote, medido no `main` de então — o #22 fechou a parte de taxonomia;
+ver "Em aberto"). Os 42 riscos de construção de então não tinham nenhum sobre grua,
+equipamento de guindar ou dispositivo de içamento; os seis riscos de içamento moram em
+`industria.py` e apontam para NR-11/NR-12 — vocabulário de fábrica (talha, ponte
+rolante, monta-carga, empilhadeira). Enquanto isso a NR-18 tem **33 itens vigentes só
+de equipamento de guindar** (`18.10.1.15` a `18.10.1.44`) e **nenhum era citado por
+risco nenhum** (hoje são quatro, por três riscos de `construcao.py`):
 
 - `18.10.1.15` define nominalmente: *"consideram-se equipamentos de guindar as gruas…"*
 - `18.10.1.21` — isolamento e sinalização da área sob carga suspensa (a contraparte de
@@ -161,7 +163,7 @@ Lotes temáticos que valem, com as fotos já identificadas:
 |---|---|---|
 | NR-12 | `SERRA DE BANCADA`, `SERRALHERIA SEM BARREIRA DE ACESSO` | as duas únicas com máquina de verdade no acervo novo |
 | ~~Içamento~~ | 7 fotos | **RODADO em 02/09** — 2 de 5 achados do engenheiro. Ver acima. Só volta a valer depois de existir taxonomia de guindar e de o Olho nomear o equipamento |
-| Poço de elevador | 6 das 19 disponíveis | achado mais repetido do acervo; `vao_caixa_elevador_sem_fechamento` existe e nunca disparou em produção. **Meça o sinal antes de gastar o lote**: no lote de içamento ele parou em 0,50, e os sete sinais dele exigem a palavra `elevador`, que o Olho não escreve |
+| Poço de elevador | 6 das 17 disponíveis | achado mais repetido do acervo; `vao_caixa_elevador_sem_fechamento` existe e nunca disparou em produção. O sinal FOI medido antes de gastar o lote, e o que se achou não era o 0,50 do lote de içamento: com o Olho escrevendo `elevador` e `cancela`, **os dois riscos de elevador disparavam com a proteção INSTALADA** (5 de 5 e 3 de 6). Sinais refeitos para ancorar na abertura, não no `sem`, e todo sinal de torre/base exige `elevador` (no canteiro há a torre da GRUA): 22 de 22 fatos com a proteção instalada ficam calados e 14 de 14 com ela ausente acionam o risco certo. É este lote que valida os dois consertos ao mesmo tempo |
 | Controle negativo | 5 documentos (POP, lista de presença, CREA, crachá) | devem dar **0 NC**; é a classe de erro que já apareceu e nunca foi testada de propósito |
 
 Ao receber os laudos: o HTML traz o "Ambiente registrado" e a lista de fatos do Olho,
@@ -190,7 +192,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 182 testes
+$VENV -m pytest tests/ -q          # 188 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -277,8 +279,8 @@ próprio comando composto (exit 144).
 | Classificar o ramo de um item pelo texto antes do anexo | Os anexos setoriais se citam entre si ("as disposições deste Anexo não se aplicam às máquinas dispostas no Anexo X"), e item do Anexo X **fala de prensa**. Pelo texto, ele passava como se fosse do Anexo VIII — que uma foto de estamparia legitimamente destranca. O anexo decide primeiro; o texto só para o que a extração deixou fora dele (`12.1`, "máquinas de montar base de calçados", ficou no corpo principal). |
 | Portão que só ABRE, com sinal que aparece em negação | `ha_maquina_na_cena` destrancaria a NR-12 com "**nenhuma máquina** visível na cena" se aceitasse a palavra "máquina" — exatamente a foto que se quer barrar. Por isso a lista é de substantivos concretos ("betoneira", "grua"), e inclui as máquinas dos ramos setoriais: sem elas o portão fecharia numa foto de padaria, trocando erro de enquadramento por buraco de cobertura. |
 | Rótulo do risco curado como nome da não conformidade | O rótulo descreve o risco que trouxe o item ao dossiê, não a situação que o Analista enquadrou. Para item **genérico** — `NR-18 18.9.1` ("proteção coletiva onde houver risco de queda"), `NR-06 6.5.1` (EPI, oito riscos) — qual risco o trouxe é acidente do roteamento. Um laudo real saiu intitulado "Andaime sem guarda-corpo e rodapé" para uma constatação sobre a tela frouxa na borda da laje, enquanto o fato dizia que o andaime TINHA guarda-corpo; dois modelos de texto diferentes erraram igual. Hoje `itens_compartilhados()` marca os 24 itens (de 232) que mais de um risco reivindica, e para eles o rótulo cai — o relatório identifica a linha pela constatação. Só o rótulo: o portão de pessoa e a gravidade base continuam vindo do risco. |
-| **`sem` é radical-cola: conta, mas não discrimina** | Ele tem 3 letras, então passa o filtro de `_radicais` e vira um radical como outro qualquer. Só que não distingue nada: um sinal de dois radicais em que um é `sem` vale por um. Custou dois defeitos no mesmo dia. `"sem carenagem"` casou com "Carenagem do motor íntegra e fixada, **sem** folgas visíveis" — carenagem em ordem, o oposto do risco. E `"vao no piso sem tampa"` casou numa foto de betoneira porque `sem` e `tampa` vieram de "Abertura circular do tambor **sem tampa**". Ao escrever ou revisar sinal, conte os radicais **discriminantes**, não os radicais. |
-| **Quatro radicais é onde a cobertura parcial abre** | O corte é 0,7. Com três radicais, faltar um dá 0,67 e **não passa** — todo radical é obrigatório. Com quatro, faltar um dá 0,75 e **passa**, e o que falta costuma ser justo o discriminante. `"abertura vertical sem fechamento"` casava uma abertura de PISO "sem cobertura ou fechamento visível", faltando só `vertical`. Sinal de até três radicais é seguro por construção; de quatro para cima, escreva sabendo que um pode faltar. **270 dos 882 sinais têm 4+ radicais** e correm esse risco. |
+| **`sem` é radical-cola: conta, mas não discrimina** | Ele tem 3 letras, então passa o filtro de `_radicais` e vira um radical como outro qualquer. Só que não distingue nada: um sinal de dois radicais em que um é `sem` vale por um. Custou dois defeitos no mesmo dia. `"sem carenagem"` casou com "Carenagem do motor íntegra e fixada, **sem** folgas visíveis" — carenagem em ordem, o oposto do risco. E `"vao no piso sem tampa"` casou numa foto de betoneira porque `sem` e `tampa` vieram de "Abertura circular do tambor **sem tampa**". Ao escrever ou revisar sinal, conte os radicais **discriminantes**, não os radicais. **E `sem` nunca é o negador**: em 04/09, consertando os sinais de elevador, `"elevador de obra sem cancela"` foi encurtado para `"sem cancela"` — dois radicais, um deles cola, e o fato *"Cancela metálica vermelha, fechada e travada, SEM sinalização de advertência"* deu cobertura 1,0. O agravante é sistemático: o `PROMPT_OLHO` **manda** escrever "sem &lt;peça&gt; visível" quando o lugar dela aparece vazio, então quase todo fato do Olho carrega um `sem` solto. O que nega numa foto é a **abertura** — `aberta`, `ausente`, `faltando`, `quebrada` —, e é nela que o sinal deve ancorar. |
+| **Quatro radicais é onde a cobertura parcial abre** | O corte é 0,7. Com três radicais, faltar um dá 0,67 e **não passa** — todo radical é obrigatório. Com quatro, faltar um dá 0,75 e **passa**, e o que falta costuma ser justo o discriminante. `"abertura vertical sem fechamento"` casava uma abertura de PISO "sem cobertura ou fechamento visível", faltando só `vertical`. Sinal de até três radicais é seguro por construção; de quatro para cima, escreva sabendo que um pode faltar. **263 dos 882 sinais têm 4+ radicais** e correm esse risco. |
 | Regra global para a cobertura parcial — **tentada e descartada** | A saída óbvia (excluir palavras-cola do conjunto que pode ancorar) **quebra 25 sinais legítimos**: `"sem capacete"`, `"sem luva"`, `"sem bota"`, `"sem placa"`, `"sem manometro"` — onde a cola e o discriminante são tudo o que existe. Também não adianta exigir que o radical faltante seja cola (deixa "escada COM sapata" casar "escada sem sapata") nem que seja não-cola (devolve o caso da betoneira). **Não há regra simples**: é encurtar sinal a sinal, com medição. Não gaste a sessão reinventando isto. |
 | Verificação mecânica no caminho errado | O aparo do Diretor ganhou verificação de lastro no #13; no lote seguinte, o mesmo enquadramento falso voltou por **aprovado**, sem aparo, e passou inteiro. Ao fechar uma porta num agente, pergunte por quais outras a mesma coisa entra — decisão de modelo muda de caminho de uma rodada para outra. Hoje a exigência é cobrada de todo enquadramento que sobrevive. |
 | **Plural de radical curto não reduzia** | `radical()` só singularizava palavra com mais de 4 letras, então `"fios"` ficava `"fios"` e `"fio"` ficava `"fio"` — dois radicais para a mesma palavra. O sinal `"fio desencapado"` foi cadastrado justamente porque o Olho escreve **"fios desencapados"**, e o par nunca casou: um quadro de tomadas aberto routeava **zero** riscos. Corrigido; a regra do `s` simples agora vale de 4 letras para cima, mas `PLURAIS` continua em 5 — aplicá-la a 4 transformaria `"mais"` em `"mal"`. |
@@ -287,19 +289,21 @@ próprio comando composto (exit 144).
 | **Corte de verbosidade aplicado a um campo só** | O `retirado` do aparo ganhou `_em_poucas_palavras` no #13, quando o `motivo` do veto ainda era sempre escrito pelo código. Quando o veto passou a carregar o texto do Diretor, os 493 caracteres de argumentação voltaram por ali — dentro do ponto de atenção que vai ao cliente. É a irmã da armadilha "verificação mecânica no caminho errado": ao pôr uma trava num campo, liste os outros campos por onde o mesmo texto sai. |
 | **Dois radicais é tudo-ou-nada, e o radical pode colidir** | A irmã invertida da armadilha dos quatro. A âncora exige dois radicais do PRÓPRIO achado, então num sinal de dois radicais nenhum pode vir da cena: ou o achado traz os dois, ou a cobertura é 0,00, não 0,50. Isso corta nos dois sentidos. Perde: `"cinta rasgada"` e `"gancho aberto"` deram **0,00** na foto de uma cinta de içamento rasgada de verdade. E dispara: com dois radicais só, uma colisão de radical basta para acionar o risco inteiro — `radical("cinta") == radical("cinto") == "cint"` fez `"cinto solto"` casar *"tecido da CINTA … material SOLTO"* com cobertura 1,0, e o acessório de içamento saiu no laudo enquadrado como EPI (`NR-06 6.9.3`). Não adianta acrescentar o discriminante: `"cinto de seguranca solto"` também casaria, porque `seguranc` pode vir do ambiente e a âncora já está satisfeita pelos outros dois. **Sinal de dois radicais só é seguro se nenhum dos dois for ambíguo por radical** — corrigido em #20 trocando por `"cinturao solto"` (reduz a `cintura`, não colide). Ao escrever sinal curto, rode o radical das duas palavras e procure por vizinho de outro gênero. |
 | **O aparo pode apagar o achado grave e deixar a metade irrelevante** | O aparo existe para restringir a constatação ao que o fato sustenta, e nisso funciona. Mas ele escolhe QUAL parte sobrevive, e pode escolher errado: na foto das cintas o Diretor aparou o desfiamento — o desgaste estrutural, que é o risco de ruptura — e manteve só a sujidade que compromete a legibilidade das marcações. O laudo saiu tecnicamente correto e materialmente inútil, e **nada foi para os pontos de atenção**. É a classe de erro 5 (achado que evapora) por um caminho que não estava mapeado: não pelo veto, pelo aparo. Ao revisar o aparo, pergunte se o que sobrou é o achado ou o resto dele. |
-| **Número deste arquivo envelhece em silêncio** | Os números daqui não estão escritos em lugar nenhum do código — são computados (`123 riscos` saía de `len(catalogo())`, `6.358 itens` de `carregar_base()`). Quando um PR muda o catálogo, o texto continua afirmando o valor velho e ninguém recorre à fonte, porque o entorno parece conferido. Medido em 03/09 rodando `/conferir` contra este arquivo: **cinco divergências**. Três nasceram de PRs desta mesma sessão (`123 riscos` → 126, `177 testes` → 182 em dois lugares); uma era herdada e desatualizada (`22 de 228` → 24 de 232); e uma **nasceu errada** — `272 dos 866 sinais` foi escrito quando o valor real era 271 de 867, e sobreviveu a três sessões e quatro PRs. A pior delas (`cinco dos sete sinais`, quando são sete de sete) estava num commit cuja própria mensagem dizia "números conferidos contra o código": seis números foram conferidos, e o sétimo escapou por estar no meio de um parágrafo em vez de numa lista. **Ao mexer aqui, rode `/conferir`** — e note que `grep` não pega nenhuma dessas: só executar o catálogo pega. |
+| **Contraparte que não pode falhar não é contraparte** | A regra "toda vez que acrescentar sinal, teste a contraparte que NÃO deve disparar" foi cumprida na letra e não no espírito: a contraparte do prompt do Olho eram três fatos — tapume íntegro, portão de veículos, bandeja de fachada — e **nenhum continha `elevador` nem `cancela`**, as palavras dos sinais que o risco casa. Passava com qualquer taxonomia, inclusive a defeituosa. Foi o `/critico` que pegou; escrita a contraparte com as palavras dentro, apareceu o defeito: **5 de 5 fatos com a cancela INSTALADA acionavam o risco de cancela ausente**, e 3 de 6 no risco do vão da caixa, sempre a 0,75, sempre faltando só o negador (`"caixa do elevador COM fechamento"` cobrindo `"caixa do elevador sem fechamento"`). Ao escrever contraparte, pergunte **por qual sinal ela passaria** — se a resposta é "por nenhum", ela não está medindo nada. |
+| **Ensinar o Olho a nomear muda o risco de todo sinal que casa aquele nome** | O falso positivo acima era latente havia sessões e nunca apareceu em lote, porque o Olho não escrevia `cancela` nem `elevador`. Mudar o prompt para ele nomear o elemento de canteiro converte o latente em provável — e justamente nas 17 fotos do lote seguinte. **Ao acrescentar vocabulário ao prompt de um agente, rode os sinais que casam esse vocabulário contra fatos em que a condição NÃO existe**, antes do lote. O prompt não é uma mudança isolada: ele é o gatilho de toda a taxonomia que fala aquela língua. |
+| **Número deste arquivo envelhece em silêncio** | Os números daqui não estão escritos em lugar nenhum do código — são computados (`123 riscos` saía de `len(catalogo())`, `6.358 itens` de `carregar_base()`). Quando um PR muda o catálogo, o texto continua afirmando o valor velho e ninguém recorre à fonte, porque o entorno parece conferido. Medido em 03/09 rodando `/conferir` contra este arquivo: **cinco divergências**. Três nasceram de PRs desta mesma sessão (`123 riscos` → 126, `177 testes` → 182 em dois lugares); uma era herdada e desatualizada (`22 de 228` → 24 de 232); e uma **nasceu errada** — `272 dos 866 sinais` foi escrito quando o valor real era 271 de 866 (só o numerador; o denominador estava certo), e sobreviveu a três sessões e quatro PRs. A pior delas (`cinco dos sete sinais`, quando são sete de sete) estava num commit cuja própria mensagem dizia "números conferidos contra o código": seis números foram conferidos, e o sétimo escapou por estar no meio de um parágrafo em vez de numa lista. **A correção também erra**: a mensagem do #24 anunciou "off-by-one nos DOIS números" e o texto daqui copiou o `867`, que nunca existiu — conferir o conserto contra o código custa o mesmo que conferir o original, e ninguém fez. **Ao mexer aqui, rode `/conferir`** — e note que `grep` não pega nenhuma dessas: só executar o catálogo pega. |
 | **Medir tempo por fora de uma função com várias saídas** | `executar` volta cedo quando o Olho não devolve fato utilizável. Cronometrar no `app.py`, em volta da chamada, funcionaria — até alguém acrescentar a próxima saída antecipada e o número virar zero em silêncio. Por isso `executar` virou um invólucro fino que cronometra e delega a `_executar`: existe **um** ponto de saída para medir. **Há teste guardando o caminho da visão que falha.** |
 | **Mergear PR com lote rodando** | O merge dispara o redeploy do Streamlit Cloud, que **reinicia o app e apaga o `st.session_state`** — onde o lote em andamento vive. No plano gratuito um lote é de horas de parede, e o usuário recomeça do zero. Vale para qualquer merge: **pergunte se há lote rodando antes**, e espere os laudos serem baixados. |
 | `git fetch origin main <branch-que-não-existe-mais>` falha inteiro, silenciosamente | Fetch de múltiplos refs é atômico: se um ref já foi deletado no remoto (branch mergeada), o comando inteiro falha e **nenhum ref é atualizado** — inclusive o `main`, que existia e seria atualizado sozinho. `origin/main` local fica congelado na versão de antes, e comparações feitas contra ele mentem. Já causou uma sessão inteira concluir errado que "a reescrita nunca foi mergeada". Se o histórico parecer suspeito, rode `git fetch origin main` sozinho antes de confiar em qualquer diff. |
 
 ---
 
-## Estado atual (o `main` de 03/09, com os PRs #17 a #25)
+## Estado atual (o `main` de 03/09, com os PRs #17 em diante)
 
 - **6.358 itens** vigentes de **24 NRs** (de 36 vigentes), extraídos dos PDFs em `normas/`
 - **126 riscos** curados mapeando para itens reais; 25 exigem pessoa na cena e
   3 têm item que só entra com máquina nomeada na cena (`itens_so_com_maquina`)
-- **182 testes**
+- **188 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
@@ -357,6 +361,21 @@ próprio comando composto (exit 144).
   trabalho**" da NR-17 (a bancada, não o documento) continuam passando — por isso
   `certificado` só entra no padrão como substantivo (`o certificado`), não como
   particípio.
+- **Os três agentes refazem a chamada quando o JSON não vem.** `_conversar_sem_cortar`
+  cobre os dois casos — a API sinalizar corte (`finish_reason == "length"`) e o parser
+  falhar sem sinal nenhum. O Olho tinha retentativa própria, escrita antes, que cobria
+  só o primeiro; ficou de fora quando a segunda metade foi escrita, e o `/conferir` de
+  04/09 achou a divergência entre o código e a docstring, que afirmava o contrário.
+  **A conta do Olho é a mais favorável do pipeline, não a menos**: a retentativa custa
+  ~2.750 tokens e só acontece na chamada que falhou, enquanto a foto perdida custa os
+  ~7.800 de auditá-la inteira de novo — e é a única falha que não produz laudo nenhum,
+  porque nada segue sem os fatos. **O dobro de teto na segunda tentativa não é
+  desperdício, é o mecanismo**: os três rodam a temperatura 0,0 ou 0,1, então repetir a
+  chamada idêntica devolveria o mesmo JSON quebrado; o teto é a única coisa que muda.
+  Não existe a versão barata disto. A função devolve `(dados, bruto)` porque o Olho
+  guarda a resposta crua também no caminho de sucesso — com JSON válido e zero achados,
+  `visao_falhou` fica verdadeiro e a tela mostra o cru, que é o que distingue "não viu
+  nada" de "respondeu num formato ilegível". **Há teste guardando os dois.**
 - **Cronômetro por foto.** `Laudo.duracao_s` e `Laudo.espera_s`, preenchidos em
   `pipeline.executar` — que é um invólucro fino sobre `_executar` justamente porque o
   corpo tem mais de uma saída. A espera pela janela de 8.000 TPM é contada separada
@@ -479,12 +498,22 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   `equipamento_guindar_sem_itens_seguranca` não tem foto positiva neste histórico (só
   contrapartes), e `18.11.13` para a cancela já estava mapeado em
   `torre_elevador_sem_cancela` — lá o problema nunca foi taxonomia, é o Olho não nomear.
-- **O Olho não nomeia o equipamento de canteiro.** Nomeou a betoneira depois do #14, mas
-  na grua escreveu "Estrutura metálica elevada de cor amarela, com cabine e contrapesos"
-  (sem "grua", sem "guindaste" — e aí a NR-11 nem pontua em `_pontuar_nrs`) e na torre
-  do elevador escreveu "Grade metálica … aberta" e "estrutura com configuração de
-  torre". É o que trava as duas cancelas, onde o risco e o item já existem. Mexe em
-  todas as fotos: **lote só para validar**.
+- **O Olho não nomeia o equipamento de canteiro — PROMPT MUDADO em 04/09, à espera de
+  lote.** Nomeou a betoneira depois do #14, mas na grua escreveu "Estrutura metálica
+  elevada de cor amarela, com cabine e contrapesos" (sem "grua", sem "guindaste" — e aí
+  a NR-11 nem pontua em `_pontuar_nrs`; "grua" é palavra-chave da NR-18, que é a norma
+  certa) e na torre do elevador escreveu "Grade metálica … aberta" e "estrutura com
+  configuração de torre". **O diagnóstico é que ele estava obedecendo**: o parágrafo da
+  barreira lista "grade" e manda qualificar; o de nomear falava de máquina e não
+  mencionava cancela. Duas regras competindo, e ele seguiu a mais específica. O
+  `PROMPT_OLHO` agora nomeia elemento de canteiro (cancela, tapume, bandeja, torre de
+  elevador, shaft), diz que o nome **não dispensa** os atributos, e restringe a cláusula
+  de escape ao caso ambíguo de verdade. Medido sem rede: com o nome, a cancela passa a
+  routear `torre_elevador_sem_cancela` (`NR-18 18.11.13`), que nunca disparara.
+  **Mexe em todas as fotos e só um lote diz se ele obedece** — o ganho medido é do
+  roteamento dado o fato certo, não do modelo escrevendo o fato certo. O risco simétrico
+  a vigiar no lote é o Olho nomear ERRADO: nome errado é fato falso, e o `fato` do Olho
+  é justamente o que nenhuma trava do pipeline confere.
 - **A palavra-chave `umidade` da NR-15 destranca o Anexo 6 (hiperbárico).** "Manchas
   escuras de umidade" numa parede de alvenaria levou cinco itens de mergulho ao dossiê.
   A `umidade` da NR-15 é o Anexo 10, locais alagados/encharcados — pede qualificação,
@@ -764,8 +793,10 @@ Funcionou, com evidência no laudo:
 Regressão introduzida e corrigida na mesma sessão: o schema do Diretor cresceu com as
 chaves do aparo, a resposta passou do teto de saída e **três laudos morreram com JSON
 truncado** — não inválido, truncado. O Olho já refazia a chamada nesse caso; o Analista
-e o Diretor não. Hoje os três compartilham `_conversar_sem_cortar`. **Toda vez que
-crescer o que se pede a um agente, verificar o teto de saída dele.**
+e o Diretor não. Hoje os três compartilham `_conversar_sem_cortar` — o Olho entrou em
+04/09, depois de o `/conferir` achar que a docstring afirmava isso havia meses sem ser
+verdade. **Toda vez que crescer o que se pede a um agente, verificar o teto de
+saída dele.**
 
 **A mesma mensagem voltou no lote de 29/08, com outra causa.** O sumário do lote de 14
 listou 3 fotos não auditadas com "Diretor/Analista não devolveu JSON utilizável" — a
@@ -775,7 +806,9 @@ oficial não escapadas) que a API não sinaliza. `_conversar_sem_cortar` só ref
 chamada quando a API confirmava o corte; agora refaz também sempre que o parser falha,
 sinalizado ou não. **Validado no lote de 15 de 01/09: 15 de 15 laudos saíram**, contra
 11 de 14 antes. As 3 fotos que morriam com "não devolveu JSON utilizável" foram
-embora.
+embora. A segunda correção só alcançou o Olho em 04/09; até lá, JSON malformado sem
+sinal ainda matava a foto na leitura da imagem, que é a falha que não deixa laudo
+nenhum.
 
 ---
 
