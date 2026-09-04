@@ -173,7 +173,58 @@ def _ler_json(texto: str, onde: str) -> dict:
         f"O agente {onde} não devolveu JSON utilizável.",
         "Costuma ser resposta cortada por falta de cota. Tente de novo em um minuto.",
         recuperavel=True,
+        bruto=texto,
     )
+
+
+def _conversar_sem_cortar(cliente, modelo, conteudo, teto, temperatura, quem):
+    """Conversa que refaz a chamada quando a resposta bateu no teto — ou quando
+    o JSON simplesmente não veio parseável, truncado ou não.
+
+    Os TRÊS agentes passam por aqui. A conta chegou quando o veredito ganhou as
+    chaves do aparo: num lote real de 14 fotos, três laudos morreram com "não
+    devolveu JSON utilizável". A primeira correção só refazia a chamada quando a
+    própria API sinalizava truncamento (`finish_reason == "length"`); um lote
+    seguinte perdeu três fotos de novo com a mesma mensagem, sem esse sinal —
+    JSON inválido por outro motivo (aspas de citação oficial não escapadas, por
+    exemplo), não truncamento. Refazer sempre que o parser falhar, e não só
+    quando a API confirma corte, cobre os dois casos.
+
+    **Por que o dobro de teto, e não a mesma chamada de novo**: os três rodam a
+    temperatura 0,0 ou 0,1. Repetir a chamada idêntica tende a devolver a mesma
+    resposta, e portanto o mesmo JSON quebrado — o teto é a única coisa que
+    muda entre as duas tentativas. Não existe a versão barata disto.
+
+    Devolve o par (dados, resposta crua). O bruto sai junto porque o Olho o
+    guarda mesmo no caminho de sucesso: quando o JSON é válido mas vem sem
+    achado nenhum, a tela de diagnóstico mostra o que o modelo respondeu, e é
+    isso que distingue "o modelo não viu nada" de "o modelo respondeu num
+    formato que não soubemos ler" — dois consertos opostos.
+
+    `conteudo` é o que vai em `content`: uma string para o Analista e o Diretor,
+    a lista de partes (texto + imagem) para o Olho. O Olho entrou aqui depois,
+    e a conta dele é a mais favorável do pipeline, não a menos: a retentativa
+    custa ~2.750 tokens e só acontece na chamada que falhou, enquanto a foto
+    perdida custa os ~7.800 de auditá-la inteira de novo — e é a única falha do
+    pipeline que não produz laudo nenhum, porque nada segue sem os fatos.
+    """
+    mensagens = [{"role": "user", "content": conteudo}]
+    bruto = cliente.conversar(
+        modelo=modelo, mensagens=mensagens, teto_saida=teto,
+        temperatura=temperatura, json_estrito=True,
+    )
+    refazer = getattr(cliente, "ultimo_corte_por_limite", False)
+    if not refazer:
+        try:
+            return _ler_json(bruto, quem), bruto
+        except ErroDeAuditoria:
+            refazer = True
+    if refazer:
+        bruto = cliente.conversar(
+            modelo=modelo, mensagens=mensagens, teto_saida=teto * 2,
+            temperatura=temperatura, json_estrito=True,
+        )
+    return _ler_json(bruto, quem), bruto
 
 
 # ---------------------------------------------------------------------------
@@ -248,27 +299,17 @@ def agente_olho(cliente: Conversador, imagem_b64: str, modelo: str, contexto: st
         "image_url": {"url": f"data:image/jpeg;base64,{imagem_b64}"},
     })
 
-    mensagens = [{"role": "user", "content": conteudo}]
-    bruto = cliente.conversar(
-        modelo=modelo, mensagens=mensagens, teto_saida=1600,
-        temperatura=0.0, json_estrito=True,
-    )
-
-    # Resposta cortada no teto não é resposta: é meia frase. Quando a API diz
-    # que foi isso que aconteceu, uma segunda tentativa com mais espaço é bem
-    # mais barata do que um laudo perdido — e o sinal vem da própria API, não
-    # de suposição nossa.
-    if getattr(cliente, "ultimo_corte_por_limite", False):
-        bruto = cliente.conversar(
-            modelo=modelo, mensagens=mensagens, teto_saida=3200,
-            temperatura=0.0, json_estrito=True,
-        )
-
+    # Resposta cortada no teto não é resposta: é meia frase — e JSON que não
+    # parseia sem a API sinalizar corte não é resposta tampouco. As duas
+    # retentativas são a mesma, e são as do Analista e do Diretor: o Olho tinha
+    # a sua, cobrindo só o caso sinalizado, e ficou de fora quando a segunda
+    # metade foi escrita. Aqui a falha é a mais cara do pipeline, porque nada
+    # segue sem os fatos: a foto sai sem laudo nenhum.
     try:
-        dados = _ler_json(bruto, "Olho")
-    except ErroDeAuditoria:
+        dados, bruto = _conversar_sem_cortar(cliente, modelo, conteudo, 1600, 0.0, "Olho")
+    except ErroDeAuditoria as erro:
         # Guardamos o texto cru para a tela de diagnóstico antes de desistir.
-        return Visao(bruto=bruto)
+        return Visao(bruto=erro.bruto)
     pessoas = dados.get("pessoas") or {}
     achados = [
         Achado(
@@ -439,49 +480,6 @@ def montar_dossie(
 # Etapa 3 — Agente Analista
 # ---------------------------------------------------------------------------
 
-def _conversar_sem_cortar(cliente, modelo, prompt, teto, temperatura, quem):
-    """Conversa de texto que refaz a chamada quando a resposta bateu no teto —
-    ou quando o JSON simplesmente não veio parseável, truncado ou não.
-
-    Quem passa por aqui é o Analista e o Diretor. A conta chegou quando o
-    veredito ganhou as chaves do aparo: num lote real de 14 fotos, três laudos
-    morreram com "não devolveu JSON utilizável". A primeira correção só refazia
-    a chamada quando a própria API sinalizava truncamento (`finish_reason ==
-    "length"`); um lote seguinte perdeu três fotos de novo com a mesma
-    mensagem, sem esse sinal — JSON inválido por outro motivo (aspas de citação
-    oficial não escapadas, por exemplo), não truncamento. Refazer sempre que o
-    parser falhar, e não só quando a API confirma corte, cobre os dois casos.
-
-    **O Olho ficou fora.** `agente_olho` tem retentativa própria, escrita antes
-    desta e nunca migrada: ela só cobre o caso sinalizado pela API. JSON
-    malformado sem sinal ainda mata a foto lá, e aí não há laudo nenhum. Migrar
-    não é gratuito — a chamada do Olho carrega a imagem e refazê-la com o dobro
-    do teto mexe na cota de todo lote —, então está registrado em "Em aberto"
-    no CLAUDE.md, não consertado às escondidas.
-
-    Quem paga o dobro de saída é só a chamada que de fato precisar de uma
-    segunda tentativa, e ainda sai mais barato do que perder a foto: a imagem
-    já foi lida e cobrada.
-    """
-    mensagens = [{"role": "user", "content": prompt}]
-    bruto = cliente.conversar(
-        modelo=modelo, mensagens=mensagens, teto_saida=teto,
-        temperatura=temperatura, json_estrito=True,
-    )
-    refazer = getattr(cliente, "ultimo_corte_por_limite", False)
-    if not refazer:
-        try:
-            return _ler_json(bruto, quem)
-        except ErroDeAuditoria:
-            refazer = True
-    if refazer:
-        bruto = cliente.conversar(
-            modelo=modelo, mensagens=mensagens, teto_saida=teto * 2,
-            temperatura=temperatura, json_estrito=True,
-        )
-    return _ler_json(bruto, quem)
-
-
 PROMPT_ANALISTA = """Você é engenheiro de segurança do trabalho enquadrando os fatos de uma inspeção.
 
 FATOS OBSERVADOS NA FOTO
@@ -555,7 +553,7 @@ def agente_analista(
             "\n\nO DIRETOR TÉCNICO REPROVOU A VERSÃO ANTERIOR. Corrija exatamente estes pontos "
             "e não repita os enquadramentos vetados:\n" + correcoes
         )
-    return _conversar_sem_cortar(cliente, modelo, prompt, 1800, 0.1, "Analista")
+    return _conversar_sem_cortar(cliente, modelo, prompt, 1800, 0.1, "Analista")[0]
 
 
 # ---------------------------------------------------------------------------
@@ -949,7 +947,7 @@ def agente_diretor(
     # reescrita. 1600 deixou de bastar num laudo com muitos achados, e o
     # trecho da exigência oficial, agora copiado em CADA enquadramento e não
     # só nos aparados, cresceu de novo.
-    return _conversar_sem_cortar(cliente, modelo, prompt, 3000, 0.0, "Diretor")
+    return _conversar_sem_cortar(cliente, modelo, prompt, 3000, 0.0, "Diretor")[0]
 
 
 # Rótulo interno da conversa com o Diretor que vazou para o parecer de um laudo

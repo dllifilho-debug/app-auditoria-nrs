@@ -132,11 +132,17 @@ def tetos_diarios() -> dict[str, int]:
 class ErroDeAuditoria(Exception):
     """Falha já traduzida para o vocabulário do usuário."""
 
-    def __init__(self, mensagem: str, sugestao: str = "", recuperavel: bool = False):
+    def __init__(self, mensagem: str, sugestao: str = "", recuperavel: bool = False,
+                 bruto: str = ""):
         super().__init__(mensagem)
         self.mensagem = mensagem
         self.sugestao = sugestao
         self.recuperavel = recuperavel
+        # Resposta crua que provocou a falha, quando havia uma. O Olho a
+        # guarda para a tela de diagnóstico em vez de descartá-la: sem isso,
+        # migrá-lo para `_conversar_sem_cortar` custaria o texto que mostra
+        # POR QUE a foto não saiu.
+        self.bruto = bruto
 
 
 def traduzir(erro: Exception) -> ErroDeAuditoria:

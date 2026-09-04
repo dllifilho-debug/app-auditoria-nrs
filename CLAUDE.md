@@ -192,7 +192,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 186 testes
+$VENV -m pytest tests/ -q          # 188 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -303,7 +303,7 @@ próprio comando composto (exit 144).
 - **6.358 itens** vigentes de **24 NRs** (de 36 vigentes), extraídos dos PDFs em `normas/`
 - **126 riscos** curados mapeando para itens reais; 25 exigem pessoa na cena e
   3 têm item que só entra com máquina nomeada na cena (`itens_so_com_maquina`)
-- **186 testes**
+- **188 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
@@ -361,6 +361,21 @@ próprio comando composto (exit 144).
   trabalho**" da NR-17 (a bancada, não o documento) continuam passando — por isso
   `certificado` só entra no padrão como substantivo (`o certificado`), não como
   particípio.
+- **Os três agentes refazem a chamada quando o JSON não vem.** `_conversar_sem_cortar`
+  cobre os dois casos — a API sinalizar corte (`finish_reason == "length"`) e o parser
+  falhar sem sinal nenhum. O Olho tinha retentativa própria, escrita antes, que cobria
+  só o primeiro; ficou de fora quando a segunda metade foi escrita, e o `/conferir` de
+  04/09 achou a divergência entre o código e a docstring, que afirmava o contrário.
+  **A conta do Olho é a mais favorável do pipeline, não a menos**: a retentativa custa
+  ~2.750 tokens e só acontece na chamada que falhou, enquanto a foto perdida custa os
+  ~7.800 de auditá-la inteira de novo — e é a única falha que não produz laudo nenhum,
+  porque nada segue sem os fatos. **O dobro de teto na segunda tentativa não é
+  desperdício, é o mecanismo**: os três rodam a temperatura 0,0 ou 0,1, então repetir a
+  chamada idêntica devolveria o mesmo JSON quebrado; o teto é a única coisa que muda.
+  Não existe a versão barata disto. A função devolve `(dados, bruto)` porque o Olho
+  guarda a resposta crua também no caminho de sucesso — com JSON válido e zero achados,
+  `visao_falhou` fica verdadeiro e a tela mostra o cru, que é o que distingue "não viu
+  nada" de "respondeu num formato ilegível". **Há teste guardando os dois.**
 - **Cronômetro por foto.** `Laudo.duracao_s` e `Laudo.espera_s`, preenchidos em
   `pipeline.executar` — que é um invólucro fino sobre `_executar` justamente porque o
   corpo tem mais de uma saída. A espera pela janela de 8.000 TPM é contada separada
@@ -471,17 +486,6 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
 
 ## Em aberto
 
-- **O Olho ficou fora da segunda correção de JSON.** `agente_olho` não usa
-  `_conversar_sem_cortar`: tem retentativa própria, e ela só refaz a chamada quando a
-  API sinaliza o corte (`ultimo_corte_por_limite`) — que é exatamente a primeira
-  correção, a que o lote de 29/08 provou insuficiente. JSON malformado sem sinal de
-  truncamento (a suspeita de então: aspas de citação não escapadas) ainda mata a foto
-  no Olho, e aí não há laudo nenhum, porque o pipeline para antes do dossiê. Achado
-  pelo `/conferir` de 04/09, não por lote — nenhuma medição diz com que frequência
-  acontece na visão. **Não é conserto de uma linha**: a chamada do Olho carrega a
-  imagem, é a mais cara do pipeline, e refazer com o dobro do teto de saída mexe na
-  cota de todas as fotos. A docstring de `_conversar_sem_cortar` também afirma que o
-  Olho já faz isso, e não faz.
 - **Taxonomia de içamento — FEITA no #22, à espera de lote.** Três riscos novos em
   `construcao.py`: `dispositivo_icamento_deteriorado` (`NR-18 18.10.1.27`,
   `NR-11 11.1.3.1`), `carga_suspensa_area_sem_isolamento` (`18.10.1.21`, sem exigir
@@ -789,9 +793,9 @@ Funcionou, com evidência no laudo:
 Regressão introduzida e corrigida na mesma sessão: o schema do Diretor cresceu com as
 chaves do aparo, a resposta passou do teto de saída e **três laudos morreram com JSON
 truncado** — não inválido, truncado. O Olho já refazia a chamada nesse caso; o Analista
-e o Diretor não. Hoje **o Analista e o Diretor** compartilham `_conversar_sem_cortar`;
-o Olho **não** — `agente_olho` tem retentativa própria, e ela ficou na versão antiga.
-Ver "Em aberto". **Toda vez que crescer o que se pede a um agente, verificar o teto de
+e o Diretor não. Hoje os três compartilham `_conversar_sem_cortar` — o Olho entrou em
+04/09, depois de o `/conferir` achar que a docstring afirmava isso havia meses sem ser
+verdade. **Toda vez que crescer o que se pede a um agente, verificar o teto de
 saída dele.**
 
 **A mesma mensagem voltou no lote de 29/08, com outra causa.** O sumário do lote de 14
@@ -802,7 +806,9 @@ oficial não escapadas) que a API não sinaliza. `_conversar_sem_cortar` só ref
 chamada quando a API confirmava o corte; agora refaz também sempre que o parser falha,
 sinalizado ou não. **Validado no lote de 15 de 01/09: 15 de 15 laudos saíram**, contra
 11 de 14 antes. As 3 fotos que morriam com "não devolveu JSON utilizável" foram
-embora. **Mas a segunda correção não alcançou o Olho** — ver "Em aberto".
+embora. A segunda correção só alcançou o Olho em 04/09; até lá, JSON malformado sem
+sinal ainda matava a foto na leitura da imagem, que é a falha que não deixa laudo
+nenhum.
 
 ---
 

@@ -1197,6 +1197,70 @@ def test_visao_repete_quando_a_resposta_foi_cortada_no_limite():
     assert [a.fato for a in visao.achados] == ["painel elétrico sem tampa"]
 
 
+def test_visao_repete_quando_o_json_nao_parseia_sem_a_api_sinalizar():
+    """O caso que faltava no Olho, e que já estava fechado no Analista e no Diretor.
+
+    A primeira correção só refazia a chamada quando a API confirmava
+    truncamento (`finish_reason == "length"`). Um lote real perdeu três fotos
+    de novo com "não devolveu JSON utilizável" SEM esse sinal — JSON inválido
+    por outro motivo. A segunda correção cobriu isso em `_conversar_sem_cortar`,
+    mas o Olho tinha retentativa própria e ficou de fora por meses.
+
+    A falha do Olho é a mais cara do pipeline: nada segue sem os fatos, então a
+    foto sai sem laudo nenhum, e não com um laudo pior.
+    """
+    from auditoria.pipeline import agente_olho
+
+    tentativas: list[int] = []
+
+    class QuebraOJsonSemAvisar:
+        # A API não sinaliza nada: do ponto de vista dela, a resposta terminou.
+        ultimo_corte_por_limite = False
+
+        def conversar(self, modelo, mensagens, teto_saida=1200, temperatura=0.0,
+                      json_estrito=False):
+            tentativas.append(teto_saida)
+            if len(tentativas) == 1:
+                return '{"ambiente": "canteiro", "achados": [{"fato": "aspa " nao escapada"}]}'
+            return (
+                '{"ambiente": "canteiro de obra", "pessoas": {"presentes": false},'
+                ' "achados": [{"fato": "poço de elevador aberto", "onde": "centro"}]}'
+            )
+
+    visao = agente_olho(QuebraOJsonSemAvisar(), "imagem", "modelo-x")
+    assert len(tentativas) == 2, "o Olho não refez a chamada"
+    # O teto dobra porque a temperatura é 0,0: repetir a chamada idêntica
+    # devolveria a mesma resposta, e portanto o mesmo JSON quebrado.
+    assert tentativas[1] == tentativas[0] * 2
+    assert [a.fato for a in visao.achados] == ["poço de elevador aberto"]
+
+
+def test_visao_guarda_o_bruto_tambem_quando_o_json_e_valido():
+    """O `bruto` do caminho de SUCESSO não é decoração.
+
+    Quando o Olho devolve JSON válido sem achado nenhum, `visao_falhou` também
+    fica verdadeiro, e a tela mostra a resposta crua. É o que distingue "o
+    modelo não viu nada" de "o modelo respondeu num formato que não soubemos
+    ler" — dois consertos opostos. Ao migrar o Olho para
+    `_conversar_sem_cortar`, que devolvia só o dicionário, esse texto quase se
+    perdeu; por isso a função devolve o par.
+    """
+    from auditoria.pipeline import agente_olho
+
+    resposta = '{"ambiente": "escritório", "pessoas": {"presentes": false}, "achados": []}'
+
+    class SemAchados:
+        ultimo_corte_por_limite = False
+
+        def conversar(self, modelo, mensagens, teto_saida=1200, temperatura=0.0,
+                      json_estrito=False):
+            return resposta
+
+    visao = agente_olho(SemAchados(), "imagem", "modelo-x")
+    assert visao.achados == []
+    assert visao.bruto == resposta
+
+
 def test_visao_preserva_resposta_crua_quando_nao_da_para_ler():
     """Sem o texto cru na mão, não dá para distinguir os modos de falha."""
     from auditoria.pipeline import agente_olho
