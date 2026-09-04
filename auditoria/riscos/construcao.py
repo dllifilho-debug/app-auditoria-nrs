@@ -136,14 +136,17 @@ RISCOS: dict[str, dict] = {
         # Três sinais tinham quatro radicais com `sem` ou `com` entre eles, e
         # disparavam com o fechamento INSTALADO — "caixa do elevador COM
         # fechamento de madeira" cobria 3 de 4 de "caixa do elevador sem
-        # fechamento". Mesmo defeito e mesma correção do risco da cancela; vale
-        # a pena aqui porque este é o risco do lote de poço de elevador, o
-        # achado mais repetido do acervo.
+        # fechamento". Mesmo defeito e mesma correção do risco da cancela: o
+        # negador não pode ser `sem` (ver o comentário longo lá), e sim a
+        # abertura, que é o que a foto mostra e o que o Olho escreve. Vale a
+        # pena aqui porque este é o risco do lote de poço de elevador, o achado
+        # mais repetido do acervo.
         "sinais": [
             "poco de elevador aberto",
-            "elevador sem fechamento",
+            "caixa de elevador aberta",
+            "vao do elevador aberto",
             "elevador so com fita",
-            "elevador sem tapume",
+            "tapume do elevador faltando",
             "porta do elevador faltando",
             "shaft do elevador aberto",
             "tabua atravessada no vao do elevador",
@@ -351,23 +354,35 @@ RISCOS: dict[str, dict] = {
         #   "acesso ao elevador so com corrente"  falta `corrent` → "acesso … fechado com porta"
         #   "vao da torre do elevador aberto"     falta `abert`   → "vão … fechado por chapa"
         #
-        # Encurtados para três radicais ou menos, em que nenhum pode faltar. A
-        # perda é de forma, não de caso: "sem cancela" continua casando "entrada
-        # da torre do elevador SEM CANCELA instalada".
+        # Encurtar não bastou, e a primeira tentativa ensinou por quê: trocar
+        # "elevador de obra sem cancela" por "sem cancela" mantém o `sem` como
+        # radical OBRIGATÓRIO — e `sem` não nega nada, só conta. O fato "Cancela
+        # metálica vermelha, fechada e travada, SEM sinalização de advertência"
+        # dava cobertura 1,0. Pior: o PROMPT_OLHO manda escrever "sem <peça>
+        # visível" quando o lugar dela aparece vazio, então esse é o formato de
+        # fato mais provável que o Olho produz. `sem` num sinal é sempre um
+        # radical a menos; como NEGADOR ele é inútil.
+        #
+        # O que nega, numa foto, é a abertura — e é o que o Olho de fato
+        # descreve. Os sinais passam a ancorar em `aberta`, `ausente`,
+        # `faltando` e `quebrada`, todos discriminantes, nenhum de quatro
+        # radicais. O caso "entrada da torre SEM CANCELA instalada" deixa de
+        # casar pela letra, e é uma perda aceita: sem cancela, o acesso está
+        # aberto, e "torre do elevador aberta" o pega. Falso negativo custa
+        # cobertura; falso positivo é a classe de erro 1 e vai ao cliente.
         #
         # "acesso so com corrente", a primeira tentativa de encurtar o terceiro,
         # casava "quadro elétrico com CORRENTE de alimentação exposta junto ao
         # ACESSO da obra" — `corrente` de elo e `corrente` elétrica têm o mesmo
         # radical. Trocado `acesso` por `elevador`, que a cena elétrica não traz.
-        # E "base sem tapume" guarda o `base` de propósito: sem ele, "buraco do
-        # elevador sem tapume" acionaria também este risco, que é da cancela e
-        # da base da torre, e não do vão da caixa (esse é o 18.9.3, abaixo).
         "sinais": [
-            "sem cancela",
-            "torre do elevador aberta",
-            "base sem tapume",
-            "elevador so com corrente",
+            "cancela aberta",
+            "cancela ausente",
+            "cancela faltando",
             "cancela quebrada",
+            "torre do elevador aberta",
+            "base da torre aberta",
+            "elevador so com corrente",
             "vao da torre aberto",
             "pessoa passando embaixo do elevador de obra",
         ],

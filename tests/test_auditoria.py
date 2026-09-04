@@ -474,6 +474,16 @@ def test_protecao_instalada_nao_aciona_o_risco_de_protecao_ausente():
         # `corrente` de elo e `corrente` elétrica têm o mesmo radical: foi por
         # aqui que a primeira tentativa de encurtar o sinal vazou.
         "Quadro elétrico com corrente de alimentação exposta junto ao acesso da obra",
+        # E estes cinco são a SEGUNDA tentativa vazando: encurtar para "sem
+        # cancela" mantinha o `sem` como radical obrigatório, e `sem` não nega
+        # nada. Pior, o PROMPT_OLHO manda escrever "sem <peça> visível" quando o
+        # lugar dela aparece vazio — este é o formato de fato mais provável que
+        # o Olho produz, e ele casava com a cancela INSTALADA.
+        "Cancela metálica vermelha, fechada e travada, sem sinalização de advertência visível",
+        "Cancela instalada e fechada, sem placa de aviso no acesso",
+        "Caixa do elevador com fechamento de madeira travado, sem sinalização",
+        "Poço de elevador fechado com tapume, sem placa de identificação",
+        "Torre do elevador com cancela fechada, sem trava de intertravamento visível",
     )
     for fato in instaladas:
         ids = [r.id for r in rotear_riscos(
@@ -483,9 +493,17 @@ def test_protecao_instalada_nao_aciona_o_risco_de_protecao_ausente():
 
 
 def test_protecao_ausente_continua_acionando_o_risco_certo():
-    """O outro lado do encurtamento: nenhum caso positivo pode ter se perdido,
-    e cada um tem de cair no risco certo dos dois — a cancela e a base da torre
-    são o `NR-18 18.11.13`/`18.11.14`; o vão da caixa é o `18.9.3`.
+    """O outro lado do encurtamento: cada caso tem de cair no risco certo dos
+    dois — a cancela e a base da torre são o `NR-18 18.11.13`/`18.11.14`; o vão
+    da caixa é o `18.9.3`.
+
+    Uma perda aceita e deliberada: "entrada da torre SEM CANCELA instalada" não
+    casa mais pela letra, porque nenhum sinal depende de `sem`. Não há como
+    manter esse caso sem trazer de volta "cancela fechada, SEM sinalização", que
+    é o mesmo par de radicais. A perda é pequena — sem cancela, o acesso está
+    aberto, e "torre do elevador aberta" o pega —, e a troca é a certa: falso
+    negativo custa cobertura, falso positivo é a classe de erro 1 e vai ao
+    cliente com um item verdadeiro descrevendo a situação oposta.
     """
     ambiente = "Canteiro de obras em edificação de múltiplos pavimentos"
     casos = [
@@ -493,21 +511,27 @@ def test_protecao_ausente_continua_acionando_o_risco_certo():
          "Cancela metálica vermelha na entrada da torre do elevador de obra, "
          "aberta, presa por uma dobradiça"),
         ("torre_elevador_sem_cancela",
-         "Entrada da torre do elevador de obra sem cancela instalada"),
+         "Cancela ausente na entrada da torre do elevador de obra"),
         ("torre_elevador_sem_cancela",
-         "Base da torre do elevador sem tapume, com o vão aberto para a circulação"),
+         "Cancela faltando no acesso ao elevador de obra"),
+        ("torre_elevador_sem_cancela",
+         "Cancela quebrada, pendurada por uma dobradiça, na entrada da torre"),
+        ("torre_elevador_sem_cancela",
+         "Torre do elevador de obra aberta no décimo segundo pavimento"),
+        ("torre_elevador_sem_cancela",
+         "Base da torre do elevador aberta, sem qualquer fechamento lateral"),
         ("torre_elevador_sem_cancela",
          "Acesso à torre do elevador fechado só com uma corrente amarrada"),
         ("torre_elevador_sem_cancela",
          "Vão da torre do elevador aberto no décimo segundo pavimento"),
-        ("torre_elevador_sem_cancela",
-         "Cancela quebrada, pendurada por uma dobradiça, na entrada da torre"),
         ("vao_caixa_elevador_sem_fechamento",
          "Poço de elevador aberto no quinto pavimento, sem qualquer barreira"),
         ("vao_caixa_elevador_sem_fechamento",
-         "Caixa do elevador sem fechamento provisório, vão livre para o poço"),
+         "Caixa do elevador aberta, vão livre para o poço"),
         ("vao_caixa_elevador_sem_fechamento",
-         "Buraco do elevador sem tapume, aberto na altura do peito"),
+         "Vão do elevador aberto na altura do peito"),
+        ("vao_caixa_elevador_sem_fechamento",
+         "Tapume do elevador faltando no pavimento"),
         ("vao_caixa_elevador_sem_fechamento",
          "Vão do elevador fechado só com fita zebrada"),
         ("vao_caixa_elevador_sem_fechamento",
