@@ -214,12 +214,25 @@ Máquina, painel elétrico, andaime, escada, cinta, cabo ou gancho: diga o estad
 (trava do gancho, guarda-corpo e rodapé do andaime, tampa do painel, proteção de partes móveis).
 Só escreva "sem <peça> visível" quando o lugar dela aparece vazio na foto; senão, "não dá para ver".
 
-NOMEIE o equipamento quando a forma o identifica sem ambiguidade: betoneira, serra circular,
-policorte, martelete, esmerilhadeira, guincho, grua, andaime, quadro elétrico. Nomear o que uma
-máquina É descreve; atribuir a ela uma FUNÇÃO DE SEGURANÇA conclui — por isso "betoneira" se
-escreve e "rede de proteção" não: a primeira é o nome do objeto, a segunda é uma afirmação sobre
-o que a tela faz. Se a forma não bastar para identificar, descreva a forma ("tambor cilíndrico
-metálico montado em chassi sobre rodas") e não invente o nome."""
+NOMEIE o que a forma identifica — máquina e também elemento de canteiro: betoneira, serra
+circular, policorte, martelete, esmerilhadeira, guincho, grua, guindaste, torre de elevador de
+obra, elevador de cremalheira, cancela, tapume, bandeja, andaime, quadro elétrico, poço de
+elevador, shaft. Nomear o que uma coisa É descreve; atribuir a ela uma FUNÇÃO DE SEGURANÇA
+conclui — por isso "betoneira" e "cancela" se escrevem e "rede de proteção" não: as duas
+primeiras são o nome do objeto, a terceira é uma afirmação sobre o que a tela faz.
+
+O nome NÃO dispensa os atributos que os dois parágrafos acima pedem — escreva os dois juntos.
+"Cancela metálica vermelha na entrada da torre do elevador, aberta, presa por uma dobradiça" é o
+fato completo: "grade metálica vermelha, aberta" perde o nome, e "cancela aberta" perde a
+descrição.
+
+Descrever a forma NO LUGAR do nome só vale quando a forma é ambígua de verdade — quando dois
+equipamentos diferentes teriam esse aspecto na foto. Se você consegue dizer o que a coisa faz
+fisicamente (içar carga, subir pela lateral do prédio levando pessoas e material, barrar a
+entrada de um vão), então você a reconheceu: escreva o nome, seguido da forma que viu.
+"Estrutura metálica elevada de cor amarela, com cabine e contrapesos" é uma grua descrita sem
+nome — escreva "grua". Ambígua de verdade é a foto em que só se vê um "tambor cilíndrico
+metálico montado em chassi sobre rodas": aí descreva a forma e não invente o nome."""
 
 
 def agente_olho(cliente: Conversador, imagem_b64: str, modelo: str, contexto: str = "") -> Visao:

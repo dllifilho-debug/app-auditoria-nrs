@@ -388,6 +388,76 @@ def test_prompt_do_olho_pede_o_nome_da_maquina():
     assert "rede de proteção" in PROMPT_OLHO, "a contraparte precisa continuar no prompt"
 
 
+def test_prompt_do_olho_pede_tambem_o_nome_do_elemento_de_canteiro():
+    """A regra de nomear valia só para máquina, e a cancela não é máquina.
+
+    No lote de içamento o Olho descreveu a cancela de uma torre de elevador como
+    "Grade metálica … pintada de vermelho, aberta" — e estava OBEDECENDO: o
+    parágrafo da barreira lista "grade" e manda qualificar material, rigidez e
+    fixação, enquanto o parágrafo de nomear falava de "equipamento" e não
+    mencionava cancela. Duas regras competindo, e o Olho seguiu a mais
+    específica. A grua saiu igual: "Estrutura metálica elevada de cor amarela,
+    com cabine e contrapesos".
+
+    O conserto é dizer que as duas se SOMAM — nome mais atributos — e estender a
+    lista ao vocabulário de canteiro de que o roteamento depende.
+    """
+    from auditoria.pipeline import PROMPT_OLHO
+
+    for nome in ("cancela", "grua", "torre de elevador", "tapume", "bandeja"):
+        assert nome in PROMPT_OLHO.lower(), nome
+    assert "NÃO dispensa os atributos" in PROMPT_OLHO
+    # A cláusula de escape continua existindo, mas com o critério apertado.
+    assert "ambígua de verdade" in PROMPT_OLHO
+    assert "tambor cilíndrico" in PROMPT_OLHO
+
+
+def test_o_nome_do_elemento_de_canteiro_e_o_que_faz_a_cancela_rotear():
+    """Por que mexer no prompt do Olho vale a mudança: medido sem rede.
+
+    O risco `torre_elevador_sem_cancela` e o item `NR-18 18.11.13` ("Em todos os
+    acessos de entrada à torre do elevador deve ser instalada barreira
+    (cancela)…") já existiam quando o lote de içamento rodou. Faltava só o nome:
+    os sete sinais do risco dependem de `elevador`, `cancela` ou `tapume`, e
+    nenhuma das duas fotos de cancela produziu qualquer um deles.
+
+    Este teste trava o ganho nos dois sentidos — o fato como o Olho escreveu
+    não routeia; o mesmo fato com o nome routeia o risco certo.
+    """
+    ambiente = ("Canteiro de obras em edificação de múltiplos pavimentos, "
+                "laje de concreto")
+    sem_nome = Visao(ambiente=ambiente, achados=[
+        Achado("Grade metálica vermelha, aberta, apoiada no piso, sem fechamento lateral"),
+        Achado("Estrutura metálica de grande porte, com configuração de torre, junto à fachada"),
+    ])
+    com_nome = Visao(ambiente=ambiente, achados=[
+        Achado("Cancela metálica vermelha na entrada da torre do elevador de obra, "
+               "aberta, presa por uma dobradiça"),
+        Achado("Torre de elevador de obra de cremalheira junto à fachada, com "
+               "estrutura metálica treliçada"),
+    ])
+
+    assert "torre_elevador_sem_cancela" not in [r.id for r in rotear_riscos(sem_nome)]
+    assert "torre_elevador_sem_cancela" in [r.id for r in rotear_riscos(com_nome)]
+
+
+def test_nomear_o_canteiro_nao_dispara_risco_de_elevador_sem_elevador():
+    """A contraparte. Nomear mais faz o Olho escrever mais nomes, e nome é
+    radical: o risco novo de disparar é o oposto do que se está consertando.
+    Um tapume comum de canteiro e um portão de acesso de veículos não são
+    cancela de torre de elevador.
+    """
+    for fato in (
+        "Tapume de madeira compensada fechando o perímetro do canteiro, íntegro",
+        "Portão metálico de correr na entrada de veículos, fechado e travado",
+        "Bandeja metálica de proteção instalada na fachada, no terceiro pavimento",
+    ):
+        visao = Visao(ambiente="Canteiro de obras em edificação", achados=[Achado(fato)])
+        assert "torre_elevador_sem_cancela" not in [
+            r.id for r in rotear_riscos(visao)
+        ], fato
+
+
 def test_roteamento_deixa_o_ambiente_nomear_o_equipamento():
     """A isenção do sinal de um radical: são nomes inequívocos, e é do ambiente
     que se espera o nome do equipamento quando o achado fala só do defeito.
