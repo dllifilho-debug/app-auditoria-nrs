@@ -1518,7 +1518,12 @@ def test_consumo_zera_os_baldes_por_modelo_na_virada_do_dia():
 def test_cliente_groq_discrimina_tokens_por_modelo():
     """O total sozinho não diz quando o lote para — é preciso saber qual balde
     está enchendo, porque o teto da Groq é de cada modelo."""
-    from auditoria.modelos import ClienteGroq, Cota
+    from auditoria.modelos import (
+        FRACAO_UTIL_DO_OTPM,
+        OTPM_ORGANIZACAO,
+        ClienteGroq,
+        Cota,
+    )
 
     class _Resposta:
         def __init__(self, tokens):
@@ -1537,6 +1542,9 @@ def test_cliente_groq_discrimina_tokens_por_modelo():
     cliente.tokens_por_modelo = {}
     cliente.sem_json_estrito = set()
     cliente.ultimo_corte_por_limite = False
+    cliente.otpm = OTPM_ORGANIZACAO
+    cliente.teto_saida_maximo = int(OTPM_ORGANIZACAO * FRACAO_UTIL_DO_OTPM)
+    cliente._avisou_do_corte = False
 
     gastos = iter((2_500, 1_700, 1_500))
     cliente._chamar_com_degradacao = lambda _p: _Resposta(next(gastos))
@@ -3319,3 +3327,178 @@ def test_o_cliente_groq_conta_o_tempo_que_dormiu(monkeypatch):
     antes = cliente.segundos_esperando
     cliente.aguardar_cota(1_000)
     assert cliente.segundos_esperando == antes
+
+
+# ---------------------------------------------------------------------------
+# O OTPM: o limite que recusa a requisição pelo TAMANHO, antes de processá-la
+# ---------------------------------------------------------------------------
+
+def test_o_teto_de_saida_pedido_nunca_excede_o_otpm_da_conta(monkeypatch):
+    """Onze fotos de doze foram recusadas em 04/09/2026 sem chegar ao modelo.
+
+    Não era volume nem código: a organização passou a ter um teto de tokens de
+    SAÍDA por minuto (OTPM) de 1.000, e o pipeline pedia 1.600, 1.800 e 3.000 —
+    cada um sozinho maior que a janela inteira do minuto. A Groq recusa pelo
+    tamanho declarado, com latência de 0,006 s, então nem a primeira foto do dia
+    passava. O corte tem de acontecer aqui, no único ponto em que
+    `max_completion_tokens` é montado.
+    """
+    import auditoria.modelos as mod
+
+    enviados = []
+
+    class _Resposta:
+        usage = None
+        choices = [type("C", (), {
+            "finish_reason": "stop",
+            "message": type("M", (), {"content": "{}"})(),
+        })()]
+
+    cliente = mod.ClienteGroq.__new__(mod.ClienteGroq)
+    cliente.margem_tokens = 1500
+    cliente.aviso = lambda _m: None
+    cliente.cota = mod.Cota()
+    cliente.tokens_gastos = 0
+    cliente.chamadas = 0
+    cliente.tokens_por_modelo = {}
+    cliente.sem_json_estrito = set()
+    cliente.ultimo_corte_por_limite = False
+    cliente.otpm = 1_000
+    cliente.teto_saida_maximo = int(1_000 * mod.FRACAO_UTIL_DO_OTPM)
+    cliente._avisou_do_corte = False
+    cliente._chamar_com_degradacao = lambda p: (
+        enviados.append(p["max_completion_tokens"]) or _Resposta()
+    )
+
+    for pedido in (1_600, 1_800, 3_000, 6_000):
+        cliente.conversar("qwen/qwen3.8-27b", [{"role": "user", "content": "oi"}],
+                          teto_saida=pedido)
+
+    assert enviados == [900, 900, 900, 900], enviados
+    assert all(t <= cliente.otpm for t in enviados)
+    # Teto que já cabe passa intacto: a trava é um limite, não um valor fixo.
+    cliente.conversar("qwen/qwen3.8-27b", [{"role": "user", "content": "oi"}],
+                      teto_saida=400)
+    assert enviados[-1] == 400
+
+
+def test_recusa_por_tamanho_nao_e_recuperavel_e_guarda_o_texto_da_groq():
+    """Os dois 429 da Groq levam a consertos opostos.
+
+    Cota estourada passa com o tempo; recusa por tamanho da requisição, não —
+    e um lote que a trate como recuperável queima foto após foto contra o mesmo
+    limite. Foi o que aconteceu: onze fotos seguidas.
+    """
+    import groq
+
+    from auditoria.modelos import traduzir
+
+    original = (
+        "Request too large for model `qwen/qwen3.8-27b` in organization "
+        "`org_x` service tier `on_demand` on output tokens per minute (OTPM): "
+        "Limit 1000, Requested 1113. The request's expected output tokens "
+        "exceed the enforced limit; reduce max_tokens (or the request's "
+        "expected output) and try again."
+    )
+    erro = traduzir(groq.RateLimitError(
+        "429", response=_resposta_http(429),
+        body={"error": {"message": original}},
+    ))
+    assert not erro.recuperavel, "esperar não faz a requisição caber"
+    assert "tamanho" in erro.mensagem.lower()
+    # E a mensagem que NOMEIA o limite sobrevive à tradução: foi o palpite
+    # escrito no código ("limite de tokens por minuto ou por dia") que mandou
+    # o diagnóstico atrás do TPM por horas, com o texto certo já na resposta.
+    assert erro.detalhe == original
+    assert "OTPM" in erro.detalhe
+
+
+def test_a_mensagem_original_da_api_sobrevive_a_traducao():
+    """Vale para todo erro traduzido, não só o do dia: a tradução é um palpite
+    sobre a causa, e o próximo limite novo chega com um nome que este código
+    ainda não conhece."""
+    import groq
+
+    from auditoria.modelos import traduzir
+
+    casos = [
+        groq.AuthenticationError("401", response=_resposta_http(401),
+                                 body={"error": {"message": "Invalid API Key"}}),
+        groq.RateLimitError("429", response=_resposta_http(429),
+                            body={"error": {"message": "Rate limit reached for tokens"}}),
+        groq.BadRequestError("400", response=_resposta_http(400),
+                             body={"error": {"message": "something new we do not parse"}}),
+    ]
+    for cru in casos:
+        assert traduzir(cru).detalhe, type(cru).__name__
+
+
+class _ClienteComOtpmApertado:
+    """Corta a primeira resposta de cada agente e só aceita 900 de saída."""
+
+    LIMITE = 900
+
+    def __init__(self):
+        self.ultimo_corte_por_limite = False
+        self.tetos: list[int] = []
+        self.pedidos: list[str] = []
+        self.vistos: set[str] = set()
+
+    def teto_permitido(self, teto: int) -> int:
+        return min(teto, self.LIMITE)
+
+    def conversar(self, modelo, mensagens, teto_saida=1200, temperatura=0.0,
+                  json_estrito=False):
+        p = _texto_do_prompt(mensagens)
+        self.tetos.append(teto_saida)
+        self.pedidos.append(p)
+        quem = ("olho" if "perito em documentação fotográfica" in p
+                else "analista" if "DOSSIÊ NORMATIVO" in p else "diretor")
+        completo = ClienteDemonstracao().conversar(
+            modelo, mensagens, teto_saida, temperatura, json_estrito
+        )
+        if quem in self.vistos:
+            self.ultimo_corte_por_limite = False
+            return completo
+        self.vistos.add(quem)
+        self.ultimo_corte_por_limite = True
+        return completo[: len(completo) // 2]
+
+
+def test_a_retentativa_nao_dobra_o_teto_acima_do_limite_da_conta(base):
+    """Dobrar o teto era o mecanismo da segunda tentativa — e virou 429 certo.
+
+    Com o OTPM abaixo do que os agentes pedem, a chamada refeita com o dobro é
+    recusada pelo tamanho e a foto morre onde antes se salvava. Com o teto no
+    talo, o que muda entre as duas tentativas passa a ser o PEDIDO: a segunda
+    manda encurtar a resposta, que é o conserto certo para uma resposta que não
+    coube.
+    """
+    cliente = _ClienteComOtpmApertado()
+    laudo = executar(
+        cliente, base, "imagem-falsa", "",
+        Configuracao(modelo_visao="d", modelo_texto="d", data_referencia=HOJE),
+    )
+    assert laudo.nao_conformidades, "o laudo se perdeu na segunda tentativa"
+    assert cliente.tetos == [900] * 6, cliente.tetos
+    refeitos = [p for p in cliente.pedidos if "REFAÇA A RESPOSTA" in p]
+    assert len(refeitos) == 3, "os três agentes cortados deveriam ter refeito o pedido"
+
+
+def test_a_segunda_tentativa_do_olho_nao_perde_a_imagem():
+    """O Olho manda lista de partes (texto + imagem); os outros dois, string.
+
+    Concatenar o pedido de concisão como texto apagaria a imagem, e a segunda
+    tentativa descreveria uma foto que ela não veria.
+    """
+    from auditoria.pipeline import _com_pedido_de_concisao
+
+    partes = [
+        {"type": "text", "text": "descreva"},
+        {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,AAA"}},
+    ]
+    refeito = _com_pedido_de_concisao(partes, 900)
+    assert [p["type"] for p in refeito] == ["text", "image_url", "text"]
+    assert refeito[1] == partes[1]
+    assert "900" in refeito[-1]["text"]
+    assert _com_pedido_de_concisao("prompt", 900).startswith("prompt")

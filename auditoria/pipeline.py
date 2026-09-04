@@ -192,14 +192,24 @@ def _conversar_sem_cortar(cliente, modelo, conteudo, teto, temperatura, quem):
 
     **Por que o dobro de teto, e não a mesma chamada de novo**: os três rodam a
     temperatura 0,0 ou 0,1. Repetir a chamada idêntica tende a devolver a mesma
-    resposta, e portanto o mesmo JSON quebrado — o teto é a única coisa que
-    muda entre as duas tentativas. Não existe a versão barata disto.
+    resposta, e portanto o mesmo JSON quebrado — alguma coisa tem de mudar
+    entre as duas tentativas. Não existe a versão barata disto.
 
     Devolve o par (dados, resposta crua). O bruto sai junto porque o Olho o
     guarda mesmo no caminho de sucesso: quando o JSON é válido mas vem sem
     achado nenhum, a tela de diagnóstico mostra o que o modelo respondeu, e é
     isso que distingue "o modelo não viu nada" de "o modelo respondeu num
     formato que não soubemos ler" — dois consertos opostos.
+
+    **Quando o dobro não cabe**, o que muda é a instrução, não o teto. Desde
+    04/09/2026 a organização tem um teto de tokens de SAÍDA por minuto (OTPM)
+    menor que o que qualquer um dos três agentes pedia, e a Groq recusa a
+    requisição pelo tamanho declarado, antes de processá-la: dobrar o teto ali
+    é 429 garantido, e a segunda tentativa morria sem nunca chegar ao modelo.
+    Com o teto no talo, a única variável que sobra é o pedido — a chamada é
+    refeita mandando encurtar a resposta, que é o conserto certo para o caso em
+    que ela não coube. Repetir a chamada idêntica continua não sendo opção: os
+    três rodam a temperatura 0,0 ou 0,1.
 
     `conteudo` é o que vai em `content`: uma string para o Analista e o Diretor,
     a lista de partes (texto + imagem) para o Olho. O Olho entrou aqui depois,
@@ -208,6 +218,11 @@ def _conversar_sem_cortar(cliente, modelo, conteudo, teto, temperatura, quem):
     perdida custa os ~7.800 de auditá-la inteira de novo — e é a única falha do
     pipeline que não produz laudo nenhum, porque nada segue sem os fatos.
     """
+    # Quanto deste teto a conta aceita numa requisição só. O cliente trava de
+    # novo na hora de montar a chamada; aqui a resposta é preciso saber antes,
+    # para escolher entre dobrar o teto e mandar encurtar a resposta.
+    cabe = getattr(cliente, "teto_permitido", lambda t: t)
+    teto = cabe(teto)
     mensagens = [{"role": "user", "content": conteudo}]
     bruto = cliente.conversar(
         modelo=modelo, mensagens=mensagens, teto_saida=teto,
@@ -220,11 +235,38 @@ def _conversar_sem_cortar(cliente, modelo, conteudo, teto, temperatura, quem):
         except RespostaIlegivel:
             refazer = True
     if refazer:
+        teto_maior = cabe(teto * 2)
+        conteudo_2 = conteudo
+        if teto_maior <= teto:
+            # O teto já estava no limite da conta: pedir mais é a requisição
+            # que a Groq recusa pelo tamanho. Mudamos o pedido.
+            conteudo_2 = _com_pedido_de_concisao(conteudo, teto_maior)
         bruto = cliente.conversar(
-            modelo=modelo, mensagens=mensagens, teto_saida=teto * 2,
-            temperatura=temperatura, json_estrito=True,
+            modelo=modelo, mensagens=[{"role": "user", "content": conteudo_2}],
+            teto_saida=teto_maior, temperatura=temperatura, json_estrito=True,
         )
     return _ler_json(bruto, quem), bruto
+
+
+PEDIDO_DE_CONCISAO = """
+
+REFAÇA A RESPOSTA. A anterior não pôde ser lida: veio cortada ou fora do formato.
+Responda SOMENTE o JSON pedido acima, sem nenhum texto antes ou depois dele, e o
+mais curto que a instrução permitir — frases diretas, sem repetir o enunciado e
+sem explicar o que você fez. A resposta inteira precisa caber em {teto} tokens."""
+
+
+def _com_pedido_de_concisao(conteudo: str | list[dict], teto: int) -> str | list[dict]:
+    """Acrescenta ao pedido a ordem de encurtar, preservando o formato original.
+
+    O Olho manda uma lista de partes (texto + imagem) e os outros dois mandam
+    uma string; devolver sempre string apagaria a imagem, e a segunda tentativa
+    do Olho descreveria uma foto que não veria.
+    """
+    pedido = PEDIDO_DE_CONCISAO.format(teto=teto)
+    if isinstance(conteudo, str):
+        return conteudo + pedido
+    return list(conteudo) + [{"type": "text", "text": pedido}]
 
 
 # ---------------------------------------------------------------------------
@@ -843,7 +885,10 @@ CONFORMIDADES PROPOSTAS
 
 PARTE 1 — CONFERÊNCIA OBRIGATÓRIA DOS ENQUADRAMENTOS
 Para CADA [V<n>], copie em "fato" o trecho LITERAL da lista de fatos que sustenta a
-constatação — copiar, não resumir. Compare oração por oração e decida entre três:
+constatação — copiar, não resumir. Copie a ORAÇÃO que basta, não o parágrafo inteiro:
+uma oração literal prova o mesmo que uma página, e a sua resposta tem teto de tamanho.
+Menos de uma oração inteira, porém, não prova nada e será tratada como invenção.
+Compare oração por oração e decida entre três:
 
 APROVADO — tudo o que a constatação afirma está no trecho copiado.
 APARADO — o trecho sustenta PARTE da constatação e o resto é suposição. NÃO derrube o
@@ -860,7 +905,8 @@ VETADO — nenhum trecho sustenta a constatação; OU a versão aparada já não
   Isto se prova do mesmo jeito mecânico que a conferência do fato, e vale para TODO
   enquadramento que você não vetar — aprovado ou aparado. Em "exigencia", COPIE do
   TEXTO OFICIAL do bloco [V<n>] o trecho literal que a constatação descumpre. Copiar,
-  não parafrasear. Se você não achar no texto oficial um trecho que ela descumpra, não
+  não parafrasear — e aqui também vale a oração que basta, nunca menos que ela.
+  Se você não achar no texto oficial um trecho que ela descumpra, não
   há não conformidade: vete. Exemplo real: um painel empoeirado foi enquadrado num item
   que exige SINALIZAÇÃO, com a etiqueta "PERIGO" legível na própria foto. Não havia
   trecho a copiar sobre limpeza, e era veto — mas o enquadramento passou por APROVADO,

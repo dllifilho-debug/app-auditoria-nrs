@@ -255,6 +255,25 @@ with st.sidebar:
 
     st.divider()
     if not modo_demo:
+        otpm = st.number_input(
+            "Limite de saída por minuto da conta (OTPM)",
+            min_value=200, max_value=1_000_000,
+            value=st.session_state.get("otpm", modelos.OTPM_ORGANIZACAO),
+            step=100,
+            help="Teto de tokens de RESPOSTA por minuto da sua organização na "
+                 "Groq. Não aparece na tabela pública do plano gratuito: veja em "
+                 "console.groq.com/settings/limits, passando o mouse sobre o TPM "
+                 "para ver o detalhamento de entrada e saída. Em 04/09/2026 ele "
+                 "recusou 11 fotos de 12 de um lote, porque o app pedia respostas "
+                 "maiores que a janela inteira do minuto.",
+        )
+        st.session_state.otpm = otpm
+        st.caption(
+            f"Cada chamada vai pedir no máximo "
+            f"{int(otpm * modelos.FRACAO_UTIL_DO_OTPM):,}".replace(",", ".")
+            + " tokens de resposta."
+        )
+
         gasto = consumo_do_dia()
         with st.expander("Consumo do dia", expanded=bool(gasto.tokens)):
             orcamento = st.number_input(
@@ -422,6 +441,13 @@ if "resultados" not in st.session_state:
 if "falhas" not in st.session_state:
     st.session_state.falhas = []
 
+# O que a Groq DISSE, guardado à parte do motivo em português que vai ao laudo.
+# Um `st.error` some no rerun seguinte, e foi assim que a mensagem que nomeava o
+# limite de verdade ("output tokens per minute (OTPM): Limit 1000") se perdeu
+# durante um lote inteiro, custando horas de diagnóstico do limite errado.
+if "erros_da_api" not in st.session_state:
+    st.session_state.erros_da_api = []
+
 # Foto retirada do seletor sai também dos resultados: manter o laudo de uma
 # imagem que já não está no lote faria o sumário e o plano de ação contarem
 # conteúdo que o inspetor removeu de propósito.
@@ -485,7 +511,8 @@ if executar_agora:
         st.stop()
 
     cliente = ClienteDemonstracao() if modo_demo else ClienteGroq(
-        api_key=chave.strip(), aviso=lambda m: st.toast(m)
+        api_key=chave.strip(), aviso=lambda m: st.toast(m),
+        otpm=st.session_state.get("otpm", modelos.OTPM_ORGANIZACAO),
     )
     config = Configuracao(
         modelo_visao=modelo_visao,
@@ -497,6 +524,7 @@ if executar_agora:
     if refazer:
         st.session_state.resultados = []
         st.session_state.falhas = []
+        st.session_state.erros_da_api = []
         fila = list(arquivos)
     else:
         fila = pendentes
@@ -505,11 +533,27 @@ if executar_agora:
     barra = st.progress(0.0, text="Iniciando…")
     interrompido = None
 
-    def registrar_falha(nome: str, motivo: str) -> None:
-        """Guarda a imagem que não virou laudo, sem duplicar em nova tentativa."""
+    def registrar_falha(nome: str, erro: ErroDeAuditoria) -> None:
+        """Guarda a imagem que não virou laudo, sem duplicar em nova tentativa.
+
+        O motivo que vai para o sumário é o texto em português; a mensagem crua
+        da API fica à parte, para a tela de diagnóstico — ela é o que nomeia o
+        limite atingido, e não é conteúdo de documento de segurança do trabalho.
+        """
         st.session_state.falhas = [
             f for f in st.session_state.falhas if f[0] != nome
-        ] + [(nome, motivo)]
+        ] + [(nome, erro.mensagem)]
+        if erro.detalhe:
+            st.session_state.erros_da_api = [
+                d for d in st.session_state.erros_da_api if d[0] != nome
+            ] + [(nome, erro.detalhe)]
+
+    def relatar_erro(erro: ErroDeAuditoria) -> None:
+        """Mostra a tradução e, logo abaixo, o texto original da API."""
+        st.error(f"**{erro.mensagem}**" + (f"\n\n{erro.sugestao}" if erro.sugestao else ""))
+        if erro.detalhe:
+            with st.expander("Mensagem original da Groq"):
+                st.code(erro.detalhe, language="text")
 
     for indice, arquivo in enumerate(fila):
         rotulo = f"{arquivo.name} ({indice + 1}/{len(fila)})"
@@ -525,6 +569,9 @@ if executar_agora:
                 st.session_state.resultados.append((arquivo.name, laudo, miniatura))
                 st.session_state.falhas = [
                     f for f in st.session_state.falhas if f[0] != arquivo.name
+                ]
+                st.session_state.erros_da_api = [
+                    d for d in st.session_state.erros_da_api if d[0] != arquivo.name
                 ]
                 achadas = len(laudo.nao_conformidades)
                 if laudo.visao_falhou:
@@ -549,17 +596,16 @@ if executar_agora:
                 )
             except ErroDeAuditoria as erro:
                 painel.update(label=f"{rotulo} — falhou", state="error")
-                st.error(f"**{erro.mensagem}**" + (f"\n\n{erro.sugestao}" if erro.sugestao else ""))
-                registrar_falha(arquivo.name, erro.mensagem)
+                relatar_erro(erro)
+                registrar_falha(arquivo.name, erro)
                 if not erro.recuperavel:
                     interrompido = (arquivo.name, erro)
                     break
             except Exception as erro:                      # rede, imagem corrompida…
                 traduzido = modelos.traduzir(erro)
                 painel.update(label=f"{rotulo} — falhou", state="error")
-                st.error(f"**{traduzido.mensagem}**" +
-                         (f"\n\n{traduzido.sugestao}" if traduzido.sugestao else ""))
-                registrar_falha(arquivo.name, traduzido.mensagem)
+                relatar_erro(traduzido)
+                registrar_falha(arquivo.name, traduzido)
 
     barra.progress(1.0, text="Concluído.")
 
@@ -609,6 +655,20 @@ if st.session_state.falhas and not resultados:
         "**Nenhuma imagem do lote foi auditada.** Falharam: "
         + ", ".join(f"`{n}` ({m})" for n, m in st.session_state.falhas)
     )
+
+if st.session_state.erros_da_api:
+    # A tradução que o app escreve é um palpite sobre a causa; o texto abaixo é
+    # o que a Groq respondeu. Foi ele que revelou que o limite atingido era o
+    # OTPM, e não o TPM que a mensagem traduzida vinha anunciando havia meses.
+    with st.expander(
+        f"O que a Groq respondeu ({len(st.session_state.erros_da_api)} falha(s))"
+    ):
+        for nome, detalhe in st.session_state.erros_da_api:
+            st.markdown(f"`{nome}`")
+            st.code(detalhe, language="text")
+        st.caption(
+            "Texto original da API, para diagnóstico. Não entra no laudo."
+        )
 
 if resultados:
     st.divider()

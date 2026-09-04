@@ -24,6 +24,61 @@ verdade é sempre com o usuário, em produção, com fotos e laudos que ele mand
 
 ---
 
+## O que travou o lote de 04/09/2026: o OTPM, e não o TPM
+
+O lote de 12 fotos de poço de elevador rodou e **só 1 foto foi auditada**. As outras
+levaram 429. Parte disso era regressão do #27 (o `except` largo que fazia erro de cota
+virar laudo de foto examinada), fechada pelo #28 e registrada na tabela de armadilhas.
+Mas a causa dos 429 não era volume, nem código: é o **OTPM — output tokens per minute —
+da organização, que é 1.000**. Mensagem literal, lida nos Logs do console da Groq:
+
+> "Request too large for model qwen/qwen3.8-27b … on output tokens per minute (OTPM):
+> Limit 1000, Requested 1113. The request's expected output tokens exceed the enforced
+> limit; reduce max_tokens (or the request's expected output) and try again."
+
+O pipeline pedia 1.600 (Olho), 1.800 (Analista) e 3.000 (Diretor): **cada um sozinho
+excede a janela inteira do minuto**. A Groq recusa antes de processar (latência
+0,006 s), então nem a primeira foto do dia passa. Isso não está na tabela pública do
+plano gratuito — lá só há o TPM de 8.000 do `qwen3.8-27b`, que soma entrada e saída;
+OTPM e ITPM são limites **por organização**, e a doc da Groq diz que só algumas os têm.
+Passou a ser aplicado entre 02 e 04/09: nos dias 01 e 02 rodaram ~20 fotos/dia com a
+mesma chave, sem travar.
+
+**Esperar não resolve, e essa é a parte que muda o desenho.** A requisição é rejeitada
+pelo TAMANHO que declara, não pela fila: espera-e-retentativa lendo o `retry-after`
+falharia 100% das vezes. E a retentativa de `_conversar_sem_cortar`, que DOBRA o teto
+(3.200/3.600/6.000), era 429 garantido — a segunda tentativa morria sem nunca chegar ao
+modelo, justamente na hora em que a foto já foi lida e cobrada.
+
+O que o lote também mostrou, a favor de cortar: as respostas que passaram nos logs da
+Groq tiveram **250, 435, 477 e 501 tokens de saída**. A folga de 1.600 a 3.000 nunca foi
+usada.
+
+**Conserto (nesta sessão):** `ClienteGroq.teto_permitido()` corta todo teto de saída
+para 90% do `OTPM_ORGANIZACAO` (900 com o limite de 1.000), no único ponto do projeto
+em que `max_completion_tokens` é montado — os agentes continuam pedindo o que precisam,
+e quando o tier pago subir o limite basta o número na barra lateral. A retentativa
+consulta `teto_permitido` antes: quando o dobro não cabe, o que muda entre as duas
+tentativas passa a ser o **pedido** (`_com_pedido_de_concisao`, que manda encurtar a
+resposta), não o teto. A margem de 10% existe porque a Groq recusou um pedido de 1.600
+dizendo "Requested 1113": o número que ela compara com o limite não é o
+`max_completion_tokens` que mandamos, e não sabemos a fórmula.
+
+**A confirmar no console** (`console.groq.com/settings/limits`, passando o mouse sobre
+o TPM para ver o detalhamento "X in / Y out"): o valor exato do OTPM. Os 1.000 vêm da
+mensagem de erro, não da tabela — se o real for outro, é o campo "Limite de saída por
+minuto da conta (OTPM)" na barra lateral que ajusta, sem mexer em código.
+
+**Ressalva que ficou de pé:** o Diretor pede 3.000 e é o agente que já morreu por
+truncamento no lote de 29/08. Com 900 ele pode truncar de novo, e o remédio antigo
+(dobrar o teto) agora é proibido. O que se fez contra isso: o `PROMPT_DIRETOR` passou a
+pedir a **oração que basta** nas duas cópias literais da conferência, em vez do
+parágrafo inteiro — "nunca menos que ela", porque `_exigencia_ancorada` recusa trecho
+com menos de 12 caracteres. Se ainda assim truncar no lote, as saídas são pedir menos
+por chamada (fatiar a conferência do Diretor) ou o Dev Tier pago.
+
+---
+
 ## Onde a coisa parou (03/09/2026, fim da sessão)
 
 **O `main` carrega os PRs #17 em diante.** O dossiê não oferece mais obrigação de
@@ -163,7 +218,7 @@ Lotes temáticos que valem, com as fotos já identificadas:
 |---|---|---|
 | NR-12 | `SERRA DE BANCADA`, `SERRALHERIA SEM BARREIRA DE ACESSO` | as duas únicas com máquina de verdade no acervo novo |
 | ~~Içamento~~ | 7 fotos | **RODADO em 02/09** — 2 de 5 achados do engenheiro. Ver acima. Só volta a valer depois de existir taxonomia de guindar e de o Olho nomear o equipamento |
-| Poço de elevador | 6 das 17 disponíveis | achado mais repetido do acervo; `vao_caixa_elevador_sem_fechamento` existe e nunca disparou em produção. O sinal FOI medido antes de gastar o lote, e o que se achou não era o 0,50 do lote de içamento: com o Olho escrevendo `elevador` e `cancela`, **os dois riscos de elevador disparavam com a proteção INSTALADA** (5 de 5 e 3 de 6). Sinais refeitos para ancorar na abertura, não no `sem`, e todo sinal de torre/base exige `elevador` (no canteiro há a torre da GRUA): 22 de 22 fatos com a proteção instalada ficam calados e 14 de 14 com ela ausente acionam o risco certo. É este lote que valida os dois consertos ao mesmo tempo |
+| Poço de elevador | 12 fotos: 5 com proteção, 5 sem, 2 de grua | **TENTADO em 04/09 e perdido: 1 foto auditada de 12, as outras recusadas pelo OTPM. Refazer.** Achado mais repetido do acervo; `vao_caixa_elevador_sem_fechamento` existe e nunca disparou em produção. O sinal FOI medido antes de gastar o lote, e o que se achou não era o 0,50 do lote de içamento: com o Olho escrevendo `elevador` e `cancela`, **os dois riscos de elevador disparavam com a proteção INSTALADA** (5 de 5 e 3 de 6). Sinais refeitos para ancorar na abertura, não no `sem`, e todo sinal de torre/base exige `elevador` (no canteiro há a torre da GRUA): 22 de 22 fatos com a proteção instalada ficam calados e 14 de 14 com ela ausente acionam o risco certo. É este lote que valida os dois consertos ao mesmo tempo |
 | Controle negativo | 5 documentos (POP, lista de presença, CREA, crachá) | devem dar **0 NC**; é a classe de erro que já apareceu e nunca foi testada de propósito |
 
 Ao receber os laudos: o HTML traz o "Ambiente registrado" e a lista de fatos do Olho,
@@ -192,7 +247,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 189 testes
+$VENV -m pytest tests/ -q          # 194 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -294,6 +349,8 @@ próprio comando composto (exit 144).
 | **`except` largo em volta de uma chamada de rede engole o motivo — e conta a foto como auditada** | O `agente_olho` tinha `try/except ErroDeAuditoria` em volta do **parse** do JSON. Ao migrá-lo para `_conversar_sem_cortar` em 04/09, o mesmo `except` passou a envolver a **chamada inteira** — e `ClienteGroq.conversar` levanta `ErroDeAuditoria` para qualquer falha da API, cota esgotada inclusive. Resultado no lote de 12 da mesma tarde: **8 fotos de 12 saíram com laudo de "a leitura da imagem falhou · 0s"** sem nunca terem chegado à Groq (`0s` é a assinatura: erro de cota volta na hora), com veredito "aprovado sem vetos" e **contadas como auditadas** — o sumário disse "9 de 12 analisadas" e listou só 3 em "Imagens não auditadas". Um laudo que diz "nenhuma não conformidade" sobre uma foto que ninguém olhou é pior que nenhum laudo. Hoje `RespostaIlegivel` (em `modelos.py`) separa as duas: só ela vira laudo de leitura falhada; erro de cota, rede ou chave sobe e a foto entra em "não auditadas". **Ao mover uma chamada para dentro de um `try` que já existia, confira o que mais aquele `except` passa a capturar** — e, num pipeline que emite documento, pergunte se o erro engolido faz o documento MENTIR sobre o que foi examinado. **Há teste guardando isso**, e ele falha no commit quebrado. |
 | **Número deste arquivo envelhece em silêncio** | Os números daqui não estão escritos em lugar nenhum do código — são computados (`123 riscos` saía de `len(catalogo())`, `6.358 itens` de `carregar_base()`). Quando um PR muda o catálogo, o texto continua afirmando o valor velho e ninguém recorre à fonte, porque o entorno parece conferido. Medido em 03/09 rodando `/conferir` contra este arquivo: **cinco divergências**. Três nasceram de PRs desta mesma sessão (`123 riscos` → 126, `177 testes` → 182 em dois lugares); uma era herdada e desatualizada (`22 de 228` → 24 de 232); e uma **nasceu errada** — `272 dos 866 sinais` foi escrito quando o valor real era 271 de 866 (só o numerador; o denominador estava certo), e sobreviveu a três sessões e quatro PRs. A pior delas (`cinco dos sete sinais`, quando são sete de sete) estava num commit cuja própria mensagem dizia "números conferidos contra o código": seis números foram conferidos, e o sétimo escapou por estar no meio de um parágrafo em vez de numa lista. **A correção também erra**: a mensagem do #24 anunciou "off-by-one nos DOIS números" e o texto daqui copiou o `867`, que nunca existiu — conferir o conserto contra o código custa o mesmo que conferir o original, e ninguém fez. **Ao mexer aqui, rode `/conferir`** — e note que `grep` não pega nenhuma dessas: só executar o catálogo pega. |
 | **Medir tempo por fora de uma função com várias saídas** | `executar` volta cedo quando o Olho não devolve fato utilizável. Cronometrar no `app.py`, em volta da chamada, funcionaria — até alguém acrescentar a próxima saída antecipada e o número virar zero em silêncio. Por isso `executar` virou um invólucro fino que cronometra e delega a `_executar`: existe **um** ponto de saída para medir. **Há teste guardando o caminho da visão que falha.** |
+| **A tradução do erro apaga o texto que nomeia a causa** | `traduzir()`, em `modelos.py`, devolvia "Cota da Groq esgotada (limite de tokens por minuto ou por dia)" para todo 429 — uma frase escrita no código, um palpite. A Groq havia respondido "output tokens per minute (OTPM): Limit 1000, Requested 1113", e esse texto era descartado. Custou horas de diagnóstico atrás do TPM, com a resposta certa dentro da exceção. Hoje `ErroDeAuditoria.detalhe` guarda a mensagem crua de TODO erro traduzido, e o app a mostra em "O que a Groq respondeu" — persistente no `session_state`, porque `st.error` some no rerun seguinte, que foi como ela se perdeu durante o lote inteiro. **Ao traduzir um erro de serviço externo, guarde o original**: o próximo limite novo chega com um nome que este código ainda não conhece. |
+| **429 tem duas causas opostas, e uma delas não passa com o tempo** | Cota estourada é fila: espera e passa, `recuperavel=True`, o lote continua. Recusa por TAMANHO da requisição (OTPM/ITPM, "Request too large") não passa nunca — repetir é queimar foto após foto contra o mesmo limite, que foi o que aconteceu com onze fotos seguidas em 04/09. `RECUSA_POR_TAMANHO` separa as duas em `traduzir()`, e a segunda interrompe o lote com a instrução certa (reduzir o teto de saída), em vez de mandar aguardar um minuto. |
 | **Mergear PR com lote rodando** | O merge dispara o redeploy do Streamlit Cloud, que **reinicia o app e apaga o `st.session_state`** — onde o lote em andamento vive. No plano gratuito um lote é de horas de parede, e o usuário recomeça do zero. Vale para qualquer merge: **pergunte se há lote rodando antes**, e espere os laudos serem baixados. |
 | `git fetch origin main <branch-que-não-existe-mais>` falha inteiro, silenciosamente | Fetch de múltiplos refs é atômico: se um ref já foi deletado no remoto (branch mergeada), o comando inteiro falha e **nenhum ref é atualizado** — inclusive o `main`, que existia e seria atualizado sozinho. `origin/main` local fica congelado na versão de antes, e comparações feitas contra ele mentem. Já causou uma sessão inteira concluir errado que "a reescrita nunca foi mergeada". Se o histórico parecer suspeito, rode `git fetch origin main` sozinho antes de confiar em qualquer diff. |
 
@@ -304,7 +361,7 @@ próprio comando composto (exit 144).
 - **6.358 itens** vigentes de **24 NRs** (de 36 vigentes), extraídos dos PDFs em `normas/`
 - **126 riscos** curados mapeando para itens reais; 25 exigem pessoa na cena e
   3 têm item que só entra com máquina nomeada na cena (`itens_so_com_maquina`)
-- **189 testes**
+- **194 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
@@ -461,7 +518,10 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
 - **Cota.** O teto que aperta é o diário, não o por minuto — e ele é **por modelo**,
   conferido no console em 30/08: 200.000 tokens/dia para `gpt-oss-120b`, `gpt-oss-20b`
   e `qwen/qwen3.6-27b`; **2.000.000 para o `qwen/qwen3.8-27b`**. Também por modelo:
-  8.000 TPM e 1.000 requisições/dia. O registro em `modelos.py` carrega o teto de cada
+  8.000 TPM e 1.000 requisições/dia. **E, desde algum momento entre 02 e 04/09, um
+  OTPM de 1.000** — tokens de SAÍDA por minuto, limite de organização que não aparece
+  na tabela pública e que recusa a requisição pelo tamanho declarado. É ele que decide
+  o teto de saída de cada chamada hoje; ver a seção sobre o lote travado de 04/09. O registro em `modelos.py` carrega o teto de cada
   um (`Modelo.tpd`) e `consumo.py` guarda um balde por modelo — antes o app somava os
   três e comparava com um número só, anunciando 28 fotos/dia e mandando parar de
   auditar com cota sobrando.
@@ -486,6 +546,31 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
 ---
 
 ## Em aberto
+
+- **O lote de 12 de poço de elevador precisa ser REFEITO.** O de 04/09 não mediu nada:
+  1 foto auditada de 12, as outras recusadas pelo OTPM. Ele valida três coisas ainda
+  não validadas em produção — o `PROMPT_OLHO` que passou a nomear elemento de canteiro
+  (#27), os sinais de elevador refeitos (#27) e a retentativa de JSON do Olho (#27/#28)
+  — mais o teto de saída novo. Desenho na tabela de lotes: 5 fotos com a proteção
+  presente, 5 sem, 2 de grua. **O critério de aceite se lê na LISTA DE FATOS do Olho,
+  não nas não conformidades**: o que se quer saber é se ele escreve "cancela",
+  "elevador", "poço" — o roteamento dado o fato certo já foi medido sem rede.
+  **Único dado até agora, com n=1**: na foto que passou ("19. PROTEÇÃO DE ELEVADOR NÃO
+  FIXADA") o Olho escreveu *"Grade metálica de malha quadrada … que delimita uma
+  abertura vertical no piso"* — **sem** "poço de elevador" e **sem** "cancela", que é o
+  padrão de ANTES da mudança. O enquadramento saiu certo assim mesmo (`NR-18 18.9.2` +
+  `NR-08 8.3.2.2`, os dois aparados pelo Diretor). Uma foto não conclui nada; é o que
+  vigiar no lote refeito.
+- **O OTPM exato não foi confirmado na fonte.** Os 1.000 vêm da mensagem de erro da
+  Groq, não da tabela de limites — a tela de `settings/limits` mostra só o TPM de 8.000,
+  e o detalhamento "X in / Y out" aparece passando o mouse sobre ele. Enquanto não for
+  conferido, o campo da barra lateral é o ajuste.
+- **O Diretor pode truncar com 900 tokens de saída.** Ele já morreu por truncamento com
+  1.600 (lote de 29/08), e agora tem menos espaço e não pode dobrá-lo. O `PROMPT_DIRETOR`
+  passou a pedir a oração que basta nas duas cópias literais, o que encolhe a maior
+  parte da resposta dele, e a retentativa manda encurtar — **nada disso foi medido em
+  produção**. Se o lote refeito trouxer "Diretor não devolveu JSON utilizável", as
+  saídas são fatiar a conferência em mais de uma chamada (custa cota) ou o Dev Tier.
 
 - **Taxonomia de içamento — FEITA no #22, à espera de lote.** Três riscos novos em
   `construcao.py`: `dispositivo_icamento_deteriorado` (`NR-18 18.10.1.27`,

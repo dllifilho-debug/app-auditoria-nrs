@@ -127,6 +127,10 @@ class ClienteDemonstracao:
         self.tokens_gastos = 0
         self.cota = None
 
+    def teto_permitido(self, teto: int) -> int:
+        """Sem rede, sem limite de organização: o dublê aceita o que pedirem."""
+        return teto
+
     def conversar(
         self, modelo: str, mensagens: list[dict], teto_saida: int = 1200,
         temperatura: float = 0.0, json_estrito: bool = False,
