@@ -145,6 +145,22 @@ class ErroDeAuditoria(Exception):
         self.bruto = bruto
 
 
+class RespostaIlegivel(ErroDeAuditoria):
+    """O modelo respondeu, e a resposta não deu para ler.
+
+    Existe para separar isto de "a chamada não aconteceu". As duas chegam como
+    `ErroDeAuditoria` e levam a consertos opostos: resposta ilegível é falha de
+    leitura da imagem, e o laudo sai dizendo isso; cota esgotada, erro de rede
+    ou chave recusada significam que a foto NÃO FOI EXAMINADA, e ela tem de
+    aparecer em "Imagens não auditadas".
+
+    Custou um lote real: um `except ErroDeAuditoria` em volta da chamada inteira
+    do Olho, em vez de só do parse, fez 8 fotos de 12 saírem com laudo de
+    "leitura falhou · 0s" — `0s` porque o erro de cota volta na hora, sem
+    chamada — e serem contadas como auditadas.
+    """
+
+
 def traduzir(erro: Exception) -> ErroDeAuditoria:
     import groq
 

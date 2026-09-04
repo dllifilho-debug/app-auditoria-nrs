@@ -22,7 +22,7 @@ from . import dossie as mod_dossie
 from .catalogo_nr import CATALOGO_NR
 from .kb import BaseNormativa, Item
 from .kb import radicais as _radicais   # usado também por riscos._validar
-from .modelos import Conversador, ErroDeAuditoria
+from .modelos import Conversador, ErroDeAuditoria, RespostaIlegivel
 from .riscos import (
     Risco,
     catalogo as catalogo_riscos,
@@ -169,7 +169,7 @@ def _ler_json(texto: str, onde: str) -> dict:
         pass
     if (objeto := _primeiro_objeto(limpo)) is not None:
         return objeto
-    raise ErroDeAuditoria(
+    raise RespostaIlegivel(
         f"O agente {onde} não devolveu JSON utilizável.",
         "Costuma ser resposta cortada por falta de cota. Tente de novo em um minuto.",
         recuperavel=True,
@@ -217,7 +217,7 @@ def _conversar_sem_cortar(cliente, modelo, conteudo, teto, temperatura, quem):
     if not refazer:
         try:
             return _ler_json(bruto, quem), bruto
-        except ErroDeAuditoria:
+        except RespostaIlegivel:
             refazer = True
     if refazer:
         bruto = cliente.conversar(
@@ -307,8 +307,14 @@ def agente_olho(cliente: Conversador, imagem_b64: str, modelo: str, contexto: st
     # segue sem os fatos: a foto sai sem laudo nenhum.
     try:
         dados, bruto = _conversar_sem_cortar(cliente, modelo, conteudo, 1600, 0.0, "Olho")
-    except ErroDeAuditoria as erro:
-        # Guardamos o texto cru para a tela de diagnóstico antes de desistir.
+    except RespostaIlegivel as erro:
+        # Só a RESPOSTA ilegível vira laudo de "leitura falhou": aí houve
+        # chamada, o modelo respondeu, e o texto cru vai para a tela de
+        # diagnóstico. Cota esgotada, rede fora e chave recusada NÃO passam por
+        # aqui — sobem, e a foto entra em "Imagens não auditadas", que é a
+        # verdade sobre ela. Capturar `ErroDeAuditoria` inteiro aqui custou um
+        # lote real: 8 fotos de 12 saíram com laudo de leitura falhada sem
+        # nunca terem chegado à Groq, e contadas como auditadas.
         return Visao(bruto=erro.bruto)
     pessoas = dados.get("pessoas") or {}
     achados = [

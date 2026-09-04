@@ -1235,6 +1235,37 @@ def test_visao_repete_quando_o_json_nao_parseia_sem_a_api_sinalizar():
     assert [a.fato for a in visao.achados] == ["poço de elevador aberto"]
 
 
+def test_erro_de_cota_no_olho_nao_vira_laudo_de_leitura_falhada():
+    """A foto que não chegou à Groq NÃO pode sair como foto examinada.
+
+    Regressão real, medida num lote de 12 em 04/09: ao migrar o Olho para
+    `_conversar_sem_cortar`, o `try/except` passou a envolver a CHAMADA inteira
+    em vez de só o parse. `ClienteGroq.conversar` levanta `ErroDeAuditoria` para
+    qualquer falha da API — cota esgotada inclusive —, então 8 fotos de 12
+    saíram com laudo de "a leitura da imagem falhou · 0s" (`0s` porque o erro de
+    cota volta na hora, sem chamada) e foram CONTADAS COMO AUDITADAS: o sumário
+    disse "9 de 12 analisadas" e listou só 3 em "Imagens não auditadas".
+
+    Um laudo que diz "nenhuma não conformidade" sobre uma foto que ninguém olhou
+    é pior que nenhum laudo. Erro de chamada tem de subir.
+    """
+    from auditoria.pipeline import agente_olho
+    from auditoria.modelos import ErroDeAuditoria
+
+    class CotaEsgotada:
+        ultimo_corte_por_limite = False
+
+        def conversar(self, modelo, mensagens, teto_saida=1200, temperatura=0.0,
+                      json_estrito=False):
+            raise ErroDeAuditoria(
+                "Cota da Groq esgotada (limite de tokens por minuto ou por dia).",
+                recuperavel=True,
+            )
+
+    with pytest.raises(ErroDeAuditoria, match="Cota da Groq"):
+        agente_olho(CotaEsgotada(), "imagem", "modelo-x")
+
+
 def test_visao_guarda_o_bruto_tambem_quando_o_json_e_valido():
     """O `bruto` do caminho de SUCESSO não é decoração.
 
