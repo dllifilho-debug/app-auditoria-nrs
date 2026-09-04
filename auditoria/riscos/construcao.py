@@ -145,7 +145,6 @@ RISCOS: dict[str, dict] = {
             "poco de elevador aberto",
             "caixa de elevador aberta",
             "vao do elevador aberto",
-            "elevador so com fita",
             "tapume do elevador faltando",
             "porta do elevador faltando",
             "shaft do elevador aberto",
@@ -380,10 +379,21 @@ RISCOS: dict[str, dict] = {
         # elevador aberto" já casa `torre do elevador aberta`, então ele não
         # cobria nada que sobrasse, só o que não devia.
         #
-        # "acesso so com corrente", a primeira tentativa de encurtar o terceiro,
-        # casava "quadro elétrico com CORRENTE de alimentação exposta junto ao
-        # ACESSO da obra" — `corrente` de elo e `corrente` elétrica têm o mesmo
-        # radical. Trocado `acesso` por `elevador`, que a cena elétrica não traz.
+        # Os sinais de proteção INADEQUADA — "acesso ao elevador so com
+        # corrente", "vao do elevador so com fita" — saíram, e a razão vale para
+        # o próximo que for tentado. Eles precisam do conceito de SUBSTITUIÇÃO
+        # ("só com", "no lugar de"), e o que sobra dele depois de `radicais()` é
+        # a palavra-cola `com`: um sinal de três radicais em que um é cola tem
+        # dois discriminantes, e "vão do elevador fechado com chapa aparafusada
+        # E FITA ZEBRADA de sinalização" — proteção rígida instalada, fita ao
+        # lado, cena comum de canteiro — dava cobertura 1,0. `corrente` ainda
+        # somava a colisão com a corrente ELÉTRICA: "quadro elétrico com
+        # CORRENTE de alimentação exposta junto ao ACESSO da obra".
+        #
+        # A perda é pequena porque a foto que motivava esses sinais também
+        # dispara os de abertura: um vão isolado só por fita É um vão aberto, e
+        # o Olho o descreve assim. Proteção inadequada não é representável por
+        # sobreposição de radicais; é caso para o Analista ler o dossiê.
         "sinais": [
             "cancela aberta",
             "cancela ausente",
@@ -391,7 +401,6 @@ RISCOS: dict[str, dict] = {
             "cancela quebrada",
             "torre do elevador aberta",
             "base do elevador aberta",
-            "elevador so com corrente",
             "pessoa passando embaixo do elevador de obra",
         ],
         "itens": ["NR-18 18.11.13", "NR-18 18.11.14"],

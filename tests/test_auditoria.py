@@ -492,6 +492,12 @@ def test_protecao_instalada_nao_aciona_o_risco_de_protecao_ausente():
         "Poço da grua aberto no piso, junto à base da torre",
         "Torre da grua aberta na base, com a fundação exposta",
         "Base da torre da grua com o poço aberto, sem fechamento lateral",
+        # Proteção rígida instalada COM fita ou corrente ao lado — cena comum de
+        # canteiro, e o que derrubou os sinais de proteção inadequada: o `com`
+        # deles é cola, e sobravam dois discriminantes.
+        "Vão do elevador fechado com chapa metálica aparafusada e fita zebrada de sinalização",
+        "Caixa do elevador fechada com tapume de madeira e fita zebrada colada na borda",
+        "Acesso à torre do elevador com porta metálica travada e corrente de segurança adicional",
     )
     for fato in instaladas:
         ids = [r.id for r in rotear_riscos(
@@ -505,7 +511,14 @@ def test_protecao_ausente_continua_acionando_o_risco_certo():
     dois — a cancela e a base da torre são o `NR-18 18.11.13`/`18.11.14`; o vão
     da caixa é o `18.9.3`.
 
-    Uma perda aceita e deliberada: "entrada da torre SEM CANCELA instalada" não
+    Duas perdas aceitas e deliberadas. A segunda é a proteção INADEQUADA — "vão
+    fechado só com fita", "acesso só com corrente": esses sinais precisam do
+    conceito de substituição, o que sobra dele em radicais é a cola `com`, e o
+    preço eram os três últimos negativos da lista acima. A foto que os motivava
+    dispara os sinais de abertura, porque um vão isolado só por fita é um vão
+    aberto e o Olho o descreve assim.
+
+    A primeira: "entrada da torre SEM CANCELA instalada" não
     casa mais pela letra, porque nenhum sinal depende de `sem`. Não há como
     manter esse caso sem trazer de volta "cancela fechada, SEM sinalização", que
     é o mesmo par de radicais. A perda é pequena — sem cancela, o acesso está
@@ -529,8 +542,6 @@ def test_protecao_ausente_continua_acionando_o_risco_certo():
         ("torre_elevador_sem_cancela",
          "Base da torre do elevador aberta, sem qualquer fechamento lateral"),
         ("torre_elevador_sem_cancela",
-         "Acesso à torre do elevador fechado só com uma corrente amarrada"),
-        ("torre_elevador_sem_cancela",
          "Vão da torre do elevador aberto no décimo segundo pavimento"),
         ("vao_caixa_elevador_sem_fechamento",
          "Poço de elevador aberto no quinto pavimento, sem qualquer barreira"),
@@ -541,11 +552,13 @@ def test_protecao_ausente_continua_acionando_o_risco_certo():
         ("vao_caixa_elevador_sem_fechamento",
          "Tapume do elevador faltando no pavimento"),
         ("vao_caixa_elevador_sem_fechamento",
-         "Vão do elevador fechado só com fita zebrada"),
-        ("vao_caixa_elevador_sem_fechamento",
          "Porta do elevador faltando no pavimento, vão aberto"),
         ("vao_caixa_elevador_sem_fechamento",
          "Shaft do elevador aberto, sem tampa"),
+        # A prova da segunda perda aceita: a foto que motivava "vao do elevador
+        # so com fita" continua routeando, pelo sinal de abertura.
+        ("vao_caixa_elevador_sem_fechamento",
+         "Vão do elevador aberto, delimitado apenas por fita zebrada"),
     ]
     for esperado, fato in casos:
         ids = [r.id for r in rotear_riscos(
