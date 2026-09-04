@@ -133,11 +133,17 @@ RISCOS: dict[str, dict] = {
             "a abertura, em material resistente travado ou fixado à estrutura, enquanto as "
             "portas definitivas não são colocadas."
         ),
+        # Três sinais tinham quatro radicais com `sem` ou `com` entre eles, e
+        # disparavam com o fechamento INSTALADO — "caixa do elevador COM
+        # fechamento de madeira" cobria 3 de 4 de "caixa do elevador sem
+        # fechamento". Mesmo defeito e mesma correção do risco da cancela; vale
+        # a pena aqui porque este é o risco do lote de poço de elevador, o
+        # achado mais repetido do acervo.
         "sinais": [
             "poco de elevador aberto",
-            "caixa do elevador sem fechamento",
-            "vao do elevador so com fita",
-            "buraco do elevador sem tapume",
+            "elevador sem fechamento",
+            "elevador so com fita",
+            "elevador sem tapume",
             "porta do elevador faltando",
             "shaft do elevador aberto",
             "tabua atravessada no vao do elevador",
@@ -333,13 +339,36 @@ RISCOS: dict[str, dict] = {
             "intertravamento, ou base da torre sem fechamento de pelo menos 2 m em todos os "
             "lados com proteção e sinalização."
         ),
+        # Quatro destes sinais eram longos e disparavam com a proteção PRESENTE.
+        # Enquanto o Olho não escrevia "cancela" nem "elevador" isso era latente;
+        # ao ensiná-lo a nomear o elemento de canteiro, o falso positivo passa a
+        # ser o caso comum — e o próximo lote é justamente o de poço de elevador.
+        # Medido: 5 de 5 fatos com a proteção instalada acionavam o risco de
+        # proteção ausente, sempre a 0,75, sempre faltando só o negador:
+        #
+        #   "elevador de obra sem cancela"        falta `sem`     → "cancela … fechada e travada"
+        #   "base do elevador sem tapume"         falta `sem`     → "base … fechada com tapume"
+        #   "acesso ao elevador so com corrente"  falta `corrent` → "acesso … fechado com porta"
+        #   "vao da torre do elevador aberto"     falta `abert`   → "vão … fechado por chapa"
+        #
+        # Encurtados para três radicais ou menos, em que nenhum pode faltar. A
+        # perda é de forma, não de caso: "sem cancela" continua casando "entrada
+        # da torre do elevador SEM CANCELA instalada".
+        #
+        # "acesso so com corrente", a primeira tentativa de encurtar o terceiro,
+        # casava "quadro elétrico com CORRENTE de alimentação exposta junto ao
+        # ACESSO da obra" — `corrente` de elo e `corrente` elétrica têm o mesmo
+        # radical. Trocado `acesso` por `elevador`, que a cena elétrica não traz.
+        # E "base sem tapume" guarda o `base` de propósito: sem ele, "buraco do
+        # elevador sem tapume" acionaria também este risco, que é da cancela e
+        # da base da torre, e não do vão da caixa (esse é o 18.9.3, abaixo).
         "sinais": [
-            "elevador de obra sem cancela",
+            "sem cancela",
             "torre do elevador aberta",
-            "base do elevador sem tapume",
-            "acesso ao elevador so com corrente",
+            "base sem tapume",
+            "elevador so com corrente",
             "cancela quebrada",
-            "vao da torre do elevador aberto",
+            "vao da torre aberto",
             "pessoa passando embaixo do elevador de obra",
         ],
         "itens": ["NR-18 18.11.13", "NR-18 18.11.14"],

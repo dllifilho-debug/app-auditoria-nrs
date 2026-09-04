@@ -441,21 +441,84 @@ def test_o_nome_do_elemento_de_canteiro_e_o_que_faz_a_cancela_rotear():
     assert "torre_elevador_sem_cancela" in [r.id for r in rotear_riscos(com_nome)]
 
 
-def test_nomear_o_canteiro_nao_dispara_risco_de_elevador_sem_elevador():
-    """A contraparte. Nomear mais faz o Olho escrever mais nomes, e nome é
-    radical: o risco novo de disparar é o oposto do que se está consertando.
-    Um tapume comum de canteiro e um portão de acesso de veículos não são
-    cancela de torre de elevador.
+def test_protecao_instalada_nao_aciona_o_risco_de_protecao_ausente():
+    """A contraparte que o prompt novo tornou obrigatória, e o falso positivo
+    que ela achou.
+
+    Ensinar o Olho a nomear o elemento de canteiro faz os fatos passarem a
+    conter `cancela`, `elevador`, `torre` e `tapume` — que é o que estes dois
+    riscos casam. Antes disso o defeito era latente; depois, seria o caso comum,
+    e o próximo lote é justamente o de poço de elevador.
+
+    Medido antes da correção: 5 de 5 fatos com a proteção INSTALADA acionavam o
+    risco de proteção ausente, e 3 de 6 no risco do vão da caixa. Sempre a 0,75,
+    sempre por sinal de quatro radicais em que o que faltava era só o negador —
+    "caixa do elevador COM fechamento de madeira" cobrindo "caixa do elevador
+    sem fechamento". É a armadilha dos quatro radicais somada à do `sem`.
+
+    Uma contraparte só vale se ela PUDER falhar: os fatos abaixo trazem as
+    palavras dos sinais de propósito. Uma lista de fatos sem `elevador` nem
+    `cancela` passaria com qualquer taxonomia, inclusive a defeituosa.
     """
-    for fato in (
-        "Tapume de madeira compensada fechando o perímetro do canteiro, íntegro",
-        "Portão metálico de correr na entrada de veículos, fechado e travado",
-        "Bandeja metálica de proteção instalada na fachada, no terceiro pavimento",
-    ):
-        visao = Visao(ambiente="Canteiro de obras em edificação", achados=[Achado(fato)])
-        assert "torre_elevador_sem_cancela" not in [
-            r.id for r in rotear_riscos(visao)
-        ], fato
+    ambiente = "Canteiro de obras em edificação de múltiplos pavimentos"
+    instaladas = (
+        "Cancela metálica fechada e travada na entrada da torre do elevador de obra",
+        "Base da torre do elevador fechada com tapume de madeira compensada, íntegro",
+        "Acesso ao elevador fechado com porta metálica de correr, com trava",
+        "Torre do elevador de obra com cancela instalada em todos os acessos, fechada",
+        "Vão da torre do elevador fechado por chapa metálica aparafusada",
+        "Caixa do elevador com fechamento de madeira compensada em toda a abertura, travado",
+        "Poço de elevador fechado por tapume de madeira em toda a altura, íntegro",
+        "Buraco do elevador fechado com tapume aparafusado à estrutura",
+        "Porta do elevador instalada e travada no pavimento",
+        # `corrente` de elo e `corrente` elétrica têm o mesmo radical: foi por
+        # aqui que a primeira tentativa de encurtar o sinal vazou.
+        "Quadro elétrico com corrente de alimentação exposta junto ao acesso da obra",
+    )
+    for fato in instaladas:
+        ids = [r.id for r in rotear_riscos(
+            Visao(ambiente=ambiente, achados=[Achado(fato)]))]
+        assert "torre_elevador_sem_cancela" not in ids, fato
+        assert "vao_caixa_elevador_sem_fechamento" not in ids, fato
+
+
+def test_protecao_ausente_continua_acionando_o_risco_certo():
+    """O outro lado do encurtamento: nenhum caso positivo pode ter se perdido,
+    e cada um tem de cair no risco certo dos dois — a cancela e a base da torre
+    são o `NR-18 18.11.13`/`18.11.14`; o vão da caixa é o `18.9.3`.
+    """
+    ambiente = "Canteiro de obras em edificação de múltiplos pavimentos"
+    casos = [
+        ("torre_elevador_sem_cancela",
+         "Cancela metálica vermelha na entrada da torre do elevador de obra, "
+         "aberta, presa por uma dobradiça"),
+        ("torre_elevador_sem_cancela",
+         "Entrada da torre do elevador de obra sem cancela instalada"),
+        ("torre_elevador_sem_cancela",
+         "Base da torre do elevador sem tapume, com o vão aberto para a circulação"),
+        ("torre_elevador_sem_cancela",
+         "Acesso à torre do elevador fechado só com uma corrente amarrada"),
+        ("torre_elevador_sem_cancela",
+         "Vão da torre do elevador aberto no décimo segundo pavimento"),
+        ("torre_elevador_sem_cancela",
+         "Cancela quebrada, pendurada por uma dobradiça, na entrada da torre"),
+        ("vao_caixa_elevador_sem_fechamento",
+         "Poço de elevador aberto no quinto pavimento, sem qualquer barreira"),
+        ("vao_caixa_elevador_sem_fechamento",
+         "Caixa do elevador sem fechamento provisório, vão livre para o poço"),
+        ("vao_caixa_elevador_sem_fechamento",
+         "Buraco do elevador sem tapume, aberto na altura do peito"),
+        ("vao_caixa_elevador_sem_fechamento",
+         "Vão do elevador fechado só com fita zebrada"),
+        ("vao_caixa_elevador_sem_fechamento",
+         "Porta do elevador faltando no pavimento, vão aberto"),
+        ("vao_caixa_elevador_sem_fechamento",
+         "Shaft do elevador aberto, sem tampa"),
+    ]
+    for esperado, fato in casos:
+        ids = [r.id for r in rotear_riscos(
+            Visao(ambiente=ambiente, achados=[Achado(fato)]))]
+        assert esperado in ids, fato
 
 
 def test_roteamento_deixa_o_ambiente_nomear_o_equipamento():
