@@ -52,7 +52,11 @@ modelo, justamente na hora em que a foto já foi lida e cobrada.
 
 O que o lote também mostrou, a favor de cortar: as respostas que passaram nos logs da
 Groq tiveram **250, 435, 477 e 501 tokens de saída**. A folga de 1.600 a 3.000 nunca foi
-usada.
+usada. O painel de uso mede a mesma coisa por outro caminho: em 04/09 o dia inteiro deu
+**18,9 mil tokens de entrada e 4,8 mil de saída em ~10 solicitações** — ~480 de saída
+por chamada, com a saída valendo ~20% do total. É essa proporção que torna o OTPM o
+gargalo e não o TPM: a janela de 8.000 por minuto não aperta quando só um quinto do
+tráfego é saída, e a de 1.000 aperta sempre.
 
 **Conserto (nesta sessão):** `ClienteGroq.teto_permitido()` corta todo teto de saída
 para 90% do `OTPM_ORGANIZACAO` (900 com o limite de 1.000), no único ponto do projeto
@@ -64,10 +68,12 @@ resposta), não o teto. A margem de 10% existe porque a Groq recusou um pedido d
 dizendo "Requested 1113": o número que ela compara com o limite não é o
 `max_completion_tokens` que mandamos, e não sabemos a fórmula.
 
-**A confirmar no console** (`console.groq.com/settings/limits`, passando o mouse sobre
-o TPM para ver o detalhamento "X in / Y out"): o valor exato do OTPM. Os 1.000 vêm da
-mensagem de erro, não da tabela — se o real for outro, é o campo "Limite de saída por
-minuto da conta (OTPM)" na barra lateral que ajusta, sem mexer em código.
+**Onde o OTPM NÃO está**: `settings/limits` mostra só o TPM somado (nenhuma coluna de
+saída, e o modal de limites do projeto também não tem), e `dashboard/usage` dá consumo,
+não limite — as duas telas foram olhadas em 04/09. A fonte do número é a mensagem de
+erro em **Registros**, que diz `Limit 1000` com todas as letras. Se um dia ele mudar, é
+de lá que se descobre, e é o campo "Limite de saída por minuto da conta (OTPM)" na
+barra lateral que ajusta, sem mexer em código.
 
 **O teto de 900 morde o Olho antes do Diretor, e ninguém tinha olhado para isso.**
 Foi o `/critico` que apontou: o corte valia para os três, e o único agente cuja saída
@@ -538,6 +544,13 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   mostra 200.000 para ele **nos dois lugares** — na tabela de limites da organização e
   no modal de limites do projeto ("Tokens per Day 200 000 · Org limit: 200 000").
   A 7.804 tokens/foto isso dá **~25 fotos/dia**, e um lote de 100 fotos leva ~4 dias.
+  **Confirmado por evidência independente** no painel `dashboard/usage?tab=activity`
+  (print de 04/09): nos dias 01 e 02 o `qwen3.8-27b` consumiu ~150K e ~160K tokens em
+  ~57 e ~66 solicitações — ou seja, **80% da cota do dia**, não 8%. As mesmas barras
+  dão ~2.500 tokens por chamada e ~7.900 por foto (3 chamadas), batendo com os 7.804
+  medidos no lote de 15. O usuário já encostava no teto diário nos dias 01 e 02 sem
+  saber, e o app dizia que sobrava cota para mais 250 fotos. As barras são leitura de
+  gráfico; só o tooltip de 04/09 é exato.
   O 3.8 continua o padrão pelo que ele gasta e pelo que ele emite (15/15 laudos, 7.804
   tokens/foto contra 13.404), não por folga de cota, que nunca existiu. Também por
   modelo:

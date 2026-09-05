@@ -46,8 +46,10 @@ class Modelo:
     # para os quatro modelos registrados. Uma leitura anterior, de 30/08, dera
     # 2.000.000 ao qwen3.8-27b, e o app anunciou ~256 fotos/dia por três
     # sessões; a tela de limites da organização e o modal de limites do projeto
-    # mostram 200.000 nos dois lugares. Conta paga muda todos esses números —
-    # por isso a barra lateral deixa ajustar o padrão.
+    # mostram 200.000 nos dois lugares, e o painel de uso confirma por outro
+    # caminho — nos dias 01 e 02/09 o modelo consumiu ~150K e ~160K num dia, que
+    # é 80% de 200.000 e seria 8% de 2.000.000. Conta paga muda todos esses
+    # números — por isso a barra lateral deixa ajustar o padrão.
     tpd: int = 200_000
 
 
