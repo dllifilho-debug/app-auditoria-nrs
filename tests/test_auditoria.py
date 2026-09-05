@@ -3529,3 +3529,157 @@ def test_a_segunda_tentativa_do_olho_nao_perde_a_imagem():
     assert refeito[1] == partes[1]
     assert "900" in refeito[-1]["text"]
     assert _com_pedido_de_concisao("prompt", 900).startswith("prompt")
+
+
+# ---------------------------------------------------------------------------
+# O lote de 9 fotos de poço de elevador (05/09/2026): sinal sem negador
+# ---------------------------------------------------------------------------
+
+def test_grade_que_fecha_a_abertura_nao_aciona_risco_de_abertura_desprotegida():
+    """Fatos reais do laudo 4 de 05/09/2026, com a proteção INSTALADA.
+
+    "abertura na parede" eram dois radicais e nenhum negador, então o fato
+    "Grade metálica montada em um batente de metal, FECHANDO uma abertura
+    retangular entre as PAREDES de tijolo" dava cobertura 1,00 — e o laudo do
+    cliente saiu com `NR-08 8.3.2.2` sobre uma abertura que estava protegida. O
+    engenheiro confirmou a foto: a grade fecha o vão.
+
+    É o defeito que o #27 corrigiu nos dois riscos de elevador e que ficou de pé
+    no risco de abertura, que é o que de fato routeia estas fotos.
+    """
+    protegida = Visao(
+        ambiente="Interior de uma construção em fase de alvenaria, com paredes de "
+                 "tijolo aparente e piso de concreto.",
+        achados=[
+            Achado("Grade metálica de malha quadrada (treliça) montada em um batente "
+                   "de metal, fechando uma abertura retangular entre as paredes de tijolo."),
+            Achado("Paredes de alvenaria de tijolo cerâmico vermelho com juntas de "
+                   "argamassa visíveis e superfície irregular, sem reboco."),
+        ],
+    )
+    assert "abertura_parede_desprotegida" not in [r.id for r in rotear_riscos(protegida)]
+
+    # E o contraponto do MESMO lote (laudo 5), onde a abertura é real: continua
+    # acionando. Sem isto o conserto seria só uma poda.
+    desprotegida = Visao(
+        ambiente="Interior de um edifício em fase de construção, caracterizado por "
+                 "estruturas de concreto aparente e piso com entulho.",
+        achados=[Achado(
+            "Abertura retangular vertical no pilar de concreto, com bordas irregulares "
+            "e sem porta ou fechamento visível, revelando um vão escuro no interior."
+        )],
+    )
+    assert "abertura_parede_desprotegida" in [r.id for r in rotear_riscos(desprotegida)]
+
+    # A contraparte do terceiro sinal, que o `/critico` cobrou: um pilar cuja
+    # abertura JÁ está fechada. `abertura no pilar` chegou a entrar aqui e dava
+    # 1,00 neste fato — o mesmo defeito, reintroduzido dentro do conserto.
+    pilar_fechado = Visao(
+        ambiente="Interior de edifício em construção.",
+        achados=[Achado(
+            "Abertura no pilar de concreto fechada com chapa metálica parafusada "
+            "na estrutura."
+        )],
+    )
+    assert "abertura_parede_desprotegida" not in [r.id for r in rotear_riscos(pilar_fechado)]
+
+    # E o que o terceiro sinal acrescenta: o vão de janela, que a descrição do
+    # risco nomeia e que nenhum sinal pegava.
+    janela = Visao(
+        ambiente="Fachada de edifício em obra.",
+        achados=[Achado(
+            "Vão de janela aberto na fachada, sem caixilho nem proteção, com queda "
+            "direta para o exterior."
+        )],
+    )
+    assert "abertura_parede_desprotegida" in [r.id for r in rotear_riscos(janela)]
+
+
+def test_guarda_corpo_instalado_nao_aciona_risco_de_guarda_corpo_ausente():
+    """O sinal fazia o oposto do que descreve, e o mesmo lote provou os dois lados.
+
+    "guarda corpo so com uma corda" tem cinco radicais e três são cola (`so` cai
+    no filtro de duas letras; sobram `com` e `uma`). O guarda-corpo INSTALADO
+    cobria 4 de 5 — "cabine ... COM UMA unidade de ar-condicionado ... e UMA
+    plataforma cercada por GUARDA-CORPO metálico" — e o que faltava era `corda`,
+    o único discriminante. Nos fatos com a corda de verdade ele ficava em 0,60 e
+    não disparava.
+    """
+    instalado = Visao(
+        ambiente="Vista aérea de um canteiro de obras urbano com edifícios em construção.",
+        achados=[Achado(
+            "Cabine de cor branca com uma unidade de ar-condicionado instalada na "
+            "lateral externa e uma plataforma superior cercada por guarda-corpo metálico."
+        )],
+    )
+    assert "periferia_laje_sem_guarda_corpo" not in [r.id for r in rotear_riscos(instalado)]
+
+    # NÃO se testa aqui o guarda-corpo íntegro descrito com "sem folgas": ele
+    # ainda aciona este risco e mais dois, por quatro sinais diferentes, e o
+    # conserto não cabe numa troca de sinal — está medido em "Em aberto" no
+    # CLAUDE.md, sob o `sem` que satisfaz um sinal negando outra coisa.
+
+    # E o que o sinal defeituoso deixava passar: a corda no lugar do guarda-corpo.
+    improvisado = Visao(
+        ambiente="Laje de cobertura em construção.",
+        achados=[Achado(
+            "Corda de náilon amarela esticada entre dois pontos na borda da laje, "
+            "no lugar de guarda-corpo."
+        )],
+    )
+    assert "periferia_laje_sem_guarda_corpo" in [r.id for r in rotear_riscos(improvisado)]
+
+
+def test_o_que_substitui_a_tela_na_borda_e_a_altura_e_nao_a_tela():
+    """Contrapartes do sinal que entrou no lugar de "guarda corpo so com uma corda".
+
+    O candidato óbvio era nomear o objeto — "tela plastica na borda" —, e ele
+    parecia seguro justamente por não depender de negação. Medido, dispara nos
+    dois fatos abaixo, em que não há periferia desprotegida nenhuma: a tela de
+    SINALIZAÇÃO na borda de uma escavação ao nível do solo, e a tela presa
+    ATRÁS de um guarda-corpo rígido, como anteparo de fragmentos. O que
+    discrimina a proteção inadequada não é a tela, é a ALTURA — e é por isso que
+    o sinal fala de joelho. Sem este teste as duas medições viveriam só no
+    comentário, e o sinal poderia voltar sem nada quebrar.
+    """
+    sinalizacao_no_solo = Visao(
+        ambiente="Canteiro de obras ao nível do solo.",
+        achados=[Achado(
+            "Tela plástica laranja de sinalização esticada na borda da área de "
+            "escavação, ao nível do solo."
+        )],
+    )
+    assert "periferia_laje_sem_guarda_corpo" not in [
+        r.id for r in rotear_riscos(sinalizacao_no_solo)
+    ]
+
+    # A cena diz "pavimento", e não "laje"/"periferia", de propósito: com essas
+    # duas palavras o fato dispara pelo sinal ANTIGO `periferia da laje sem
+    # guarda-corpo`, que tem cinco radicais e passa a 0,80 faltando justamente o
+    # `sem` — outro caso da família registrada em "Em aberto", e que não é o que
+    # este teste mede. Aqui se isola o sinal que entrou.
+    anteparo_atras_do_guarda_corpo = Visao(
+        ambiente="Pavimento de edifício em obra.",
+        achados=[Achado(
+            "Guarda-corpo metálico rígido instalado na borda do pavimento, com tela "
+            "plástica presa por trás como anteparo de fragmentos."
+        )],
+    )
+    assert "periferia_laje_sem_guarda_corpo" not in [
+        r.id for r in rotear_riscos(anteparo_atras_do_guarda_corpo)
+    ]
+
+    # E o positivo que o sinal existe para pegar, do lote de 29/08: a barreira
+    # descrita com material, fixação e ALTURA.
+    tela_na_altura_do_joelho = Visao(
+        ambiente="Área de construção civil em fase de alvenaria, localizada em um "
+                 "edifício de grande altura com vista para uma cidade.",
+        achados=[Achado(
+            "Tela plástica flexível laranja de malha larga estendida ao longo da borda "
+            "do piso, presa a um cone e a uma haste, altura na altura do joelho, sem "
+            "guarda-corpo rigido visivel."
+        )],
+    )
+    assert "periferia_laje_sem_guarda_corpo" in [
+        r.id for r in rotear_riscos(tela_na_altura_do_joelho)
+    ]
