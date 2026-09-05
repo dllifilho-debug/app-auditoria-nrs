@@ -47,7 +47,36 @@ RISCOS: dict[str, dict] = {
         "sinais": [
             "periferia da laje sem guarda-corpo",
             "borda de laje aberta",
-            "guarda corpo so com uma corda",
+            # Era "guarda corpo so com uma corda", e fazia o oposto do que
+            # descreve. Cinco radicais, dois deles cola — `com` e `uma`; o `so`
+            # nem chega a virar radical, some no filtro de duas letras, e é por
+            # isso que um sinal de seis palavras discrimina por três: o
+            # guarda-corpo INSTALADO
+            # cobria 4 de 5 — "cabine ... COM UMA unidade de ar-condicionado ...
+            # e UMA plataforma cercada por GUARDA-CORPO metálico" — e o que
+            # faltava era justamente `corda`, o único discriminante. Medido nas
+            # 9 fotos de 05/09/2026: disparou nas duas em que o guarda-corpo
+            # está instalado na borda, e ficou em 0,60 num fato com a corda
+            # esticada no lugar do guarda-corpo, que é o caso que ele existe
+            # para pegar. Três radicais, nenhum cola, todos obrigatórios.
+            "guarda corpo de corda",
+            # E este entra porque a troca acima revelou o que o sinal defeituoso
+            # vinha segurando: o falso negativo mais caro do lote de 29/08 — a
+            # tela plástica frouxa na borda da laje — só routeava porque
+            # "guarda corpo so com uma corda" cobria 4 de 5 num fato que não
+            # tem corda nenhuma. Um teste verde por acidente é pior que um
+            # teste vermelho. Dois candidatos foram medidos e recusados antes
+            # deste: `sem guarda-corpo` dispara igual em "guarda-corpo rígido
+            # instalado, SEM folgas nem oxidação" — a armadilha do `sem` como
+            # negador; e `tela plastica na borda`, que parecia seguro por
+            # nomear o objeto, dispara com a tela de SINALIZAÇÃO na borda de
+            # uma escavação ao nível do solo e com a tela presa ATRÁS de um
+            # guarda-corpo rígido — nos dois casos não há periferia
+            # desprotegida nenhuma. O que discrimina não é a tela, é a ALTURA:
+            # "na altura do joelho" descreve a condição de risco, e nenhuma das
+            # três contrapartes a contém. É estreito de propósito — depende de
+            # o Olho medir a altura, que é o que o prompt dele manda fazer.
+            "tela na altura do joelho",
             "guarda corpo de madeira frouxo",
             "sem rodape na borda",
             "fita zebrada no lugar de guarda-corpo",
@@ -119,8 +148,73 @@ RISCOS: dict[str, dict] = {
             # "vao na parede" ficou de fora por um terceiro motivo, também
             # medido: casa com "vigas apoiadas no VÃO entre as PAREDES", que é
             # descrição de estrutura, não de abertura desprotegida.
-            "abertura na parede",
+            #
+            # "abertura na parede" SAIU no lote de 05/09/2026, e o motivo é a
+            # outra metade da mesma armadilha: dois radicais, nenhum deles
+            # negador. O fato "Grade metálica montada em um batente de metal,
+            # FECHANDO uma abertura retangular entre as PAREDES de tijolo" —
+            # uma abertura protegida — deu cobertura 1,00 e o laudo saiu com
+            # `NR-08 8.3.2.2` sobre uma proteção que existe. É o defeito que o
+            # #27 corrigiu nos dois riscos de elevador e que ficou de pé aqui,
+            # que é justamente o risco que routeia essas fotos. Medido nas 9
+            # fotos do lote: o sinal produziu UM falso positivo e nenhum acerto
+            # exclusivo — na foto em que a abertura era real, quem disparou foi
+            # `abertura vertical`, e na outra o risco de piso já traz o mesmo
+            # item.
+            #
+            # NADA entra no lugar dele, e isso foi medido três vezes. Os
+            # candidatos naturais põem o `sem` como terceiro radical, e o
+            # `/critico` pegou o que a pressa não pegou: é o MESMO defeito que
+            # este commit conserta, reintroduzido no conserto. `vao sem porta`
+            # dispara em "vão de acesso com porta metálica INSTALADA e travada,
+            # sem folgas" (1,00) e `vao sem fechamento` em "vão vertical COM
+            # fechamento provisório de madeira fixado à estrutura, sem trechos
+            # abertos" (1,00) — nos dois o `sem` vem de negar OUTRA coisa.
+            # `abertura sem fechamento` cai por outro lado: casa a abertura de
+            # PISO "sem cobertura ou fechamento visível", e a NC sairia
+            # intitulada "Abertura na parede" para um buraco no chão.
+            #
+            # Sobra `abertura vertical`, que é quem sustentava o único acerto
+            # do risco nas 9 fotos. Sinal de dois radicais sem negador tem o
+            # risco conhecido — uma abertura vertical PROTEGIDA dispararia —,
+            # e ele fica declarado aqui em vez de trocado por um pior.
+            #
+            # `vao de janela aberto` é o terceiro (o validador exige três), e
+            # chegar a ele custou mais duas rodadas de contraparte. `vao
+            # escuro` passou em cinco contrapartes sintéticas e caiu na sexta,
+            # que é real: no fato "Abertura retangular no PISO, parcialmente
+            # coberta por uma estrutura ESCURA e plana … a extensão do VÃO", o
+            # adjetivo qualifica a tampa, não o vão, e a abertura de piso
+            # passava a acionar o risco de parede. `abertura no pilar` parecia
+            # resolvido — um pilar com abertura é vão vertical por construção,
+            # nunca piso — e o `/critico` mostrou que a contraparte que faltava
+            # era outra: "abertura no pilar de concreto FECHADA com chapa
+            # metálica parafusada" dá 1,00, que é o mesmo defeito de novo, e
+            # ele não acrescentava acerto nenhum (no caso real o `abertura
+            # vertical` já dispara sozinho).
+            #
+            # Este tem o negador dentro (`abert`), três radicais, nenhum cola, e
+            # cobre o caso que a descrição do risco nomeia e que nenhum sinal
+            # pegava: o vão de janela. Medido contra as seis contrapartes
+            # acumuladas — pilar fechado, grade fechando, abertura de piso duas
+            # vezes, vão com porta, grade instalada: cala em todas.
+            #
+            # O QUE ISSO CUSTA, e o `/critico` cobrou a declaração: nenhum
+            # sinal restante contém a palavra "parede", então uma abertura de
+            # parede descrita SEM "vertical" e SEM "janela" deixa de acionar
+            # este risco. Medido: "Abertura retangular na parede de alvenaria,
+            # sem qualquer fechamento ou proteção instalada" não routeia aqui
+            # (cai em `poco_elevador_carga_sem_cercamento`, que cita outro
+            # item); com "vertical" no lugar de "retangular", routeia. A troca
+            # é deliberada — o sinal removido disparava com a proteção
+            # INSTALADA, que é laudo errado no cliente, contra um falso
+            # negativo que depende do vocabulário do Olho. Não há sinal seguro
+            # para "abertura na parede": `parede` e `abertura` são os dois
+            # substantivos da cena, e nenhum nega nada. É o mesmo beco da
+            # família registrada em "Em aberto" no CLAUDE.md, e sai dele pela
+            # mesma porta: exigir adjacência entre o negador e o substantivo.
             "abertura vertical",
+            "vao de janela aberto",
             "janela sem peitoril",
         ],
         "itens": ["NR-08 8.3.2.2"],

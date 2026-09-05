@@ -100,6 +100,99 @@ por chamada (fatiar a conferência do Diretor) ou o Dev Tier pago.
 
 ---
 
+## Validação em produção de 05/09/2026 — o lote de 9 de poço de elevador
+
+Rodado no `c1f97ad`. **9 fotos das 12 previstas, 9 laudos emitidos, 0 não auditadas,
+6 NCs.** As três coisas que este lote existia para responder:
+
+1. **O OTPM está resolvido.** Nenhuma foto perdida, nenhum 429, contra 1 de 12 no dia
+   anterior. O teto de 900 tokens de saída não truncou nada — **zero** ocorrências de
+   "não devolveu JSON utilizável", nem do Olho nem do Diretor. A ressalva do Diretor
+   não se materializou nas 6 a 7 achados por foto que este lote produziu.
+2. **O Olho passou a nomear a torre — e nomeou ERRADO.** Ele escreveu "Torre de
+   elevador de obra" em 2 das 3 fotos da GRUA, e "grua" na terceira, sobre o mesmo
+   equipamento. O engenheiro confirmou: é grua. O nome errado levou o laudo 7 a
+   `NR-18 18.11.14` (fechamento da base da torre do ELEVADOR) numa foto de grua — item
+   verdadeiro, situação errada, a **classe de erro 1**. O risco simétrico previsto ao
+   mudar o prompt no #27 aconteceu na primeira medição.
+3. **Os dois riscos de elevador continuam sem disparar.** `vao_caixa_elevador_sem_fechamento`
+   e `torre_elevador_sem_cancela`: **zero disparos em 9 fotos**, três delas de poço de
+   elevador de verdade. O Olho escreveu "poço de elevador" em **1 de 9** fatos, e como
+   inferência ("indicando uma abertura para outro nível ou poço de elevador"). O que
+   routeia essas fotos são os riscos de ABERTURA, não os de elevador.
+
+### O gabarito, medido contra o nome do arquivo
+
+| Foto | O engenheiro escreveu | O app entregou | |
+|---|---|---|---|
+| `18 PAV. PROTEÇÃO POÇO DE ELEVADOR` | proteção instalada | 0 NC | ✅ |
+| `PROTEÇÃO ... SOMENTE COM UM PONTO DE FIXAÇÃO` | fixação precária | NC pela **ferrugem** | ❌ achado errado |
+| `13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO` | poço sem proteção | `NR-18 18.9.2`, abertura no piso | ~ parcial |
+| `11 PAV. PROTEÇÃO POÇO ELEVADOR SEM PROTEÇÃO` | **está protegida** | NC falsa: "a malha pode não impedir a queda de objetos pequenos" | ❌ |
+| `19 PAV. POÇO ELEVADOR SEM PROTEÇÃOO` | sem proteção | `NR-08 8.3.2.2`, abertura no pilar | ✅ |
+| `19 PAV. POÇO GRUA SEM PROTEÇÃO` | sem proteção | `NR-18 18.9.2` + `NR-08 8.3.2.2` complementar | ✅ |
+| `GRUA`, `GRUAA` | — | 0 NC | ✅ |
+| `GRUAAA` | — | `NR-18 18.11.14` (item de elevador) | ❌ classe 1 |
+
+**O sinal que produziu o falso positivo, medido e corrigido nesta sessão.**
+`abertura_parede_desprotegida` tinha `"abertura na parede"`: dois radicais, nenhum
+negador. O fato *"Grade metálica montada em um batente de metal, **fechando** uma
+abertura retangular entre as **paredes** de tijolo"* — proteção instalada, confirmada
+pelo engenheiro — deu **cobertura 1,00**. É o defeito que o #27 corrigiu nos dois
+riscos de elevador e deixou de pé no risco que de fato routeia estas fotos. Medido nas
+9 fotos: o sinal produziu **um falso positivo e nenhum acerto exclusivo** — onde a
+abertura era real quem disparou foi `"abertura vertical"`, e na outra o risco de piso
+já traz o mesmo item. **Nada entrou no lugar dele, e isso custou três rodadas de
+medição.** Os candidatos naturais põem o `sem` como terceiro radical, e o `/critico`
+pegou o que a pressa não pegou: é o MESMO defeito, reintroduzido dentro do conserto.
+`"vao sem porta"` dispara em *"vão de acesso com porta metálica INSTALADA e travada,
+sem folgas"* (1,00) e `"vao sem fechamento"` em *"vão vertical COM fechamento
+provisório fixado à estrutura, sem trechos abertos"* (1,00) — nos dois o `sem` vem de
+negar outra coisa. `"abertura sem fechamento"` cai por outro lado: casa a abertura de
+PISO "sem cobertura ou fechamento visível". E `"vao escuro"` passou em cinco
+contrapartes sintéticas e caiu na sexta, que é real — no fato *"Abertura retangular no
+PISO, parcialmente coberta por uma estrutura ESCURA e plana … a extensão do VÃO"*, o
+adjetivo qualifica a tampa e não o vão. `"abertura no pilar"` parecia resolver — um pilar com abertura é vão vertical por
+construção, nunca piso — e o `/critico` mostrou que a contraparte que faltava era outra:
+*"abertura no pilar de concreto FECHADA com chapa metálica parafusada"* dá 1,00, o mesmo
+defeito outra vez, e ele não acrescentava acerto nenhum. O terceiro sinal (o validador
+exige três) é `"vao de janela aberto"`: tem o negador dentro, cala nas seis contrapartes
+acumuladas e cobre o caso que a descrição do risco nomeia e que nenhum sinal pegava.
+
+**O que a remoção custou, medido**: nenhum sinal restante contém a palavra "parede",
+então uma abertura de parede descrita **sem** "vertical" e **sem** "janela" deixa de
+acionar este risco — *"Abertura retangular na parede de alvenaria, sem qualquer
+fechamento ou proteção instalada"* não routeia aqui (cai em
+`poco_elevador_carga_sem_cercamento`, que cita outro item); troque "retangular" por
+"vertical" e routeia. A troca é deliberada: o sinal removido disparava com a proteção
+INSTALADA, que é laudo errado no cliente, contra um falso negativo que depende do
+vocabulário do Olho. **Não existe sinal seguro para "abertura na parede"** — `parede` e
+`abertura` são os dois substantivos da cena e nenhum nega nada; é o mesmo beco da
+família do `sem`, e sai dele pela mesma porta.
+
+**E a foto 1 escapou por acidente léxico, não por taxonomia.** Ela mostra a mesma
+situação da foto 4 (grade instalada) e deu 0 NC só porque `abertura` e `parede` caíram
+em achados diferentes, e a âncora exige dois radicais do mesmo fragmento. Não havia
+nada no sistema distinguindo abertura protegida de desprotegida.
+
+**Um segundo sinal fazia o OPOSTO do que descreve.** `"guarda corpo so com uma corda"`
+tem cinco radicais e dois são cola, `com` e `uma` — o `so` nem chega a virar radical,
+some no filtro de duas letras. Medido: dispara nas duas fotos em que o **guarda-corpo está instalado** na
+borda (cobertura 0,80, faltando só `corda`) e fica em 0,60 num fato com a corda
+esticada no lugar do guarda-corpo — o caso que ele existe para pegar. Trocado por
+`"guarda corpo de corda"` (3 radicais, nenhum cola). A troca revelou o que o sinal
+defeituoso vinha segurando: **o falso negativo mais caro do lote de 29/08 — a tela
+plástica frouxa na borda — só routeava porque aquele sinal cobria 4 de 5 num fato sem
+corda nenhuma**. Um teste verde por acidente é pior que um teste vermelho. No lugar
+entrou `"tela na altura do joelho"`, depois de dois candidatos medidos e recusados:
+`"sem guarda-corpo"` dispara em *"guarda-corpo rígido instalado, SEM folgas nem
+oxidação"*, e `"tela plastica na borda"` — que parecia seguro por nomear o objeto —
+dispara com a tela de SINALIZAÇÃO na borda de uma escavação ao nível do solo e com a
+tela presa ATRÁS de um guarda-corpo rígido. **O que discrimina não é a tela, é a
+altura.**
+
+---
+
 ## Onde a coisa parou (03/09/2026, fim da sessão)
 
 **O `main` carrega os PRs #17 em diante.** O dossiê não oferece mais obrigação de
@@ -268,7 +361,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 195 testes
+$VENV -m pytest tests/ -q          # 198 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -356,7 +449,7 @@ próprio comando composto (exit 144).
 | Portão que só ABRE, com sinal que aparece em negação | `ha_maquina_na_cena` destrancaria a NR-12 com "**nenhuma máquina** visível na cena" se aceitasse a palavra "máquina" — exatamente a foto que se quer barrar. Por isso a lista é de substantivos concretos ("betoneira", "grua"), e inclui as máquinas dos ramos setoriais: sem elas o portão fecharia numa foto de padaria, trocando erro de enquadramento por buraco de cobertura. |
 | Rótulo do risco curado como nome da não conformidade | O rótulo descreve o risco que trouxe o item ao dossiê, não a situação que o Analista enquadrou. Para item **genérico** — `NR-18 18.9.1` ("proteção coletiva onde houver risco de queda"), `NR-06 6.5.1` (EPI, oito riscos) — qual risco o trouxe é acidente do roteamento. Um laudo real saiu intitulado "Andaime sem guarda-corpo e rodapé" para uma constatação sobre a tela frouxa na borda da laje, enquanto o fato dizia que o andaime TINHA guarda-corpo; dois modelos de texto diferentes erraram igual. Hoje `itens_compartilhados()` marca os 24 itens (de 232) que mais de um risco reivindica, e para eles o rótulo cai — o relatório identifica a linha pela constatação. Só o rótulo: o portão de pessoa e a gravidade base continuam vindo do risco. |
 | **`sem` é radical-cola: conta, mas não discrimina** | Ele tem 3 letras, então passa o filtro de `_radicais` e vira um radical como outro qualquer. Só que não distingue nada: um sinal de dois radicais em que um é `sem` vale por um. Custou dois defeitos no mesmo dia. `"sem carenagem"` casou com "Carenagem do motor íntegra e fixada, **sem** folgas visíveis" — carenagem em ordem, o oposto do risco. E `"vao no piso sem tampa"` casou numa foto de betoneira porque `sem` e `tampa` vieram de "Abertura circular do tambor **sem tampa**". Ao escrever ou revisar sinal, conte os radicais **discriminantes**, não os radicais. **E `sem` nunca é o negador**: em 04/09, consertando os sinais de elevador, `"elevador de obra sem cancela"` foi encurtado para `"sem cancela"` — dois radicais, um deles cola, e o fato *"Cancela metálica vermelha, fechada e travada, SEM sinalização de advertência"* deu cobertura 1,0. O agravante é sistemático: o `PROMPT_OLHO` **manda** escrever "sem &lt;peça&gt; visível" quando o lugar dela aparece vazio, então quase todo fato do Olho carrega um `sem` solto. O que nega numa foto é a **abertura** — `aberta`, `ausente`, `faltando`, `quebrada` —, e é nela que o sinal deve ancorar. |
-| **Quatro radicais é onde a cobertura parcial abre** | O corte é 0,7. Com três radicais, faltar um dá 0,67 e **não passa** — todo radical é obrigatório. Com quatro, faltar um dá 0,75 e **passa**, e o que falta costuma ser justo o discriminante. `"abertura vertical sem fechamento"` casava uma abertura de PISO "sem cobertura ou fechamento visível", faltando só `vertical`. Sinal de até três radicais é seguro por construção; de quatro para cima, escreva sabendo que um pode faltar. **263 dos 882 sinais têm 4+ radicais** e correm esse risco. |
+| **Quatro radicais é onde a cobertura parcial abre** | O corte é 0,7. Com três radicais, faltar um dá 0,67 e **não passa** — todo radical é obrigatório. Com quatro, faltar um dá 0,75 e **passa**, e o que falta costuma ser justo o discriminante. `"abertura vertical sem fechamento"` casava uma abertura de PISO "sem cobertura ou fechamento visível", faltando só `vertical`. Sinal de até três radicais é seguro por construção; de quatro para cima, escreva sabendo que um pode faltar. **262 dos 883 sinais têm 4+ radicais** e correm esse risco. |
 | Regra global para a cobertura parcial — **tentada e descartada** | A saída óbvia (excluir palavras-cola do conjunto que pode ancorar) **quebra 25 sinais legítimos**: `"sem capacete"`, `"sem luva"`, `"sem bota"`, `"sem placa"`, `"sem manometro"` — onde a cola e o discriminante são tudo o que existe. Também não adianta exigir que o radical faltante seja cola (deixa "escada COM sapata" casar "escada sem sapata") nem que seja não-cola (devolve o caso da betoneira). **Não há regra simples**: é encurtar sinal a sinal, com medição. Não gaste a sessão reinventando isto. |
 | Verificação mecânica no caminho errado | O aparo do Diretor ganhou verificação de lastro no #13; no lote seguinte, o mesmo enquadramento falso voltou por **aprovado**, sem aparo, e passou inteiro. Ao fechar uma porta num agente, pergunte por quais outras a mesma coisa entra — decisão de modelo muda de caminho de uma rodada para outra. Hoje a exigência é cobrada de todo enquadramento que sobrevive. |
 | **Plural de radical curto não reduzia** | `radical()` só singularizava palavra com mais de 4 letras, então `"fios"` ficava `"fios"` e `"fio"` ficava `"fio"` — dois radicais para a mesma palavra. O sinal `"fio desencapado"` foi cadastrado justamente porque o Olho escreve **"fios desencapados"**, e o par nunca casou: um quadro de tomadas aberto routeava **zero** riscos. Corrigido; a regra do `s` simples agora vale de 4 letras para cima, mas `PLURAIS` continua em 5 — aplicá-la a 4 transformaria `"mais"` em `"mal"`. |
@@ -383,7 +476,7 @@ próprio comando composto (exit 144).
 - **6.358 itens** vigentes de **24 NRs** (de 36 vigentes), extraídos dos PDFs em `normas/`
 - **126 riscos** curados mapeando para itens reais; 25 exigem pessoa na cena e
   3 têm item que só entra com máquina nomeada na cena (`itens_so_com_maquina`)
-- **195 testes**
+- **198 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
@@ -584,7 +677,62 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
 
 ## Em aberto
 
-- **O lote de 12 de poço de elevador precisa ser REFEITO.** O de 04/09 não mediu nada:
+- **O `sem` satisfaz um sinal negando OUTRA coisa no mesmo fato — e isso derruba uma
+  família inteira de riscos.** Achado no lote de 05/09 e **medido**: o fato *"Guarda-corpo
+  metálico rígido instalado na borda da laje, com travessão superior e rodapé, **sem
+  folgas** nem oxidação visível"* — proteção em ordem — aciona **quatro sinais de três
+  riscos diferentes**, todos porque o `sem` de "sem folgas" completa um sinal sobre a
+  falta de outra peça:
+  `"periferia da laje sem guarda-corpo"` (1,00 — o `periferi` vem do ambiente),
+  `"sem rodape na borda"` (1,00, sobre um guarda-corpo que TEM rodapé),
+  `"andaime sem guarda corpo"` (0,75, sem andaime nenhum) e
+  `"passarela sem guarda corpo"` (0,75, sem passarela nenhuma).
+  **E há um quinto, achado ao escrever a contraparte do sinal novo**: o mesmo
+  `"periferia da laje sem guarda-corpo"` dispara a **0,80 sem precisar do `sem`** —
+  no fato *"Guarda-corpo metálico rígido instalado na borda da laje, com tela plástica
+  presa por trás"*, com `periferi` vindo do ambiente, ele cobre 4 de 5 e a cobertura
+  parcial faz o resto. É a armadilha dos 4+ radicais e a do `sem` no mesmo sinal, que é
+  o principal do risco. Encurtá-lo não resolve: tirado o `sem`, sobra "guarda-corpo na
+  periferia da laje", que dispara com o guarda-corpo instalado; e sem ele o risco perde
+  o caso mais óbvio de todos ("borda da laje sem guarda-corpo"), porque
+  `"borda de laje aberta"` fica em 0,67 ali.
+  Não é caso isolado: é consequência direta de o `PROMPT_OLHO` mandar escrever "sem
+  &lt;peça&gt; visível" e de o `sem` contar como radical. **Não cabe numa troca de sinal**
+  — são quatro sinais de três riscos, e o CLAUDE.md já registra que a regra global
+  (excluir cola da ancoragem) foi tentada e quebra 25 sinais legítimos. O que a medição
+  de hoje acrescenta é uma hipótese que **não** foi tentada: tratar `"sem X"` como
+  bigrama, exigindo adjacência entre o `sem` e o substantivo que ele nega — `kb.py` já
+  indexa bigramas no BM25. Isso separaria "sem rodapé" de "rodapé … sem folgas". É
+  mudança estrutural no roteamento e só um lote valida.
+- **O Olho chama grua de "torre de elevador".** Medido em 05/09: 2 das 3 fotos do mesmo
+  equipamento saíram como "Torre de elevador de obra" e a terceira como "grua"; o
+  engenheiro confirmou que é grua. O `PROMPT_OLHO` lista "torre de elevador" entre os
+  elementos de canteiro a nomear desde o #27, e ele passou a aplicar o nome a toda torre
+  amarela. Consequência já impressa em laudo: `NR-18 18.11.14` (fechamento da base da
+  torre do elevador) numa foto de grua. **Nome errado é fato falso, e o `fato` do Olho é
+  justamente o que nenhuma trava do pipeline confere.** O que distingue os dois na foto:
+  a grua tem lança horizontal e contrapesos; o elevador de cremalheira tem cabine que
+  sobe pela própria torre. Mexe em todas as fotos, então merece lote.
+- **A constatação hipotética passa pelo Diretor.** Duas das seis NCs do lote de 05/09
+  não afirmam um fato, afirmam uma possibilidade sobre uma proteção que existe: *"a
+  malha **pode não** impedir a queda de objetos pequenos"* e *"manchas de oxidação
+  **indicando possível** comprometimento da integridade estrutural"*. O Diretor aprovou
+  as duas (aparou a metade mais forte de cada). Ele não erra a conferência: o fato-âncora
+  existe mesmo — a grade existe, a ferrugem existe. O que passa é o **salto** do fato
+  para a hipótese, e nada no pipeline olha para ele. A regra da moldura cobre afirmar
+  que algo NÃO existe; não cobre afirmar que algo que existe PODE falhar. Conserto
+  candidato: uma regra na PARTE 2 do `PROMPT_DIRETOR` vetando constatação cujo núcleo é
+  uma possibilidade sobre proteção instalada. É mudança de prompt de agente — vale lote.
+  **Cuidado ao escrevê-la**: "pode causar queda" é a *consequência*, que é legítima e
+  fica em campo próprio; o que se veta é a possibilidade dentro da CONSTATAÇÃO.
+- **A taxonomia corrigida não fecha a porta da foto 4.** Medido depois do conserto: sem
+  o risco, o `NR-08 8.3.2.2` ainda chega ao dossiê dela em D3, agora pela busca textual
+  (o fato menciona "abertura" e "paredes"). Cai de item curado para item textual, sem o
+  rótulo do risco empurrando — mas o Analista ainda pode escolhê-lo. **Quem fecharia
+  essa porta é o item acima**, não a taxonomia.
+- **Faltam 3 fotos do lote de poço de elevador.** O de 05/09 rodou 9 das 12 e está
+  medido acima; as outras 3 valem para fechar a amostra, agora com os dois sinais
+  corrigidos. O de 04/09 não mediu nada:
   1 foto auditada de 12, as outras recusadas pelo OTPM. Ele valida três coisas ainda
   não validadas em produção — o `PROMPT_OLHO` que passou a nomear elemento de canteiro
   (#27), os sinais de elevador refeitos (#27) e a retentativa de JSON do Olho (#27/#28)
