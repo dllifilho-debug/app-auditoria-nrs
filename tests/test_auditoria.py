@@ -1563,9 +1563,9 @@ def test_cliente_groq_discrimina_tokens_por_modelo():
 
 
 def test_consumo_usa_o_teto_de_cada_modelo_e_nao_um_numero_so():
-    """Os tetos não são iguais entre si: o qwen3.8-27b tem 2.000.000 de tokens
-    por dia contra 200.000 dos demais. Com um número só, o painel diria que a
-    cota dele acabou com nove décimos sobrando."""
+    """O teto diário da Groq é de cada modelo, e eles não são iguais entre si.
+    Com um número só, o painel manda parar de auditar com cota sobrando no
+    balde certo. Os valores aqui são de teste — os reais estão no registro."""
     from auditoria.consumo import Consumo
 
     tetos = {"qwen/qwen3.8-27b": 2_000_000, "openai/gpt-oss-120b": 200_000}
@@ -1607,12 +1607,17 @@ def test_modelo_fora_do_registro_cai_no_teto_padrao():
 
 
 def test_registro_declara_o_teto_diario_de_cada_modelo():
-    """O 3.8 tem dez vezes o teto dos demais; é isso que faz um lote de 100
-    fotos caber num dia."""
+    """Todos os quatro modelos registrados têm 200.000 tokens por dia.
+
+    Por três sessões o registro deu 2.000.000 ao qwen3.8-27b, de uma leitura de
+    30/08 do console, e o app anunciou ~256 fotos por dia sobre esse número — o
+    console de 04/09 mostra 200.000 para ele na tabela da organização e no modal
+    de limites do projeto. A conta real de um lote de 100 fotos é de dias, não
+    de um dia."""
     from auditoria import modelos
 
     tetos = modelos.tetos_diarios()
-    assert tetos["qwen/qwen3.8-27b"] == 2_000_000
+    assert tetos["qwen/qwen3.8-27b"] == 200_000
     assert tetos["openai/gpt-oss-120b"] == 200_000
     assert "digitado-a-mao" not in tetos
 
@@ -3110,16 +3115,18 @@ def test_madeira_com_pregos_nao_routeia_gambiarra():
 # O padrão dos modelos é o 3.8 nos dois campos
 # ---------------------------------------------------------------------------
 
-def test_o_padrao_dos_dois_campos_e_o_modelo_de_teto_alto():
+def test_o_padrao_dos_dois_campos_e_o_modelo_medido_no_lote_de_15():
     """A ordem das listas em `modelos.py` define o padrão, e o 3.8 assumiu os
-    dois postos depois da medição do lote de 15 (15/15 laudos, 7.804
-    tokens/foto, teto diário de 2 milhões). O usuário já o selecionava à mão;
-    um clique esquecido custava um lote inteiro medido no modelo errado."""
+    dois postos depois da medição do lote de 15: 15/15 laudos contra 11/14, a
+    7.804 tokens por foto contra 13.404. O usuário já o selecionava à mão; um
+    clique esquecido custava um lote inteiro medido no modelo errado.
+
+    O teto diário não entra nessa conta — os quatro modelos têm o mesmo."""
     from auditoria import modelos
 
     assert modelos.PADRAO_VISAO == "qwen/qwen3.8-27b"
     assert modelos.PADRAO_TEXTO == "qwen/qwen3.8-27b"
-    assert modelos.tetos_diarios()["qwen/qwen3.8-27b"] == 2_000_000
+    assert len(set(modelos.tetos_diarios().values())) == 1
 
 
 def test_o_mesmo_id_tem_rotulo_proprio_em_cada_lista():
@@ -3259,9 +3266,8 @@ def test_motivo_do_veto_nao_leva_a_argumentacao_para_o_laudo(base):
 # ---------------------------------------------------------------------------
 
 def test_laudo_registra_o_tempo_da_foto(base):
-    """Com o teto diário de 2 milhões de tokens, o que limita um lote de 100
-    fotos deixou de ser a cota e passou a ser o relógio (~45 s/foto medidos em
-    produção). Sem número no app, planejar lote é chute."""
+    """Um lote de 100 fotos esbarra na cota diária e no relógio (~45 s/foto
+    medidos em produção). Sem número no app, planejar lote é chute."""
     laudo = executar(
         ClienteDemonstracao(), base, "imagem-falsa", "",
         Configuracao(modelo_visao="d", modelo_texto="d", data_referencia=HOJE),

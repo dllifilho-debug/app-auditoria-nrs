@@ -40,10 +40,14 @@ class Modelo:
     # raciocinar: precisa descrever. Deixá-lo pensar consome todo o orçamento de
     # saída antes de a resposta começar a ser escrita.
     raciocinio_desligavel: bool = False
-    # Teto diário de tokens DESTE modelo, lido no console da Groq em 30/08/2026
-    # (plano gratuito). Não é da conta somada: cada modelo tem seu próprio balde,
-    # e um deles tem dez vezes o dos outros. Conta paga muda todos esses números
-    # — por isso a barra lateral deixa ajustar o padrão.
+    # Teto diário de tokens DESTE modelo, no plano gratuito. Não é da conta
+    # somada: cada modelo tem seu próprio balde, e é o balde mais cheio em
+    # PROPORÇÃO que interrompe o lote. Lido no console em 04/09/2026: 200.000
+    # para os quatro modelos registrados. Uma leitura anterior, de 30/08, dera
+    # 2.000.000 ao qwen3.8-27b, e o app anunciou ~256 fotos/dia por três
+    # sessões; a tela de limites da organização e o modal de limites do projeto
+    # mostram 200.000 nos dois lugares. Conta paga muda todos esses números —
+    # por isso a barra lateral deixa ajustar o padrão.
     tpd: int = 200_000
 
 
@@ -57,8 +61,13 @@ class Modelo:
 #   |------------------------------------------|----------|----------------|
 #   | laudos emitidos                          | 15/15    | 11/14          |
 #   | tokens por foto (n=15)                   | 7.804    | 13.404 (n=1)   |
-#   | teto diário de tokens                    | 2.000.000| 200.000        |
-#   | fotos por dia                            | ~256     | ~16, preso     |
+#   | fotos por dia (teto de 200.000)          | ~25      | ~15            |
+#
+# O teto diário NÃO é o diferencial, e por um tempo se acreditou que fosse: o
+# console lido em 04/09/2026 mostra 200.000 tokens/dia para os quatro modelos
+# desta lista, o 3.8 incluído — tabela de limites da organização e o modal de
+# limites do projeto dizem o mesmo. O que sustenta o 3.8 é gastar menos por
+# foto e emitir laudo onde o outro falhava; a folga de dez vezes nunca existiu.
 #
 # O usuário já selecionava o 3.8 nos dois campos à mão; o padrão do código é que
 # tinha ficado para trás, e um clique esquecido custava um lote inteiro medido no
@@ -73,22 +82,19 @@ VISAO = [
     # Janela e teto de saída são os do 3.6: nenhum dos dois é lido em runtime
     # hoje, e não havia como confirmar os do 3.8 sem rede à Groq nesta sessão.
     Modelo("qwen/qwen3.8-27b", "Qwen 3.8 27B (visão)", True, 262_144, 65_536,
-           "Padrão. Teto diário de 2 milhões de tokens — dez vezes o dos "
-           "demais. Um lote de 100 fotos cabe num dia.",
-           json_estrito_confiavel=False, raciocinio_desligavel=True,
-           tpd=2_000_000),
+           "Padrão. O que gasta menos por foto: 7.804 tokens com n=15, contra "
+           "13.404 do 120b. Com o teto de 200.000/dia, ~25 fotos por dia.",
+           json_estrito_confiavel=False, raciocinio_desligavel=True),
     Modelo("qwen/qwen3.6-27b", "Qwen 3.6 27B (visão)", True, 262_144, 65_536,
-           "Multimodal, com histórico de uso neste app. Teto diário de 200 mil "
-           "tokens.",
+           "Multimodal, com histórico de uso neste app.",
            json_estrito_confiavel=False, raciocinio_desligavel=True),
 ]
 
 TEXTO = [
     Modelo("qwen/qwen3.8-27b", "Qwen 3.8 27B", False, 262_144, 65_536,
-           "Padrão. Teto diário de 2 milhões de tokens. Fez Olho, Analista e "
-           "Diretor sozinho num lote de 15 fotos, a 7.804 tokens por foto.",
-           json_estrito_confiavel=False, raciocinio_desligavel=True,
-           tpd=2_000_000),
+           "Padrão. Fez Olho, Analista e Diretor sozinho num lote de 15 fotos, "
+           "a 7.804 tokens por foto — ~25 fotos por dia no teto de 200.000.",
+           json_estrito_confiavel=False, raciocinio_desligavel=True),
     Modelo("openai/gpt-oss-120b", "GPT-OSS 120B", False, 131_072, 65_536,
            "Raciocínio normativo forte, mas preso a 200 mil tokens por dia — "
            "cerca de 16 fotos, e perdeu 3 laudos em 14 por JSON inutilizável."),

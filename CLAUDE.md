@@ -191,7 +191,7 @@ fotos levam ~1 h 18 min."*
 **O 3.8 é o padrão do código desde 02/09.** `PADRAO_VISAO`/`PADRAO_TEXTO` são o
 primeiro item de `VISAO`/`TEXTO` em `modelos.py`, e o 3.8 foi para o topo das duas
 listas depois da medição: 15/15 laudos emitidos (contra 11/14 no `120b`), 7.804
-tokens/foto com n=15, teto diário de 2 milhões, ~256 fotos/dia. Os outros modelos
+tokens/foto com n=15 (contra 13.404), ~25 fotos/dia. Os outros modelos
 continuam na lista; a barra lateral escolhe. **Há teste travando isso.**
 
 Ao mexer nas listas: `por_id()` aceita `entre=` para restringir a busca a uma delas.
@@ -351,6 +351,7 @@ próprio comando composto (exit 144).
 | **Medir tempo por fora de uma função com várias saídas** | `executar` volta cedo quando o Olho não devolve fato utilizável. Cronometrar no `app.py`, em volta da chamada, funcionaria — até alguém acrescentar a próxima saída antecipada e o número virar zero em silêncio. Por isso `executar` virou um invólucro fino que cronometra e delega a `_executar`: existe **um** ponto de saída para medir. **Há teste guardando o caminho da visão que falha.** |
 | **A tradução do erro apaga o texto que nomeia a causa** | `traduzir()`, em `modelos.py`, devolvia "Cota da Groq esgotada (limite de tokens por minuto ou por dia)" para todo 429 — uma frase escrita no código, um palpite. A Groq havia respondido "output tokens per minute (OTPM): Limit 1000, Requested 1113", e esse texto era descartado. Custou horas de diagnóstico atrás do TPM, com a resposta certa dentro da exceção. Hoje `ErroDeAuditoria.detalhe` guarda a mensagem crua de TODO erro traduzido, e o app a mostra em "O que a Groq respondeu" — persistente no `session_state`, porque `st.error` some no rerun seguinte, que foi como ela se perdeu durante o lote inteiro. **Ao traduzir um erro de serviço externo, guarde o original**: o próximo limite novo chega com um nome que este código ainda não conhece. |
 | **429 tem duas causas opostas, e uma delas não passa com o tempo** | Cota estourada é fila: espera e passa, `recuperavel=True`, o lote continua. Recusa por TAMANHO da requisição (OTPM/ITPM, "Request too large") não passa nunca — repetir é queimar foto após foto contra o mesmo limite, que foi o que aconteceu com onze fotos seguidas em 04/09. `RECUSA_POR_TAMANHO` separa as duas em `traduzir()`, e a segunda interrompe o lote com a instrução certa (reduzir o teto de saída), em vez de mandar aguardar um minuto. |
+| **Limite de fornecedor lido uma vez vira número do código para sempre** | O teto diário do `qwen3.8-27b` foi lido no console em 30/08 como 2.000.000, entrou em `Modelo.tpd`, virou a nota da barra lateral ("dez vezes o dos demais"), a justificativa do padrão, dois testes e cinco parágrafos deste arquivo — tudo derivado de uma leitura de tela, num campo que o fornecedor muda quando quer. O console de 04/09 mostra **200.000**, na tabela da organização e no modal do projeto. Nenhum `/conferir` pega isso, porque a fonte de verdade não está no repositório: o código executado devolve fielmente o número errado que lhe deram. **Todo número que vem de fora do repositório precisa da data da leitura ao lado e de reconferência quando um print novo chegar** — e quando ele cair, caem juntas todas as contas derivadas (aqui: ~256 fotos/dia → ~25, e "um lote de 100 cabe num dia" → ~4 dias). |
 | **Mergear PR com lote rodando** | O merge dispara o redeploy do Streamlit Cloud, que **reinicia o app e apaga o `st.session_state`** — onde o lote em andamento vive. No plano gratuito um lote é de horas de parede, e o usuário recomeça do zero. Vale para qualquer merge: **pergunte se há lote rodando antes**, e espere os laudos serem baixados. |
 | `git fetch origin main <branch-que-não-existe-mais>` falha inteiro, silenciosamente | Fetch de múltiplos refs é atômico: se um ref já foi deletado no remoto (branch mergeada), o comando inteiro falha e **nenhum ref é atualizado** — inclusive o `main`, que existia e seria atualizado sozinho. `origin/main` local fica congelado na versão de antes, e comparações feitas contra ele mentem. Já causou uma sessão inteira concluir errado que "a reescrita nunca foi mergeada". Se o histórico parecer suspeito, rode `git fetch origin main` sozinho antes de confiar em qualquer diff. |
 
@@ -515,9 +516,16 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   diferentes. Um botão de emergência danificado foi crítico numa foto e passou
   despercebido em outra do mesmo painel. O app é apoio, não substituto do olho do
   engenheiro — e o rodapé do laudo diz isso a sério.
-- **Cota.** O teto que aperta é o diário, não o por minuto — e ele é **por modelo**,
-  conferido no console em 30/08: 200.000 tokens/dia para `gpt-oss-120b`, `gpt-oss-20b`
-  e `qwen/qwen3.6-27b`; **2.000.000 para o `qwen/qwen3.8-27b`**. Também por modelo:
+- **Cota.** O teto diário é **por modelo**, e é de **200.000 tokens para os quatro**
+  — `gpt-oss-120b`, `gpt-oss-20b`, `qwen3.6-27b` e o `qwen3.8-27b`. Por três sessões
+  este arquivo e o registro em `modelos.py` deram **2.000.000 ao 3.8**, de uma leitura
+  de 30/08, e o app anunciou ~256 fotos/dia sobre esse número; o console de 04/09
+  mostra 200.000 para ele **nos dois lugares** — na tabela de limites da organização e
+  no modal de limites do projeto ("Tokens per Day 200 000 · Org limit: 200 000").
+  A 7.804 tokens/foto isso dá **~25 fotos/dia**, e um lote de 100 fotos leva ~4 dias.
+  O 3.8 continua o padrão pelo que ele gasta e pelo que ele emite (15/15 laudos, 7.804
+  tokens/foto contra 13.404), não por folga de cota, que nunca existiu. Também por
+  modelo:
   8.000 TPM e 1.000 requisições/dia. **E, desde algum momento entre 02 e 04/09, um
   OTPM de 1.000** — tokens de SAÍDA por minuto, limite de organização que não aparece
   na tabela pública e que recusa a requisição pelo tamanho declarado. É ele que decide
@@ -531,7 +539,7 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   | configuração | tokens/foto | chamadas | fotos/dia |
   |---|---|---|---|
   | Olho no 3.8, texto no `120b` | 13.404 (1.946 + 11.458) | 4 | ~16, preso no `120b` |
-  | tudo no `qwen3.8-27b` | **7.060** | 3 | **~283**, preso no TPD |
+  | tudo no `qwen3.8-27b` | **7.060** | 3 | **~28**, preso no TPD |
 
   A execução de 13.404 teve uma **retentativa** no `120b` — o `_conversar_sem_cortar`
   refazendo JSON que não parseou, com o dobro do teto de saída. Sem ela seriam ~4.600
@@ -539,8 +547,9 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   frequência da retentativa, que uma foto não determina. Entrada por agente, medida
   antes no 3.6: Olho ~1.956 (1.600 são a imagem em 896px), Analista ~1.716 (dossiê
   sozinho: 921), Diretor ~1.551.
-  **Com tudo no 3.8, um lote de 100 fotos cabe num dia** e o limite passa a ser tempo
-  de parede pela janela de 8.000 TPM (~1,1 foto/min), não mais a cota diária.
+  **Um lote de 100 fotos não cabe num dia**: a ~25 fotos/dia pelo teto de 200.000,
+  são ~4 dias, e dentro de cada dia o relógio ainda freia pela janela de 8.000 TPM
+  (~1,1 foto/min). Os dois limites apertam; o diário é o que decide o calendário.
 - **Documento gerado não substitui laudo assinado por profissional habilitado.**
 
 ---
@@ -624,7 +633,8 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   3.8 já foi feita em 02/09):
   1. Separar o Diretor num modelo diferente do Analista (`gpt-oss-20b`) — **só faz
      sentido se o 3.8 não vingar**. Levaria o texto de ~43 para ~80 fotos/dia contra
-     as ~283 do 3.8. Ganho secundário que continua valendo: os dois hoje dividem uma
+     as ~25 do 3.8 — e, com os quatro modelos no mesmo teto de 200.000, dividir o
+     trabalho entre dois baldes passou a ser o ganho de cota mais óbvio que sobra. Ganho secundário que continua valendo: os dois hoje dividem uma
      janela de 8.000 TPM, e é ela que faz a espera adaptativa frear.
   2. Resolução padrão 768px em vez de 896px (a imagem é ~31% da entrada) — mas isso
      morde direto na variabilidade da visão, que já é o limite honesto do app. Manter
@@ -816,13 +826,13 @@ O que ficou provado:
   `_conversar_sem_cortar` (refazer também quando o parser falha, não só quando a API
   sinaliza corte).
 - **Custo confirmado com n=15**: 7.804 tokens/foto, contra 7.060 previstos com n=1.
-  ~256 fotos/dia; um lote de 100 cabe num dia. O excesso de ~11.200 tokens no lote
+  ~25 fotos/dia no teto de 200.000. O excesso de ~11.200 tokens no lote
   sugere **~2 retentativas em 15 fotos (~12%)** — a retentativa não é o problema de
   cota que se temia.
 - **`itens_compartilhados()` funcionou no caso que o motivou**: a tela frouxa na borda
   da laje saiu nomeada pela constatação, não como "Andaime sem guarda-corpo".
 - **O balde por modelo aparece na barra lateral** (`qwen/qwen3.8-27b — 117.069 de
-  2.000.000`).
+  2.000.000` — o denominador estava errado; ver "Cota" nos limites honestos).
 
 O que o lote revelou de defeito, e virou os PRs #13/#14/#15:
 

@@ -283,9 +283,9 @@ with st.sidebar:
                 step=10_000,
                 help="Na Groq o teto diário é de cada modelo, não da conta somada. "
                      "Os modelos do registro usam o teto próprio deles, lido no "
-                     "console em 30/08 (200.000 para quase todos, 2.000.000 para o "
-                     "Qwen 3.8). Este campo vale para modelo digitado à mão, e para "
-                     "ajustar se a sua conta não for a gratuita.",
+                     "console em 04/09: 200.000 para os quatro. Este campo vale "
+                     "para modelo digitado à mão, e para ajustar se a sua conta "
+                     "não for a gratuita.",
             )
             st.session_state.orcamento_diario = orcamento
             tetos = modelos.tetos_diarios()
@@ -699,8 +699,8 @@ if resultados:
               delta_color="inverse" if criticas else "off")
     m4.metric("Normas acionadas", len(normas))
 
-    # Tempo de parede: com o teto diário de 2 milhões de tokens, o que limita um
-    # lote de 100 fotos deixou de ser a cota e passou a ser o relógio. A média
+    # Tempo de parede: um lote de 100 fotos esbarra na cota diária e no relógio,
+    # e o segundo não aparece em lugar nenhum sem isto aqui. A média
     # sozinha não ajuda a planejar — o que ajuda é saber quanto dela é espera
     # pela janela de TPM, porque essa parte não melhora com modelo mais rápido.
     cronometrados = [l for _, l, _ in resultados if l.duracao_s > 0]
