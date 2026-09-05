@@ -6,6 +6,12 @@ Uma pausa fixa de 15 s não resolve isso — a janela é de 60 s e o consumo var
 com o tamanho do laudo. Aqui a espera é calculada a partir dos cabeçalhos
 `x-ratelimit-*` que a própria API devolve, então o app anda rápido quando há
 folga e desacelera exatamente o necessário quando não há.
+
+Em 04/09/2026 apareceu um segundo limite, de outra natureza, e ele não se
+resolve esperando: o OTPM (`OTPM_ORGANIZACAO`, abaixo) recusa a requisição pelo
+TAMANHO da resposta que ela declara, antes de processá-la. Contra ele a espera
+adaptativa não faz nada — o conserto é pedir menos numa única chamada, e é o
+que `ClienteGroq.teto_permitido` garante.
 """
 
 import os
@@ -34,10 +40,16 @@ class Modelo:
     # raciocinar: precisa descrever. Deixá-lo pensar consome todo o orçamento de
     # saída antes de a resposta começar a ser escrita.
     raciocinio_desligavel: bool = False
-    # Teto diário de tokens DESTE modelo, lido no console da Groq em 30/08/2026
-    # (plano gratuito). Não é da conta somada: cada modelo tem seu próprio balde,
-    # e um deles tem dez vezes o dos outros. Conta paga muda todos esses números
-    # — por isso a barra lateral deixa ajustar o padrão.
+    # Teto diário de tokens DESTE modelo, no plano gratuito. Não é da conta
+    # somada: cada modelo tem seu próprio balde, e é o balde mais cheio em
+    # PROPORÇÃO que interrompe o lote. Lido no console em 04/09/2026: 200.000
+    # para os quatro modelos registrados. Uma leitura anterior, de 30/08, dera
+    # 2.000.000 ao qwen3.8-27b, e o app anunciou ~256 fotos/dia por três
+    # sessões; a tela de limites da organização e o modal de limites do projeto
+    # mostram 200.000 nos dois lugares, e o painel de uso confirma por outro
+    # caminho — nos dias 01 e 02/09 o modelo consumiu ~150K e ~160K num dia, que
+    # é 80% de 200.000 e seria 8% de 2.000.000. Conta paga muda todos esses
+    # números — por isso a barra lateral deixa ajustar o padrão.
     tpd: int = 200_000
 
 
@@ -51,8 +63,13 @@ class Modelo:
 #   |------------------------------------------|----------|----------------|
 #   | laudos emitidos                          | 15/15    | 11/14          |
 #   | tokens por foto (n=15)                   | 7.804    | 13.404 (n=1)   |
-#   | teto diário de tokens                    | 2.000.000| 200.000        |
-#   | fotos por dia                            | ~256     | ~16, preso     |
+#   | fotos por dia (teto de 200.000)          | ~25      | ~15            |
+#
+# O teto diário NÃO é o diferencial, e por um tempo se acreditou que fosse: o
+# console lido em 04/09/2026 mostra 200.000 tokens/dia para os quatro modelos
+# desta lista, o 3.8 incluído — tabela de limites da organização e o modal de
+# limites do projeto dizem o mesmo. O que sustenta o 3.8 é gastar menos por
+# foto e emitir laudo onde o outro falhava; a folga de dez vezes nunca existiu.
 #
 # O usuário já selecionava o 3.8 nos dois campos à mão; o padrão do código é que
 # tinha ficado para trás, e um clique esquecido custava um lote inteiro medido no
@@ -67,22 +84,19 @@ VISAO = [
     # Janela e teto de saída são os do 3.6: nenhum dos dois é lido em runtime
     # hoje, e não havia como confirmar os do 3.8 sem rede à Groq nesta sessão.
     Modelo("qwen/qwen3.8-27b", "Qwen 3.8 27B (visão)", True, 262_144, 65_536,
-           "Padrão. Teto diário de 2 milhões de tokens — dez vezes o dos "
-           "demais. Um lote de 100 fotos cabe num dia.",
-           json_estrito_confiavel=False, raciocinio_desligavel=True,
-           tpd=2_000_000),
+           "Padrão. O que gasta menos por foto: 7.804 tokens com n=15, contra "
+           "13.404 do 120b. Com o teto de 200.000/dia, ~25 fotos por dia.",
+           json_estrito_confiavel=False, raciocinio_desligavel=True),
     Modelo("qwen/qwen3.6-27b", "Qwen 3.6 27B (visão)", True, 262_144, 65_536,
-           "Multimodal, com histórico de uso neste app. Teto diário de 200 mil "
-           "tokens.",
+           "Multimodal, com histórico de uso neste app.",
            json_estrito_confiavel=False, raciocinio_desligavel=True),
 ]
 
 TEXTO = [
     Modelo("qwen/qwen3.8-27b", "Qwen 3.8 27B", False, 262_144, 65_536,
-           "Padrão. Teto diário de 2 milhões de tokens. Fez Olho, Analista e "
-           "Diretor sozinho num lote de 15 fotos, a 7.804 tokens por foto.",
-           json_estrito_confiavel=False, raciocinio_desligavel=True,
-           tpd=2_000_000),
+           "Padrão. Fez Olho, Analista e Diretor sozinho num lote de 15 fotos, "
+           "a 7.804 tokens por foto — ~25 fotos por dia no teto de 200.000.",
+           json_estrito_confiavel=False, raciocinio_desligavel=True),
     Modelo("openai/gpt-oss-120b", "GPT-OSS 120B", False, 131_072, 65_536,
            "Raciocínio normativo forte, mas preso a 200 mil tokens por dia — "
            "cerca de 16 fotos, e perdeu 3 laudos em 14 por JSON inutilizável."),
@@ -95,6 +109,47 @@ TEXTO = [
 
 PADRAO_VISAO = VISAO[0].id
 PADRAO_TEXTO = TEXTO[0].id
+
+# --------------------------------------------------------------------------
+# O limite que derrubou o lote de 12 de 04/09/2026: OTPM
+# --------------------------------------------------------------------------
+#
+# Teto de tokens de SAÍDA por minuto da organização. Ele NÃO está na tabela
+# pública do plano gratuito — lá só aparece o TPM de 8.000 do qwen3.8-27b, que
+# soma entrada e saída. OTPM e ITPM são limites por ORGANIZAÇÃO, e a própria
+# doc da Groq diz que só algumas os têm. A conta do usuário passou a tê-lo
+# entre 02 e 04/09/2026: nos dias 01 e 02 rodaram ~20 fotos/dia com a mesma
+# chave, e em 04/09 só 1 foto de 12 passou. Mensagem literal, lida nos Logs do
+# console da Groq:
+#
+#   "Request too large for model qwen/qwen3.8-27b ... on output tokens per
+#    minute (OTPM): Limit 1000, Requested 1113. The request's expected output
+#    tokens exceed the enforced limit; reduce max_tokens (or the request's
+#    expected output) and try again."
+#
+# Duas consequências que mudam o desenho do app:
+#
+# 1. **Esperar não resolve.** A requisição é recusada pelo TAMANHO que ela
+#    declara, não pela fila — latência de 0,006 s, antes de qualquer
+#    processamento. Nem a primeira foto do dia passa. Espera-e-retentativa
+#    lendo o `retry-after` falharia 100% das vezes.
+# 2. **Os tetos que o pipeline pedia excediam sozinhos a janela inteira do
+#    minuto** (1600 no Olho, 1800 no Analista, 3000 no Diretor), e a
+#    retentativa de `_conversar_sem_cortar`, que DOBRA o teto, era 429
+#    garantido. Por isso o corte mora aqui, no único lugar em que
+#    `max_completion_tokens` é montado, e não em cada agente: quando o tier
+#    pago subir o limite, um número muda e o pipeline volta a pedir o que
+#    precisa, sem tocar em três chamadas espalhadas.
+#
+# O que a folga nunca custou: as respostas que passaram nos logs da Groq
+# tiveram 250, 435, 477 e 501 tokens de saída. Os tetos de 1600 a 3000 nunca
+# foram usados de verdade.
+OTPM_ORGANIZACAO = 1000
+
+# A Groq recusou um pedido de 1600 dizendo "Requested 1113" — o número que ela
+# compara com o limite não é o `max_completion_tokens` que mandamos, e não
+# sabemos a fórmula. A margem existe por isso, não por superstição.
+FRACAO_UTIL_DO_OTPM = 0.9
 
 # A Groq desligou modelos quinze vezes desde 2024, em média a cada um ou dois
 # meses. Um registro fixo em código envelhece entre uma release e outra, então o
@@ -133,11 +188,19 @@ class ErroDeAuditoria(Exception):
     """Falha já traduzida para o vocabulário do usuário."""
 
     def __init__(self, mensagem: str, sugestao: str = "", recuperavel: bool = False,
-                 bruto: str = ""):
+                 bruto: str = "", detalhe: str = ""):
         super().__init__(mensagem)
         self.mensagem = mensagem
         self.sugestao = sugestao
         self.recuperavel = recuperavel
+        # O que a API DISSE, palavra por palavra. `mensagem` é a tradução que
+        # este módulo escreve para o usuário, e uma tradução é um palpite sobre
+        # a causa: "Cota da Groq esgotada (limite de tokens por minuto ou por
+        # dia)" custou horas de diagnóstico de TPM quando a Groq havia escrito,
+        # na resposta descartada, "output tokens per minute (OTPM): Limit 1000,
+        # Requested 1113". O limite era outro, e o texto que o dizia existia.
+        # Sem guardar isto, o próximo limite novo cobra a mesma investigação.
+        self.detalhe = detalhe
         # Resposta crua que provocou a falha, quando havia uma. O Olho a
         # guarda para a tela de diagnóstico em vez de descartá-la: sem isso,
         # migrá-lo para `_conversar_sem_cortar` custaria o texto que mostra
@@ -161,43 +224,83 @@ class RespostaIlegivel(ErroDeAuditoria):
     """
 
 
+# Recusa por TAMANHO da requisição, não por volume consumido. Chega como 429,
+# igual à cota estourada, e leva ao conserto oposto: esperar não adianta, é
+# preciso pedir menos numa única chamada.
+RECUSA_POR_TAMANHO = re.compile(
+    r"request too large|tokens per minute \(otpm\)|tokens per minute \(itpm\)|"
+    r"\botpm\b|\bitpm\b|expected output tokens exceed",
+    re.IGNORECASE,
+)
+
+
+def mensagem_da_api(erro: Exception) -> str:
+    """O texto que a Groq escreveu, sem a tradução deste módulo por cima."""
+    corpo = getattr(erro, "body", None)
+    if isinstance(corpo, dict):
+        interno = corpo.get("error")
+        if isinstance(interno, dict) and interno.get("message"):
+            return str(interno["message"]).strip()
+        if corpo.get("message"):
+            return str(corpo["message"]).strip()
+    return str(erro).strip()
+
+
 def traduzir(erro: Exception) -> ErroDeAuditoria:
     import groq
 
     if isinstance(erro, ErroDeAuditoria):
         return erro
+    detalhe = mensagem_da_api(erro)
     if isinstance(erro, groq.AuthenticationError):
         return ErroDeAuditoria(
             "Chave da API recusada pela Groq.",
             "Confira a chave em console.groq.com/keys e cole-a novamente.",
+            detalhe=detalhe,
         )
     if isinstance(erro, groq.PermissionDeniedError):
         return ErroDeAuditoria(
             "Esta chave não tem permissão para o modelo escolhido.",
             "Selecione outro modelo na barra lateral ou verifique o plano da conta.",
+            detalhe=detalhe,
         )
     if isinstance(erro, groq.NotFoundError):
         return ErroDeAuditoria(
             "O modelo selecionado não existe mais na Groq.",
             "Modelos em preview saem sem aviso. Escolha outro na barra lateral.",
+            detalhe=detalhe,
         )
     if isinstance(erro, groq.RateLimitError):
+        # Os dois 429 da Groq levam a consertos opostos, e distingui-los é o
+        # que faltou em 04/09: recusa por TAMANHO da requisição não passa com
+        # o tempo — o lote inteiro falharia foto a foto se continuasse.
+        if RECUSA_POR_TAMANHO.search(detalhe):
+            return ErroDeAuditoria(
+                "A Groq recusou a requisição pelo TAMANHO da resposta pedida "
+                "(limite de tokens por minuto da organização).",
+                "Esperar não resolve: reduza o teto de saída na barra lateral, "
+                "abaixo do limite que o console mostra em Settings → Limits.",
+                detalhe=detalhe,
+            )
         return ErroDeAuditoria(
             "Cota da Groq esgotada (limite de tokens por minuto ou por dia).",
             "Aguarde um minuto, reduza o lote de fotos ou use o modelo mais leve.",
             recuperavel=True,
+            detalhe=detalhe,
         )
     if isinstance(erro, groq.APITimeoutError):
         return ErroDeAuditoria(
             "A Groq demorou demais para responder.",
             "Tente de novo; se persistir, reduza o rigor da análise.",
             recuperavel=True,
+            detalhe=detalhe,
         )
     if isinstance(erro, groq.APIConnectionError):
         return ErroDeAuditoria(
             "Não foi possível falar com a API da Groq.",
             "Verifique a conexão de rede.",
             recuperavel=True,
+            detalhe=detalhe,
         )
     if isinstance(erro, groq.BadRequestError):
         texto = str(erro)
@@ -206,14 +309,18 @@ def traduzir(erro: Exception) -> ErroDeAuditoria:
                 "O modelo não conseguiu responder no formato exigido.",
                 "Tente novamente ou escolha outro modelo na barra lateral.",
                 recuperavel=True,
+                detalhe=detalhe,
             )
         if re.search(r"image|base64|payload|too large|size", texto, re.IGNORECASE):
             return ErroDeAuditoria(
                 "A Groq recusou a imagem enviada.",
                 "Reduza a resolução de envio na barra lateral.",
+                detalhe=detalhe,
             )
-        return ErroDeAuditoria(f"A Groq recusou a requisição: {erro}")
-    return ErroDeAuditoria(f"Falha inesperada: {type(erro).__name__}: {erro}")
+        return ErroDeAuditoria("A Groq recusou a requisição.", detalhe=detalhe)
+    return ErroDeAuditoria(
+        f"Falha inesperada: {type(erro).__name__}.", detalhe=detalhe
+    )
 
 
 # --------------------------------------------------------------------------
@@ -225,6 +332,16 @@ class Conversador(Protocol):
         self, modelo: str, mensagens: list[dict], teto_saida: int = 1200,
         temperatura: float = 0.0, json_estrito: bool = False,
     ) -> str: ...
+
+    def teto_permitido(self, teto: int) -> int:
+        """Quanto deste teto de saída a conta aceita numa única requisição.
+
+        Faz parte do contrato porque quem chama precisa SABER que o pedido foi
+        cortado: a retentativa de `_conversar_sem_cortar` existia para dobrar o
+        teto, e dobrar um teto que já bate no limite da organização é 429
+        garantido. Com esta pergunta, ela troca de estratégia em vez de repetir
+        a chamada condenada.
+        """
 
 
 RE_PENSAMENTO = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
@@ -288,12 +405,17 @@ class ClienteGroq:
         margem_tokens: int = 1500,
         aviso: Callable[[str], None] | None = None,
         tempo_limite: float = 120.0,
+        otpm: int = OTPM_ORGANIZACAO,
     ):
         import groq
 
         self._groq = groq
         self.cliente = groq.Groq(api_key=api_key, max_retries=3, timeout=tempo_limite)
         self.margem_tokens = margem_tokens
+        self.otpm = otpm
+        self.teto_saida_maximo = max(int(otpm * FRACAO_UTIL_DO_OTPM), 1)
+        # Avisar a cada chamada seria três linhas por foto, cem vezes num lote.
+        self._avisou_do_corte = False
         self.aviso = aviso or (lambda _m: None)
         self.cota = Cota()
         self.tokens_gastos = 0
@@ -351,6 +473,10 @@ class ClienteGroq:
         self._ler_cabecalhos(crua.headers)
         return crua.parse()
 
+    def teto_permitido(self, teto: int) -> int:
+        """O teto de saída pedido, reduzido ao que cabe no OTPM da conta."""
+        return min(teto, self.teto_saida_maximo)
+
     def conversar(
         self,
         modelo: str,
@@ -359,6 +485,21 @@ class ClienteGroq:
         temperatura: float = 0.0,
         json_estrito: bool = False,
     ) -> str:
+        # Trava única: este é o só lugar do projeto em que
+        # `max_completion_tokens` é montado. Pôr o corte em cada agente
+        # espalharia o mesmo número por três chamadas, e a próxima a nascer
+        # esqueceria dele — como esqueceu a retentativa, que dobrava o teto
+        # sem consultar limite nenhum.
+        pedido = teto_saida
+        teto_saida = self.teto_permitido(teto_saida)
+        if teto_saida < pedido and not self._avisou_do_corte:
+            self._avisou_do_corte = True
+            self.aviso(
+                f"O teto de saída pedido ({pedido} tokens) não cabe no limite da "
+                f"organização ({self.otpm} tokens de saída por minuto). As "
+                f"chamadas vão pedir no máximo {teto_saida}; resposta longa pode "
+                "sair cortada."
+            )
         custo = _estimar_tokens(mensagens) + teto_saida
         self.aguardar_cota(custo)
 
