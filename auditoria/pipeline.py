@@ -251,9 +251,14 @@ def _conversar_sem_cortar(cliente, modelo, conteudo, teto, temperatura, quem):
 PEDIDO_DE_CONCISAO = """
 
 REFAÇA A RESPOSTA. A anterior não pôde ser lida: veio cortada ou fora do formato.
-Responda SOMENTE o JSON pedido acima, sem nenhum texto antes ou depois dele, e o
-mais curto que a instrução permitir — frases diretas, sem repetir o enunciado e
-sem explicar o que você fez. A resposta inteira precisa caber em {teto} tokens."""
+Responda SOMENTE o JSON pedido acima, sem nenhum texto antes ou depois dele, e em
+no máximo {teto} tokens no total.
+
+Corte PROSA, nunca CONTEÚDO. Frases diretas, sem repetir o enunciado, sem explicar
+o que você fez, sem justificar a decisão. As listas continuam com os MESMOS itens
+que teriam na resposta completa: deixar um de fora não é resposta mais curta, é
+resposta errada. Cada fato que você não escrever some do laudo, e cada
+enquadramento que ficar sem conferência é recusado automaticamente."""
 
 
 def _com_pedido_de_concisao(conteudo: str | list[dict], teto: int) -> str | list[dict]:
@@ -262,6 +267,16 @@ def _com_pedido_de_concisao(conteudo: str | list[dict], teto: int) -> str | list
     O Olho manda uma lista de partes (texto + imagem) e os outros dois mandam
     uma string; devolver sempre string apagaria a imagem, e a segunda tentativa
     do Olho descreveria uma foto que não veria.
+
+    **Encurtar prosa e encurtar evidência são coisas opostas, e o pedido tem de
+    dizer qual.** Para o Olho, a resposta É a evidência do laudo inteiro: um
+    achado que ele não escrever na segunda tentativa não é enquadrado por
+    ninguém depois, e some sem deixar rastro — a classe de erro 5 pela porta
+    mais barata que existe. Para o Diretor é pior de um jeito diferente:
+    enquadramento sem entrada em `conferencia` cai em `_exigencia_ancorada("")`,
+    que é falso, e vira **veto automático** com o motivo errado. Por isso o
+    texto manda cortar repetição e justificativa, e proíbe explicitamente
+    encurtar a lista.
     """
     pedido = PEDIDO_DE_CONCISAO.format(teto=teto)
     if isinstance(conteudo, str):

@@ -3491,6 +3491,27 @@ def test_a_retentativa_nao_dobra_o_teto_acima_do_limite_da_conta(base):
     assert len(refeitos) == 3, "os três agentes cortados deveriam ter refeito o pedido"
 
 
+def test_o_pedido_de_concisao_corta_prosa_e_nao_a_lista():
+    """Encurtar prosa e encurtar evidência são coisas opostas.
+
+    A resposta do Olho É a evidência do laudo: um achado que ele não escrever na
+    segunda tentativa não é enquadrado por ninguém depois e some sem rastro. E
+    enquadramento que o Diretor deixar fora de `conferencia` chega a
+    `_exigencia_ancorada("")`, que é falso, e vira veto automático com o motivo
+    errado — encurtar por omissão derruba não conformidade verdadeira nos dois.
+    """
+    from auditoria.pipeline import PEDIDO_DE_CONCISAO, _exigencia_ancorada
+
+    texto = PEDIDO_DE_CONCISAO.format(teto=900)
+    assert "MESMOS itens" in texto
+    assert "Corte PROSA, nunca CONTEÚDO" in texto
+    # A consequência que o pedido cita é real, não retórica: sem exigência
+    # copiada, o enquadramento é recusado.
+    class _Item:
+        texto = "As aberturas no piso devem ter fechamento provisório resistente."
+    assert not _exigencia_ancorada("", _Item())
+
+
 def test_a_segunda_tentativa_do_olho_nao_perde_a_imagem():
     """O Olho manda lista de partes (texto + imagem); os outros dois, string.
 

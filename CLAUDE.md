@@ -69,6 +69,21 @@ o TPM para ver o detalhamento "X in / Y out"): o valor exato do OTPM. Os 1.000 v
 mensagem de erro, não da tabela — se o real for outro, é o campo "Limite de saída por
 minuto da conta (OTPM)" na barra lateral que ajusta, sem mexer em código.
 
+**O teto de 900 morde o Olho antes do Diretor, e ninguém tinha olhado para isso.**
+Foi o `/critico` que apontou: o corte valia para os três, e o único agente cuja saída
+**é** a evidência do laudo é o Olho — um achado que ele não escreve não é enquadrado
+por ninguém depois. Medido sem rede, sobre a resposta do dublê (a cena de canteiro
+de `FATOS_DEMO`, 5 achados): **~95 tokens por achado**, ~397 no total. Extrapolando,
+**10 achados ≈ 872 tokens e 12 ≈ 1.062** — ou seja, uma foto rica de canteiro passa
+dos 900. Não há como dar mais espaço a ele (900 é o máximo da conta), então o que se
+fez foi impedir que a segunda tentativa PIORE isso: o `PEDIDO_DE_CONCISAO` manda
+cortar prosa e proíbe encurtar a lista, com a razão escrita. Para o Diretor a mesma
+omissão é pior de outro jeito: enquadramento sem entrada em `conferencia` chega a
+`_exigencia_ancorada("")`, que é falso, e vira **veto automático com o motivo
+errado** — a NC verdadeira cai e o laudo diz que ela não descumpre o item. **Há teste
+travando as duas cláusulas.** O que continua sem resposta é o truncamento na PRIMEIRA
+chamada do Olho, numa foto de muitos achados: aí não há mitigação, só o lote dirá.
+
 **Ressalva que ficou de pé:** o Diretor pede 3.000 e é o agente que já morreu por
 truncamento no lote de 29/08. Com 900 ele pode truncar de novo, e o remédio antigo
 (dobrar o teto) agora é proibido. O que se fez contra isso: o `PROMPT_DIRETOR` passou a
@@ -247,7 +262,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 194 testes
+$VENV -m pytest tests/ -q          # 195 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -362,7 +377,7 @@ próprio comando composto (exit 144).
 - **6.358 itens** vigentes de **24 NRs** (de 36 vigentes), extraídos dos PDFs em `normas/`
 - **126 riscos** curados mapeando para itens reais; 25 exigem pessoa na cena e
   3 têm item que só entra com máquina nomeada na cena (`itens_so_com_maquina`)
-- **194 testes**
+- **195 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
