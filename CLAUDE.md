@@ -598,10 +598,18 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   padrão de ANTES da mudança. O enquadramento saiu certo assim mesmo (`NR-18 18.9.2` +
   `NR-08 8.3.2.2`, os dois aparados pelo Diretor). Uma foto não conclui nada; é o que
   vigiar no lote refeito.
-- **O OTPM exato não foi confirmado na fonte.** Os 1.000 vêm da mensagem de erro da
-  Groq, não da tabela de limites — a tela de `settings/limits` mostra só o TPM de 8.000,
-  e o detalhamento "X in / Y out" aparece passando o mouse sobre ele. Enquanto não for
-  conferido, o campo da barra lateral é o ajuste.
+- **O OTPM exato não foi confirmado numa tela de limites, e as duas candidatas já
+  foram descartadas.** Os 1.000 vêm da mensagem de erro em **Registros**, que é a
+  fonte. `settings/limits` mostra só o TPM somado, sem coluna de saída — o modal de
+  limites do projeto também não tem —, e `dashboard/usage` dá consumo, não limite;
+  as duas foram olhadas em 04/09. **Não gaste outra rodada procurando**: se o número
+  mudar, é pela mensagem de erro que se descobre, e é o campo "Limite de saída por
+  minuto da conta (OTPM)" na barra lateral que ajusta, sem mexer em código. A frase
+  anterior deste item dizia que o detalhamento "X in / Y out" aparecia passando o
+  mouse sobre o TPM — era suposição, escrita antes de qualquer print, e o do painel
+  de uso a desmentiu. Ela sobreviveu ao mesmo PR que corrigiu a afirmação gêmea
+  vinte linhas acima, que é exatamente a armadilha do "número envelhece em silêncio"
+  cometida dentro do conserto dela.
 - **O Diretor pode truncar com 900 tokens de saída.** Ele já morreu por truncamento com
   1.600 (lote de 29/08), e agora tem menos espaço e não pode dobrá-lo. O `PROMPT_DIRETOR`
   passou a pedir a oração que basta nas duas cópias literais, o que encolhe a maior
