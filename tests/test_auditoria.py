@@ -566,6 +566,191 @@ def test_protecao_ausente_continua_acionando_o_risco_certo():
         assert esperado in ids, fato
 
 
+def test_prompt_do_olho_separa_a_grua_do_elevador_pelo_que_esta_no_recorte():
+    """O risco simétrico do #27 aconteceu na primeira medição.
+
+    Ensinar o Olho a nomear o elemento de canteiro pôs "torre de elevador de
+    obra" na lista de nomes a escrever, e ele passou a aplicá-la a toda torre
+    amarela: no lote de 05/09 saíram 2 das 3 fotos da GRUA como "Torre de
+    elevador de obra", e a terceira como "grua" — o mesmo equipamento, e o
+    engenheiro confirmou que é grua.
+
+    O conserto não é ensiná-lo a distinguir melhor: é a regra da MOLDURA
+    aplicada ao nome. Numa foto da base, nem a lança nem a cremalheira aparecem,
+    e escolher entre os dois é adivinhar. O nome só se escreve quando o que
+    distingue está dentro do recorte; fora dele, "torre metálica treliçada",
+    que é verdadeiro nos dois casos.
+    """
+    from auditoria.pipeline import PROMPT_OLHO
+
+    # Os dois discriminantes, um de cada equipamento.
+    for marca in ("lança horizontal", "contrapesos", "cremalheira"):
+        assert marca in PROMPT_OLHO, marca
+    # O nome de recuo, que não escolhe entre os dois.
+    assert "torre metálica treliçada" in PROMPT_OLHO
+    # E a razão, que é o que impede o modelo de tratar isto como preferência de
+    # estilo: nome errado não é nome pobre, é fato falso.
+    assert "nome errado é fato falso" in PROMPT_OLHO
+    # A regra vale para a torre de canteiro; o poço dentro da edificação é outro
+    # elemento e continua a ser nomeado. Sem esta ressalva, a mesma frase
+    # calaria `vao_caixa_elevador_sem_fechamento`, que é o risco que o lote de
+    # poço de elevador existe para validar.
+    assert "shaft" in PROMPT_OLHO
+    assert "não para o poço" in PROMPT_OLHO
+
+    # E `cabine` não pode ficar nas DUAS colunas. O parágrafo anterior — que é
+    # anterior a esta mudança — usa "com cabine e contrapesos" como exemplo de
+    # GRUA, e essa é justamente a frase que o modelo escreveu para a grua em
+    # produção. Listar a cabine como marca do elevador sem resolver o conflito
+    # seria duas regras competindo no mesmo prompt, que é exatamente como o
+    # defeito do #27 nasceu. O que decide é ONDE ela fica.
+    assert "A cabine sozinha não decide nada" in PROMPT_OLHO
+    assert "com cabine e contrapesos" in PROMPT_OLHO
+
+
+def test_nome_errado_da_torre_leva_item_de_elevador_para_foto_de_grua(base):
+    """O que o nome errado custou, medido — e por qual caminho.
+
+    O laudo 7 do lote de 05/09 saiu com `NR-18 18.11.14` (fechamento da base da
+    torre do ELEVADOR) numa foto de grua: item verdadeiro, situação errada, a
+    classe de erro 1. E o risco curado `torre_elevador_sem_cancela` teve ZERO
+    disparos nas 9 fotos — ou seja, o item não chegou lá pela taxonomia.
+
+    Chegou pela BUSCA TEXTUAL: a palavra "torre de elevador" no fato basta para
+    a seção 18.11 da NR-18 (elevadores de obra) ocupar o dossiê inteiro, com ou
+    sem risco roteado. Por isso este teste mede o dossiê, não o roteamento — o
+    roteamento sozinho não veria o defeito que produziu o laudo errado.
+    """
+    ambiente = ("Canteiro de obra de edificação em construção, com estrutura "
+                "de concreto aparente")
+
+    def refs(fatos):
+        d = _dossie_da_cena(base, ambiente, fatos)
+        return [f"{e.item.nr} {e.item.item}" for e in d.entradas]
+
+    # Hoje: o nome errado leva os itens de elevador de obra para a foto de grua.
+    errado = refs(["Torre de elevador de obra em estrutura metálica treliçada "
+                   "amarela, com a base aberta, sem fechamento no perímetro"])
+    assert "NR-18 18.11.14" in errado
+
+    # Pelo caminho textual, sem risco nenhum roteado, o efeito é o mesmo: cinco
+    # vagas do dossiê vão para a seção 18.11 por causa de uma palavra.
+    so_texto = ["Estrutura vertical treliçada amarela identificada como torre "
+                "de elevador de obra, montada junto à fachada"]
+    assert not rotear_riscos(Visao(ambiente=ambiente,
+                                   achados=[Achado(so_texto[0])]))
+    assert [r for r in refs(so_texto) if r.startswith("NR-18 18.11")]
+
+    # Depois: recusado o nome, nem o risco nem a busca textual alcançam o 18.11.
+    for fato in (
+        "Torre metálica treliçada amarela de canteiro, com a base aberta, "
+        "sem fechamento no perímetro",
+        "Estrutura vertical treliçada amarela de canteiro, montada junto à fachada",
+    ):
+        assert not [r for r in refs([fato]) if r.startswith("NR-18 18.11")], fato
+
+
+def test_o_elevador_de_verdade_continua_chegando_ao_item_certo(base):
+    """O outro lado: a regra da moldura não pode custar o caso verdadeiro.
+
+    Quando o discriminante está no recorte — a cabine que sobe pela própria
+    torre, a cremalheira, a cancela do pavimento — o nome se escreve, e o
+    `18.11.13`/`18.11.14` continua chegando. Sem este teste, calar a torre
+    ambígua e calar o elevador de verdade seriam indistinguíveis.
+    """
+    ambiente = ("Canteiro de obra de edificação em construção, com estrutura "
+                "de concreto aparente")
+    cenas = [
+        ["Torre de elevador de obra com cabine que corre pela própria torre e "
+         "cremalheira dentada na face",
+         "Cancela metálica vermelha na entrada do pavimento, aberta, presa por "
+         "uma dobradiça"],
+        ["Torre de elevador de obra com cabine que sobe pela própria torre, "
+         "base aberta sem tapume no perímetro"],
+    ]
+    for fatos in cenas:
+        refs = [f"{e.item.nr} {e.item.item}"
+                for e in _dossie_da_cena(base, ambiente, fatos).entradas]
+        assert "NR-18 18.11.14" in refs, fatos
+
+
+def test_o_vocabulario_novo_do_olho_nao_aciona_risco_nenhum():
+    """A contraparte que a armadilha registrada torna obrigatória: ao pôr
+    vocabulário novo no prompt de um agente, rodar os sinais que casam esse
+    vocabulário contra fatos em que a condição NÃO existe.
+
+    As palavras novas são `lança`, `contrapesos`, `cremalheira` e `treliçada`.
+    UMA delas tem vizinho de radical na taxonomia: `contrapes`, que vive em
+    "andaime suspenso com contrapeso de tijolo". `lanc` é o caso que parecia
+    perigoso e não é — `radical("lança")` e `radical("lance")` são ambos `lanc`,
+    e "lance de escada" é vocabulário corrente de obra, mas nenhum sinal da
+    taxonomia usa o radical.
+
+    Os fatos abaixo trazem também `torre`, que NÃO é palavra nova (o #27 já a
+    pusera no prompt) e tem vizinho em "torre de andaime bamba": é o par mais
+    provável de vazar, porque os fatos de torre o carregam sempre.
+    """
+    ambiente = ("Canteiro de obra de edificação em construção, com estrutura "
+                "de concreto aparente")
+    neutros = (
+        "Grua com torre metálica treliçada amarela, lança horizontal no topo e "
+        "contrapesos na contralança",
+        "Grua com lança horizontal e contrapesos de concreto empilhados na "
+        "contralança, sem andaime na cena",
+        "Torre metálica treliçada amarela de canteiro, apoiada em base de "
+        "concreto, sem oscilação visível",
+        "Torre de elevador de obra com cabine que corre pela própria torre e "
+        "cremalheira dentada na face, íntegra",
+    )
+    for fato in neutros:
+        ids = [r.id for r in rotear_riscos(
+            Visao(ambiente=ambiente, achados=[Achado(fato)]))]
+        assert "andaime_suspenso_irregular" not in ids, fato
+        assert "andaime_base_instavel" not in ids, fato
+        assert "plataforma_cavalete_irregular" not in ids, fato
+
+
+def test_prompt_do_diretor_veta_a_constatacao_hipotetica():
+    """Duas das seis NCs do lote de 05/09 não afirmavam um fato: afirmavam uma
+    possibilidade sobre uma proteção que EXISTE.
+
+    "a malha PODE NÃO impedir a queda de objetos pequenos", sobre a grade que
+    fecha o vão, e "manchas de oxidação INDICANDO POSSÍVEL comprometimento da
+    integridade estrutural". O Diretor aprovou as duas, e não errou a
+    conferência: o fato-âncora existe mesmo — a grade existe, a ferrugem existe.
+    O que passa é o SALTO do fato para a hipótese, e nada no pipeline olhava
+    para ele. A regra da moldura cobre afirmar que algo NÃO existe; não cobria
+    afirmar que algo que existe PODE falhar.
+
+    A cláusula tem de trazer junto a sua própria fronteira: a CONSEQUÊNCIA é
+    legítima e tem campo próprio. "Abertura no piso, que pode causar queda" tem
+    por núcleo a abertura, que é estado — vetá-la seria trocar um falso positivo
+    por um falso negativo em todo laudo do app.
+    """
+    from auditoria.pipeline import PROMPT_DIRETOR
+
+    assert "POSSIBILIDADE" in PROMPT_DIRETOR
+    # O teste mecânico que o Diretor aplica: risque a hipótese e leia o resto.
+    for palavra in ("pode", "possível", "indicando"):
+        assert palavra in PROMPT_DIRETOR, palavra
+    assert "proteção instalada em" in PROMPT_DIRETOR
+    # A fronteira, sem a qual a cláusula viraria um veto geral.
+    assert "NÃO alcança a consequência" in PROMPT_DIRETOR
+    assert "pode causar queda" in PROMPT_DIRETOR
+    # A segunda fronteira, e a mais cara. O passo decisivo da cláusula — "o que
+    # sobra é proteção em estado normal?" — é o único julgamento dentro de uma
+    # regra que se anuncia mecânica, e o caso que ele erraria já custou caro a
+    # este projeto: a tela plástica frouxa na borda da laje é o falso negativo
+    # mais caro do lote de 29/08. Sem esta linha, "a tela pode não resistir"
+    # viraria veto, e o achado evaporaria — a classe de erro 5 pela porta que a
+    # própria correção abriria.
+    assert "tela plástica frouxa na borda da laje" in PROMPT_DIRETOR
+    assert "do tipo certo e no lugar certo" in PROMPT_DIRETOR
+    # E ela é veto, não aparo: aparada, a constatação vira "a grade existe", que
+    # não descumpre item nenhum — o que a Parte 1 já trata como veto.
+    assert "PARTE 2 — VETE também quando:" in PROMPT_DIRETOR
+
+
 def test_roteamento_deixa_o_ambiente_nomear_o_equipamento():
     """A isenção do sinal de um radical: são nomes inequívocos, e é do ambiente
     que se espera o nome do equipamento quando o achado fala só do defeito.

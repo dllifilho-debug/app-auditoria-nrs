@@ -361,7 +361,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 198 testes
+$VENV -m pytest tests/ -q          # 203 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -467,6 +467,7 @@ próprio comando composto (exit 144).
 | **429 tem duas causas opostas, e uma delas não passa com o tempo** | Cota estourada é fila: espera e passa, `recuperavel=True`, o lote continua. Recusa por TAMANHO da requisição (OTPM/ITPM, "Request too large") não passa nunca — repetir é queimar foto após foto contra o mesmo limite, que foi o que aconteceu com onze fotos seguidas em 04/09. `RECUSA_POR_TAMANHO` separa as duas em `traduzir()`, e a segunda interrompe o lote com a instrução certa (reduzir o teto de saída), em vez de mandar aguardar um minuto. |
 | **Limite de fornecedor lido uma vez vira número do código para sempre** | O teto diário do `qwen3.8-27b` foi lido no console em 30/08 como 2.000.000, entrou em `Modelo.tpd`, virou a nota da barra lateral ("dez vezes o dos demais"), a justificativa do padrão, dois testes e cinco parágrafos deste arquivo — tudo derivado de uma leitura de tela, num campo que o fornecedor muda quando quer. O console de 04/09 mostra **200.000**, na tabela da organização e no modal do projeto. Nenhum `/conferir` pega isso, porque a fonte de verdade não está no repositório: o código executado devolve fielmente o número errado que lhe deram. **Todo número que vem de fora do repositório precisa da data da leitura ao lado e de reconferência quando um print novo chegar** — e quando ele cair, caem juntas todas as contas derivadas (aqui: ~256 fotos/dia → ~25, e "um lote de 100 cabe num dia" → ~4 dias). |
 | **Mergear PR com lote rodando** | O merge dispara o redeploy do Streamlit Cloud, que **reinicia o app e apaga o `st.session_state`** — onde o lote em andamento vive. No plano gratuito um lote é de horas de parede, e o usuário recomeça do zero. Vale para qualquer merge: **pergunte se há lote rodando antes**, e espere os laudos serem baixados. |
+| **Medir o roteamento não vê o item que a busca textual traz** | O `NR-18 18.11.14` saiu impresso numa foto de grua, e o risco curado que cita esse item teve **zero disparos nas 9 fotos** do lote. As duas coisas são verdadeiras: o item chegou ao dossiê pela **busca textual**, que a palavra "torre de elevador" no fato basta para acionar. Medido: um fato que routeia risco NENHUM enche cinco vagas do dossiê com a seção 18.11. O reflexo desta casa é reproduzir `rotear_riscos` sem rede — barato e certeiro para defeito de taxonomia, e **cego para metade do dossiê**. `montar_dossie` é igualmente determinístico e custa o mesmo. Ao investigar item errado num laudo, rode o dossiê inteiro antes de concluir que a taxonomia está limpa; "o risco não disparou" não é álibi. |
 | `git fetch origin main <branch-que-não-existe-mais>` falha inteiro, silenciosamente | Fetch de múltiplos refs é atômico: se um ref já foi deletado no remoto (branch mergeada), o comando inteiro falha e **nenhum ref é atualizado** — inclusive o `main`, que existia e seria atualizado sozinho. `origin/main` local fica congelado na versão de antes, e comparações feitas contra ele mentem. Já causou uma sessão inteira concluir errado que "a reescrita nunca foi mergeada". Se o histórico parecer suspeito, rode `git fetch origin main` sozinho antes de confiar em qualquer diff. |
 
 ---
@@ -476,7 +477,7 @@ próprio comando composto (exit 144).
 - **6.358 itens** vigentes de **24 NRs** (de 36 vigentes), extraídos dos PDFs em `normas/`
 - **126 riscos** curados mapeando para itens reais; 25 exigem pessoa na cena e
   3 têm item que só entra com máquina nomeada na cena (`itens_so_com_maquina`)
-- **198 testes**
+- **203 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
@@ -704,15 +705,67 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   bigrama, exigindo adjacência entre o `sem` e o substantivo que ele nega — `kb.py` já
   indexa bigramas no BM25. Isso separaria "sem rodapé" de "rodapé … sem folgas". É
   mudança estrutural no roteamento e só um lote valida.
-- **O Olho chama grua de "torre de elevador".** Medido em 05/09: 2 das 3 fotos do mesmo
-  equipamento saíram como "Torre de elevador de obra" e a terceira como "grua"; o
-  engenheiro confirmou que é grua. O `PROMPT_OLHO` lista "torre de elevador" entre os
-  elementos de canteiro a nomear desde o #27, e ele passou a aplicar o nome a toda torre
-  amarela. Consequência já impressa em laudo: `NR-18 18.11.14` (fechamento da base da
-  torre do elevador) numa foto de grua. **Nome errado é fato falso, e o `fato` do Olho é
-  justamente o que nenhuma trava do pipeline confere.** O que distingue os dois na foto:
-  a grua tem lança horizontal e contrapesos; o elevador de cremalheira tem cabine que
-  sobe pela própria torre. Mexe em todas as fotos, então merece lote.
+
+  **Segunda instância, medida em 07/09 ao escrever a contraparte do conserto da grua — e
+  ela cai justamente nos riscos de elevador que o #27 consertou.** O fato *"Grade
+  metálica rígida parafusada **fechando por inteiro** o poço de elevador, **sem trechos
+  abertos**"* — proteção instalada por inteiro — aciona três riscos:
+  `"poco de elevador aberto"` a **1,00** em `vao_caixa_elevador_sem_fechamento` **e** em
+  `poco_elevador_carga_sem_cercamento`, e `"poço aberto sem placa"` a 0,75 em
+  `espaco_confinado_sem_sinalizacao` (NR-33, espaço confinado, numa foto de poço). O
+  `abert` vem de "sem trechos **abertos**": não é o `sem` completando o sinal, é o
+  **particípio da negação** virando o radical afirmativo que o sinal pede. É a mesma
+  família e um mecanismo a mais — o conserto do #27 ancorou os sinais na abertura em vez
+  de no `sem`, e a abertura também pode aparecer negada. **A hipótese do bigrama não
+  cobre este caso**: aqui não há `sem X` adjacente a cobrir, há `sem trechos abertos`,
+  em que o negador está a duas palavras do que ele nega. Quem for atacar o item acima
+  precisa decidir se trata os dois mecanismos ou só um. E o custo é imediato: são os
+  cinco "com proteção" do lote de 12 que correm esse risco.
+- **O Olho chama grua de "torre de elevador" — PROMPT MUDADO em 07/09, à espera de
+  lote.** Medido em 05/09: 2 das 3 fotos do mesmo equipamento saíram como "Torre de
+  elevador de obra" e a terceira como "grua"; o engenheiro confirmou que é grua. O
+  `PROMPT_OLHO` lista "torre de elevador" entre os elementos de canteiro a nomear desde
+  o #27, e ele passou a aplicar o nome a toda torre amarela. Consequência já impressa em
+  laudo: `NR-18 18.11.14` (fechamento da base da torre do elevador) numa foto de grua.
+  **Nome errado é fato falso, e o `fato` do Olho é justamente o que nenhuma trava do
+  pipeline confere.**
+
+  **O caminho não era o que se supunha, e isso mudou o conserto.** O risco curado
+  `torre_elevador_sem_cancela` teve **zero disparos nas 9 fotos** — o item não veio da
+  taxonomia. Veio da **busca textual**: medido sem rede, o fato *"Estrutura vertical
+  treliçada amarela identificada como torre de elevador de obra, montada junto à
+  fachada"* routeia **risco nenhum** e ainda assim enche o dossiê com **cinco itens da
+  seção NR-18 18.11** (elevadores de obra). A palavra sozinha basta. Quem só medisse o
+  roteamento — que é o reflexo desta casa — não veria o defeito que produziu o laudo.
+
+  **O conserto é a regra da MOLDURA aplicada ao nome**, não ensinar o Olho a distinguir
+  melhor: numa foto da base da torre nem a lança nem a cremalheira aparecem, e escolher
+  entre os dois é adivinhar. O prompt agora dá os dois discriminantes (grua: lança
+  horizontal e contrapesos; elevador de cremalheira: cabine que sobe pela própria torre,
+  cremalheira dentada, cancela por pavimento) e manda escrever **"torre metálica
+  treliçada"**, sem escolher, quando nenhum deles está no recorte. Medido nos dois
+  sentidos: com o nome recusado, nem o risco nem a busca textual alcançam o 18.11; com o
+  discriminante presente, o elevador de verdade continua chegando ao `18.11.13`/`18.11.14`.
+  A ressalva que a regra carrega: ela vale para a torre **no canteiro** e não para o poço
+  (caixa, shaft) do elevador dentro da edificação — sem ela, a mesma frase calaria
+  `vao_caixa_elevador_sem_fechamento`, que é o risco que o lote de poço existe para
+  validar. Conferido: o dossiê do poço e o do shaft trazem `18.9.2`/`18.9.3`/`8.3.2.2` e
+  NR-11 (o do poço traz ainda NR-33 e NR-01 — ver o achado do `sem` acima), e **nunca**
+  `18.11`. **Há quatro testes travando isso**, e o custo declarado é o simétrico: uma
+  torre de elevador de verdade fotografada só na base perde os dois itens do `18.11`.
+  Mexe em todas as fotos — **só o lote diz se ele obedece**.
+
+  **O `/critico` REJEITOU a primeira versão, e o gap era o defeito do #27 reintroduzido
+  dentro do conserto dele.** A tabela de discriminantes punha `cabine` na coluna do
+  ELEVADOR três linhas abaixo do exemplo — anterior a esta mudança, e mantido — que
+  chama de GRUA uma *"estrutura metálica elevada de cor amarela, com cabine e
+  contrapesos"*. E essa é exatamente a frase que o modelo escreveu para a grua em
+  produção, no lote de içamento. Duas regras competindo no mesmo prompt, sobre a palavra
+  que o modelo de fato usa, é como o defeito do #27 nasceu — e a versão 1 deste conserto
+  o repetia. Hoje o prompt resolve o conflito em vez de o criar: a cabine sozinha não
+  decide nada (a grua também tem uma), o que decide é **onde ela fica** — no topo, junto
+  da lança, é grua; correndo pela torre, é elevador; e se a foto não mostra qual das
+  duas, cai na regra da moldura. **Há teste travando as duas metades.**
 - **A constatação hipotética passa pelo Diretor.** Duas das seis NCs do lote de 05/09
   não afirmam um fato, afirmam uma possibilidade sobre uma proteção que existe: *"a
   malha **pode não** impedir a queda de objetos pequenos"* e *"manchas de oxidação
@@ -725,6 +778,31 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   uma possibilidade sobre proteção instalada. É mudança de prompt de agente — vale lote.
   **Cuidado ao escrevê-la**: "pode causar queda" é a *consequência*, que é legítima e
   fica em campo próprio; o que se veta é a possibilidade dentro da CONSTATAÇÃO.
+
+  **ESCRITA em 07/09, à espera de lote.** É a cláusula (d) da PARTE 2, e o teste que ela
+  dá ao Diretor é mecânico como o resto da conferência: risque da constatação toda
+  palavra de hipótese ("pode", "poderia", "possível", "eventual", "sujeito a",
+  "indicando", "não se pode garantir") e leia o que sobra — se o que sobra é proteção
+  instalada em estado normal, vete. Os dois casos reais estão escritos na cláusula, com
+  a razão de a Parte 1 os aprovar (o fato-âncora existe; o que não existe é o defeito).
+  A fronteira entrou junto e é o que impede a cláusula de virar veto geral: o exemplo
+  "abertura no piso, que pode causar queda" está lá como o que **não** se veta. **Não há
+  como conferir isto por código** — `_exigencia_ancorada` confere o trecho que o Diretor
+  copia no campo `exigencia` contra o texto do item, e a constatação nunca entra nessa
+  comparação; aqui, além disso, o item e o fato estão ambos certos, e o que é falso é o
+  salto entre eles.
+  **Há teste travando as duas metades da cláusula**, a que veta e a fronteira.
+
+  **A cláusula se anuncia mecânica e tem UM passo de julgamento**, achado ao rodar o
+  `/critico`: o teste final é "o que sobra é proteção instalada em **estado normal**?", e
+  isso não é cópia, é avaliação. O caso que ele erraria já custou caro — a **tela
+  plástica frouxa na borda da laje** é o falso negativo mais caro do lote de 29/08, e uma
+  constatação do tipo *"a tela pode não resistir ao impacto"* teria, ao risco da hipótese,
+  o resto lido como "tela instalada na borda" e viraria veto: a **classe de erro 5** pela
+  porta que a própria correção abriria. Por isso "estado normal" ficou definido dentro da
+  cláusula — íntegro, **do tipo certo e no lugar certo** —, com a tela frouxa nomeada como
+  o que NÃO é estado normal. **Há teste travando as duas asserções.** O que continua sem
+  resposta é se a definição basta: é julgamento num prompt, e só o lote diz.
 - **A taxonomia corrigida não fecha a porta da foto 4.** Medido depois do conserto: sem
   o risco, o `NR-08 8.3.2.2` ainda chega ao dossiê dela em D3, agora pela busca textual
   (o fato menciona "abertura" e "paredes"). Cai de item curado para item textual, sem o
@@ -746,6 +824,20 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   padrão de ANTES da mudança. O enquadramento saiu certo assim mesmo (`NR-18 18.9.2` +
   `NR-08 8.3.2.2`, os dois aparados pelo Diretor). Uma foto não conclui nada; é o que
   vigiar no lote refeito.
+
+  **O próximo lote carrega mais duas coisas (07/09), e o critério de aceite de cada uma
+  se lê num lugar diferente do laudo** — é por isso que as duas cabem no mesmo lote sem
+  confundir a atribuição:
+  1. **O nome da torre**, na LISTA DE FATOS do Olho. Nas fotos de grua, aceite é ele
+     escrever "grua" (com a lança/contrapesos no recorte) ou "torre metálica treliçada"
+     (sem eles) — e **nunca** "torre de elevador". Nas de poço, que ele siga escrevendo
+     "poço de elevador": a regra não alcança o poço, e se ele parar de nomeá-lo a
+     cláusula ficou larga demais.
+  2. **A constatação hipotética**, na lista de VETADOS do Diretor. Aceite é sumir do
+     laudo constatação cujo núcleo é "pode", "possível" ou "indicando" sobre proteção
+     que existe. O que vigiar do outro lado é o veto largo: se a contagem de NCs cair
+     nas fotos SEM proteção, ou se sumir a consequência ("pode causar queda") das que
+     ficaram, a fronteira da cláusula não segurou.
 - **O OTPM exato não foi confirmado numa tela de limites, e as duas candidatas já
   foram descartadas.** Os 1.000 vêm da mensagem de erro em **Registros**, que é a
   fonte. `settings/limits` mostra só o TPM somado, sem coluna de saída — o modal de
