@@ -340,7 +340,24 @@ fisicamente (içar carga, subir pela lateral do prédio levando pessoas e materi
 entrada de um vão), então você a reconheceu: escreva o nome, seguido da forma que viu.
 "Estrutura metálica elevada de cor amarela, com cabine e contrapesos" é uma grua descrita sem
 nome — escreva "grua". Ambígua de verdade é a foto em que só se vê um "tambor cilíndrico
-metálico montado em chassi sobre rodas": aí descreva a forma e não invente o nome."""
+metálico montado em chassi sobre rodas": aí descreva a forma e não invente o nome.
+
+Nomear também é AFIRMAR, e nome errado é fato falso — pior que nome nenhum, porque atravessa
+o laudo inteiro sem que nada o confira. Escreva o nome só quando o que distingue aquele
+equipamento dos parecidos estiver DENTRO do recorte. As duas torres de canteiro que se
+confundem, e o que separa uma da outra:
+- GRUA: lança horizontal no topo e contrapesos na contralança; a carga desce por cabo a
+  partir da lança.
+- ELEVADOR DE OBRA (de cremalheira): cabine ou plataforma que SOBE PELA PRÓPRIA TORRE,
+  cremalheira (barra dentada) na face da torre, cancela em cada pavimento de acesso.
+A cabine sozinha não decide nada: a grua também tem uma, e ela aparece no exemplo do
+parágrafo acima ("com cabine e contrapesos" é grua). O que decide é ONDE ela fica — no
+topo, junto da lança, é grua; correndo pela torre, é elevador. Se a foto mostra a cabine
+e não mostra qual das duas coisas ela faz, você não distinguiu: vá para a regra abaixo.
+Se o recorte mostra só a base, ou um trecho do meio da torre, nenhum dos dois sinais aparece:
+escreva "torre metálica treliçada" e NÃO escolha entre os dois. Isso vale para a torre no
+canteiro, não para o poço (ou caixa, ou shaft) do elevador dentro da edificação — um vão
+vertical na estrutura é o que é, e se escreve pelo nome."""
 
 
 def agente_olho(cliente: Conversador, imagem_b64: str, modelo: str, contexto: str = "") -> Visao:
@@ -940,7 +957,21 @@ a) o texto do item NÃO trata da situação descrita (o erro mais comum e o mais
    Item que regula documento, inventário, treinamento ou registro NUNCA enquadra
    condição física de uma foto;
 b) cobra EPI, treinamento ou conduta sem trabalhador visível na cena;
-c) a linguagem é alarmista ou a gravidade está inflada frente ao que se vê.
+c) a linguagem é alarmista ou a gravidade está inflada frente ao que se vê;
+d) o núcleo da constatação é uma POSSIBILIDADE, e não um estado. Risque dela toda palavra
+   de hipótese ("pode", "poderia", "possível", "eventual", "sujeito a", "indicando",
+   "não se pode garantir") e leia o que sobra: se o que sobra é uma proteção instalada em
+   estado normal, não há não conformidade — vete. "Estado normal" é o que a foto mostra
+   íntegro, do tipo certo e no lugar certo: uma tela plástica frouxa na borda da laje NÃO
+   é proteção em estado normal, e a constatação sobre ela sobrevive a este risco mesmo
+   quando a frase original trazia um "pode". Dois casos reais impressos no laudo do
+   cliente, os dois sobre proteção que EXISTE na foto: "a malha PODE NÃO impedir a queda de
+   objetos pequenos", sobre uma grade que fecha o vão, e "manchas de oxidação INDICANDO
+   POSSÍVEL comprometimento da integridade estrutural". Nos dois o fato-âncora existe — a
+   grade existe, a ferrugem existe — e é por isso que a Parte 1 os aprova: o que não existe
+   é o defeito. Isto NÃO alcança a consequência: "abertura no piso, que pode causar queda"
+   tem por núcleo a abertura, que é estado, e a queda é o dano previsto, com campo próprio.
+   O que se veta é a hipótese dentro da CONSTATAÇÃO, nunca o risco que ela descreve.
 
 A gravidade deve ser coerente entre os enquadramentos do mesmo laudo: se dois
 enquadramentos descrevem o MESMO problema físico, devem ter a mesma gravidade e
