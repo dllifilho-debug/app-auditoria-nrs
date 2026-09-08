@@ -771,6 +771,126 @@ def _nr12(dossie):
     return [e.item.item for e in dossie.entradas if e.item.nr == "NR-12"]
 
 
+def test_item_de_equipamento_ausente_da_cena_nao_entra_no_dossie_da_nr18(base):
+    """O falso positivo do lote de 08/09, e o que ele revelou.
+
+    A foto `GRUA.jpg` — topo de uma grua, com contrapesos e um ar-condicionado —
+    routeia risco NENHUM. Sem taxonomia curada o dossiê vira busca textual pura,
+    e a NR-18 ofereceu `18.12.22` (contrapeso de ANDAIME SUSPENSO) e `18.10.1.5`
+    (SERRA CIRCULAR). O Analista escolheu o primeiro, e saiu no laudo do cliente
+    uma não conformidade de andaime sobre uma grua: item verdadeiro, equipamento
+    errado — a classe de erro 1.
+
+    Diagnóstico medido, e não o que se supunha: fazer um risco de guindar
+    disparar NÃO expulsa o `18.12.22`, só o empurra para D3. O problema não é
+    alcançabilidade da taxonomia, é a NR-18 oferecer item de equipamento que não
+    está na cena — o mesmo que `setor_pertinente` já resolvia na NR-12, por um
+    caminho que a NR-18 não usava.
+    """
+    cena_grua = (
+        "Vista do topo de uma estrutura metálica elevada, possivelmente uma grua",
+        [
+            "Conjunto de contrapesos metálicos retangulares, de cor ferrugem, com a "
+            "inscrição '1000' visível em alguns blocos, empilhados sobre a lança horizontal",
+            "Treliça metálica de cor amarela formando a coluna vertical de sustentação",
+        ],
+    )
+    refs = [f"{e.item.nr} {e.item.item}"
+            for e in _dossie_da_cena(base, *cena_grua).entradas]
+    assert "NR-18 18.12.22" not in refs, "contrapeso de andaime suspenso numa foto de grua"
+    assert "NR-18 18.10.1.5" not in refs, "serra circular numa foto de grua"
+
+
+def test_o_portao_da_nr18_nao_alcanca_o_item_generico(base):
+    """O que o portão NÃO pode tirar, e é onde o app acerta.
+
+    `18.9.2` (abertura no piso), `18.9.4.2` (guarda-corpo rígido) e `18.9.1`
+    (proteção coletiva) não nomeiam equipamento nenhum no próprio texto, então
+    `setor_do_item` devolve None para eles e eles passam livres. Sem esta
+    garantia o portão derrubaria os 6 de 6 enquadramentos de abertura que o
+    lote de 08/09 acertou.
+
+    Medido: aplicado às 15 fotos daquele lote, nenhum enquadramento verdadeiro
+    perdeu o seu item — o único que saiu foi o falso positivo acima.
+    """
+    from auditoria.dossie import setor_do_item
+
+    for ref in ("18.9.2", "18.9.4.2", "18.9.1", "18.9.3", "18.16.4.1"):
+        item = base.obter("NR-18", ref)
+        assert setor_do_item(item) is None, (
+            f"NR-18 {ref} é genérico e não pode ficar atrás de portão de equipamento"
+        )
+
+    # O `18.16.4.1` é o caso que mostrou por que o ramo da NR-18 é a SEÇÃO e não
+    # o texto: ele diz "as madeiras retiradas de ANDAIMES, tapumes, fôrmas e
+    # escoramentos devem ser empilhadas após retirados ou rebatidos os pregos",
+    # mas é o item dos PREGOS EXPOSTOS e vale para madeira empilhada sem andaime
+    # nenhum. Com `no_item=("andaime",)` ele ficava preso — o mesmo defeito do
+    # `18.9.3`, na família que a primeira versão não testou.
+    from auditoria.dossie import setor_pertinente
+
+    pregos = base.obter("NR-18", "18.16.4.1")
+    assert setor_pertinente(pregos, "madeira empilhada com pregos expostos no piso")
+
+
+def test_o_portao_da_nr18_abre_quando_o_equipamento_esta_na_cena(base):
+    """A contraparte que faz o portão valer: ele filtra por ausência, não por
+    tema. Com o andaime na cena, o item de andaime volta a ser candidato — senão
+    isto não seria um portão, seria um veto permanente à seção 18.12.
+    """
+    from auditoria.dossie import setor_pertinente
+
+    andaime = base.obter("NR-18", "18.12.22")
+    assert not setor_pertinente(andaime, "topo de uma grua com contrapesos")
+    assert setor_pertinente(andaime, "andaime suspenso na fachada, com contrapesos")
+
+    serra = base.obter("NR-18", "18.10.1.5")
+    assert not setor_pertinente(serra, "poço de elevador sem proteção")
+    assert setor_pertinente(serra, "serra circular de bancada na central de corte")
+
+    # `_menciona` tolera três letras de sufixo, então `serra` solto no `na_cena`
+    # abriria em "madeira serrada", "tábua serrada" e "pó de serragem" — nenhum
+    # deles uma máquina, todos vocabulário corrente de canteiro. Como é o
+    # `18.10.1.5` que ocupava vaga em 8 dossiês de 15, `serra` solto desfaria em
+    # silêncio o principal ganho deste portão. Por isso `na_cena` traz o NOME DA
+    # MÁQUINA, que é o que o docstring do `Setor` sempre pediu.
+    for madeira in ("madeira serrada empilhada no piso",
+                    "tábua serrada apoiada na parede",
+                    "pó de serragem acumulado no canto"):
+        assert not setor_pertinente(serra, madeira), madeira
+
+    # E a simétrica, que é a mais perigosa das três: `contrapeso` é o objeto que
+    # CONFUNDE os dois equipamentos — o `18.12.22` regula o contrapeso do
+    # andaime suspenso, e foi ele que virou não conformidade na foto da grua.
+    # Usá-lo no `na_cena` do guindar recriaria a mesma confusão no sentido
+    # inverso: uma foto legítima de andaime suspenso, que menciona contrapesos
+    # porque eles fazem parte dele, abriria o portão dos equipamentos de
+    # guindar. `grua` e `guindaste` cobrem o caso sem esse risco.
+    guindar = base.obter("NR-18", "18.10.1.24")
+    assert not setor_pertinente(
+        guindar, "andaime suspenso na fachada, com contrapesos de concreto"
+    ), "o contrapeso do andaime suspenso não pode destrancar item de grua"
+    assert setor_pertinente(
+        guindar, "vista do topo de estrutura metálica elevada, possivelmente uma grua"
+    )
+
+
+def test_o_portao_de_elevador_reforca_em_codigo_o_prompt_do_olho(base):
+    """O #32 ensinou o Olho a escrever "torre metálica treliçada" quando não dá
+    para saber se a torre é de grua ou de elevador. O portão fecha o mesmo
+    caminho pelo outro lado: sem o nome na cena, a seção 18.11 dos elevadores de
+    obra não é candidata nem pela busca textual.
+
+    Era por ali que o `NR-18 18.11.14` chegou ao laudo de uma grua em 05/09 —
+    com risco curado nenhum disparando, medido na época.
+    """
+    from auditoria.dossie import setor_pertinente
+
+    item = base.obter("NR-18", "18.11.14")
+    assert not setor_pertinente(item, "torre metálica treliçada amarela de canteiro")
+    assert setor_pertinente(item, "torre do elevador de obra, com cabine e cremalheira")
+
+
 def test_eletrica_predial_generica_nao_cita_nr12_sem_maquina_na_cena(base):
     """Lote real: cabo danificado e caixa de distribuição aberta em obra civil,
     sem nenhuma máquina na cena, chegavam ao dossiê com NR-12 12.3.4/12.3.8 —
