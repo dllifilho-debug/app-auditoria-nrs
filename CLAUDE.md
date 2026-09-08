@@ -146,6 +146,16 @@ Analista escolheu o menos ruim. Os quatro itens de guindar que o #22 mapeou
 anemometro"` e `"guindaste sem alarme"` — nada numa foto de contrapesos casa. **Os itens
 certos existem e são inalcançáveis.**
 
+**E a alcançabilidade NÃO era o conserto — medido.** A hipótese natural era que, com um
+risco de guindar disparando, os itens curados encabeçariam o dossiê e o `18.12.22` sairia.
+Testado: acrescentado um fato de carga suspensa, o `carga_suspensa_area_sem_isolamento`
+dispara, o `18.10.1.21` entra em D1 — **e o `18.12.22` continua lá, em D3**. Os itens de
+busca textual não saem por serem empurrados. O conserto verdadeiro é o portão setorial da
+NR-18 (#35): item que nomeia um EQUIPAMENTO no próprio texto só entra se aquele equipamento
+estiver na cena, que é o que `setor_pertinente` já fazia na NR-12 por um caminho que a
+NR-18 não usava. Medido nas 15 fotos: a serra circular saiu de **8 dossiês de 15**, o
+falso positivo morreu, e **nenhum enquadramento verdadeiro perdeu o seu item**.
+
 **4. O laudo 15 (`19 PAV. POÇO GRUA SEM PROTEÇÃO`) saiu com 0 NC**, e o engenheiro
 confirmou pela foto: **sem proteção de piso NEM de parede**. Duas falhas empilhadas, as
 duas medidas:
@@ -432,7 +442,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 207 testes
+$VENV -m pytest tests/ -q          # 211 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -539,6 +549,13 @@ próprio comando composto (exit 144).
 | **Limite de fornecedor lido uma vez vira número do código para sempre** | O teto diário do `qwen3.8-27b` foi lido no console em 30/08 como 2.000.000, entrou em `Modelo.tpd`, virou a nota da barra lateral ("dez vezes o dos demais"), a justificativa do padrão, dois testes e cinco parágrafos deste arquivo — tudo derivado de uma leitura de tela, num campo que o fornecedor muda quando quer. O console de 04/09 mostra **200.000**, na tabela da organização e no modal do projeto. Nenhum `/conferir` pega isso, porque a fonte de verdade não está no repositório: o código executado devolve fielmente o número errado que lhe deram. **Todo número que vem de fora do repositório precisa da data da leitura ao lado e de reconferência quando um print novo chegar** — e quando ele cair, caem juntas todas as contas derivadas (aqui: ~256 fotos/dia → ~25, e "um lote de 100 cabe num dia" → ~4 dias). |
 | **Mergear PR com lote rodando** | O merge dispara o redeploy do Streamlit Cloud, que **reinicia o app e apaga o `st.session_state`** — onde o lote em andamento vive. No plano gratuito um lote é de horas de parede, e o usuário recomeça do zero. Vale para qualquer merge: **pergunte se há lote rodando antes**, e espere os laudos serem baixados. |
 | **Desenho de lote que só existe no chat se perde, e a subtração mente** | O lote de poço de elevador foi desenhado numa conversa e nunca gravado aqui: só o resumo "12 fotos: 5 com proteção, 5 sem, 2 de grua". Duas sessões depois ninguém sabia quais eram, e a sessão de 07/09 gastou uma rodada reconstruindo por nome de arquivo — que o próprio CLAUDE.md avisa não ser confiável. Pior: o resumo permitiu a subtração `12 − 9 = 3` que o texto repetiu como "faltam 3 fotos", quando as 9 que rodaram incluíam **duas fotos que não estavam nas 12** (`GRUAA`, `GRUAAA`) e faltavam **5**. O erro não é de contagem, é de conjunto: "rodou N das M" só subtrai se os N saírem dos M, e nenhum `/conferir` pega isso, porque a resposta não está no repositório — estava num chat. **Grave a lista NOMINAL de todo lote aqui, não o resumo por grupo**, e ao escrever "rodou N das M" confira um a um de onde vieram os N. |
+| **Cada conserto de portão prende itens que ninguém mediu** | No #35 o MESMO defeito — item genérico preso atrás de equipamento — apareceu **três vezes**, e as duas últimas nasceram do conserto da vez anterior: (1) `no_item=("elevador",)` prendeu o `18.9.3`, item de ABERTURA; (2) `no_item=("andaime",)` prendeu o `18.16.4.1`, o item dos PREGOS EXPOSTOS; (3) o `anexos=("II",)` acrescentado para consertar o (2) prendeu o `Anexo II 1`, que é requisito geral de "cabos de aço utilizados em OBRAS DE CONSTRUÇÃO" — perdido numa foto de cabo esgarçado de grua ou de cinta de içamento, que é achado real deste acervo. O `/critico` pegou as três, uma por rodada. **Ao fechar um portão, liste TODOS os itens que ele passa a prender e leia cada um** — não só os que motivaram a mudança. `setor_do_item` sobre a NR inteira custa dois segundos e teria mostrado as três de uma vez. |
+| **Onde o ramo é a SEÇÃO, classificar pelo texto erra** | O `Setor` nasceu para a NR-12, onde o ANEXO decide o ramo, e a NR-18 entrou no #35 classificando por texto do item. Duas vezes isso prendeu item GENÉRICO: o `18.9.3` — "os vãos de acesso às caixas dos ELEVADORES" — que é item de ABERTURA e é o que `vao_caixa_elevador_sem_fechamento` cita; e o `18.16.4.1` — "as madeiras retiradas de ANDAIMES, tapumes, fôrmas e escoramentos … retirados ou rebatidos os pregos" — que é o item dos PREGOS EXPOSTOS e vale para madeira empilhada sem andaime nenhum. O primeiro foi consertado com uma lista de formas compostas; o segundo sobreviveu na família que não tinha sido testada, e o `/critico` pegou. Na NR-18 `18.12` é andaimes inteiro e `18.11` é elevadores inteiro: `Setor.secoes` casa o `capitulo` por prefixo, é exato, vem antes do texto e **aposentou o remendo das formas compostas**. `18.10.1` continua por texto porque serra e guindar dividem a seção. **Quando existir um critério exato — anexo ou seção —, o texto é aproximação e vai errar no item genérico que menciona o ramo de passagem.** |
+| **O objeto que confunde dois equipamentos não pode ser o discriminante de nenhum** | O `18.12.22` regula o CONTRAPESO do andaime suspenso, e foi por ele que a foto da grua virou não conformidade de andaime. Ao escrever o portão do #35 eu pus `contrapeso` no `na_cena` dos equipamentos de guindar — recriando a mesma confusão no sentido inverso: medido, `setor_pertinente(18.10.1.24, "andaime suspenso … com contrapesos")` devolvia **True**, e uma foto legítima de andaime suspenso passava a destrancar item de grua. O `/critico` pegou. A regra: quando um objeto é o que confunde A com B, ele não serve para reconhecer A **nem** B — use o nome do equipamento (`grua`, `guindaste`), não a peça compartilhada. Vale para o próximo portão: liste o que os dois ramos TÊM EM COMUM antes de escolher o vocabulário de cena. |
+| **`na_cena` genérico abre o portão em vocabulário que não é máquina** | O `_menciona` tolera três letras de sufixo. `serra` solto no `na_cena` abre em "madeira serrada", "tábua serrada" e "pó de serragem" — vocabulário corrente de canteiro, nenhum deles uma máquina — e como é o `18.10.1.5` (serra circular) que ocupava vaga em 8 dossiês de 15, isso desfaria em silêncio o principal ganho do portão do #35. O `/critico` pegou depois de a mesma régua ter sido aplicada ao `lanca` do guindar (excluído porque "concreto lançado" abriria) e **não** ao termo que sustentava o número de manchete. `na_cena` é o NOME DA MÁQUINA, como o docstring do `Setor` sempre pediu — e a régua do sufixo se aplica a TODOS os termos, não ao que primeiro chamou atenção. **Ressalva que fica de pé**: todo `na_cena` abre em negação ("sem andaime visível" abre o portão de andaime), porque `_menciona` não olha o entorno. É a armadilha do "portão que só ABRE", e aqui ela erra para o lado permissivo — restaura o comportamento anterior, não cria falso positivo novo. Consertar exige mexer no `_menciona`, que vale para a NR-12 também, e pede medição própria. |
+| **A correção do número não alcança as cópias dele** | O `/conferir` do #35 achou "7 dossiês de 15" (eram 8) e o conserto foi aplicado à mensagem do commit e a este arquivo — e **não ao comentário no código**, que ficou afirmando 7 a trinta linhas de um segundo comentário que dizia 8. O mesmo artefato carregava os dois números para a mesma medição, e foi o `/critico` que pegou, uma rodada depois. É a irmã da armadilha "número deste arquivo envelhece em silêncio", pela via mais fácil: quem corrige olha onde o DIVERGE foi apontado, não onde o número mora. **Ao corrigir número, faça `grep` do valor VELHO no repositório inteiro** — código, teste e documento — e confira que sobrou um só. |
+| **A NR-18 também tem ramo por equipamento, e ela não usa anexo para isso** | O `setor_pertinente` foi escrito para a NR-12, onde o ANEXO decide o ramo. A NR-18 não tem anexo setorial: o equipamento está no texto do item, e por isso ela ficou de fora do filtro por três sessões. O preço apareceu no lote de 08/09 — a foto do topo de uma grua recebeu `18.12.22` (contrapeso de ANDAIME SUSPENSO) e virou não conformidade impressa, e o `18.10.1.5` (SERRA CIRCULAR) ocupava vaga em **8 dossiês de 15**. **A hipótese natural foi medida e refutada**: fazer um risco de guindar disparar não expulsa o item de BM25, só o empurra para D3 — item de busca textual não sai por ser empurrado, sai por ser filtrado antes do corte relativo. Ao ver item de equipamento errado num laudo, pergunte se aquela NR tem ramo e por onde ele se reconhece. |
+| **`no_item` genérico prende item genérico da mesma NR** | Ao pôr `no_item=("elevador",)` no portão da NR-18, ele capturou o `NR-18 18.9.3` — *"os vãos de acesso às caixas dos ELEVADORES devem ter fechamento provisório"* —, que é item de ABERTURA, mora na seção 18.9 e é o que `vao_caixa_elevador_sem_fechamento` cita. Prendê-lo atrás da palavra "elevador" na cena desfaria, pela busca textual, justamente o risco que o lote de poço existe para validar — e logo depois de o #32 ter ensinado o Olho a NÃO escrever "elevador" quando a torre é ambígua. **A forma composta resolve** (`"torre do elevador"`, `"elevador de materiais"`, `"cremalheira"`), e continua prendendo os 16 itens de equipamento de elevador. Quem pegou foi o teste que exige `setor_do_item` None para os itens genéricos de abertura — escreva esse teste ANTES de escolher o vocabulário do `no_item`. |
 | **Duas causas colapsadas num motivo só fazem o documento afirmar o que ninguém verificou** | `_exigencia_ancorada` devolve falso em dois casos opostos: o trecho VEIO e não está no item (a constatação inventou a exigência — é o que a rede existe para pegar, e a frase "a constatação não descumpre o texto oficial deste item" é verdadeira), e o trecho NÃO VEIO (o supervisor não respondeu — nada foi refutado). O código dizia a mesma frase nos dois. No lote de 08/09 isso saiu impresso: `19 PAV. POÇO GRUA SEM PROTEÇÃO`, um poço sem proteção de piso nem de parede, com 0 NC e o laudo afirmando ao engenheiro que a situação não descumpre a norma. Prova de que foi omissão e não juízo: o ponto de atenção saiu com o texto da CONSTATAÇÃO, que é o fallback de `observacoes.get(ref) or nc.constatacao` — o Diretor não preencheu nenhum dos dois campos que devia. É a irmã da armadilha do `except` largo, e a pergunta é a mesma: **o erro engolido faz o documento MENTIR sobre o que foi examinado?** Hoje `_exigencia_omitida` separa os dois, o enquadramento continua caindo (reabrir a porta devolveria o painel empoeirado ao laudo) e a trilha diz "Supervisão incompleta". **Há quatro testes travando isso.** |
 | **Lista do laudo preenchida por `append` acumula entre os ciclos do Gauntlet** | `laudo.vetos = motivos` é ATRIBUIÇÃO, e é por isso que os vetos não duplicam quando o laço roda mais de um ciclo. `laudo.aparos.append(...)` não tem essa proteção. Ao acrescentar `conferencia_omitida` com `append`, o teste pegou o item repetido duas vezes com `max_ciclos=2` (o padrão de `Configuracao`, embora o `app.py` use 1 no modo Padrão). **Ao pôr campo novo no `Laudo` dentro do laço, monte a lista local e atribua no fim do ciclo**, como `motivos`. |
 | **Medir o roteamento não vê o item que a busca textual traz** | O `NR-18 18.11.14` saiu impresso numa foto de grua, e o risco curado que cita esse item teve **zero disparos nas 9 fotos** do lote. As duas coisas são verdadeiras: o item chegou ao dossiê pela **busca textual**, que a palavra "torre de elevador" no fato basta para acionar. Medido: um fato que routeia risco NENHUM enche cinco vagas do dossiê com a seção 18.11. O reflexo desta casa é reproduzir `rotear_riscos` sem rede — barato e certeiro para defeito de taxonomia, e **cego para metade do dossiê**. `montar_dossie` é igualmente determinístico e custa o mesmo. Ao investigar item errado num laudo, rode o dossiê inteiro antes de concluir que a taxonomia está limpa; "o risco não disparou" não é álibi. |
@@ -551,7 +568,7 @@ próprio comando composto (exit 144).
 - **6.358 itens** vigentes de **24 NRs** (de 36 vigentes), extraídos dos PDFs em `normas/`
 - **126 riscos** curados mapeando para itens reais; 25 exigem pessoa na cena e
   3 têm item que só entra com máquina nomeada na cena (`itens_so_com_maquina`)
-- **207 testes**
+- **211 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
@@ -824,6 +841,8 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   treliçada"**, sem escolher, quando nenhum deles está no recorte. Medido nos dois
   sentidos: com o nome recusado, nem o risco nem a busca textual alcançam o 18.11; com o
   discriminante presente, o elevador de verdade continua chegando ao `18.11.13`/`18.11.14`.
+  **O portão setorial do #35 fecha o mesmo caminho pelo lado da busca textual — mas só ele;
+  ver a porta que sobra em "Em aberto".**
   A ressalva que a regra carrega: ela vale para a torre **no canteiro** e não para o poço
   (caixa, shaft) do elevador dentro da edificação — sem ela, a mesma frase calaria
   `vao_caixa_elevador_sem_fechamento`, que é o risco que o lote de poço existe para
@@ -881,6 +900,36 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   cláusula — íntegro, **do tipo certo e no lugar certo** —, com a tela frouxa nomeada como
   o que NÃO é estado normal. **Há teste travando as duas asserções.** O que continua sem
   resposta é se a definição basta: é julgamento num prompt, e só o lote diz.
+- **A `cancela` entrega os itens de elevador sem passar por portão nenhum.** Achado pelo
+  `/critico` no #35, e **medido**: os filtros do `dossie.py` valem só para a recuperação
+  textual — item de risco CURADO entra por `montar_dossie` e não passa por
+  `setor_pertinente`. E quatro dos sete sinais de `torre_elevador_sem_cancela` são
+  `"cancela aberta|ausente|faltando|quebrada"`, que **não exigem `elevador`** (só os de
+  torre e base exigem, desde o #27). Reproduzido: a cena *"Cancela metálica vermelha aberta
+  no acesso"* + *"Torre metálica treliçada amarela de canteiro, com a base aberta"* — torre
+  deliberadamente SEM nome, como o #32 ensinou o Olho a escrever — routeia
+  `torre_elevador_sem_cancela` e entrega `NR-18 18.11.13` e `18.11.14` em D1 e D2. **É a
+  mesma porta da classe de erro 1 que produziu o laudo 7 de 05/09**, agora pelo caminho
+  curado. Não foi consertado no #35 de propósito: exigir `elevador` nos sinais de cancela
+  reduz cobertura justamente onde o risco finalmente passou a funcionar, e é decisão que só
+  um lote valida — não se faz reagindo a um crítico. **O que primeiro se mede**: com que
+  frequência o Olho escreve "cancela" numa cena que não é de elevador. No lote de içamento
+  ele chamou de "Grade metálica … pintada de vermelho, aberta" e não de cancela; depois do
+  #32 ele nomeia mais.
+- **Zero riscos roteados prevê laudo ruim, e o dossiê textual é oferecido do mesmo jeito.**
+  Medido nas 15 fotos de 08/09: **4 routearam risco nenhum** — `SOMENTE COM UM PONTO DE
+  FIXAÇÃO`, `GRUAA`, `GRUAAA` e `GRUA`. Três deram 0 NC (certo) e a quarta produziu **a
+  única não conformidade do lote que veio de dossiê sem risco curado — o falso positivo**.
+  As 11 que routearam ao menos um risco saíram todas certas ou defensáveis. O portão
+  setorial do #35 tira o item errado, mas **não fecha a classe**: o dossiê do `GRUA`
+  depois dele ainda traz plataforma flutuante, escada extensível e escada fixa vertical,
+  porque a NR-18 não tem item genérico que se aplique a uma foto de topo de grua. O que
+  fecharia é não oferecer dossiê textual quando a taxonomia curada não reconhece nada na
+  cena — quando ela cala, a busca textual está adivinhando. **Contra**: é n=4, e remove
+  justamente a cobertura que a busca textual existe para dar; o controle negativo de
+  02/09 (8 documentos, 0 NC) provavelmente é mais evidência a favor, mas os fatos daquelas
+  fotos não estão registrados para conferir. **Meça antes de implementar** — dá para
+  reprocessar os fatos de qualquer lote passado sem rede.
 - **A taxonomia corrigida não fecha a porta da foto 4.** Medido depois do conserto: sem
   o risco, o `NR-08 8.3.2.2` ainda chega ao dossiê dela em D3, agora pela busca textual
   (o fato menciona "abertura" e "paredes"). Cai de item curado para item textual, sem o

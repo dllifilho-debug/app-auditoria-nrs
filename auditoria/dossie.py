@@ -241,6 +241,15 @@ class Setor:
     anexos: tuple[str, ...]
     no_item: tuple[str, ...]
     na_cena: tuple[str, ...]
+    # Prefixo de seção, para a NR onde o ramo é a SEÇÃO e não o anexo. Na NR-18
+    # `18.12` é andaimes e `18.11` é elevadores de obra, inteirinhos — e usar o
+    # texto ali não só é desnecessário como erra: `18.16.4.1` fala de "madeiras
+    # retiradas de ANDAIMES, tapumes, fôrmas e escoramentos" mas é o item dos
+    # PREGOS EXPOSTOS, vale para madeira empilhada sem andaime nenhum na cena, e
+    # ficava preso. Mesma classe do `18.9.3` — "os vãos de acesso às caixas dos
+    # ELEVADORES" — que é item de ABERTURA. Onde a seção decide, ela é exata e o
+    # texto é aproximação.
+    secoes: tuple[str, ...] = ()
 
 
 # Medido no dossiê antes deste filtro: uma betoneira de canteiro gastava os
@@ -348,6 +357,131 @@ SETORES: dict[str, tuple[Setor, ...]] = {
             ),
         ),
     ),
+    "NR-18": (
+        # AUDITORIA COMPLETA DO QUE ESTE PORTÃO PRENDE, feita de uma vez depois
+        # de o mesmo defeito ter aparecido três vezes uma por rodada
+        # (`setor_do_item` sobre a NR inteira custa dois segundos):
+        #
+        #   andaimes    57 itens, todos em 18.12
+        #   elevadores  27 itens, todos em 18.11
+        #   guindar     23 itens, 20 em 18.10.1 + 3 do Anexo I (treinamento)
+        #   serras       2 itens,  1 em 18.10.1 + o mega-item `Anexo II 2`
+        #
+        # Os QUATRO que caem fora da própria seção já eram inalcançáveis por
+        # `comprovavel_em_foto` — os três do Anexo I são carga horária e
+        # conteúdo programático de treinamento, e o `Anexo II 2` é obrigação de
+        # papel pelo mesmo filtro. Nenhum deles chegava a um dossiê antes, e o
+        # portão não muda isso. Item genérico de verdade — `18.9.x`, `18.16.4.1`
+        # — passa livre, e há teste exigindo `setor_do_item` None para eles.
+        #
+        # A NR-18 não usa anexo setorial como a NR-12: o ramo está no texto do
+        # item, e é o EQUIPAMENTO que ele regula. Sem isto, uma foto do topo de
+        # uma grua recebia `18.12.22` (contrapeso de ANDAIME SUSPENSO) e
+        # `18.10.1.5` (SERRA CIRCULAR) — o primeiro virou não conformidade
+        # impressa no laudo de 08/09, sobre um equipamento que não estava na
+        # cena. Medido nas 15 fotos daquele lote: a serra circular ocupava vaga
+        # em 8 dossiês dos 15, e nenhum enquadramento verdadeiro perdeu o seu
+        # item quando o portão entrou.
+        #
+        # Os itens genéricos — `18.9.2` (abertura no piso), `18.9.4.2`
+        # (guarda-corpo rígido), `18.9.1` (proteção coletiva) — não nomeiam
+        # equipamento nenhum e passam livres, que é o que mantém o domínio em
+        # que este app acerta.
+        # Por SEÇÃO, não por texto: `18.12` é andaimes inteiro. Com
+        # `no_item=("andaime",)` o portão prendia o `18.16.4.1` — "as madeiras
+        # retiradas de ANDAIMES, tapumes, fôrmas e escoramentos devem ser
+        # empilhadas após retirados ou rebatidos os pregos" —, que é o item dos
+        # PREGOS EXPOSTOS e vale para madeira empilhada sem andaime nenhum. Era
+        # o mesmo defeito do `18.9.3`, sobrevivendo na família que não tinha
+        # sido testada; o `/critico` pegou.
+        # O Anexo II ficou de FORA: os seus dois itens são requisito geral de
+        # cabo de aço "utilizados em obras de construção", não de andaime — e
+        # trancá-los atrás de "andaime na cena" perderia o item numa foto de
+        # cabo esgarçado de grua ou de cinta de içamento, que é achado real
+        # deste acervo. Foi a terceira vez que o mesmo defeito apareceu neste
+        # conserto (18.9.3, depois 18.16.4.1, depois este), e esta veio do
+        # conserto da rodada anterior: ao fechar um portão, meça TODOS os itens
+        # que ele passa a prender, não só os que motivaram a mudança.
+        #
+        # RESÍDUO DECLARADO: com o Anexo II fora daqui, o `Anexo II 2` passou a
+        # ser capturado pela família das SERRAS — porque a extração engoliu o
+        # anexo inteiro num item de 12.016 caracteres, glossário incluído
+        # ("coletor de serragem", "bancada da serra circular"). É defeito de
+        # extração, não de taxonomia, e não se conserta contorcendo o portão:
+        # um item de 12 mil caracteres não é comando normativo e não aparece em
+        # nenhum dos 15 dossiês do lote de 08/09. Se um dia o `kb_build` fatiar
+        # os anexos direito, este comentário deixa de fazer sentido — e é assim
+        # que se saberá que o problema era lá.
+        Setor(
+            nome="andaimes, balancins e cadeiras suspensas",
+            anexos=(),
+            no_item=(),
+            na_cena=("andaime", "balancim", "cadeira suspensa"),
+            secoes=("18.12",),
+        ),
+        # `na_cena` é o NOME DA MÁQUINA, nunca `serra` solto: `_menciona`
+        # tolera três letras de sufixo, e "madeira serrada", "tábua serrada" e
+        # "pó de serragem" — vocabulário corrente de canteiro, e nenhum deles
+        # uma máquina — abririam o portão. Como é justamente o `18.10.1.5`
+        # (serra circular) que ocupava vaga em 8 dossiês de 15, `serra` solto
+        # desfaria em silêncio o principal ganho medido deste portão. Foi o
+        # `/critico` que pegou, depois de a mesma régua ter sido aplicada ao
+        # `lanca` do guindar e não a este.
+        Setor(
+            nome="serras e policortes",
+            anexos=(),
+            no_item=("serra circular", "policorte"),
+            na_cena=(
+                "serra circular", "serra de bancada", "serra de mesa",
+                "serra marmore", "policorte", "disco de corte",
+            ),
+        ),
+        # Este portão reforça em CÓDIGO o que o #32 fez só por prompt: o Olho
+        # foi ensinado a escrever "torre metálica treliçada" quando não dá para
+        # saber se a torre é de grua ou de elevador, e agora a seção 18.11 dos
+        # elevadores de obra também exige o nome na cena para entrar.
+        #
+        # ATENÇÃO: isto fecha só o caminho TEXTUAL. Item curado não passa por
+        # `setor_pertinente`, e `torre_elevador_sem_cancela` tem quatro sinais
+        # — "cancela aberta|ausente|faltando|quebrada" — que não exigem
+        # `elevador`. Uma torre sem nome com uma cancela aberta na cena entrega
+        # `18.11.13`/`18.11.14` por cima deste portão. Medido; ver "Em aberto".
+        #
+        # Por SEÇÃO, como o andaime: `18.11` é elevadores de obra inteiro. Por
+        # texto, "elevador" prendia o `18.9.3` — "os vãos de acesso às caixas
+        # dos ELEVADORES devem ter fechamento provisório" —, que é item de
+        # ABERTURA e é o que `vao_caixa_elevador_sem_fechamento` cita. A seção
+        # resolve isso por construção, e sem a lista de formas compostas que a
+        # primeira versão precisou inventar.
+        Setor(
+            nome="elevadores de obra",
+            anexos=(),
+            no_item=(),
+            na_cena=("elevador", "cremalheira", "monta-carga", "monta carga"),
+            secoes=("18.11",),
+        ),
+        # Duas palavras ficaram de fora do `na_cena`, cada uma por um motivo.
+        #
+        # `lanca`: `_menciona` tolera três letras de sufixo, e "concreto
+        # lançado" abriria o portão.
+        #
+        # `contrapeso`: é justamente o objeto que confunde os dois equipamentos
+        # — o `18.12.22` regula o contrapeso do ANDAIME SUSPENSO, e foi ele que
+        # virou não conformidade na foto da grua. Usá-lo como discriminante de
+        # cena aqui recriaria a mesma confusão no sentido inverso: uma foto
+        # legítima de andaime suspenso, que menciona contrapesos porque eles
+        # fazem parte dele, abriria o portão dos equipamentos de guindar.
+        # Medido: `setor_pertinente(18.10.1.24, "andaime suspenso … com
+        # contrapesos")` devolvia True. `grua` e `guindaste` cobrem o caso sem
+        # nenhum dos dois riscos — na foto `GRUA.jpg` o portão abre pelo
+        # ambiente, que diz "grua".
+        Setor(
+            nome="equipamentos de guindar",
+            anexos=(),
+            no_item=("equipamento de guindar", "grua", "guindaste", "moitao"),
+            na_cena=("grua", "guindaste", "moitao"),
+        ),
+    ),
 }
 
 # Os demais anexos da NR-12 valem para qualquer máquina e ficam de fora da
@@ -391,7 +525,13 @@ def setor_do_item(item: Item) -> Setor | None:
         for setor in setores:
             if item.anexo in setor.anexos:
                 return setor
+    # A seção, como o anexo, é exata — e por isso vem antes do texto.
     for setor in setores:
+        if setor.secoes and item.capitulo.startswith(setor.secoes):
+            return setor
+    for setor in setores:
+        if setor.secoes:
+            continue  # o ramo é a seção; o texto não opina sobre ele
         if _menciona(normalizar(item.texto), setor.no_item):
             return setor
     return None
