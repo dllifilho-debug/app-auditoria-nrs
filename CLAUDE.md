@@ -100,6 +100,69 @@ por chamada (fatiar a conferência do Diretor) ou o Dev Tier pago.
 
 ---
 
+## Validação em produção de 08/09/2026 — o lote de 15 de poço de elevador
+
+Rodado no `b855531` (os PRs #32 e #33). **15 laudos, 0 não auditadas, 10 NCs.**
+
+**O sumário exportado diz "14 imagens analisadas" e chegaram 15 laudos** — o plano de ação
+dele tem as 10 NCs, e a que falta na conta é o laudo 15. O sumário foi baixado antes de a
+última foto terminar; a contagem boa é a dos laudos. Ao medir um lote, conte os laudos, não
+o sumário.
+
+Contra o achado que o engenheiro escreveu no nome do arquivo: **9 acertos claros de 15
+(60%)**, contra 5 de 9 (56%) em 05/09. **A melhora em TAXA é pequena e as amostras não são
+comparáveis** — cinco das 15 não tinham rodado antes. O que melhorou de verdade é
+localizado, não geral, e está nos pontos abaixo. Os enquadramentos de abertura ausente
+foram **6 de 6**.
+
+**1. A regra da moldura aplicada ao nome FUNCIONOU.** `"torre de elevador"` aparece **zero
+vezes** nas três fotos de grua — eram 2 de 3. E o Olho usou a redação exata que o prompt
+oferece: *"**Torre metálica treliçada** de cor amarela"* no `GRUAA` e no `GRUAAA`, com
+*"lança … estendendo-se horizontalmente"*. No `GRUAA` ele ainda escreveu *"Torre de
+**guindaste** metálica distante"* para a torre ao fundo — parou de errar e passou a acertar
+o nome quando o discriminante aparece. **`GRUAAA` voltou a 0 NC**, a linha de base medida
+antes do #27: o experimento controlado fechou.
+
+**2. A cláusula (d) do Diretor está ativa, e dá para lê-la no texto.** Três pareceres
+carregam a linguagem dela — *"os pontos de atenção propostos baseiam-se em **suposições de
+dano estrutural ou infiltração sem lastro visual definitivo**, devendo ser descartados para
+manter a credibilidade técnica do laudo"* (laudo 2), e semelhante nos laudos 12 e 13. O
+`"a malha pode não impedir a queda de objetos pequenos"` não voltou, e a NC pela ferrugem
+morreu.
+
+**Mas a hipótese mudou de campo.** Nos laudos 6 e 7 ela reaparece no **parecer**: *"o risco
+predominante é a **potencial instabilidade** do fechamento provisório, que **pode não**
+atender à exigência"*. A cláusula (d) governa a CONSTATAÇÃO; o parecer não passa por ela.
+É a armadilha do "corte de verbosidade aplicado a um campo só", cometida de novo por não se
+ter listado os outros campos por onde o mesmo texto sai.
+
+**3. Falso positivo novo no `GRUA`: `NR-18 18.12.22`**, que é contrapeso de **andaime
+suspenso**, numa foto de grua. Diagnosticado e **não é o vocabulário novo do prompt** — a
+hipótese foi levantada e medida: trocar `contrapesos` por outra palavra mantém o item no
+dossiê. A causa é o dossiê pobre: a foto de grua routeia **risco nenhum**, então o dossiê é
+busca textual pura e oferece `18.10.1.5` (**serra circular**) em D1 e o `18.12.22` em D2. O
+Analista escolheu o menos ruim. Os quatro itens de guindar que o #22 mapeou
+(`18.10.1.21/.24/.26/.27`) só chegam por risco curado, e os sinais são `"grua sem
+anemometro"` e `"guindaste sem alarme"` — nada numa foto de contrapesos casa. **Os itens
+certos existem e são inalcançáveis.**
+
+**4. O laudo 15 (`19 PAV. POÇO GRUA SEM PROTEÇÃO`) saiu com 0 NC**, e o engenheiro
+confirmou pela foto: **sem proteção de piso NEM de parede**. Duas falhas empilhadas, as
+duas medidas:
+- **O Olho não registrou a abertura de PISO.** Escreveu o vão vertical e a grade encostada
+  na parede (correto: ela não está instalada), mas não o buraco no chão. Sem isso
+  `abertura_piso_desprotegida` não dispara e o `18.9.2` **nunca chega ao dossiê** — nem um
+  Diretor perfeito o enquadraria.
+- **O Diretor não copiou a exigência**, e o veto mecânico caiu com o motivo errado. Ver a
+  armadilha nova; foi o que o #34 consertou.
+
+**A tese do "item curto" foi levantada e REFUTADA.** Os laudos 3, 4, 9 e 15 enquadraram
+todos o mesmo `NR-08 8.3.2.2`; três passaram. O laudo 3 usa a mesma linguagem de qualidade
+("não constituindo proteção rígida e contínua") e passou. Nem a brevidade do item nem a
+redação da constatação explicam o veto — só o campo `exigencia` explica.
+
+---
+
 ## Validação em produção de 05/09/2026 — o lote de 9 de poço de elevador
 
 Rodado no `c1f97ad`. **9 fotos, 9 laudos emitidos, 0 não auditadas, 6 NCs.**
@@ -369,7 +432,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 203 testes
+$VENV -m pytest tests/ -q          # 207 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -476,6 +539,8 @@ próprio comando composto (exit 144).
 | **Limite de fornecedor lido uma vez vira número do código para sempre** | O teto diário do `qwen3.8-27b` foi lido no console em 30/08 como 2.000.000, entrou em `Modelo.tpd`, virou a nota da barra lateral ("dez vezes o dos demais"), a justificativa do padrão, dois testes e cinco parágrafos deste arquivo — tudo derivado de uma leitura de tela, num campo que o fornecedor muda quando quer. O console de 04/09 mostra **200.000**, na tabela da organização e no modal do projeto. Nenhum `/conferir` pega isso, porque a fonte de verdade não está no repositório: o código executado devolve fielmente o número errado que lhe deram. **Todo número que vem de fora do repositório precisa da data da leitura ao lado e de reconferência quando um print novo chegar** — e quando ele cair, caem juntas todas as contas derivadas (aqui: ~256 fotos/dia → ~25, e "um lote de 100 cabe num dia" → ~4 dias). |
 | **Mergear PR com lote rodando** | O merge dispara o redeploy do Streamlit Cloud, que **reinicia o app e apaga o `st.session_state`** — onde o lote em andamento vive. No plano gratuito um lote é de horas de parede, e o usuário recomeça do zero. Vale para qualquer merge: **pergunte se há lote rodando antes**, e espere os laudos serem baixados. |
 | **Desenho de lote que só existe no chat se perde, e a subtração mente** | O lote de poço de elevador foi desenhado numa conversa e nunca gravado aqui: só o resumo "12 fotos: 5 com proteção, 5 sem, 2 de grua". Duas sessões depois ninguém sabia quais eram, e a sessão de 07/09 gastou uma rodada reconstruindo por nome de arquivo — que o próprio CLAUDE.md avisa não ser confiável. Pior: o resumo permitiu a subtração `12 − 9 = 3` que o texto repetiu como "faltam 3 fotos", quando as 9 que rodaram incluíam **duas fotos que não estavam nas 12** (`GRUAA`, `GRUAAA`) e faltavam **5**. O erro não é de contagem, é de conjunto: "rodou N das M" só subtrai se os N saírem dos M, e nenhum `/conferir` pega isso, porque a resposta não está no repositório — estava num chat. **Grave a lista NOMINAL de todo lote aqui, não o resumo por grupo**, e ao escrever "rodou N das M" confira um a um de onde vieram os N. |
+| **Duas causas colapsadas num motivo só fazem o documento afirmar o que ninguém verificou** | `_exigencia_ancorada` devolve falso em dois casos opostos: o trecho VEIO e não está no item (a constatação inventou a exigência — é o que a rede existe para pegar, e a frase "a constatação não descumpre o texto oficial deste item" é verdadeira), e o trecho NÃO VEIO (o supervisor não respondeu — nada foi refutado). O código dizia a mesma frase nos dois. No lote de 08/09 isso saiu impresso: `19 PAV. POÇO GRUA SEM PROTEÇÃO`, um poço sem proteção de piso nem de parede, com 0 NC e o laudo afirmando ao engenheiro que a situação não descumpre a norma. Prova de que foi omissão e não juízo: o ponto de atenção saiu com o texto da CONSTATAÇÃO, que é o fallback de `observacoes.get(ref) or nc.constatacao` — o Diretor não preencheu nenhum dos dois campos que devia. É a irmã da armadilha do `except` largo, e a pergunta é a mesma: **o erro engolido faz o documento MENTIR sobre o que foi examinado?** Hoje `_exigencia_omitida` separa os dois, o enquadramento continua caindo (reabrir a porta devolveria o painel empoeirado ao laudo) e a trilha diz "Supervisão incompleta". **Há quatro testes travando isso.** |
+| **Lista do laudo preenchida por `append` acumula entre os ciclos do Gauntlet** | `laudo.vetos = motivos` é ATRIBUIÇÃO, e é por isso que os vetos não duplicam quando o laço roda mais de um ciclo. `laudo.aparos.append(...)` não tem essa proteção. Ao acrescentar `conferencia_omitida` com `append`, o teste pegou o item repetido duas vezes com `max_ciclos=2` (o padrão de `Configuracao`, embora o `app.py` use 1 no modo Padrão). **Ao pôr campo novo no `Laudo` dentro do laço, monte a lista local e atribua no fim do ciclo**, como `motivos`. |
 | **Medir o roteamento não vê o item que a busca textual traz** | O `NR-18 18.11.14` saiu impresso numa foto de grua, e o risco curado que cita esse item teve **zero disparos nas 9 fotos** do lote. As duas coisas são verdadeiras: o item chegou ao dossiê pela **busca textual**, que a palavra "torre de elevador" no fato basta para acionar. Medido: um fato que routeia risco NENHUM enche cinco vagas do dossiê com a seção 18.11. O reflexo desta casa é reproduzir `rotear_riscos` sem rede — barato e certeiro para defeito de taxonomia, e **cego para metade do dossiê**. `montar_dossie` é igualmente determinístico e custa o mesmo. Ao investigar item errado num laudo, rode o dossiê inteiro antes de concluir que a taxonomia está limpa; "o risco não disparou" não é álibi. |
 | `git fetch origin main <branch-que-não-existe-mais>` falha inteiro, silenciosamente | Fetch de múltiplos refs é atômico: se um ref já foi deletado no remoto (branch mergeada), o comando inteiro falha e **nenhum ref é atualizado** — inclusive o `main`, que existia e seria atualizado sozinho. `origin/main` local fica congelado na versão de antes, e comparações feitas contra ele mentem. Já causou uma sessão inteira concluir errado que "a reescrita nunca foi mergeada". Se o histórico parecer suspeito, rode `git fetch origin main` sozinho antes de confiar em qualquer diff. |
 
@@ -486,7 +551,7 @@ próprio comando composto (exit 144).
 - **6.358 itens** vigentes de **24 NRs** (de 36 vigentes), extraídos dos PDFs em `normas/`
 - **126 riscos** curados mapeando para itens reais; 25 exigem pessoa na cena e
   3 têm item que só entra com máquina nomeada na cena (`itens_so_com_maquina`)
-- **203 testes**
+- **207 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
@@ -503,8 +568,12 @@ próprio comando composto (exit 144).
 - **A segunda metade da conferência também é mecânica.** Em `conferencia`, o Diretor
   copia por enquadramento DOIS trechos literais: o **fato** que sustenta a constatação e
   o trecho do **TEXTO OFICIAL** que ela descumpre. `_exigencia_ancorada` confere o
-  segundo contra o item, e o que não ancora vira veto — em aprovado e em aparado. Pega
-  exigência **inventada**; não pega trecho verdadeiro citado fora de propósito, e contra
+  segundo contra o item, e o que não ancora vira veto — em aprovado e em aparado. **O veto
+  distingue duas causas** (desde o #34): trecho que veio e não ancora é refutação — "a
+  constatação não descumpre o texto oficial deste item"; trecho que não veio é omissão da
+  supervisão, dito assim no laudo e listado na trilha como "Supervisão incompleta". O
+  enquadramento cai nos dois casos; o que muda é o documento não afirmar um juízo que
+  ninguém emitiu. Pega exigência **inventada**; não pega trecho verdadeiro citado fora de propósito, e contra
   esse continua agindo só o prompt. Este é o único uso em código do bloco `conferencia`:
   o `fato` copiado segue sem verificação automática.
 - **Uma abertura, uma não conformidade.** `ITENS_EQUIVALENTES` (em `riscos/__init__.py`)
@@ -817,7 +886,11 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   (o fato menciona "abertura" e "paredes"). Cai de item curado para item textual, sem o
   rótulo do risco empurrando — mas o Analista ainda pode escolhê-lo. **Quem fecharia
   essa porta é o item acima**, não a taxonomia.
-- **Faltam 5 fotos do lote de poço de elevador, e o lote a rodar são 14.** O de 05/09
+- **~~Faltam 5 fotos do lote de poço de elevador~~ — RODADO em 08/09, 15 fotos, medido na
+  seção de validação no alto deste arquivo.** O que sobrou dele em aberto está nos itens
+  desta lista: o `18.12.22` no `GRUA` (itens de guindar inalcançáveis), a hipótese que
+  migrou para o parecer, e o Olho não ter visto a abertura de piso do laudo 15. O histórico
+  abaixo fica porque a lista nominal das 14 continua valendo para refazer o lote. O de 05/09
   rodou **7 das 12 mais 2 de fora** (`GRUAA` e `GRUAAA`) e está medido acima — não
   "9 das 12"; ver a correção da conta no cabeçalho daquela seção. O de 04/09 não mediu
   nada: 1 foto auditada de 12, as outras recusadas pelo OTPM.
