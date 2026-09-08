@@ -900,6 +900,72 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   cláusula — íntegro, **do tipo certo e no lugar certo** —, com a tela frouxa nomeada como
   o que NÃO é estado normal. **Há teste travando as duas asserções.** O que continua sem
   resposta é se a definição basta: é julgamento num prompt, e só o lote diz.
+- **Contexto POR FOTO: medido em 08/09, decidido, NÃO implementado.** O usuário perguntou
+  se descrever o que vê em cada foto ajudaria o enquadramento. Hoje o campo "Contexto da
+  inspeção" é **um só para o lote inteiro** (`app.py:408`) e alcança TRÊS consumidores:
+  o Olho (`pipeline.py:370`), o roteamento (como `extra` colado em cada fragmento) e a
+  busca textual (dentro do `blob` que alimenta `_pontuar_nrs` e os portões). Medidos
+  quatro desenhos sobre os fatos reais das 15 fotos, com um contexto plausível por foto e
+  o item que o engenheiro esperaria como gabarito (10 das 15 têm item esperado):
+
+  | braço | esperado | posição média | riscos | dossiê | ruído |
+  |---|---|---|---|---|---|
+  | **A** hoje (sem contexto) | 8 de 10 | D1,0 | 18 | 126 | 21 |
+  | **B** prosa no campo atual | 9 de 10 | D2,7 | 31 | 142 | 29 |
+  | **C** fragmento próprio, fora dos portões | 8 de 10 | D1,0 | 23 | 142 | 32 |
+  | **D** marcado numa lista de riscos | **10 de 10** | **D1,0** | 20 | 129 | **21** |
+
+  ("ruído" = itens de NR-12/33/15/17/11/09/32 num lote de poço e grua.)
+
+  **A prosa livre (B) não compensa**: +1 acerto contra +72% de riscos roteados, +8 de
+  ruído, e o item certo caindo de D1 para D2,7 — encher o dossiê e empurrar o item certo
+  para baixo é a classe de erro 1 pela porta do "dossiê pobre força escolha ruim". O ruído
+  caiu em 2 fotos, subiu em 7, ficou igual em 6.
+
+  **O desenho C foi proposto com confiança e REPROVADO pela própria medição.** A hipótese
+  era que o ganho vinha do roteamento, e que bastava isolar o contexto num fragmento
+  próprio e tirá-lo dos portões. Medido: `abertura_piso_desprotegida` **não dispara nem
+  com o contexto** — o `18.9.2` do laudo 15 chegou pela BUSCA TEXTUAL, alimentada pelo
+  `blob` que inclui o contexto. O C cortava exatamente esse caminho, então não entrega
+  nada e ainda é o mais ruidoso dos quatro. **Medir antes de construir foi o que pegou.**
+
+  **A lista marcada (D) domina os outros três ao mesmo tempo**, o que é raro aqui: 10 de
+  10, item sempre em D1, **ruído idêntico ao de hoje**, e as 5 fotos sem marcação saem
+  byte a byte iguais. As duas que o app perdia — `PROTEÇÃO POÇO DE ELEVADOR SOMENTE COM UM
+  PONTO DE FIXAÇÃO` e o laudo 15 `19 PAV. POÇO GRUA SEM PROTEÇÃO` — são exatamente as que
+  ela recupera. A lista sai da taxonomia que já existe: **40 riscos de construção sem
+  exigir pessoa na cena**, dos quais ~15 cobrem o uso do engenheiro.
+
+  **O custo, medido**: marcar por engano `abertura_piso_desprotegida` no `GRUAAA` põe
+  `NR-18 18.9.2` em D1, curado, numa foto de grua onde hoje **nenhum caminho** leva esse
+  item. A trava que sobra é o Diretor exigir o trecho literal do fato do Olho — e o #34
+  mostrou que ela também falha por omissão. **Isso muda a natureza do app**: hoje ele é um
+  segundo olhar independente; com a lista passa a ser parcialmente dirigido, e o erro pode
+  ser do engenheiro, entrando na posição mais forte do dossiê.
+
+  **Uma armadilha prática que a medição achou**: escrever `"sem achado"` no contexto de uma
+  foto boa **aciona risco**. Na `GRUA`, `"grua do canteiro, vista do topo, sem achado"`
+  dispara `andaime_sem_guarda_corpo` e `rampa_passarela_irregular` — sem andaime nem
+  passarela na cena. Tirando o `"sem achado"`, zero riscos; `"tudo conforme"` também é
+  seguro. É a armadilha do `sem`, agora vinda da caneta do engenheiro — e o formato natural
+  de anotação de vistoria ("sem proteção", "sem sinalização") é o pior caso para o roteador.
+  Vale para qualquer campo de texto livre que se acrescente ao app.
+
+  **Duas travas de desenho para quem implementar**, e uma terceira que foi levantada e cai:
+  1. **A marcação NÃO vai ao Olho.** Ele continua descrevendo às cegas. Se o contexto
+     chegar nele, ele escreve o que lhe disserem — veja ou não —, o `fato` vira eco do
+     que o engenheiro digitou, e a conferência do Diretor contra os fatos fica circular.
+     É a classe de erro 3, e é o que hoje protege contra o clique errado.
+  2. **Nunca ler o nome do arquivo automaticamente.** É a tentação óbvia (zero trabalho, o
+     dado já existe em 138 das 253 fotos), e queimaria o gabarito inteiro: se o que o
+     engenheiro escreve virar entrada, "o app acertou" passa a significar "o app repetiu o
+     que eu disse". Campo separado, preenchido de propósito.
+  3. ~~Item marcado entra sem o rótulo do risco, para não empurrar o Analista~~ —
+     **levantada e derrubada na conferência**: `Entrada.linha()` monta
+     `[D<n>] <nr> <item> — <resumo>` e **não inclui o `origem`**. O rótulo do risco nunca
+     chega ao Analista; ele é usado só em `aferir()` (gravidade base, portão de pessoa,
+     nome da NC). O que empurra é a POSIÇÃO no dossiê, não o rótulo — não há trava a
+     escrever aqui.
 - **A `cancela` entrega os itens de elevador sem passar por portão nenhum.** Achado pelo
   `/critico` no #35, e **medido**: os filtros do `dossie.py` valem só para a recuperação
   textual — item de risco CURADO entra por `montar_dossie` e não passa por
