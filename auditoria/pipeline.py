@@ -107,6 +107,11 @@ class Laudo:
     espera_s: float = 0.0
     # O agente de visão devolveu resposta sem nenhum fato utilizável.
     visao_falhou: bool = False
+    # Enquadramentos que caíram porque a conferência do Diretor não veio, e não
+    # porque ele os refutou. É falha de supervisão, não juízo técnico, e sai na
+    # trilha dita assim — senão o laudo afirma ao engenheiro que a situação não
+    # descumpre a norma, que é coisa que ninguém verificou.
+    conferencia_omitida: list[str] = field(default_factory=list)
 
     @property
     def aprovado(self) -> bool:
@@ -745,6 +750,33 @@ RE_ORFA = re.compile(r"\b(?:na|no|da|do|de|a|o|em|com|conforme|segundo|pela|pelo
                      re.IGNORECASE)
 
 
+# Abaixo disto o trecho não prova nada — e, na prática, é o Diretor não tendo
+# respondido. Os dois casos precisam do mesmo número, então ele mora aqui.
+MINIMO_EXIGENCIA = 12
+
+
+def _exigencia_omitida(trecho: str) -> bool:
+    """O Diretor deixou de copiar o trecho, em vez de copiar um que não serve.
+
+    A distinção não é cosmética. `_exigencia_ancorada` devolve falso nos dois
+    casos, e o código transformava os dois no MESMO veto — "a constatação não
+    descumpre o texto oficial deste item". Para o trecho que não ancora isso é
+    verdade e é o objetivo da rede. Para o trecho AUSENTE é uma afirmação
+    técnica que ninguém fez: o supervisor não refutou o enquadramento, ele não
+    respondeu sobre ele, e o laudo do cliente saía dizendo ao engenheiro que a
+    situação não descumpre a norma.
+
+    Aconteceu no lote de 08/09, na foto `19 PAV. POÇO GRUA SEM PROTEÇÃO` — um
+    poço sem proteção de piso nem de parede, confirmado pelo engenheiro, que
+    saiu com 0 não conformidade e essa frase impressa. É a irmã da armadilha do
+    `except` largo: o erro engolido faz o documento MENTIR sobre o que foi
+    examinado.
+    """
+    from .kb import normalizar
+
+    return len(normalizar(trecho)) < MINIMO_EXIGENCIA
+
+
 def _exigencia_ancorada(trecho: str, item: Item) -> bool:
     """O aparo conseguiu apontar, no texto oficial, o que ainda é descumprido?
 
@@ -764,7 +796,7 @@ def _exigencia_ancorada(trecho: str, item: Item) -> bool:
     from .kb import normalizar
 
     alvo = normalizar(trecho)
-    if len(alvo) < 12:  # trecho curto demais não prova nada
+    if len(alvo) < MINIMO_EXIGENCIA:  # trecho curto demais não prova nada
         return False
     oficial = normalizar(item.texto)
     if alvo in oficial:
@@ -1004,6 +1036,17 @@ Responda SOMENTE com este JSON:
 }}"""
 
 SEM_ITENS = "(nenhum)"
+
+# O trecho existe e não está no item: a constatação inventou a exigência. É o
+# que a rede foi feita para pegar, e a frase é uma afirmação técnica correta.
+MOTIVO_EXIGENCIA_NAO_ANCORA = "a constatação não descumpre o texto oficial deste item"
+
+# O trecho não veio. Nada foi refutado — não houve conferência. Dizer a mesma
+# frase aqui é pôr no laudo um juízo que o supervisor não emitiu.
+MOTIVO_CONFERENCIA_OMITIDA = (
+    "a conferência não trouxe o trecho descumprido — o enquadramento caiu por "
+    "omissão da supervisão, não por refutação"
+)
 
 
 def _rotular(itens: list[str], letra: str) -> str:
@@ -1337,6 +1380,10 @@ def _executar(
             str(c.get("ref", "")).strip().upper(): c
             for c in veredito.get("conferencia", [])
         }
+        # Local, e atribuída ao laudo no fim do ciclo — como `motivos`. Um
+        # `append` direto no laudo acumularia entre os ciclos do Gauntlet, que
+        # é o que `laudo.vetos = motivos` evita logo abaixo.
+        omitidas: list[str] = []
         for n, nc in enumerate(aprovadas, start=1):
             ref = f"V{n}"
             if ref in vetados:
@@ -1353,9 +1400,15 @@ def _executar(
             if _exigencia_ancorada(exigencia, nc.item):
                 continue
             aparados.pop(ref, None)
-            vetados[ref] = (
-                "a constatação não descumpre o texto oficial deste item"
-            )
+            if _exigencia_omitida(exigencia):
+                # O enquadramento cai do mesmo jeito — sem a conferência não há
+                # como sustentá-lo, e reabrir essa porta devolveria o painel
+                # empoeirado ao laudo. O que muda é o que se diz ao engenheiro,
+                # e que a falha fica registrada como falha de supervisão.
+                vetados[ref] = MOTIVO_CONFERENCIA_OMITIDA
+                omitidas.append(f"{nc.item.nr} {nc.item.item}")
+            else:
+                vetados[ref] = MOTIVO_EXIGENCIA_NAO_ANCORA
 
         sobreviventes: list[NaoConformidade] = []
         motivos: list[str] = []
@@ -1401,6 +1454,7 @@ def _executar(
         sobreviventes.sort(key=lambda x: (x.prioridade, x.item.nr, x.item.item))
         laudo.nao_conformidades = sobreviventes
         laudo.vetos = motivos
+        laudo.conferencia_omitida = omitidas
         laudo.parecer_diretor = _parecer_coerente(
             _limpar_citacoes(_sem_rotulo_interno(str(veredito.get("parecer", "")).strip())),
             sobreviventes, motivos,

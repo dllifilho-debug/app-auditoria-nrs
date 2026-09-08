@@ -2629,6 +2629,104 @@ def test_enquadramento_aprovado_sem_exigencia_no_item_vira_veto(base):
     assert laudo.sem_enquadramento, "o achado evaporou em vez de virar observação"
 
 
+def test_conferencia_omitida_nao_vira_afirmacao_de_que_a_norma_nao_foi_descumprida(base):
+    """O laudo 15 do lote de 08/09, e a frase que ele imprimiu ao cliente.
+
+    `19 PAV. POÇO GRUA SEM PROTEÇÃO` — poço sem proteção de piso NEM de parede,
+    confirmado pelo engenheiro na foto — saiu com ZERO não conformidade e com
+    "a constatação não descumpre o texto oficial deste item" impresso no laudo.
+
+    O Diretor não tinha refutado nada: ele aprovou o enquadramento e deixou o
+    campo `exigencia` vazio. Prova de que foi omissão e não juízo: o ponto de
+    atenção saiu com o texto da CONSTATAÇÃO, que é o fallback de
+    `observacoes.get(ref) or nc.constatacao` — ou seja, ele também não escreveu
+    `observacao`. Nos dois campos que devia preencher não veio nada.
+
+    O enquadramento continua caindo, e isso é deliberado: sem conferência não
+    há como sustentá-lo, e reabrir a porta devolveria ao laudo o painel
+    empoeirado em item de sinalização. O que não pode é o documento AFIRMAR ao
+    engenheiro que a situação não descumpre a norma quando ninguém verificou.
+    """
+    from auditoria.pipeline import MOTIVO_CONFERENCIA_OMITIDA, MOTIVO_EXIGENCIA_NAO_ANCORA
+
+    laudo, _ = _rodar(base, "NR-35 Anexo III 5.2.2.5", lambda: {
+        "conferencia": [{"ref": "V1", "fato": FATO, "decisao": "aprovado",
+                         "exigencia": ""}],
+        "aparados": [], "vetados": [], "ajustes": [], "pontos_descartados": [],
+        "conformidades_descartadas": [], "parecer": "p",
+    })
+    assert not laudo.nao_conformidades, "sem conferência o enquadramento tem de cair"
+    assert laudo.sem_enquadramento, "o achado evaporou em vez de virar observação"
+    trilha = " ".join(laudo.vetos)
+    assert MOTIVO_CONFERENCIA_OMITIDA in trilha
+    assert MOTIVO_EXIGENCIA_NAO_ANCORA not in trilha, (
+        "o laudo está afirmando que a norma não foi descumprida, e ninguém conferiu"
+    )
+    assert laudo.conferencia_omitida == ["NR-35 Anexo III 5.2.2.5"]
+
+
+def test_exigencia_que_nao_ancora_continua_sendo_refutacao(base):
+    """A contraparte, e a razão de a separação não ser cosmética.
+
+    Quando o trecho VEIO e não está no item, a afirmação é verdadeira e é o
+    objetivo da rede: o painel empoeirado enquadrado em item de sinalização foi
+    refutado de fato. Este teste impede que o conserto do caso omisso dilua o
+    caso que a rede existe para pegar — os dois chegam a
+    `_exigencia_ancorada` falso e só aqui se separam.
+    """
+    from auditoria.pipeline import MOTIVO_CONFERENCIA_OMITIDA, MOTIVO_EXIGENCIA_NAO_ANCORA
+
+    laudo, _ = _rodar(base, "NR-35 Anexo III 5.2.2.5", lambda: {
+        "conferencia": [{"ref": "V1", "fato": FATO, "decisao": "aprovado",
+                         "exigencia": "os degraus devem ser mantidos limpos e desobstruídos"}],
+        "aparados": [], "vetados": [], "ajustes": [], "pontos_descartados": [],
+        "conformidades_descartadas": [], "parecer": "p",
+    })
+    assert not laudo.nao_conformidades
+    trilha = " ".join(laudo.vetos)
+    assert MOTIVO_EXIGENCIA_NAO_ANCORA in trilha
+    assert MOTIVO_CONFERENCIA_OMITIDA not in trilha
+    assert laudo.conferencia_omitida == [], "refutação não é omissão de supervisão"
+
+
+def test_o_piso_da_exigencia_e_o_mesmo_nas_duas_funcoes(base):
+    """`_exigencia_omitida` e `_exigencia_ancorada` precisam concordar sobre o
+    que é "trecho curto demais", senão abre uma faixa em que o enquadramento
+    cai por não ancorar e o motivo diz refutação, que é a mentira original.
+    """
+    from auditoria.pipeline import (
+        MINIMO_EXIGENCIA, _exigencia_ancorada, _exigencia_omitida,
+    )
+
+    item = base.obter("NR-35", "Anexo III 5.2.2.5")
+    assert _exigencia_omitida("")
+    assert _exigencia_omitida("   ")
+    # Exatamente no piso: deixa de ser omissão e passa a ser avaliado.
+    curto = "a" * (MINIMO_EXIGENCIA - 1)
+    assert _exigencia_omitida(curto)
+    assert not _exigencia_omitida("a" * MINIMO_EXIGENCIA)
+    # E nenhum trecho abaixo do piso escapa como se tivesse ancorado.
+    assert not _exigencia_ancorada(curto, item)
+
+
+def test_a_trilha_do_laudo_distingue_supervisao_incompleta(base):
+    """O motivo separado só serve se chegar ao papel: é no laudo do cliente que
+    a frase errada foi impressa, não no log.
+    """
+    from auditoria import relatorio
+
+    laudo, _ = _rodar(base, "NR-35 Anexo III 5.2.2.5", lambda: {
+        "conferencia": [{"ref": "V1", "fato": FATO, "decisao": "aprovado",
+                         "exigencia": ""}],
+        "aparados": [], "vetados": [], "ajustes": [], "pontos_descartados": [],
+        "conformidades_descartadas": [], "parecer": "p",
+    })
+    md = relatorio.markdown(laudo, base, 1, "foto.jpg")
+    assert "Supervisão incompleta" in md
+    assert "não por terem sido refutados" in md
+    assert "NR-35 Anexo III 5.2.2.5" in md
+
+
 def test_enquadramento_aprovado_com_exigencia_do_item_sobrevive(base):
     """A contraparte: aprovado com trecho real do item continua no laudo."""
     laudo, _ = _rodar(base, "NR-35 Anexo III 5.2.2.5", lambda: {
