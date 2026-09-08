@@ -102,8 +102,16 @@ por chamada (fatiar a conferência do Diretor) ou o Dev Tier pago.
 
 ## Validação em produção de 05/09/2026 — o lote de 9 de poço de elevador
 
-Rodado no `c1f97ad`. **9 fotos das 12 previstas, 9 laudos emitidos, 0 não auditadas,
-6 NCs.** As três coisas que este lote existia para responder:
+Rodado no `c1f97ad`. **9 fotos, 9 laudos emitidos, 0 não auditadas, 6 NCs.**
+
+**Não eram "9 das 12", e essa conta enganou duas sessões.** Recuperado o desenho original
+em 07/09: das 9 que rodaram, **7 eram das 12 e 2 vieram de fora** — `GRUAA` e `GRUAAA`
+não estavam no desenho, cujo grupo de grua tinha só `GRUA` e `19 PAV. POÇO GRUA SEM
+PROTEÇÃO`. Logo **faltam 5**, não 3. É a armadilha do número que envelhece em silêncio
+pela via mais fácil de todas: uma subtração (12 − 9) cujo minuendo e subtraendo não
+falavam do mesmo conjunto. Ao escrever "rodou N das M", confira que os N saíram dos M.
+
+As três coisas que este lote existia para responder:
 
 1. **O OTPM está resolvido.** Nenhuma foto perdida, nenhum 429, contra 1 de 12 no dia
    anterior. O teto de 900 tokens de saída não truncou nada — **zero** ocorrências de
@@ -332,7 +340,7 @@ Lotes temáticos que valem, com as fotos já identificadas:
 |---|---|---|
 | NR-12 | `SERRA DE BANCADA`, `SERRALHERIA SEM BARREIRA DE ACESSO` | as duas únicas com máquina de verdade no acervo novo |
 | ~~Içamento~~ | 7 fotos | **RODADO em 02/09** — 2 de 5 achados do engenheiro. Ver acima. Só volta a valer depois de existir taxonomia de guindar e de o Olho nomear o equipamento |
-| Poço de elevador | 12 fotos: 5 com proteção, 5 sem, 2 de grua | **TENTADO em 04/09 e perdido: 1 foto auditada de 12, as outras recusadas pelo OTPM. Refazer.** Achado mais repetido do acervo; `vao_caixa_elevador_sem_fechamento` existe e nunca disparou em produção. O sinal FOI medido antes de gastar o lote, e o que se achou não era o 0,50 do lote de içamento: com o Olho escrevendo `elevador` e `cancela`, **os dois riscos de elevador disparavam com a proteção INSTALADA** (5 de 5 e 3 de 6). Sinais refeitos para ancorar na abertura, não no `sem`, e todo sinal de torre/base exige `elevador` (no canteiro há a torre da GRUA): 22 de 22 fatos com a proteção instalada ficam calados e 14 de 14 com ela ausente acionam o risco certo. É este lote que valida os dois consertos ao mesmo tempo |
+| Poço de elevador | **14 fotos** (as 12 do desenho + `GRUAA` e `GRUAAA`) | **TENTADO em 04/09 e perdido: 1 foto auditada de 12, as outras recusadas pelo OTPM. Refazer.** Achado mais repetido do acervo; `vao_caixa_elevador_sem_fechamento` existe e nunca disparou em produção. O sinal FOI medido antes de gastar o lote, e o que se achou não era o 0,50 do lote de içamento: com o Olho escrevendo `elevador` e `cancela`, **os dois riscos de elevador disparavam com a proteção INSTALADA** (5 de 5 e 3 de 6). Sinais refeitos para ancorar na abertura, não no `sem`, e todo sinal de torre/base exige `elevador` (no canteiro há a torre da GRUA): 22 de 22 fatos com a proteção instalada ficam calados e 14 de 14 com ela ausente acionam o risco certo. É este lote que valida os dois consertos ao mesmo tempo. **Desenho recuperado em 07/09 e gravado aqui para não se perder de novo** — proteção presente (5): `18 PAV. PROTEÇÃO POÇO DE ELEVADOR`, `PROTEÇÃO POÇO DE ELEVADOR SOMENTE COM UM PONTO DE FIXAÇÃO`, `PROTEÇÃO POÇO ELEVADOR DIFERENTE DO PROJETO`, `PROTEÇÃO POÇO ELEVADOR DIFERENTE DAS ANTERIORES`, `19. PROTEÇÃO DE ELEVADOR NÃO FIXADA`; proteção ausente (5): `13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO`, `11 PAV. PROTEÇÃO POÇO ELEVADOR SEM PROTEÇÃO`, `3 PAV. POÇO ELEVADOR SEM PROTEÇÃO E SINALIZAÇÃO`, `19 PAV. POÇO ELEVADOR SEM PROTEÇÃO`, `20 PAV SEM PROTEÇÃO NO POÇO DE ELEVADOR`; grua (2): `GRUA`, `19 PAV. POÇO GRUA SEM PROTEÇÃO`. **As duas acrescentadas** são `GRUAA` e `GRUAAA`: nenhuma das duas de grua do desenho testa o nome da torre (`GRUA` já dava 0 NC e `19 PAV. POÇO GRUA` é poço), e **`GRUAAA` é a foto que produziu o `NR-18 18.11.14`** — sem ela o defeito da grua fica sem o seu teste. **E ela é o único experimento controlado do histórico**, cruzado em 07/09: a MESMA foto deu **0 NC** no lote de içamento de 02/09, ANTES do #27, e `NR-18 18.11.14` no lote de 05/09, DEPOIS dele (o #27 mergeou em 04/09). Uma foto, uma mudança, dois resultados opostos — é a prova causal de que foi o prompt que produziu o defeito, e não a variabilidade da visão. Por isso o aceite dela é forte: 0 NC no `GRUAAA` não é "pode ter sido sorte", é **volta a uma linha de base medida**. Cuidado com os dois arquivos gêmeos `19 PAV. POÇO ELEVADOR SEM PROTEÇÃO.jpg` e `...PROTEÇÃOO.jpg` (dois O): o desenho lista o de um O, o gabarito de 05/09 registra o de dois, e qual deles rodou não dá para saber sem os laudos — rode os dois |
 | Controle negativo | 5 documentos (POP, lista de presença, CREA, crachá) | devem dar **0 NC**; é a classe de erro que já apareceu e nunca foi testada de propósito |
 
 Ao receber os laudos: o HTML traz o "Ambiente registrado" e a lista de fatos do Olho,
@@ -467,6 +475,7 @@ próprio comando composto (exit 144).
 | **429 tem duas causas opostas, e uma delas não passa com o tempo** | Cota estourada é fila: espera e passa, `recuperavel=True`, o lote continua. Recusa por TAMANHO da requisição (OTPM/ITPM, "Request too large") não passa nunca — repetir é queimar foto após foto contra o mesmo limite, que foi o que aconteceu com onze fotos seguidas em 04/09. `RECUSA_POR_TAMANHO` separa as duas em `traduzir()`, e a segunda interrompe o lote com a instrução certa (reduzir o teto de saída), em vez de mandar aguardar um minuto. |
 | **Limite de fornecedor lido uma vez vira número do código para sempre** | O teto diário do `qwen3.8-27b` foi lido no console em 30/08 como 2.000.000, entrou em `Modelo.tpd`, virou a nota da barra lateral ("dez vezes o dos demais"), a justificativa do padrão, dois testes e cinco parágrafos deste arquivo — tudo derivado de uma leitura de tela, num campo que o fornecedor muda quando quer. O console de 04/09 mostra **200.000**, na tabela da organização e no modal do projeto. Nenhum `/conferir` pega isso, porque a fonte de verdade não está no repositório: o código executado devolve fielmente o número errado que lhe deram. **Todo número que vem de fora do repositório precisa da data da leitura ao lado e de reconferência quando um print novo chegar** — e quando ele cair, caem juntas todas as contas derivadas (aqui: ~256 fotos/dia → ~25, e "um lote de 100 cabe num dia" → ~4 dias). |
 | **Mergear PR com lote rodando** | O merge dispara o redeploy do Streamlit Cloud, que **reinicia o app e apaga o `st.session_state`** — onde o lote em andamento vive. No plano gratuito um lote é de horas de parede, e o usuário recomeça do zero. Vale para qualquer merge: **pergunte se há lote rodando antes**, e espere os laudos serem baixados. |
+| **Desenho de lote que só existe no chat se perde, e a subtração mente** | O lote de poço de elevador foi desenhado numa conversa e nunca gravado aqui: só o resumo "12 fotos: 5 com proteção, 5 sem, 2 de grua". Duas sessões depois ninguém sabia quais eram, e a sessão de 07/09 gastou uma rodada reconstruindo por nome de arquivo — que o próprio CLAUDE.md avisa não ser confiável. Pior: o resumo permitiu a subtração `12 − 9 = 3` que o texto repetiu como "faltam 3 fotos", quando as 9 que rodaram incluíam **duas fotos que não estavam nas 12** (`GRUAA`, `GRUAAA`) e faltavam **5**. O erro não é de contagem, é de conjunto: "rodou N das M" só subtrai se os N saírem dos M, e nenhum `/conferir` pega isso, porque a resposta não está no repositório — estava num chat. **Grave a lista NOMINAL de todo lote aqui, não o resumo por grupo**, e ao escrever "rodou N das M" confira um a um de onde vieram os N. |
 | **Medir o roteamento não vê o item que a busca textual traz** | O `NR-18 18.11.14` saiu impresso numa foto de grua, e o risco curado que cita esse item teve **zero disparos nas 9 fotos** do lote. As duas coisas são verdadeiras: o item chegou ao dossiê pela **busca textual**, que a palavra "torre de elevador" no fato basta para acionar. Medido: um fato que routeia risco NENHUM enche cinco vagas do dossiê com a seção 18.11. O reflexo desta casa é reproduzir `rotear_riscos` sem rede — barato e certeiro para defeito de taxonomia, e **cego para metade do dossiê**. `montar_dossie` é igualmente determinístico e custa o mesmo. Ao investigar item errado num laudo, rode o dossiê inteiro antes de concluir que a taxonomia está limpa; "o risco não disparou" não é álibi. |
 | `git fetch origin main <branch-que-não-existe-mais>` falha inteiro, silenciosamente | Fetch de múltiplos refs é atômico: se um ref já foi deletado no remoto (branch mergeada), o comando inteiro falha e **nenhum ref é atualizado** — inclusive o `main`, que existia e seria atualizado sozinho. `origin/main` local fica congelado na versão de antes, e comparações feitas contra ele mentem. Já causou uma sessão inteira concluir errado que "a reescrita nunca foi mergeada". Se o histórico parecer suspeito, rode `git fetch origin main` sozinho antes de confiar em qualquer diff. |
 
@@ -808,16 +817,23 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   (o fato menciona "abertura" e "paredes"). Cai de item curado para item textual, sem o
   rótulo do risco empurrando — mas o Analista ainda pode escolhê-lo. **Quem fecharia
   essa porta é o item acima**, não a taxonomia.
-- **Faltam 3 fotos do lote de poço de elevador.** O de 05/09 rodou 9 das 12 e está
-  medido acima; as outras 3 valem para fechar a amostra, agora com os dois sinais
-  corrigidos. O de 04/09 não mediu nada:
-  1 foto auditada de 12, as outras recusadas pelo OTPM. Ele valida três coisas ainda
-  não validadas em produção — o `PROMPT_OLHO` que passou a nomear elemento de canteiro
-  (#27), os sinais de elevador refeitos (#27) e a retentativa de JSON do Olho (#27/#28)
-  — mais o teto de saída novo. Desenho na tabela de lotes: 5 fotos com a proteção
-  presente, 5 sem, 2 de grua. **O critério de aceite se lê na LISTA DE FATOS do Olho,
-  não nas não conformidades**: o que se quer saber é se ele escreve "cancela",
-  "elevador", "poço" — o roteamento dado o fato certo já foi medido sem rede.
+- **Faltam 5 fotos do lote de poço de elevador, e o lote a rodar são 14.** O de 05/09
+  rodou **7 das 12 mais 2 de fora** (`GRUAA` e `GRUAAA`) e está medido acima — não
+  "9 das 12"; ver a correção da conta no cabeçalho daquela seção. O de 04/09 não mediu
+  nada: 1 foto auditada de 12, as outras recusadas pelo OTPM.
+  **A lista nominal das 14 está na tabela de lotes**, com as cinco que faltam, e é de lá
+  que se monta o lote — o desenho já se perdeu uma vez e custou uma rodada de conversa.
+  Ele valida cinco coisas ainda não validadas em produção — o `PROMPT_OLHO` que passou a
+  nomear elemento de canteiro (#27), os sinais de elevador refeitos (#27), a retentativa
+  de JSON do Olho (#27/#28), e agora a **regra da moldura aplicada ao nome** e a
+  **cláusula (d) do Diretor** (#32) — mais o teto de saída.
+  **O critério de aceite se lê na LISTA DE FATOS do Olho, não nas não conformidades**:
+  o que se quer saber é se ele escreve "cancela", "elevador", "poço" — o roteamento dado
+  o fato certo já foi medido sem rede. As três leituras, cada uma num lugar diferente do
+  laudo: em `GRUAAA`, o nome da torre e a ausência do `NR-18 18.11.14` — que é aceite forte, porque essa foto tem linha de base de 0 NC medida ANTES do #27 (ver a tabela de lotes); nas 5 de proteção
+  presente, a contagem de NCs (deve ser 0 — é onde a cláusula (d) e os sinais do #31 se
+  provam); nas 5 de proteção ausente, se o `18.9.3` routeia, que é o ganho do #27 nunca
+  medido.
   **Único dado até agora, com n=1**: na foto que passou ("19. PROTEÇÃO DE ELEVADOR NÃO
   FIXADA") o Olho escreveu *"Grade metálica de malha quadrada … que delimita uma
   abertura vertical no piso"* — **sem** "poço de elevador" e **sem** "cancela", que é o
