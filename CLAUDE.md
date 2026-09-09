@@ -442,7 +442,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 211 testes
+$VENV -m pytest tests/ -q          # 222 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -559,6 +559,8 @@ próprio comando composto (exit 144).
 | **Duas causas colapsadas num motivo só fazem o documento afirmar o que ninguém verificou** | `_exigencia_ancorada` devolve falso em dois casos opostos: o trecho VEIO e não está no item (a constatação inventou a exigência — é o que a rede existe para pegar, e a frase "a constatação não descumpre o texto oficial deste item" é verdadeira), e o trecho NÃO VEIO (o supervisor não respondeu — nada foi refutado). O código dizia a mesma frase nos dois. No lote de 08/09 isso saiu impresso: `19 PAV. POÇO GRUA SEM PROTEÇÃO`, um poço sem proteção de piso nem de parede, com 0 NC e o laudo afirmando ao engenheiro que a situação não descumpre a norma. Prova de que foi omissão e não juízo: o ponto de atenção saiu com o texto da CONSTATAÇÃO, que é o fallback de `observacoes.get(ref) or nc.constatacao` — o Diretor não preencheu nenhum dos dois campos que devia. É a irmã da armadilha do `except` largo, e a pergunta é a mesma: **o erro engolido faz o documento MENTIR sobre o que foi examinado?** Hoje `_exigencia_omitida` separa os dois, o enquadramento continua caindo (reabrir a porta devolveria o painel empoeirado ao laudo) e a trilha diz "Supervisão incompleta". **Há quatro testes travando isso.** |
 | **Lista do laudo preenchida por `append` acumula entre os ciclos do Gauntlet** | `laudo.vetos = motivos` é ATRIBUIÇÃO, e é por isso que os vetos não duplicam quando o laço roda mais de um ciclo. `laudo.aparos.append(...)` não tem essa proteção. Ao acrescentar `conferencia_omitida` com `append`, o teste pegou o item repetido duas vezes com `max_ciclos=2` (o padrão de `Configuracao`, embora o `app.py` use 1 no modo Padrão). **Ao pôr campo novo no `Laudo` dentro do laço, monte a lista local e atribua no fim do ciclo**, como `motivos`. |
 | **Medir o roteamento não vê o item que a busca textual traz** | O `NR-18 18.11.14` saiu impresso numa foto de grua, e o risco curado que cita esse item teve **zero disparos nas 9 fotos** do lote. As duas coisas são verdadeiras: o item chegou ao dossiê pela **busca textual**, que a palavra "torre de elevador" no fato basta para acionar. Medido: um fato que routeia risco NENHUM enche cinco vagas do dossiê com a seção 18.11. O reflexo desta casa é reproduzir `rotear_riscos` sem rede — barato e certeiro para defeito de taxonomia, e **cego para metade do dossiê**. `montar_dossie` é igualmente determinístico e custa o mesmo. Ao investigar item errado num laudo, rode o dossiê inteiro antes de concluir que a taxonomia está limpa; "o risco não disparou" não é álibi. |
+| **Widget de framework traz afordância que o desenho não pediu** | O `st.multiselect` do Streamlit 1.63 oferece **"Select all"** por padrão (`select_all=1000`: aparece sempre que há até mil opções). No campo de marcação por foto, um clique nele marcaria os 40 riscos de uma vez — e como o item marcado entra na FRENTE num dossiê de 22 entradas, isso expulsaria o roteamento e a busca textual inteiros: o app pararia de auditar a foto e devolveria a lista que lhe deram. Não apareceu em teste nenhum e não está na assinatura que se lê de cabeça; **apareceu na tela**, no primeiro print do painel. Hoje vai `select_all=False` e `max_selections=3`. Ao pôr widget novo, leia a assinatura inteira do construtor e pergunte o que ele faz **por padrão** — e olhe a tela, que é onde o padrão do framework aparece. |
+| **Expansor do Streamlit fecha a cada rerun, e cada marcação é um rerun** | O painel de marcação nasceu sem `expanded`, e no navegador se viu o que teste nenhum veria: marcar a primeira foto fechava o painel, de modo que marcar a segunda de um lote de 100 exigiria reabrir e rolar, cem vezes. `expanded=com_marcacao > 0` resolve — a primeira marcação abre o painel para valer. Vale para todo expansor que contenha widget: o estado dele não sobrevive ao rerun que o próprio widget dispara. |
 | `git fetch origin main <branch-que-não-existe-mais>` falha inteiro, silenciosamente | Fetch de múltiplos refs é atômico: se um ref já foi deletado no remoto (branch mergeada), o comando inteiro falha e **nenhum ref é atualizado** — inclusive o `main`, que existia e seria atualizado sozinho. `origin/main` local fica congelado na versão de antes, e comparações feitas contra ele mentem. Já causou uma sessão inteira concluir errado que "a reescrita nunca foi mergeada". Se o histórico parecer suspeito, rode `git fetch origin main` sozinho antes de confiar em qualquer diff. |
 
 ---
@@ -568,7 +570,18 @@ próprio comando composto (exit 144).
 - **6.358 itens** vigentes de **24 NRs** (de 36 vigentes), extraídos dos PDFs em `normas/`
 - **126 riscos** curados mapeando para itens reais; 25 exigem pessoa na cena e
   3 têm item que só entra com máquina nomeada na cena (`itens_so_com_maquina`)
-- **211 testes**
+- **Achado apontado pelo inspetor, foto a foto** (o desenho D, medido em 08/09). Um
+  `st.multiselect` por foto oferece os **40** riscos de `riscos_marcaveis()` — os de
+  construção que não exigem pessoa na cena —, e o que for marcado entra na FRENTE dos
+  riscos roteados em `montar_dossie`. A marcação **não chega ao agente de visão**: ele
+  segue descrevendo às cegas, senão o `fato` viraria eco do que o inspetor apontou e a
+  conferência do Diretor ficaria circular. Foto sem marcação sai idêntica à de hoje, e
+  toda marcação é declarada **nos dois documentos** — a trilha do laudo por foto e o
+  sumário executivo, que traz a lista nominal das imagens dirigidas e marca a linha do
+  plano de ação. Um laudo dirigido em parte por quem inspecionou não tem o mesmo valor de
+  evidência que um em que o app chegou sozinho ao item, e quem lê o documento precisa
+  saber de qual dos dois se trata.
+- **222 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
@@ -900,10 +913,11 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   cláusula — íntegro, **do tipo certo e no lugar certo** —, com a tela frouxa nomeada como
   o que NÃO é estado normal. **Há teste travando as duas asserções.** O que continua sem
   resposta é se a definição basta: é julgamento num prompt, e só o lote diz.
-- **Contexto POR FOTO: medido em 08/09, decidido, NÃO implementado.** O usuário perguntou
+- **Contexto POR FOTO: medido em 08/09, IMPLEMENTADO em 09/09 (o desenho D), à espera
+  de lote.** O usuário perguntou
   se descrever o que vê em cada foto ajudaria o enquadramento. Hoje o campo "Contexto da
   inspeção" é **um só para o lote inteiro** (`app.py:408`) e alcança TRÊS consumidores:
-  o Olho (`pipeline.py:370`), o roteamento (como `extra` colado em cada fragmento) e a
+  o Olho (`pipeline.py:375`), o roteamento (como `extra` colado em cada fragmento) e a
   busca textual (dentro do `blob` que alimenta `_pontuar_nrs` e os portões). Medidos
   quatro desenhos sobre os fatos reais das 15 fotos, com um contexto plausível por foto e
   o item que o engenheiro esperaria como gabarito (10 das 15 têm item esperado):
@@ -966,6 +980,54 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
      chega ao Analista; ele é usado só em `aferir()` (gravidade base, portão de pessoa,
      nome da NC). O que empurra é a POSIÇÃO no dossiê, não o rótulo — não há trava a
      escrever aqui.
+
+  **O que foi construído (09/09), e o que sobrou para o lote decidir.** `riscos_marcaveis()`
+  em `riscos/__init__.py` devolve os **40** riscos ofereciveis; `montar_dossie` ganhou
+  `marcados`, que põe os riscos apontados **na frente** dos roteados, e `executar` os
+  repassa sem tocar no `agente_olho`. Na interface é um expansor com um `st.multiselect`
+  por foto, entre a lista de fotos e o botão de executar. **São onze testes novos**, dos
+  quais quatro travam as travas de desenho — a marcação ausente do prompt do Olho, a foto
+  sem marcação idêntica à de hoje, o portão de pessoa continuando a valer para o risco
+  marcado, e a lista não oferecendo o que aquele portão descartaria. Os outros sete medem
+  a posição no dossiê, a robustez a id desconhecido e a declaração nos dois documentos.
+
+  **O `/critico` REJEITOU a primeira versão, e o gap era a armadilha do corte aplicado a
+  um campo só, com dois DOCUMENTOS no lugar de dois campos.** A marcação era declarada na
+  trilha do laudo por foto e **não** no sumário executivo — que é o documento que o
+  engenheiro entrega, e cujo plano de ação lista a providência como linha solta, longe do
+  laudo de origem. O commit argumentava que "sem essa linha dirigir o dossiê seria
+  invisível no documento que vai ao cliente" e deixava exatamente isso no outro documento.
+  Hoje `consolidado()` traz a contagem de imagens dirigidas, a lista nominal com o risco
+  apontado, e a marca `*(apontada)*` na linha do plano de ação. **Há dois testes travando
+  as duas metades**, e a pergunta que o gap deixa para o próximo campo: ao declarar algo
+  no laudo, pergunte por qual outro documento o mesmo conteúdo chega ao mesmo leitor.
+
+  **Três decisões que a medição não cobre**, tomadas no desenho e não medidas:
+  1. **Teto de três marcações por foto.** Os itens marcados entram primeiro num dossiê de
+     22 entradas, então marcação em massa expulsa o roteamento e a busca textual inteiros
+     — o app pararia de auditar a foto e passaria a devolver a lista que lhe deram. Três é
+     acima do que o acervo mostra por foto (o nome de arquivo nomeia um achado, às vezes
+     dois: `3 PAV. POÇO ELEVADOR SEM PROTEÇÃO E SINALIZAÇÃO`). **Quantas marcações por
+     foto o braço D usou não ficou registrado**, então o teto não tem medição por trás:
+     é aritmética de dossiê, não resultado.
+  2. **A lista é só de construção.** Os 43 riscos de indústria e os 38 de ambiental ficam
+     de fora: num app de canteiro eles encheriam a lista de vocabulário de fábrica, e
+     lista que ninguém lê inteira é lista em que se marca por engano. O custo é não poder
+     marcar risco genuinamente industrial que apareça numa obra.
+  3. **Risco que exige pessoa não é ofereciável.** O portão `exige_pessoa` de
+     `montar_dossie` continua valendo para o marcado, então um risco de EPI marcado numa
+     foto sem ninguém seria descartado **em silêncio** — o inspetor clica e nada acontece,
+     sem uma linha no laudo explicando por quê. Melhor não oferecer.
+
+  **O critério de aceite do lote se lê na TRILHA do laudo, não nas não conformidades.** A
+  linha "Risco(s) apontado(s) pelo inspetor" declara toda marcação, e é ela que separa o
+  laudo dirigido do laudo em que o app chegou sozinho ao item — a distinção que o valor de
+  evidência do documento depende. O que vigiar: (a) nas fotos marcadas, se o item marcado
+  aparece na NC ou se o Analista o ignora, que é a única coisa que a reprodução sem rede
+  não responde; (b) nas fotos marcadas ERRADO de propósito, se o Diretor derruba — a única
+  trava contra o clique errado é ele exigir o trecho literal do fato do Olho, e o #34
+  mostrou que ela falha por omissão; (c) nas fotos sem marcação, que o laudo seja o de
+  hoje.
 - **A `cancela` entrega os itens de elevador sem passar por portão nenhum.** Achado pelo
   `/critico` no #35, e **medido**: os filtros do `dossie.py` valem só para a recuperação
   textual — item de risco CURADO entra por `montar_dossie` e não passa por

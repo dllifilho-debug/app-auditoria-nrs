@@ -229,6 +229,17 @@ def markdown(
     p.append("")
     p.append("### Trilha de auditoria do laudo")
     p.append("")
+    # Declarado antes de tudo: um laudo em que o engenheiro apontou o risco não
+    # tem o mesmo valor de evidência que um em que o app chegou sozinho ao item,
+    # e quem lê o documento depois precisa saber de qual dos dois se trata. Sem
+    # esta linha, dirigir o dossiê seria invisível no produto final.
+    if laudo.riscos_marcados:
+        p.append(
+            f"- Risco(s) apontado(s) pelo inspetor antes da análise, com os itens "
+            f"correspondentes postos no topo do dossiê: "
+            + "; ".join(laudo.riscos_marcados)
+            + ". A leitura da imagem foi feita sem acesso a esta indicação."
+        )
     p.append(f"- Ciclos de análise e revisão executados: **{laudo.ciclos}**")
     p.append(
         f"- Veredito da revisão técnica: "
@@ -321,6 +332,26 @@ def consolidado(
     p.append(f"**Não conformidades caracterizadas:** {total}")
     p.append("")
 
+    # A mesma declaração que a trilha de cada laudo faz, no documento que de
+    # fato circula. O laudo por foto é onde ela nasce, mas é o sumário que o
+    # engenheiro entrega, e é o plano de ação dele que vira providência — um
+    # sumário que lista a NC dirigida sem dizer que foi dirigida esconde
+    # justamente o que muda o valor de evidência da linha. É a armadilha do
+    # corte aplicado a um campo só: a trava foi posta num documento e o mesmo
+    # conteúdo sai pelo outro.
+    dirigidos = [(nome, l.riscos_marcados) for nome, l in laudos if l.riscos_marcados]
+    if dirigidos:
+        p.append(
+            f"**Imagens com achado apontado pelo inspetor:** {len(dirigidos)} de "
+            f"{len(laudos)}. Nessas fotos o dossiê normativo consultado recebeu no "
+            "topo os itens do risco apontado, e a leitura da imagem foi feita sem "
+            "acesso à indicação. As demais foram analisadas sem direcionamento."
+        )
+        p.append("")
+        for nome, rotulos in dirigidos:
+            p.append(f"- `{nome}` — {'; '.join(rotulos)}")
+        p.append("")
+
     if total:
         p.append("## Distribuição por gravidade")
         p.append("")
@@ -349,10 +380,15 @@ def consolidado(
             for nc in laudo.nao_conformidades
         ]
         pendencias.sort(key=lambda t: (t[0].prioridade, t[0].prazo_dias))
+        # A providência é a linha que vira ordem de serviço, e é lida solta, longe
+        # do laudo de origem. Sem a marca aqui, quem executa não tem como saber
+        # que aquela linha nasceu de uma foto dirigida.
+        apontadas = {nome for nome, _ in dirigidos}
         for nc, nome in pendencias:
             p.append(
-                f"| {nc.prazo_dias} d | {nome} | {nc.acao_corretiva} | "
-                f"{nc.item.nr} `{nc.item.item}` |"
+                f"| {nc.prazo_dias} d | {nome}"
+                + (" *(apontada)*" if nome in apontadas else "")
+                + f" | {nc.acao_corretiva} | {nc.item.nr} `{nc.item.item}` |"
             )
         p.append("")
     else:
