@@ -104,6 +104,48 @@ por chamada (fatiar a conferência do Diretor) ou o Dev Tier pago.
 
 Rodado no `b855531` (os PRs #32 e #33). **15 laudos, 0 não auditadas, 10 NCs.**
 
+### A lista nominal, RECONSTRUÍDA em 09/09 — e por que ela não é o registro
+
+O lote rodou sem a lista nominal ser gravada, que é a armadilha desta casa cometida de
+novo. As 15 abaixo são **reconstrução**, não registro. Confirmadas nominalmente no texto
+desta seção e dos itens em aberto são **cinco**: `GRUA`, `GRUAA`, `GRUAAA`,
+`19 PAV. POÇO GRUA SEM PROTEÇÃO` (o laudo 15) e
+`PROTEÇÃO POÇO DE ELEVADOR SOMENTE COM UM PONTO DE FIXAÇÃO` — as quatro que routearam
+risco nenhum, mais o laudo 15. As outras dez saem do desenho do lote, não de laudo lido.
+
+| # | Foto | Grupo | Rodou antes? |
+|---|---|---|---|
+| 1 | `18 PAV. PROTEÇÃO POÇO DE ELEVADOR` | proteção presente | 05/09 |
+| 2 | `PROTEÇÃO POÇO DE ELEVADOR SOMENTE COM UM PONTO DE FIXAÇÃO` ✔ | proteção presente | 05/09 |
+| 3 | `PROTEÇÃO POÇO ELEVADOR DIFERENTE DO PROJETO` | proteção presente | **nova** |
+| 4 | `PROTEÇÃO POÇO ELEVADOR DIFERENTE DAS ANTERIORES` | proteção presente | **nova** |
+| 5 | `19. PROTEÇÃO DE ELEVADOR NÃO FIXADA` | proteção presente | 04/09 (a única que passou o OTPM) |
+| 6 | `13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO` | proteção ausente | 05/09 |
+| 7 | `11 PAV. PROTEÇÃO POÇO ELEVADOR SEM PROTEÇÃO` | proteção ausente | 05/09 |
+| 8 | `3 PAV. POÇO ELEVADOR SEM PROTEÇÃO E SINALIZAÇÃO` | proteção ausente | **nova** |
+| 9 | `19 PAV. POÇO ELEVADOR SEM PROTEÇÃO` (um O) | proteção ausente | **nova** |
+| 10 | `19 PAV. POÇO ELEVADOR SEM PROTEÇÃOO` (dois O) | proteção ausente | 05/09 |
+| 11 | `20 PAV SEM PROTEÇÃO NO POÇO DE ELEVADOR` | proteção ausente | **nova** |
+| 12 | `GRUA` ✔ | grua | 02/09 e 05/09 |
+| 13 | `19 PAV. POÇO GRUA SEM PROTEÇÃO` ✔ (laudo 15) | grua | 02/09 e 05/09 |
+| 14 | `GRUAA` ✔ | grua | 05/09 |
+| 15 | `GRUAAA` ✔ | grua | 02/09 e 05/09 |
+
+(✔ = confirmada nominalmente nos laudos; as demais são inferência.)
+
+**O que sustenta a reconstrução é uma conta que fecha, e só isso.** O texto acima diz
+"cinco das 15 não tinham rodado antes". Das 12 do desenho, 7 rodaram em 05/09; das 5 que
+sobraram, `19. PROTEÇÃO DE ELEVADOR NÃO FIXADA` foi a única foto que o OTPM deixou passar
+em 04/09, então restam 4 estreantes — e a quinta é o gêmeo de um O, que o gabarito de
+05/09 não registra ter rodado. **Quatro mais o gêmeo dão os cinco declarados.** É
+corroboração, não prova: outra combinação de 15 poderia dar cinco estreantes também.
+
+**Como fechar isto de verdade:** os 15 HTML do lote de 08/09 trazem o nome do arquivo no
+cabeçalho de cada laudo. Se eles ainda existirem, meia dúzia de nomes lidos de lá vale
+mais que esta tabela inteira — **substitua a tabela pelos nomes lidos e apague esta
+ressalva**. Enquanto ela estiver aqui, não subtraia nada a partir desta lista: é
+exatamente a conta `12 − 9 = 3` que já mentiu uma vez, por os N não saírem dos M.
+
 **O sumário exportado diz "14 imagens analisadas" e chegaram 15 laudos** — o plano de ação
 dele tem as 10 NCs, e a que falta na conta é o laudo 15. O sumário foi baixado antes de a
 última foto terminar; a contagem boa é a dos laudos. Ao medir um lote, conte os laudos, não
@@ -413,7 +455,7 @@ Lotes temáticos que valem, com as fotos já identificadas:
 |---|---|---|
 | NR-12 | `SERRA DE BANCADA`, `SERRALHERIA SEM BARREIRA DE ACESSO` | as duas únicas com máquina de verdade no acervo novo |
 | ~~Içamento~~ | 7 fotos | **RODADO em 02/09** — 2 de 5 achados do engenheiro. Ver acima. Só volta a valer depois de existir taxonomia de guindar e de o Olho nomear o equipamento |
-| Poço de elevador | **14 fotos** (as 12 do desenho + `GRUAA` e `GRUAAA`) | **TENTADO em 04/09 e perdido: 1 foto auditada de 12, as outras recusadas pelo OTPM. Refazer.** Achado mais repetido do acervo; `vao_caixa_elevador_sem_fechamento` existe e nunca disparou em produção. O sinal FOI medido antes de gastar o lote, e o que se achou não era o 0,50 do lote de içamento: com o Olho escrevendo `elevador` e `cancela`, **os dois riscos de elevador disparavam com a proteção INSTALADA** (5 de 5 e 3 de 6). Sinais refeitos para ancorar na abertura, não no `sem`, e todo sinal de torre/base exige `elevador` (no canteiro há a torre da GRUA): 22 de 22 fatos com a proteção instalada ficam calados e 14 de 14 com ela ausente acionam o risco certo. É este lote que valida os dois consertos ao mesmo tempo. **Desenho recuperado em 07/09 e gravado aqui para não se perder de novo** — proteção presente (5): `18 PAV. PROTEÇÃO POÇO DE ELEVADOR`, `PROTEÇÃO POÇO DE ELEVADOR SOMENTE COM UM PONTO DE FIXAÇÃO`, `PROTEÇÃO POÇO ELEVADOR DIFERENTE DO PROJETO`, `PROTEÇÃO POÇO ELEVADOR DIFERENTE DAS ANTERIORES`, `19. PROTEÇÃO DE ELEVADOR NÃO FIXADA`; proteção ausente (5): `13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO`, `11 PAV. PROTEÇÃO POÇO ELEVADOR SEM PROTEÇÃO`, `3 PAV. POÇO ELEVADOR SEM PROTEÇÃO E SINALIZAÇÃO`, `19 PAV. POÇO ELEVADOR SEM PROTEÇÃO`, `20 PAV SEM PROTEÇÃO NO POÇO DE ELEVADOR`; grua (2): `GRUA`, `19 PAV. POÇO GRUA SEM PROTEÇÃO`. **As duas acrescentadas** são `GRUAA` e `GRUAAA`: nenhuma das duas de grua do desenho testa o nome da torre (`GRUA` já dava 0 NC e `19 PAV. POÇO GRUA` é poço), e **`GRUAAA` é a foto que produziu o `NR-18 18.11.14`** — sem ela o defeito da grua fica sem o seu teste. **E ela é o único experimento controlado do histórico**, cruzado em 07/09: a MESMA foto deu **0 NC** no lote de içamento de 02/09, ANTES do #27, e `NR-18 18.11.14` no lote de 05/09, DEPOIS dele (o #27 mergeou em 04/09). Uma foto, uma mudança, dois resultados opostos — é a prova causal de que foi o prompt que produziu o defeito, e não a variabilidade da visão. Por isso o aceite dela é forte: 0 NC no `GRUAAA` não é "pode ter sido sorte", é **volta a uma linha de base medida**. Cuidado com os dois arquivos gêmeos `19 PAV. POÇO ELEVADOR SEM PROTEÇÃO.jpg` e `...PROTEÇÃOO.jpg` (dois O): o desenho lista o de um O, o gabarito de 05/09 registra o de dois, e qual deles rodou não dá para saber sem os laudos — rode os dois |
+| Poço de elevador | **15 fotos — a lista nominal está na seção de validação de 08/09**, reconstruída e com a ressalva do que nela é inferência. É de lá que se monta o lote; esta linha guarda o histórico. As 14 originais eram as 12 do desenho + `GRUAA` e `GRUAAA` | **TENTADO em 04/09 e perdido: 1 foto auditada de 12, as outras recusadas pelo OTPM. Refazer.** Achado mais repetido do acervo; `vao_caixa_elevador_sem_fechamento` existe e nunca disparou em produção. O sinal FOI medido antes de gastar o lote, e o que se achou não era o 0,50 do lote de içamento: com o Olho escrevendo `elevador` e `cancela`, **os dois riscos de elevador disparavam com a proteção INSTALADA** (5 de 5 e 3 de 6). Sinais refeitos para ancorar na abertura, não no `sem`, e todo sinal de torre/base exige `elevador` (no canteiro há a torre da GRUA): 22 de 22 fatos com a proteção instalada ficam calados e 14 de 14 com ela ausente acionam o risco certo. É este lote que valida os dois consertos ao mesmo tempo. **Desenho recuperado em 07/09 e gravado aqui para não se perder de novo** — proteção presente (5): `18 PAV. PROTEÇÃO POÇO DE ELEVADOR`, `PROTEÇÃO POÇO DE ELEVADOR SOMENTE COM UM PONTO DE FIXAÇÃO`, `PROTEÇÃO POÇO ELEVADOR DIFERENTE DO PROJETO`, `PROTEÇÃO POÇO ELEVADOR DIFERENTE DAS ANTERIORES`, `19. PROTEÇÃO DE ELEVADOR NÃO FIXADA`; proteção ausente (5): `13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO`, `11 PAV. PROTEÇÃO POÇO ELEVADOR SEM PROTEÇÃO`, `3 PAV. POÇO ELEVADOR SEM PROTEÇÃO E SINALIZAÇÃO`, `19 PAV. POÇO ELEVADOR SEM PROTEÇÃO`, `20 PAV SEM PROTEÇÃO NO POÇO DE ELEVADOR`; grua (2): `GRUA`, `19 PAV. POÇO GRUA SEM PROTEÇÃO`. **As duas acrescentadas** são `GRUAA` e `GRUAAA`: nenhuma das duas de grua do desenho testa o nome da torre (`GRUA` já dava 0 NC e `19 PAV. POÇO GRUA` é poço), e **`GRUAAA` é a foto que produziu o `NR-18 18.11.14`** — sem ela o defeito da grua fica sem o seu teste. **E ela é o único experimento controlado do histórico**, cruzado em 07/09: a MESMA foto deu **0 NC** no lote de içamento de 02/09, ANTES do #27, e `NR-18 18.11.14` no lote de 05/09, DEPOIS dele (o #27 mergeou em 04/09). Uma foto, uma mudança, dois resultados opostos — é a prova causal de que foi o prompt que produziu o defeito, e não a variabilidade da visão. Por isso o aceite dela é forte: 0 NC no `GRUAAA` não é "pode ter sido sorte", é **volta a uma linha de base medida**. Cuidado com os dois arquivos gêmeos `19 PAV. POÇO ELEVADOR SEM PROTEÇÃO.jpg` e `...PROTEÇÃOO.jpg` (dois O): o desenho lista o de um O, o gabarito de 05/09 registra o de dois, e qual deles rodou não dá para saber sem os laudos — rode os dois |
 | Controle negativo | 5 documentos (POP, lista de presença, CREA, crachá) | devem dar **0 NC**; é a classe de erro que já apareceu e nunca foi testada de propósito |
 
 Ao receber os laudos: o HTML traz o "Ambiente registrado" e a lista de fatos do Olho,
