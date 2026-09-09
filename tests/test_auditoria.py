@@ -24,7 +24,11 @@ from auditoria.kb import carregar_base, extrair_citacoes, tokenizar
 from auditoria.pipeline import (
     Achado, Configuracao, Visao, aferir, executar, montar_dossie, rotear_riscos,
 )
-from auditoria.riscos import catalogo as catalogo_riscos
+from auditoria.riscos import (
+    GRAVIDADES,
+    catalogo as catalogo_riscos,
+    riscos_marcaveis,
+)
 
 HOJE = date(2026, 8, 23)
 
@@ -4086,3 +4090,256 @@ def test_o_que_substitui_a_tela_na_borda_e_a_altura_e_nao_a_tela():
     assert "periferia_laje_sem_guarda_corpo" in [
         r.id for r in rotear_riscos(tela_na_altura_do_joelho)
     ]
+
+
+# ---------------------------------------------------------------------------
+# Achado apontado pelo inspetor (desenho D, medido em 08/09)
+# ---------------------------------------------------------------------------
+
+# A cena do laudo 15 do lote de 08/09 — `19 PAV. POÇO GRUA SEM PROTEÇÃO`, um poço
+# sem proteção de piso NEM de parede, que saiu com 0 NC. O Olho registrou o vão
+# vertical e a grade encostada na parede, e NÃO registrou a abertura de piso: sem
+# esse fato `abertura_piso_desprotegida` não dispara e o `NR-18 18.9.2` nunca
+# chega ao dossiê — nem um Diretor perfeito o enquadraria depois.
+CENA_LAUDO_15 = Visao(
+    ambiente="Pavimento em obra de edificação, com paredes de alvenaria sem "
+             "revestimento e piso de concreto.",
+    achados=[
+        Achado("Vão vertical retangular aberto na parede de alvenaria, sem "
+               "fechamento provisório instalado."),
+        Achado("Grade metálica de malha quadrada apoiada e encostada na parede, "
+               "ao lado do vão, sem fixação à estrutura."),
+    ],
+)
+
+
+def test_a_lista_marcavel_so_oferece_construcao_sem_exigir_pessoa():
+    """Os dois filtros da lista, e os dois são de segurança.
+
+    Risco de outro domínio encheria a lista de vocabulário de fábrica num app de
+    canteiro; risco que exige pessoa seria descartado em silêncio pelo portão de
+    `montar_dossie` numa foto sem ninguém — o inspetor marcaria e nada
+    aconteceria, sem uma linha no laudo explicando por quê.
+    """
+    marcaveis = riscos_marcaveis()
+    assert marcaveis, "a lista não pode ficar vazia"
+    assert all(r.dominio == "construcao" for r in marcaveis)
+    assert not [r.id for r in marcaveis if r.exige_pessoa]
+    # Ordem: do mais grave para o menos, que é a ordem em que se lê uma lista de
+    # quarenta itens sem ler os quarenta.
+    posicao = [GRAVIDADES.index(r.gravidade_base) for r in marcaveis]
+    assert posicao == sorted(posicao)
+
+
+def test_risco_marcado_traz_ao_dossie_o_item_que_o_olho_nao_alcancou(base):
+    """O caso que o desenho D existe para consertar, reproduzido sem rede."""
+    citados = lambda d: [f"{e.item.nr} {e.item.item}" for e in d.entradas]
+
+    sozinho, _ = montar_dossie(base, CENA_LAUDO_15, "", HOJE)
+    assert "NR-18 18.9.2" not in citados(sozinho), (
+        "a cena precisa NÃO alcançar o item por conta própria, senão o teste "
+        "não mede nada"
+    )
+
+    marcado, origem = montar_dossie(
+        base, CENA_LAUDO_15, "", HOJE, marcados=["abertura_piso_desprotegida"]
+    )
+    assert citados(marcado)[0] == "NR-18 18.9.2"
+    # E o item vem CURADO, com o risco do inspetor: é dele que `aferir` tira a
+    # gravidade base e o portão de pessoa na cena.
+    assert origem["D1"].id == "abertura_piso_desprotegida"
+
+
+def test_o_item_marcado_encabeca_sem_expulsar_o_que_o_roteamento_achou(base):
+    """A posição é o mecanismo inteiro — e ela ACRESCENTA, não substitui.
+
+    Encher o dossiê e empurrar o item certo para baixo é a classe de erro 1 pela
+    porta do dossiê pobre; foi por isso que a prosa livre no campo de contexto
+    (o braço B da medição) foi recusada, com o item esperado caindo de D1 para
+    D2,7. Marcar põe o item do inspetor em D1 e desloca os demais um degrau,
+    sem tirar nenhum.
+    """
+    visao = Visao(
+        ambiente="Pavimento de edifício em obra, com piso de concreto.",
+        achados=[Achado(
+            "Tela plástica flexível laranja de malha larga estendida ao longo da "
+            "borda do piso, presa a um cone e a uma haste, altura na altura do "
+            "joelho, sem guarda-corpo rigido visivel."
+        )],
+    )
+    sozinho, _ = montar_dossie(base, visao, "", HOJE)
+    marcado, _ = montar_dossie(
+        base, visao, "", HOJE, marcados=["madeira_com_prego_exposto"]
+    )
+    assert marcado.entradas[0].item.item == "18.16.4.1"
+    antes = [e.item.id for e in sozinho.entradas]
+    depois = [e.item.id for e in marcado.entradas]
+    assert depois[1:len(antes) + 1] == antes[:len(depois) - 1]
+    assert antes[0] in depois, "o item que o roteamento achou não pode sumir"
+
+
+def test_foto_sem_marcacao_sai_exatamente_como_antes(base):
+    """As 5 fotos sem marcação da medição saem byte a byte iguais.
+
+    A lista é o desenho que domina os outros três justamente porque não cobra
+    nada de quem não a usa; um caminho que altere a foto não marcada desfaria
+    isso em silêncio.
+    """
+    sem_argumento, origem_a = montar_dossie(base, CENA_LAUDO_15, "", HOJE)
+    lista_vazia, origem_b = montar_dossie(base, CENA_LAUDO_15, "", HOJE, marcados=[])
+    assert [e.item.id for e in sem_argumento.entradas] == [
+        e.item.id for e in lista_vazia.entradas
+    ]
+    assert {k: v.id for k, v in origem_a.items()} == {k: v.id for k, v in origem_b.items()}
+
+
+def test_id_de_risco_desconhecido_e_ignorado_sem_derrubar_a_foto(base):
+    """Lote salvo com taxonomia antiga perde a marcação, não a foto."""
+    d, _ = montar_dossie(
+        base, CENA_LAUDO_15, "", HOJE,
+        marcados=["risco_que_nao_existe_mais", "abertura_piso_desprotegida"],
+    )
+    assert d.entradas[0].item.item == "18.9.2"
+
+
+def test_risco_marcado_que_exige_pessoa_nao_burla_o_portao(base):
+    """O portão de pessoa na cena vale para o marcado como para o roteado.
+
+    É por isso que a lista não oferece risco de EPI: aqui ele seria descartado
+    em silêncio, e silêncio é o que não se quer num campo em que o inspetor
+    clicou de propósito.
+    """
+    de_epi = [r for r in catalogo_riscos().values() if r.exige_pessoa]
+    assert de_epi
+    d, _ = montar_dossie(
+        base, CENA_LAUDO_15, "", HOJE, marcados=[de_epi[0].id]
+    )
+    assert all(
+        f"{e.item.nr} {e.item.item}" not in de_epi[0].itens for e in d.entradas
+    ), "risco que exige pessoa entrou numa cena sem ninguém"
+    assert de_epi[0].id not in [r.id for r in riscos_marcaveis()]
+
+
+class _DubleQueGuardaOsPrompts:
+    """Devolve laudo mínimo e guarda o texto de cada chamada."""
+
+    ultimo_corte_por_limite = False
+
+    def __init__(self):
+        self.prompts: list[str] = []
+
+    def conversar(self, modelo, mensagens, teto_saida=1200, temperatura=0.0,
+                  json_estrito=False):
+        p = _texto_do_prompt(mensagens)
+        self.prompts.append(p)
+        if "perito em documentação fotográfica" in p:
+            return json.dumps({
+                "ambiente": CENA_LAUDO_15.ambiente,
+                "pessoas": {"presentes": False, "quantidade": 0},
+                "achados": [
+                    {"fato": a.fato, "onde": "", "confianca": "alta"}
+                    for a in CENA_LAUDO_15.achados
+                ],
+            }, ensure_ascii=False)
+        return json.dumps(
+            {"nao_conformidades": [], "sem_enquadramento": [], "conformidades": []},
+            ensure_ascii=False,
+        )
+
+
+def _laudo_marcado(base):
+    duble = _DubleQueGuardaOsPrompts()
+    laudo = executar(
+        duble, base, "img", "",
+        Configuracao(modelo_visao="d", modelo_texto="d", data_referencia=HOJE),
+        marcados=["abertura_piso_desprotegida"],
+    )
+    return laudo, duble
+
+
+def test_a_marcacao_nao_chega_ao_agente_de_visao(base):
+    """A trava que protege o laudo do clique errado.
+
+    Se a marcação chegasse ao Olho, ele escreveria o que lhe disseram — veja ou
+    não —, o `fato` viraria eco do que o inspetor apontou e a conferência do
+    Diretor contra os fatos ficaria circular. É a classe de erro 3, e ela entra
+    justamente pelo campo que o inspetor preenche de propósito.
+    """
+    _, duble = _laudo_marcado(base)
+    olho = [p for p in duble.prompts if "perito em documentação fotográfica" in p]
+    assert olho, "o agente de visão nem chegou a ser chamado"
+    risco = catalogo_riscos()["abertura_piso_desprotegida"]
+    for p in olho:
+        assert risco.id not in p
+        assert risco.rotulo not in p
+
+
+def test_a_trilha_do_laudo_declara_o_que_o_inspetor_apontou(base):
+    """Um laudo dirigido em parte por quem inspecionou não tem o mesmo valor de
+    evidência que um em que o app chegou sozinho ao item. Sem esta linha,
+    dirigir o dossiê seria invisível no documento que vai ao cliente."""
+    laudo, _ = _laudo_marcado(base)
+    rotulo = catalogo_riscos()["abertura_piso_desprotegida"].rotulo
+    assert laudo.riscos_marcados == [rotulo]
+    texto = relatorio.markdown(laudo, base, numero=1)
+    assert rotulo in texto
+    assert "apontado(s) pelo inspetor" in texto
+    assert "sem acesso a esta indicação" in texto
+
+
+def test_laudo_sem_marcacao_nao_ganha_linha_de_trilha(base):
+    duble = _DubleQueGuardaOsPrompts()
+    laudo = executar(
+        duble, base, "img", "",
+        Configuracao(modelo_visao="d", modelo_texto="d", data_referencia=HOJE),
+    )
+    assert laudo.riscos_marcados == []
+    assert "apontado(s) pelo inspetor" not in relatorio.markdown(laudo, base, numero=1)
+
+
+def test_o_sumario_do_lote_declara_as_fotos_dirigidas(base):
+    """A declaração vale nos DOIS documentos, e é o sumário que circula.
+
+    O laudo por foto é onde a marcação nasce, mas é o sumário que o engenheiro
+    entrega e é o plano de ação dele que vira ordem de serviço — uma linha lida
+    solta, longe do laudo de origem. Um sumário que lista a NC dirigida sem
+    dizer que foi dirigida esconde justamente o que muda o valor de evidência
+    da linha. É a armadilha do corte aplicado a um campo só, com dois
+    documentos no lugar de dois campos.
+    """
+    from auditoria.pipeline import NaoConformidade
+
+    marcado, _ = _laudo_marcado(base)
+    marcado.nao_conformidades = [
+        NaoConformidade(
+            item=base.obter("NR-18", "18.9.2"),
+            constatacao="Abertura no piso sem fechamento travado.",
+            consequencia="Queda de altura.",
+            gravidade="critica",
+            acao_corretiva="Instalar fechamento provisório travado.",
+            prazo_dias=1,
+        )
+    ]
+    limpo = executar(
+        _DubleQueGuardaOsPrompts(), base, "img", "",
+        Configuracao(modelo_visao="d", modelo_texto="d", data_referencia=HOJE),
+    )
+
+    texto = relatorio.consolidado(
+        [("dirigida.jpg", marcado), ("sozinha.jpg", limpo)], base, HOJE
+    )
+    assert "Imagens com achado apontado pelo inspetor:** 1 de 2" in texto
+    assert catalogo_riscos()["abertura_piso_desprotegida"].rotulo in texto
+    # E a marca na linha do plano de ação, que é lida longe do laudo de origem.
+    linha = [l for l in texto.splitlines() if "Instalar fechamento" in l][0]
+    assert "*(apontada)*" in linha
+
+
+def test_sumario_de_lote_sem_marcacao_nao_ganha_o_bloco(base):
+    limpo = executar(
+        _DubleQueGuardaOsPrompts(), base, "img", "",
+        Configuracao(modelo_visao="d", modelo_texto="d", data_referencia=HOJE),
+    )
+    texto = relatorio.consolidado([("sozinha.jpg", limpo)], base, HOJE)
+    assert "apontado pelo inspetor" not in texto
+    assert "*(apontada)*" not in texto

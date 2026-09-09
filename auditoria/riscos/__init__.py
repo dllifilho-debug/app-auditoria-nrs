@@ -214,6 +214,44 @@ def grupo_equivalente(ref: str) -> tuple[str, ...]:
     return ()
 
 
+# Os riscos que o engenheiro pode marcar numa foto, antes de rodar o lote.
+#
+# Dois filtros, e os dois são de segurança, não de conveniência:
+#
+# 1. **Domínio de construção.** Marcar é dirigir o dossiê, e o que se dirige
+#    tem de ser o que o usuário deste app audita. Oferecer também os riscos de
+#    indústria e de ambiental encheria a lista de vocabulário de fábrica
+#    (talha, ponte rolante, masseira) num app de canteiro — e lista que
+#    ninguém lê inteira é lista em que se marca por engano.
+# 2. **Sem exigir pessoa na cena.** O portão `exige_pessoa` continua valendo
+#    dentro de `montar_dossie`, então um risco de EPI marcado numa foto sem
+#    ninguém seria **descartado em silêncio**: o engenheiro marca, o item não
+#    entra, e nada no laudo explica por quê. Melhor não oferecer.
+#
+# O custo declarado: risco de EPI e de conduta não é marcável, nem risco
+# genuinamente industrial que apareça num canteiro. Para esses o caminho
+# continua sendo o de sempre — o Olho descreve, o roteamento reconhece.
+def riscos_marcaveis() -> tuple[Risco, ...]:
+    """Riscos que o engenheiro pode apontar por foto, do mais grave ao menos.
+
+    Marcar um risco põe os itens dele no TOPO do dossiê, curados, sem passar
+    pela busca textual. Isso muda a natureza do app: ele deixa de ser um
+    segundo olhar inteiramente independente e passa a ser parcialmente
+    dirigido, e uma marcação errada entra na posição mais forte do dossiê.
+    Por isso a marcação **não chega ao agente de visão** (ver `agente_olho`) e
+    fica registrada na trilha do laudo (ver `relatorio.para_markdown`).
+    """
+    return tuple(
+        sorted(
+            (
+                r for r in catalogo().values()
+                if r.dominio == "construcao" and not r.exige_pessoa
+            ),
+            key=lambda r: (GRAVIDADES.index(r.gravidade_base), r.rotulo),
+        )
+    )
+
+
 def rotulos_para_prompt() -> str:
     """Lista compacta dos riscos, para o modelo de visão etiquetar os achados."""
     return "\n".join(f"- {r.id}: {r.rotulo}" for r in catalogo().values())

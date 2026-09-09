@@ -16,7 +16,7 @@ import re
 import time
 from dataclasses import dataclass, field, replace
 from datetime import date
-from typing import Callable
+from typing import Callable, Sequence
 
 from . import dossie as mod_dossie
 from .catalogo_nr import CATALOGO_NR
@@ -112,6 +112,13 @@ class Laudo:
     # trilha dita assim — senão o laudo afirma ao engenheiro que a situação não
     # descumpre a norma, que é coisa que ninguém verificou.
     conferencia_omitida: list[str] = field(default_factory=list)
+    # Riscos que o engenheiro apontou nesta foto antes de rodar, pelo rótulo.
+    # Vai à trilha do laudo porque muda o que o documento é: um laudo dirigido
+    # em parte por quem inspecionou não tem o mesmo valor de evidência que um
+    # laudo em que o app chegou sozinho ao item, e quem lê precisa distinguir
+    # os dois. Guardamos o rótulo, e não o id, para a trilha sair legível sem
+    # depender do catálogo na hora de imprimir.
+    riscos_marcados: list[str] = field(default_factory=list)
 
     @property
     def aprovado(self) -> bool:
@@ -497,9 +504,34 @@ def montar_dossie(
     contexto: str,
     quando: date,
     teto: int = 22,
+    marcados: Sequence[str] = (),
 ) -> tuple[mod_dossie.Dossie, dict[str, Risco]]:
-    """Dossiê = itens dos riscos roteados (prioridade) + reforço por busca textual."""
+    """Dossiê = riscos marcados + riscos roteados + reforço por busca textual.
+
+    `marcados` são ids de risco que o engenheiro apontou nesta foto (ver
+    `riscos.riscos_marcaveis`). Eles entram na FRENTE dos roteados, e a
+    posição é o mecanismo inteiro: medido nas 15 fotos de 08/09, o item que o
+    engenheiro esperava passou de 8 acertos em 10 para 10 em 10, sempre em D1,
+    com o mesmo ruído de hoje e sem alterar em nada as fotos sem marcação.
+
+    A marcação chega aqui como id de risco, e não como texto: ela não entra no
+    `blob` da busca textual nem nos radicais do roteamento. Isso é de
+    propósito. O texto livre do campo de contexto carrega a armadilha do `sem`
+    — `"grua do canteiro, sem achado"` aciona `andaime_sem_guarda_corpo` e
+    `rampa_passarela_irregular` numa foto sem andaime nem passarela —, e o
+    formato natural de anotação de vistoria ("sem proteção", "sem
+    sinalização") é o pior caso possível para o roteador.
+    """
     riscos = rotear_riscos(visao, contexto)
+    if marcados:
+        curados_por_id = catalogo_riscos()
+        # Id desconhecido é ignorado em silêncio de propósito: a lista é
+        # montada a partir do catálogo, então o único jeito de chegar aqui um
+        # id inválido é um lote salvo com taxonomia antiga — e nesse caso
+        # perder a marcação é melhor que perder a foto.
+        apontados = [curados_por_id[i] for i in dict.fromkeys(marcados) if i in curados_por_id]
+        ja = {r.id for r in apontados}
+        riscos = apontados + [r for r in riscos if r.id not in ja]
 
     # O ambiente entra aqui junto dos achados: é ele que costuma nomear a
     # máquina ("central de corte", "área de preparo de concreto com betoneira")
@@ -1230,6 +1262,7 @@ def executar(
     contexto: str,
     config: Configuracao,
     progresso: Callable[[str], None] | None = None,
+    marcados: Sequence[str] = (),
 ) -> Laudo:
     """Roda o loop completo para uma foto, cronometrando a passagem.
 
@@ -1239,7 +1272,7 @@ def executar(
     """
     inicio = time.monotonic()
     esperando_antes = getattr(cliente, "segundos_esperando", 0.0)
-    laudo = _executar(cliente, base, imagem_b64, contexto, config, progresso)
+    laudo = _executar(cliente, base, imagem_b64, contexto, config, progresso, marcados)
     laudo.duracao_s = time.monotonic() - inicio
     laudo.espera_s = getattr(cliente, "segundos_esperando", 0.0) - esperando_antes
     return laudo
@@ -1252,13 +1285,25 @@ def _executar(
     contexto: str,
     config: Configuracao,
     progresso: Callable[[str], None] | None = None,
+    marcados: Sequence[str] = (),
 ) -> Laudo:
     avisar = progresso or (lambda _m: None)
     quando = config.data_referencia
 
+    # A marcação do engenheiro NÃO é passada ao agente de visão, e não é
+    # esquecimento. Se ela chegasse lá, ele escreveria o que lhe disseram —
+    # veja ou não —, o `fato` viraria eco do que o engenheiro apontou e a
+    # conferência do Diretor contra os fatos ficaria circular. É a classe de
+    # erro 3 (enquadramento sem evidência visual), e o Olho descrever às cegas
+    # é o que hoje protege o laudo do clique errado.
     avisar("Leitura da imagem — registrando os fatos materiais…")
     visao = agente_olho(cliente, imagem_b64, config.modelo_visao, contexto)
     laudo = Laudo(visao=visao, data_referencia=quando)
+
+    curados_por_id = catalogo_riscos()
+    laudo.riscos_marcados = [
+        curados_por_id[i].rotulo for i in dict.fromkeys(marcados) if i in curados_por_id
+    ]
 
     # Sem fato extraído da imagem não existe laudo possível. Deixar o Analista
     # seguir aqui faria o enquadramento nascer do texto que o inspetor digitou,
@@ -1275,7 +1320,9 @@ def _executar(
         return laudo
 
     avisar("Montando o dossiê normativo a partir dos PDFs oficiais…")
-    dossie_atual, origem = montar_dossie(base, visao, contexto, quando, config.teto_dossie)
+    dossie_atual, origem = montar_dossie(
+        base, visao, contexto, quando, config.teto_dossie, marcados
+    )
 
     laudo.nrs_sem_texto = dossie_atual.nrs_sem_texto
 

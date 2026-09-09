@@ -25,7 +25,7 @@ from auditoria.demo import ClienteDemonstracao
 from auditoria.kb import carregar_base
 from auditoria.modelos import ClienteGroq, ErroDeAuditoria
 from auditoria.pipeline import Configuracao, executar
-from auditoria.riscos import catalogo as catalogo_riscos
+from auditoria.riscos import catalogo as catalogo_riscos, riscos_marcaveis
 
 LIMITE_BASE64 = 3_600_000        # a Groq recusa imagem base64 acima de ~4 MB
 
@@ -483,6 +483,89 @@ if arquivos:
             + " Se a cota acabar no meio, o que já saiu fica salvo e basta executar de novo."
         )
 
+# ---------------------------------------------------------------------------
+# Achados apontados pelo inspetor, foto a foto
+# ---------------------------------------------------------------------------
+# A marcação é uma LISTA, não texto livre, e a diferença é medida. Prosa no
+# campo de contexto acerta uma foto a mais e cobra caro por ela: +72% de riscos
+# roteados, mais ruído de norma de outro ramo, e o item certo caindo de D1 para
+# D2,7 em média — encher o dossiê empurra para baixo justamente o item que se
+# queria. A lista marcada acerta 10 de 10, mantém o item em D1 e sai com o mesmo
+# ruído de hoje. Texto livre também traz a armadilha do `sem`: escrever
+# "sem achado" numa foto boa ACIONA risco, porque `sem` conta como radical.
+#
+# Nome de arquivo NUNCA vira entrada automática. A tentação é óbvia — 138 das
+# 253 fotos do acervo trazem o achado no próprio nome, escrito pelo engenheiro
+# na inspeção — e queimaria o gabarito inteiro: se o que ele escreve virar
+# entrada, "o app acertou" passa a significar "o app repetiu o que eu disse".
+# Campo separado, preenchido de propósito.
+PREFIXO_MARCACAO = "marcados::"
+
+
+def marcados_de(nome: str) -> list[str]:
+    """Ids de risco que o inspetor apontou para esta foto."""
+    return list(st.session_state.get(PREFIXO_MARCACAO + nome, []))
+
+
+if arquivos:
+    marcaveis = riscos_marcaveis()
+    nome_da_gravidade = {
+        "critica": "Crítica", "alta": "Alta", "media": "Média", "baixa": "Baixa",
+    }
+    rotulo_marcavel = {
+        r.id: f"{nome_da_gravidade.get(r.gravidade_base, r.gravidade_base)} · {r.rotulo}"
+        for r in marcaveis
+    }
+    com_marcacao = sum(1 for a in arquivos if marcados_de(a.name))
+    with st.expander(
+        "Apontar achados foto a foto (opcional)"
+        + (f" — {com_marcacao} de {len(arquivos)} marcada(s)" if com_marcacao else ""),
+        # Cada marcação dispara um rerun, e o expansor volta fechado no rerun
+        # seguinte: sem isto, marcar a segunda foto de um lote de 100 exige
+        # reabrir o painel e rolar até ela, cem vezes. A primeira marcação é
+        # que abre o painel para valer — depois dela ele fica aberto sozinho.
+        expanded=com_marcacao > 0,
+    ):
+        st.caption(
+            "Marque o que **você viu** em cada foto, no máximo três achados. Os itens "
+            "de NR correspondentes entram no topo do dossiê que o enquadramento "
+            "consulta, e o teto de três é o que deixa espaço para o app achar o "
+            "resto sozinho. Foto sem marcação é analisada exatamente como hoje.\n\n"
+            "A leitura da imagem continua às cegas: o agente de visão **não** recebe "
+            "esta indicação, para que os fatos do laudo sigam vindo da foto e não do "
+            "que foi digitado. Toda marcação é declarada na trilha do laudo."
+        )
+        if ja_auditadas:
+            st.caption(
+                f"{len(ja_auditadas)} foto(s) já auditada(s) nesta sessão: marcar agora "
+                "só muda o laudo se você marcar **Refazer as imagens já auditadas** "
+                "antes de executar."
+            )
+        for arquivo in arquivos:
+            st.multiselect(
+                arquivo.name,
+                options=[r.id for r in marcaveis],
+                format_func=lambda i: rotulo_marcavel[i],
+                key=PREFIXO_MARCACAO + arquivo.name,
+                placeholder="Nenhum achado apontado — o app analisa por conta própria",
+                # O Streamlit oferece "Select all" por padrão, e aqui ele é um
+                # clique que marca os 40 riscos de uma vez: o dossiê tem teto de
+                # 22 entradas e os itens marcados entram primeiro, de modo que a
+                # marcação em massa expulsaria o roteamento e a busca textual
+                # inteiros. O app deixaria de auditar a foto e passaria a
+                # devolver a lista que lhe deram.
+                select_all=False,
+                # Mesmo raciocínio, para a marcação em massa feita à mão. Três é
+                # acima do que o acervo mostra por foto — o nome de arquivo que o
+                # engenheiro escreve nomeia um achado, às vezes dois
+                # ("SEM PROTEÇÃO E SINALIZAÇÃO") — e mantém espaço no dossiê para
+                # o que o app achar sozinho, que é a razão de ele existir.
+                # O limite é de desenho, não medido: a medição de 08/09 usou uma
+                # marcação por foto.
+                max_selections=3,
+            )
+
+
 refazer = False
 if ja_auditadas:
     refazer = st.checkbox(
@@ -565,6 +648,7 @@ if executar_agora:
                 laudo = executar(
                     cliente, base, imagem_b64, contexto, config,
                     progresso=lambda m: st.write(m),
+                    marcados=marcados_de(arquivo.name),
                 )
                 st.session_state.resultados.append((arquivo.name, laudo, miniatura))
                 st.session_state.falhas = [
