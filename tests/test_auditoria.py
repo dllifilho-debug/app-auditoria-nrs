@@ -4564,3 +4564,86 @@ def test_repescagem_que_devolve_trecho_ruim_continua_sendo_omissao(base):
         "o laudo está afirmando que a norma não foi descumprida, e ninguém conferiu"
     )
     assert laudo.conferencia_omitida == ["NR-35 Anexo III 5.2.2.5"]
+
+
+def test_prompt_do_diretor_veta_constatacao_que_e_verificacao():
+    """A cláusula (e), e ela nasceu de um laudo impresso duas vezes.
+
+    `11 PAV. PROTEÇÃO POÇO ELEVADOR SEM PROTEÇÃO` saiu em 09/09 e no lote de
+    três do mesmo dia com `NR-18 18.9.2` — na segunda vez CRÍTICA, prazo de 1
+    dia — cuja providência era "Verificar no local se a grade possui travamento
+    ou fixação na estrutura". O laudo cobrava do engenheiro, em 24 horas, uma
+    ida ao local.
+
+    O mecanismo é a regra da MOLDURA aplicada até a metade: o Diretor apara a
+    afirmação categórica (certo, a fixação não aparece no recorte) e mantém o
+    enquadramento, quando o que restou já não afirma descumprimento nenhum. O
+    prompt sempre disse para escrever a verificação em `observacao`; o que
+    faltava era dizer que, nesse caso, NÃO SOBRA NADA para aparar.
+    """
+    from auditoria.pipeline import PROMPT_DIRETOR
+
+    assert "e) o que sobraria da constatação é uma VERIFICAÇÃO" in PROMPT_DIRETOR
+    assert "não é possível determinar se há" in PROMPT_DIRETOR
+    assert 'escreva a verificação em "observacao"' in PROMPT_DIRETOR
+
+
+def test_a_clausula_e_protege_a_falta_que_a_foto_mostra():
+    """A fronteira, sem a qual a cláusula (e) viraria a classe de erro 5.
+
+    Se ela alcançasse toda constatação sobre peça ausente, o falso negativo
+    mais caro do histórico voltaria: a tela plástica frouxa na borda da laje é
+    falta que a foto MOSTRA, e a constatação sobre ela afirma. O discriminante
+    é o mesmo da moldura — a peça apareceria no recorte se existisse —, e o
+    teste é sobre a CONSTATAÇÃO, nunca sobre a ação corretiva, que
+    legitimamente pode mandar verificar o resto.
+    """
+    from auditoria.pipeline import PROMPT_DIRETOR
+
+    assert "A FRONTEIRA, e ela é o oposto disto" in PROMPT_DIRETOR
+    assert "tela plástica frouxa pendurada na borda" in PROMPT_DIRETOR
+    assert "o teste desta cláusula é sobre a CONSTATAÇÃO, nunca sobre a ação" in PROMPT_DIRETOR
+
+
+def test_aparo_que_devolve_a_mesma_constatacao_nao_vira_linha_de_trilha(base):
+    """O laudo 3 de 09/09: trilha afirmando um corte que não houve.
+
+    Saiu impresso "constatação restrita ao fato registrado — retirado: Nenhuma
+    cláusula foi removida, pois…" — o Diretor dizendo no próprio texto que não
+    removeu nada, dentro de uma linha que anuncia remoção. A comparação é exata
+    de propósito: o aparo existe para RESTRINGIR, e qualquer restrição real
+    muda o texto.
+    """
+    laudo, _ = _rodar(base, "NR-35 Anexo III 5.2.2.5", lambda: {
+        "conferencia": [{"ref": "V1", "fato": FATO, "decisao": "aparado",
+                         "exigencia": TRECHO_REAL}],
+        "aparados": [{"ref": "V1", "constatacao": f"  {CONSTATACAO.upper()}  ",
+                      "acao_corretiva": "", "gravidade": "alta",
+                      "retirado": "Nenhuma cláusula foi removida, pois a constatação "
+                                  "original já estava restrita aos fatos visíveis"}],
+        "vetados": [], "ajustes": [], "pontos_descartados": [],
+        "conformidades_descartadas": [], "parecer": "p",
+    })
+    assert laudo.nao_conformidades, "o enquadramento não devia cair por isto"
+    assert laudo.aparos == [], f"trilha anuncia corte que não houve: {laudo.aparos}"
+
+
+def test_aparo_que_muda_uma_clausula_continua_virando_linha(base):
+    """A contraparte: restrição de verdade tem de aparecer na trilha.
+
+    Sem ela o conserto acima viraria uma porta — o aparo que corta a cláusula
+    sem lastro é exatamente o que a trilha existe para registrar, e é o
+    mecanismo que o #13 construiu.
+    """
+    laudo, _ = _rodar(base, "NR-35 Anexo III 5.2.2.5", lambda: {
+        "conferencia": [{"ref": "V1", "fato": FATO, "decisao": "aparado",
+                         "exigencia": TRECHO_REAL}],
+        "aparados": [{"ref": "V1", "constatacao": APARADA,
+                      "acao_corretiva": "Reposicionar a escada sobre piso estável.",
+                      "gravidade": "alta", "retirado": "a cláusula da sapata"}],
+        "vetados": [], "ajustes": [], "pontos_descartados": [],
+        "conformidades_descartadas": [], "parecer": "p",
+    })
+    assert laudo.nao_conformidades[0].constatacao == APARADA
+    assert len(laudo.aparos) == 1
+    assert "retirado: a cláusula da sapata" in laudo.aparos[0]

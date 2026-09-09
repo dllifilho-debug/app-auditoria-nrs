@@ -213,10 +213,62 @@ Dois defeitos menores, medidos e não corrigidos:
 1. **Uma abertura, duas NCs, por um par que `ITENS_EQUIVALENTES` não cobre.** O laudo 11
    conta a mesma abertura em `18.9.1` (proteção coletiva, genérico) e `18.9.2` (fechamento
    da abertura). A fusão só declara `18.9.2`/`8.3.2.2`.
-2. **Dois defeitos no texto do aparo.** No laudo 5 ele sai cortado no meio da frase
-   ("…que é o que…"), que é o `_em_poucas_palavras` truncando sem reticências próprias;
-   no laudo 3 o Diretor declarou aparo dizendo que **nada** foi removido, e a linha foi
-   impressa assim mesmo. Aparo sem retirada não devia virar linha de trilha.
+2. **Um defeito no texto do aparo, e um que eu diagnostiquei errado.** No laudo 3 o
+   Diretor declarou aparo dizendo que **nada** foi removido ("Nenhuma cláusula foi
+   removida, pois…") e a linha foi impressa na trilha assim mesmo — aparo sem retirada
+   não devia virar linha. **O outro não existe**: eu li o "…que é o que…" do laudo 5 como
+   truncagem sem marca, e `_em_poucas_palavras` MARCA o corte com reticência — medido,
+   246 caracteres entram e saem 200 terminando em "…". O que é feio ali é o Diretor
+   escrever 246 caracteres de deliberação num campo que pede uma frase curta; a
+   truncagem é a mitigação e ela está funcionando.
+
+### Segunda rodada de 09/09 — o lote de TRÊS, desenhado para responder três coisas
+
+Rodado no mesmo código (o #37; a repescagem ainda não estava mergeada). **3 fotos, 3 NCs.**
+Lote pequeno de propósito: o que faltava validar era estreito e a cota do dia já tinha ido
+em ~117 mil dos 200 mil.
+
+| Foto | Marcação | Resultado |
+|---|---|---|
+| `19 PAV. POÇO GRUA SEM PROTEÇÃO` | abertura de piso | **`NR-18 18.9.2` crítica** + `8.3.2.2` complementar |
+| `PROTEÇÃO POÇO DE ELEVADOR SOMENTE COM UM PONTO DE FIXAÇÃO` | abertura de piso + vão de caixa de elevador | `NR-18 18.9.2` alta, **no achado errado** |
+| `11 PAV. PROTEÇÃO POÇO ELEVADOR SEM PROTEÇÃO` | nenhuma (controle) | `NR-18 18.9.2` **crítica**, e a NC é uma VERIFICAÇÃO |
+
+**1. O desenho D fechou o ciclo.** A foto que deu 0 NC em 08/09 e na primeira rodada de
+09/09 agora produz a não conformidade certa, aprovada sem vetos. **E a omissão da
+conferência NÃO se repetiu na mesma foto** — logo ela é **intermitente**, não
+determinística. A hipótese com que montei o lote ("essa foto omite sempre") estava errada,
+e a repescagem não foi exercitada. Ela continua sendo a rede certa; o que caiu foi o
+prognóstico de com que frequência ela dispara.
+
+**2. O TETO do desenho D, medido — e é o achado conceitual deste lote.** Na foto 2 a
+marcação funcionou no que promete: `18.9.2` entrou em D1 e o Analista usou. **Mas ele
+pendurou o item no achado errado** — a constatação é sobre a CORROSÃO da grade, não sobre
+o ponto de fixação, que é o que o engenheiro anotou no nome do arquivo. O motivo está na
+lista de fatos: o Olho escreveu *"grade metálica instalada sobre um vão vertical, com
+estrutura de suporte em perfil metálico e sinais de corrosão"*, e **quantos pontos de
+fixação a grade tem não aparece em fato nenhum**.
+**A marcação dirige o DOSSIÊ, não o Olho** — a trava 1, deliberada, para o `fato` não
+virar eco do que o inspetor digitou. A consequência que ninguém tinha medido:
+**marcação não recupera achado que o Olho não viu**; ela só garante que o item certo
+esteja disponível quando o achado estiver lá.
+**Inferência, não medição**: das duas fotos que o braço D "recuperava" em 08/09, esta é
+uma — e o que o gabarito daquele braço media era a posição do item no dossiê, não a
+existência do fato que o sustenta. Se isso vale para a outra (`19 PAV. POÇO GRUA`), a
+resposta é não: lá o fato existia e o enquadramento saiu. Ao prometer o que a marcação
+faz, é esta a fronteira.
+
+**3. A verificação-como-NC repetiu, e escalou.** A foto 3 saiu de novo com a providência
+*"Verificar no local se a grade metálica possui travamento"* como não conformidade, e a
+gravidade subiu de **alta para crítica**: o laudo cobra do engenheiro, em 24 horas, uma
+ida ao local. n=2 com escalada, então é sistemático. **Conserto: a cláusula (e) do
+`PROMPT_DIRETOR`**, escrita nesta sessão — quando o único defeito alegado está fora do
+recorte, não sobra nada para aparar; vete e escreva a verificação em `observacao`. A
+fronteira entrou junto e é o que impede a classe de erro 5: falta que a foto MOSTRA é
+afirmação, e a tela plástica frouxa está nomeada lá. **Há dois testes travando as duas
+metades**, e como toda cláusula de prompt, **só o lote diz se ele obedece**.
+
+**O `*(apontada)*` do plano de ação funcionou**: duas linhas marcadas, uma não.
 
 ---
 
@@ -604,7 +656,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 228 testes
+$VENV -m pytest tests/ -q          # 232 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -745,7 +797,7 @@ próprio comando composto (exit 144).
   plano de ação. Um laudo dirigido em parte por quem inspecionou não tem o mesmo valor de
   evidência que um em que o app chegou sozinho ao item, e quem lê o documento precisa
   saber de qual dos dois se trata.
-- **228 testes**
+- **232 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
@@ -788,6 +840,13 @@ próprio comando composto (exit 144).
   constatação não descumpre o texto oficial deste item" sobre quem ninguém conferiu — a
   frase exata que o #34 tirou deste mesmo laudo. Foi o `/critico` de novo, na segunda
   rodada, e **há teste travando**.
+- **Aparo que devolve a constatação idêntica não vira linha de trilha.** A comparação é
+  exata (só normaliza espaço e caixa), porque o aparo existe para RESTRINGIR e qualquer
+  restrição real muda o texto. Nasceu do laudo 3 de 09/09, que imprimiu "constatação
+  restrita ao fato registrado — retirado: Nenhuma cláusula foi removida, pois…" — a trilha
+  anunciando um corte que não houve, com o próprio Diretor dizendo no mesmo texto que não
+  houve. **Há dois testes travando**, um deles a contraparte: aparo que muda uma cláusula
+  continua virando linha.
 - **Uma abertura, uma não conformidade.** `ITENS_EQUIVALENTES` (em `riscos/__init__.py`)
   declara os itens que impõem a MESMA exigência sobre o mesmo objeto —
   `NR-18 18.9.2` e `NR-08 8.3.2.2`. O primeiro do grupo que o Analista enquadrar
@@ -1219,26 +1278,38 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   trava contra o clique errado é ele exigir o trecho literal do fato do Olho, e o #34
   mostrou que ela falha por omissão; (c) nas fotos sem marcação, que o laudo seja o de
   hoje.
-- **A não conformidade que é uma VERIFICAÇÃO, com prazo de 1 dia.** Laudo 7 de 09/09
-  (`11 PAV. PROTEÇÃO POÇO ELEVADOR SEM PROTEÇÃO`): o aparo do Diretor converteu a
-  afirmação ("a grade não atende ao requisito") em verificação ("Verificar no local se a
-  grade metálica possui travamento"), que é a regra da moldura funcionando — e o
-  resultado ficou como **não conformidade**, com gravidade alta e prazo de 1 dia. Uma
-  verificação não é um descumprimento: ela pertence aos pontos de atenção. O aparo hoje
-  só sabe reescrever a constatação no lugar, não movê-la de seção. **Cuidado ao
-  consertar**: mover automaticamente todo aparo que vire verificação pode virar a classe
-  de erro 5 pela porta do aparo, que já aconteceu com a cinta de içamento.
+- **A não conformidade que é uma VERIFICAÇÃO — CLÁUSULA (e) ESCRITA em 09/09, à espera de
+  lote.** `11 PAV. PROTEÇÃO POÇO ELEVADOR SEM PROTEÇÃO` saiu duas vezes no mesmo dia com
+  a providência "Verificar no local se a grade metálica possui travamento" como **não
+  conformidade** — na segunda vez CRÍTICA, prazo de 1 dia, cobrando em 24 horas uma ida
+  ao local. n=2 com escalada de alta para crítica.
+  O mecanismo é a regra da moldura aplicada até a metade: o Diretor apara a afirmação
+  categórica (certo — a fixação não aparece no recorte) e mantém o enquadramento, quando
+  o que restou já não afirma descumprimento nenhum. O prompt sempre mandou escrever a
+  verificação em `observacao`; o que faltava era dizer que, nesse caso, **não sobra nada
+  para aparar**. É a cláusula (e) da PARTE 2, com o caso real dentro.
+  **A fronteira é o que impede a classe de erro 5**, e foi escrita junto: falta que a foto
+  MOSTRA é afirmação, não verificação — borda de laje que aparece inteira, abertura
+  escancarada, **tela plástica frouxa na borda** (o falso negativo mais caro do histórico,
+  nomeado na cláusula). E o teste é sobre a CONSTATAÇÃO, nunca sobre a ação corretiva, que
+  legitimamente pode mandar verificar o resto. **Há dois testes travando as duas metades.**
+  **Não há conserto por código aqui**, e isso foi decidido, não esquecido: detectar
+  "verificação" por texto livre é a armadilha do sinal escrito por extenso mudada de
+  lugar, e a moldura é `motivo de aparo, nunca de veto sozinha` justamente para o aparo
+  não virar veto geral. O aceite se lê na lista de VETADOS e nos pontos de atenção.
 - **Uma abertura, duas NCs, por um par que `ITENS_EQUIVALENTES` não cobre.** Laudo 11 de
   09/09 conta a mesma abertura em `NR-18 18.9.1` (proteção coletiva, genérico) e
   `NR-18 18.9.2` (fechamento da abertura). A fusão declara só `18.9.2`/`8.3.2.2`. **Não é
   o mesmo caso**: `18.9.1` e `18.9.2` são da MESMA NR e não impõem a mesma exigência —
   um manda proteger o entorno, o outro fechar o vão. Declará-los equivalentes seria
   mentira; o que cabe medir é se o Analista devia enquadrar os dois.
-- **Dois defeitos no texto do aparo, impressos no laudo do cliente.** No laudo 5 de 09/09
-  ele sai cortado no meio da frase ("…que é o que…") — o `_em_poucas_palavras` corta sem
-  marcar o corte. No laudo 3 o Diretor declarou aparo dizendo que **nada** foi removido
-  ("Nenhuma cláusula foi removida, pois…") e a linha foi impressa na trilha assim mesmo.
-  Aparo sem retirada não devia virar linha; e o corte devia dizer que cortou.
+- **~~Dois defeitos no texto do aparo~~ — um consertado, o outro não existia.** O laudo 3
+  de 09/09 declarou aparo dizendo que **nada** foi removido e a linha saiu impressa na
+  trilha; hoje o aparo cuja constatação volta idêntica não vira linha nenhuma. O segundo
+  eu diagnostiquei errado: `_em_poucas_palavras` marca o corte com reticência, medido.
+  **Fica a lição**: eu afirmei "corta sem marcar" olhando o laudo, e a função executada
+  desmentiu em dois segundos. Defeito de saída de código se confere rodando o código,
+  não lendo o produto dele.
 - **Item de abertura no PISO usado para vão VERTICAL, com o aparo agravando.** Laudo 1 de
   09/09: `NR-18 18.9.2` para um painel de madeira vertical encostado no concreto, e o
   aparo retirou a referência ao vão vertical — com a razão certa, "a norma regula

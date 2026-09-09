@@ -1036,6 +1036,24 @@ d) o núcleo da constatação é uma POSSIBILIDADE, e não um estado. Risque del
    é o defeito. Isto NÃO alcança a consequência: "abertura no piso, que pode causar queda"
    tem por núcleo a abertura, que é estado, e a queda é o dano previsto, com campo próprio.
    O que se veta é a hipótese dentro da CONSTATAÇÃO, nunca o risco que ela descreve.
+e) o que sobraria da constatação é uma VERIFICAÇÃO, e não uma afirmação. Leia a
+   constatação que você vai devolver e pergunte: ela DIZ o que a foto mostra, ou pede que
+   alguém vá olhar? "Sem evidência de travamento", "não é possível determinar se há
+   fixação", "verificar se a grade está travada" não afirmam descumprimento nenhum — são
+   o limite da foto, e o limite da foto não é não conformidade. Aqui a MOLDURA se fecha:
+   quando o único defeito alegado está fora do recorte, NÃO SOBRA NADA para aparar. Vete,
+   e escreva a verificação em "observacao", que é onde ela serve ao engenheiro.
+   Caso real, impresso duas vezes no laudo do cliente: uma grade cobrindo um vão, apoiada
+   no concreto, virou não conformidade CRÍTICA com prazo de 1 dia cuja providência era
+   "Verificar no local se a grade possui travamento ou fixação na estrutura". O laudo
+   cobrou em 24 horas uma ida ao local. Você tinha aparado a afirmação categórica — certo
+   — e mantido o enquadramento, quando o que restou já não descumpria nada.
+   A FRONTEIRA, e ela é o oposto disto: falta que a foto MOSTRA é afirmação, não
+   verificação. Borda de laje que aparece inteira e sem guarda-corpo, abertura de piso
+   escancarada, tela plástica frouxa pendurada na borda — nessas a peça apareceria no
+   recorte se existisse, e a constatação afirma. Aprove. E não confunda com a AÇÃO
+   corretiva: "instalar fechamento e verificar a fixação dos demais" é providência
+   legítima; o teste desta cláusula é sobre a CONSTATAÇÃO, nunca sobre a ação.
 
 A gravidade deve ser coerente entre os enquadramentos do mesmo laudo: se dois
 enquadramentos descrevem o MESMO problema físico, devem ter a mesma gravidade e
@@ -1246,6 +1264,17 @@ def _em_poucas_palavras(texto: str, limite: int = 200) -> str:
         return texto.rstrip(" .;")
     corte = texto.rfind(" ", 0, limite)
     return texto[: corte if corte > 0 else limite].rstrip(" ,.;") + "…"
+
+
+def _mesma_constatacao(a: str, b: str) -> bool:
+    """As duas constatações são o mesmo texto, a menos de espaço e caixa.
+
+    Deliberadamente exata: o aparo existe para RESTRINGIR a constatação, e
+    qualquer restrição real muda o texto. Uma comparação frouxa (por
+    similaridade, digamos) engoliria o aparo que corta uma cláusula curta, que
+    é justamente o caso que a trilha precisa registrar.
+    """
+    return " ".join(a.split()).casefold() == " ".join(b.split()).casefold()
 
 
 def _fundir_equivalentes(ncs: list[NaoConformidade]) -> list[NaoConformidade]:
@@ -1591,14 +1620,26 @@ def _executar(
                 )
                 continue
             if (aparo := aparados.get(ref)) and str(aparo.get("constatacao", "")).strip():
-                retirado = _em_poucas_palavras(
-                    _limpar_citacoes(str(aparo.get("retirado", "")).strip())
-                )
-                laudo.aparos.append(
-                    f"{nc.item.nr} {nc.item.item}: constatação restrita ao fato registrado"
-                    + (f" — retirado: {retirado}" if retirado else "")
-                )
-                nc.constatacao = _limpar_citacoes(str(aparo["constatacao"]).strip())
+                nova = _limpar_citacoes(str(aparo["constatacao"]).strip())
+                # Aparo que devolve a constatação IDÊNTICA não aparou nada, e a
+                # linha de trilha mentia sobre isso. No laudo 3 de 09/09 saiu
+                # impresso "constatação restrita ao fato registrado — retirado:
+                # Nenhuma cláusula foi removida, pois…", que é a trilha
+                # afirmando um corte que não houve, com o próprio Diretor
+                # dizendo no mesmo texto que não houve. A comparação é exata
+                # (só normaliza espaço e caixa), então reescrita de verdade
+                # continua virando linha — inclusive a que muda uma palavra.
+                if _mesma_constatacao(nova, nc.constatacao):
+                    aparados.pop(ref, None)
+                else:
+                    retirado = _em_poucas_palavras(
+                        _limpar_citacoes(str(aparo.get("retirado", "")).strip())
+                    )
+                    laudo.aparos.append(
+                        f"{nc.item.nr} {nc.item.item}: constatação restrita ao fato registrado"
+                        + (f" — retirado: {retirado}" if retirado else "")
+                    )
+                nc.constatacao = nova
                 if (novo := str(aparo.get("acao_corretiva", "")).strip()):
                     nc.acao_corretiva = _limpar_citacoes(novo)
                 if str(aparo.get("gravidade", "")).lower() in GRAVIDADE_ORDEM:
