@@ -100,6 +100,126 @@ por chamada (fatiar a conferência do Diretor) ou o Dev Tier pago.
 
 ---
 
+## Validação em produção de 09/09/2026 — o lote de 15 refeito, com marcação
+
+Rodado no código do #37 (o desenho D). **15 laudos, 0 não auditadas, 12 NCs.** O hash
+de "Versão em execução" não foi lido na barra lateral desta vez — o commit é inferido do
+merge, e é o único dado deste lote que não vem dos laudos. **Leia o hash da próxima vez.**
+Duas fotos marcadas pelo inspetor: `19 PAV. POÇO GRUA SEM PROTEÇÃO` (marcação certa, o
+caso que o desenho D existe para recuperar) e `GRUAA` (marcação ERRADA de propósito, o
+teste do clique errado). As outras treze sem marcação.
+
+### A lista nominal — esta é REGISTRO, lida no cabeçalho dos 15 laudos
+
+| # | Foto | NCs | Item |
+|---|---|---|---|
+| 1 | `18 PAV. PROTEÇÃO POÇO DE ELEVADOR` | 1 | `NR-18 18.9.2` |
+| 2 | `PROTEÇÃO POÇO DE ELEVADOR SOMENTE COM UM PONTO DE FIXAÇÃO` | 0 | — |
+| 3 | `PROTEÇÃO POÇO ELEVADOR DIFERENTE DO PROJETO` | 1 | `NR-08 8.3.2.2` |
+| 4 | `PROTEÇÃO POÇO ELEVADOR DIFERENTE DAS ANTERIORES` | 1 | `NR-08 8.3.2.2` |
+| 5 | `19. PROTEÇÃO DE ELEVADOR NÃO FIXADA` | 1 | `NR-18 18.9.2` |
+| 6 | `13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO` | 1 | `NR-18 18.9.2` |
+| 7 | `11 PAV. PROTEÇÃO POÇO ELEVADOR SEM PROTEÇÃO` | 1 | `NR-18 18.9.2` |
+| 8 | `3 PAV. POÇO ELEVADOR SEM PROTEÇÃO E SINALIZAÇÃO` | 1 | `NR-18 18.9.2` + `8.3.2.2` complementar |
+| 9 | `19 PAV. POÇO ELEVADOR SEM PROTEÇÃOO` (dois O) | 2 | `NR-08 8.3.2.2` + **`NR-18 18.9.3`** |
+| 10 | `19 PAV. POÇO ELEVADOR SEM PROTEÇÃO` (um O) | 1 | `NR-18 18.9.2` |
+| 11 | `20 PAV SEM PROTEÇÃO NO POÇO DE ELEVADOR` | 2 | `NR-18 18.9.1` + `18.9.2` |
+| 12 | `GRUAA` **(marcada — erro de propósito)** | 0 | — |
+| 13 | `GRUAAA` | 0 | — |
+| 14 | `GRUA` | 0 | — |
+| 15 | `19 PAV. POÇO GRUA SEM PROTEÇÃO` **(marcada — certa)** | 0 | 2 vetos por omissão |
+
+**Os dois gêmeos rodaram os dois** (linhas 9 e 10), o que a reconstrução de 08/09 supunha.
+Isso não prova o lote de 08/09 — é outro lote —, mas a lista de lá deixa de ser a única
+que existe: **para montar lote de poço, use esta.**
+
+### 1. O desenho D funcionou, e o gargalo é outro
+
+**O Analista USOU o item marcado.** No laudo 15 ele enquadrou `NR-18 18.9.2` **e**
+`NR-08 8.3.2.2` — os dois certos, na foto que deu 0 NC em 08/09 porque o Olho não
+registrou a abertura de piso e o item nunca chegava ao dossiê. A cadeia marcação →
+dossiê → Analista fechou.
+
+**O que derrubou os dois foi o Diretor não copiar a exigência.** Os dois caíram com
+`MOTIVO_CONFERENCIA_OMITIDA`, e o laudo diz isso com todas as letras. **É o #34 validado
+em produção, na mesma foto que o motivou** — em 08/09 esse laudo afirmava ao engenheiro
+que a situação não descumpre a norma; hoje ele diz que ninguém conferiu, lista os dois
+achados inteiros nos pontos de atenção e manda rever no local.
+
+**A leitura pelo SUMÁRIO me fez concluir o contrário, e essa é a armadilha nova.** A
+ausência de linha no plano de ação é compatível com duas coisas opostas — o Analista não
+enquadrou, ou enquadrou e o Diretor derrubou —, e só a trilha do laudo separa as duas.
+Ver a tabela de armadilhas.
+
+**Conserto (nesta sessão): `_reconferir_exigencias`**, uma segunda chamada estreita que
+pergunta de novo SÓ o trecho que não veio. Não custa chamada nas 14 fotos de 15 em que a
+conferência não faltou, e a trava é a mesma distinção do #34: **trecho que veio e não ancora não é
+reperguntado**, porque ali ele refutou de verdade e repetir a pergunta daria ao modelo
+uma segunda chance de inventar a exigência. **Há quatro testes travando isso**, um deles
+sobre a repescagem vazia continuar derrubando o enquadramento.
+
+### 2. O falso positivo da grua morreu — o #35 validado
+
+O `GRUA` deu `NR-18 18.12.22` (contrapeso de **andaime suspenso**) em 08/09 e hoje dá
+**0 NC**. E os fatos mencionam "contrapesos metálicos … sobre a extremidade da lança
+horizontal" explicitamente: o caminho que produziu o falso positivo continua aberto no
+texto, e o que o fechou foi o portão setorial. A serra circular também não aparece em
+laudo nenhum.
+
+### 3. A marcação errada não produziu nada
+
+No `GRUAA` o `18.9.2` entrou curado em D1 numa foto de grua e **o Analista nem o
+enquadrou** — a trava segurou antes do Diretor. A trilha declara a marcação, e o sumário
+também. É o custo que o #37 declarou como não medido, medido: com n=1, o clique errado
+não virou laudo errado.
+
+### 4. O nome da torre, confirmado pela segunda vez
+
+Zero ocorrências de "torre de elevador" nas três fotos de grua. `GRUAA` e `GRUAAA` trazem
+"Torre metálica treliçada", que é a redação que o prompt oferece quando o discriminante
+não está no recorte; `GRUAA` traz ainda "Torre de guindaste metálica distante" e `GRUAAA`
+"lança de guindaste". `GRUAAA` fica em **0 NC pela segunda medição seguida**, com 3
+trabalhadores na cena.
+
+### 5. O `18.9.3` routeou — o ganho do #27 nunca medido
+
+Laudo 9 enquadrou `NR-18 18.9.3` (vãos de acesso às caixas dos elevadores). É a primeira
+vez que esse item sai em laudo, e ele é o que `vao_caixa_elevador_sem_fechamento` cita.
+
+### Gabarito contra o nome do arquivo: 11 de 15 defensáveis
+
+Contra 9 de 15 em 08/09, e as amostras agora SÃO comparáveis: mesma lista, mesmas 15.
+As quatro que não fecham:
+
+- **Laudo 1** (`18 PAV. PROTEÇÃO POÇO DE ELEVADOR`, o único nome do grupo que não aponta
+  defeito): saiu com `NR-18 18.9.2` — item de abertura no **piso** — para um painel de
+  madeira **vertical** encostado no concreto. Pior, o aparo retirou a referência ao vão
+  vertical, com a razão certa ("a norma regula especificamente aberturas no piso"), e
+  **manteve o enquadramento**. Falta conferir a foto: há buraco no chão ali?
+- **Laudo 2** (`SOMENTE COM UM PONTO DE FIXAÇÃO`): 0 NC. A NC falsa pela ferrugem de
+  08/09 morreu — a cláusula (d) aparece no parecer, descartando "suposições de dano
+  estrutural ou infiltração sem lastro visual definitivo". Mas a fixação precária, que é
+  o achado do engenheiro, segue sem ser vista. **Era uma das duas que o desenho D
+  recuperaria e ela não foi marcada** — marcar da próxima é o segundo teste do mecanismo.
+- **Laudo 7** (`11 PAV.`): a não conformidade É UMA VERIFICAÇÃO — "Verificar no local se
+  a grade metálica possui travamento". O aparo converteu a afirmação em verificação, o
+  que é a regra da moldura funcionando, e **deixou o resultado como NC com prazo de 1
+  dia**. Verificação é ponto de atenção, não não conformidade. E o parecer traz a
+  hipótese outra vez ("potencial instabilidade"), no campo que a cláusula (d) não governa.
+- **Laudo 15**: o caso acima, com o conserto já escrito.
+
+Dois defeitos menores, medidos e não corrigidos:
+
+1. **Uma abertura, duas NCs, por um par que `ITENS_EQUIVALENTES` não cobre.** O laudo 11
+   conta a mesma abertura em `18.9.1` (proteção coletiva, genérico) e `18.9.2` (fechamento
+   da abertura). A fusão só declara `18.9.2`/`8.3.2.2`.
+2. **Dois defeitos no texto do aparo.** No laudo 5 ele sai cortado no meio da frase
+   ("…que é o que…"), que é o `_em_poucas_palavras` truncando sem reticências próprias;
+   no laudo 3 o Diretor declarou aparo dizendo que **nada** foi removido, e a linha foi
+   impressa assim mesmo. Aparo sem retirada não devia virar linha de trilha.
+
+---
+
 ## Validação em produção de 08/09/2026 — o lote de 15 de poço de elevador
 
 Rodado no `b855531` (os PRs #32 e #33). **15 laudos, 0 não auditadas, 10 NCs.**
@@ -484,7 +604,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 222 testes
+$VENV -m pytest tests/ -q          # 228 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -601,6 +721,8 @@ próprio comando composto (exit 144).
 | **Duas causas colapsadas num motivo só fazem o documento afirmar o que ninguém verificou** | `_exigencia_ancorada` devolve falso em dois casos opostos: o trecho VEIO e não está no item (a constatação inventou a exigência — é o que a rede existe para pegar, e a frase "a constatação não descumpre o texto oficial deste item" é verdadeira), e o trecho NÃO VEIO (o supervisor não respondeu — nada foi refutado). O código dizia a mesma frase nos dois. No lote de 08/09 isso saiu impresso: `19 PAV. POÇO GRUA SEM PROTEÇÃO`, um poço sem proteção de piso nem de parede, com 0 NC e o laudo afirmando ao engenheiro que a situação não descumpre a norma. Prova de que foi omissão e não juízo: o ponto de atenção saiu com o texto da CONSTATAÇÃO, que é o fallback de `observacoes.get(ref) or nc.constatacao` — o Diretor não preencheu nenhum dos dois campos que devia. É a irmã da armadilha do `except` largo, e a pergunta é a mesma: **o erro engolido faz o documento MENTIR sobre o que foi examinado?** Hoje `_exigencia_omitida` separa os dois, o enquadramento continua caindo (reabrir a porta devolveria o painel empoeirado ao laudo) e a trilha diz "Supervisão incompleta". **Há quatro testes travando isso.** |
 | **Lista do laudo preenchida por `append` acumula entre os ciclos do Gauntlet** | `laudo.vetos = motivos` é ATRIBUIÇÃO, e é por isso que os vetos não duplicam quando o laço roda mais de um ciclo. `laudo.aparos.append(...)` não tem essa proteção. Ao acrescentar `conferencia_omitida` com `append`, o teste pegou o item repetido duas vezes com `max_ciclos=2` (o padrão de `Configuracao`, embora o `app.py` use 1 no modo Padrão). **Ao pôr campo novo no `Laudo` dentro do laço, monte a lista local e atribua no fim do ciclo**, como `motivos`. |
 | **Medir o roteamento não vê o item que a busca textual traz** | O `NR-18 18.11.14` saiu impresso numa foto de grua, e o risco curado que cita esse item teve **zero disparos nas 9 fotos** do lote. As duas coisas são verdadeiras: o item chegou ao dossiê pela **busca textual**, que a palavra "torre de elevador" no fato basta para acionar. Medido: um fato que routeia risco NENHUM enche cinco vagas do dossiê com a seção 18.11. O reflexo desta casa é reproduzir `rotear_riscos` sem rede — barato e certeiro para defeito de taxonomia, e **cego para metade do dossiê**. `montar_dossie` é igualmente determinístico e custa o mesmo. Ao investigar item errado num laudo, rode o dossiê inteiro antes de concluir que a taxonomia está limpa; "o risco não disparou" não é álibi. |
+| **Conserto que reintroduz o defeito que ele cita como trava** | A repescagem da conferência nasceu citando o #34 — "duas causas colapsadas num motivo só" — como a razão de só repescar o SILÊNCIO. E colapsou as duas de novo na saída: um trecho repescado que não ancorasse caía em `MOTIVO_EXIGENCIA_NAO_ANCORA`, e o laudo voltava a dizer "a constatação não descumpre o texto oficial deste item" sobre uma supervisão que nunca respondeu. O `/critico` pegou; era a terceira vez que a armadilha aparecia, e a segunda **dentro do conserto de si mesma** (a primeira foi o #35, com o portão prendendo item genérico três vezes seguidas). A pergunta que faltava: **depois desta mudança, por quantos caminhos o veto passa a ser decidido, e o que cada um diz ao engenheiro?** Ao consertar um mecanismo, releia a saída DELE, não só a entrada. |
+| **O sumário não distingue enquadramento ausente de enquadramento vetado** | Lendo o sumário do lote de 09/09, concluí que o Analista tinha IGNORADO o item marcado na foto `19 PAV. POÇO GRUA SEM PROTEÇÃO` — porque ela não aparece no plano de ação. Errado: ele enquadrou os dois itens certos, e o Diretor os derrubou por não copiar a exigência. A ausência de linha no plano é compatível com as duas coisas, e elas pedem consertos OPOSTOS (dossiê/roteamento de um lado, conferência do supervisor do outro). O sumário só lista o que sobreviveu; **quem separa é a trilha do laudo**, que nomeia cada veto e sua causa. É a irmã da armadilha "medir o roteamento não vê o item que a busca textual traz", num nível acima: **ao medir um lote, o sumário conta QUANTO, e só o laudo conta POR QUÊ** — não conclua causa a partir dele. |
 | **Widget de framework traz afordância que o desenho não pediu** | O `st.multiselect` do Streamlit 1.63 oferece **"Select all"** por padrão (`select_all=1000`: aparece sempre que há até mil opções). No campo de marcação por foto, um clique nele marcaria os 40 riscos de uma vez — e como o item marcado entra na FRENTE num dossiê de 22 entradas, isso expulsaria o roteamento e a busca textual inteiros: o app pararia de auditar a foto e devolveria a lista que lhe deram. Não apareceu em teste nenhum e não está na assinatura que se lê de cabeça; **apareceu na tela**, no primeiro print do painel. Hoje vai `select_all=False` e `max_selections=3`. Ao pôr widget novo, leia a assinatura inteira do construtor e pergunte o que ele faz **por padrão** — e olhe a tela, que é onde o padrão do framework aparece. |
 | **Expansor do Streamlit fecha a cada rerun, e cada marcação é um rerun** | O painel de marcação nasceu sem `expanded`, e no navegador se viu o que teste nenhum veria: marcar a primeira foto fechava o painel, de modo que marcar a segunda de um lote de 100 exigiria reabrir e rolar, cem vezes. `expanded=com_marcacao > 0` resolve — a primeira marcação abre o painel para valer. Vale para todo expansor que contenha widget: o estado dele não sobrevive ao rerun que o próprio widget dispara. |
 | `git fetch origin main <branch-que-não-existe-mais>` falha inteiro, silenciosamente | Fetch de múltiplos refs é atômico: se um ref já foi deletado no remoto (branch mergeada), o comando inteiro falha e **nenhum ref é atualizado** — inclusive o `main`, que existia e seria atualizado sozinho. `origin/main` local fica congelado na versão de antes, e comparações feitas contra ele mentem. Já causou uma sessão inteira concluir errado que "a reescrita nunca foi mergeada". Se o histórico parecer suspeito, rode `git fetch origin main` sozinho antes de confiar em qualquer diff. |
@@ -623,7 +745,7 @@ próprio comando composto (exit 144).
   plano de ação. Um laudo dirigido em parte por quem inspecionou não tem o mesmo valor de
   evidência que um em que o app chegou sozinho ao item, e quem lê o documento precisa
   saber de qual dos dois se trata.
-- **222 testes**
+- **228 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
@@ -648,6 +770,24 @@ próprio comando composto (exit 144).
   ninguém emitiu. Pega exigência **inventada**; não pega trecho verdadeiro citado fora de propósito, e contra
   esse continua agindo só o prompt. Este é o único uso em código do bloco `conferencia`:
   o `fato` copiado segue sem verificação automática.
+- **A conferência do Diretor tem repescagem.** Quando ele deixa `exigencia` em branco,
+  `_reconferir_exigencias` pergunta de novo, numa chamada estreita que leva só os
+  enquadramentos que faltaram. **Só o trecho AUSENTE é repescado**: trecho que veio e não
+  ancora é refutação, e reperguntar ali daria ao modelo uma segunda chance de inventar a
+  exigência, que é o que a rede existe para impedir. Repescagem vazia derruba o
+  enquadramento como antes, com "Supervisão incompleta" na trilha; repescagem ilegível
+  também, sem matar a foto. Motivada pelo laudo 15 de 09/09, em que os dois
+  enquadramentos certos de um poço sem proteção caíram por omissão.
+  **Havendo aparo, a pergunta é feita sobre a constatação APARADA**, nunca sobre a
+  original: o que tem de descumprir o item é o que sobra do corte, e perguntar pela frase
+  inteira salvaria justamente o caso que o aparo manda vetar. Foi o `/critico` que pegou,
+  e **há teste travando** — ele falha quando a constatação original volta à pergunta.
+  **E quem entrou na repescagem cai sempre como OMISSÃO**, mesmo que o reparo devolva um
+  trecho que não ancore: ele entrou porque a supervisão ficou em silêncio, e o silêncio
+  não vira refutação por causa do que um reparo produziu. Sem isso o laudo diria "a
+  constatação não descumpre o texto oficial deste item" sobre quem ninguém conferiu — a
+  frase exata que o #34 tirou deste mesmo laudo. Foi o `/critico` de novo, na segunda
+  rodada, e **há teste travando**.
 - **Uma abertura, uma não conformidade.** `ITENS_EQUIVALENTES` (em `riscos/__init__.py`)
   declara os itens que impõem a MESMA exigência sobre o mesmo objeto —
   `NR-18 18.9.2` e `NR-08 8.3.2.2`. O primeiro do grupo que o Analista enquadrar
@@ -955,8 +1095,8 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   cláusula — íntegro, **do tipo certo e no lugar certo** —, com a tela frouxa nomeada como
   o que NÃO é estado normal. **Há teste travando as duas asserções.** O que continua sem
   resposta é se a definição basta: é julgamento num prompt, e só o lote diz.
-- **Contexto POR FOTO: medido em 08/09, IMPLEMENTADO em 09/09 (o desenho D), à espera
-  de lote.** O usuário perguntou
+- **Contexto POR FOTO: medido em 08/09, implementado em 09/09 (o desenho D), e
+  VALIDADO no lote de 09/09 — com uma ressalva que virou conserto.** O usuário perguntou
   se descrever o que vê em cada foto ajudaria o enquadramento. Hoje o campo "Contexto da
   inspeção" é **um só para o lote inteiro** (`app.py:408`) e alcança TRÊS consumidores:
   o Olho (`pipeline.py:375`), o roteamento (como `extra` colado em cada fragmento) e a
@@ -1061,6 +1201,15 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
      foto sem ninguém seria descartado **em silêncio** — o inspetor clica e nada acontece,
      sem uma linha no laudo explicando por quê. Melhor não oferecer.
 
+  **RESULTADO DO LOTE (09/09), n=2 marcações.** A cadeia marcação → dossiê → Analista
+  fechou: na foto marcada certa o Analista enquadrou os dois itens corretos, e quem os
+  derrubou foi o Diretor, por não copiar a exigência (ver a seção de validação de 09/09 e
+  a repescagem que ela motivou). Na foto marcada ERRADA de propósito, o item curado em D1
+  não virou enquadramento nenhum. As treze sem marcação saíram como sairiam.
+  **O que ainda não foi testado é a segunda foto que o desenho D recuperaria** —
+  `PROTEÇÃO POÇO DE ELEVADOR SOMENTE COM UM PONTO DE FIXAÇÃO`, que não foi marcada neste
+  lote e segue com o achado do engenheiro (fixação precária) não encontrado.
+
   **O critério de aceite do lote se lê na TRILHA do laudo, não nas não conformidades.** A
   linha "Risco(s) apontado(s) pelo inspetor" declara toda marcação, e é ela que separa o
   laudo dirigido do laudo em que o app chegou sozinho ao item — a distinção que o valor de
@@ -1070,6 +1219,33 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   trava contra o clique errado é ele exigir o trecho literal do fato do Olho, e o #34
   mostrou que ela falha por omissão; (c) nas fotos sem marcação, que o laudo seja o de
   hoje.
+- **A não conformidade que é uma VERIFICAÇÃO, com prazo de 1 dia.** Laudo 7 de 09/09
+  (`11 PAV. PROTEÇÃO POÇO ELEVADOR SEM PROTEÇÃO`): o aparo do Diretor converteu a
+  afirmação ("a grade não atende ao requisito") em verificação ("Verificar no local se a
+  grade metálica possui travamento"), que é a regra da moldura funcionando — e o
+  resultado ficou como **não conformidade**, com gravidade alta e prazo de 1 dia. Uma
+  verificação não é um descumprimento: ela pertence aos pontos de atenção. O aparo hoje
+  só sabe reescrever a constatação no lugar, não movê-la de seção. **Cuidado ao
+  consertar**: mover automaticamente todo aparo que vire verificação pode virar a classe
+  de erro 5 pela porta do aparo, que já aconteceu com a cinta de içamento.
+- **Uma abertura, duas NCs, por um par que `ITENS_EQUIVALENTES` não cobre.** Laudo 11 de
+  09/09 conta a mesma abertura em `NR-18 18.9.1` (proteção coletiva, genérico) e
+  `NR-18 18.9.2` (fechamento da abertura). A fusão declara só `18.9.2`/`8.3.2.2`. **Não é
+  o mesmo caso**: `18.9.1` e `18.9.2` são da MESMA NR e não impõem a mesma exigência —
+  um manda proteger o entorno, o outro fechar o vão. Declará-los equivalentes seria
+  mentira; o que cabe medir é se o Analista devia enquadrar os dois.
+- **Dois defeitos no texto do aparo, impressos no laudo do cliente.** No laudo 5 de 09/09
+  ele sai cortado no meio da frase ("…que é o que…") — o `_em_poucas_palavras` corta sem
+  marcar o corte. No laudo 3 o Diretor declarou aparo dizendo que **nada** foi removido
+  ("Nenhuma cláusula foi removida, pois…") e a linha foi impressa na trilha assim mesmo.
+  Aparo sem retirada não devia virar linha; e o corte devia dizer que cortou.
+- **Item de abertura no PISO usado para vão VERTICAL, com o aparo agravando.** Laudo 1 de
+  09/09: `NR-18 18.9.2` para um painel de madeira vertical encostado no concreto, e o
+  aparo retirou a referência ao vão vertical — com a razão certa, "a norma regula
+  especificamente aberturas no piso" — e **manteve o enquadramento**. É a classe de erro
+  1 pelo caminho do aparo: ele corta o que não tem lastro e não pergunta se o que sobrou
+  ainda descumpre AQUELE item, que é justamente o que o `PROMPT_DIRETOR` manda fazer.
+  Falta conferir a foto antes de chamar de falso positivo.
 - **A `cancela` entrega os itens de elevador sem passar por portão nenhum.** Achado pelo
   `/critico` no #35, e **medido**: os filtros do `dossie.py` valem só para a recuperação
   textual — item de risco CURADO entra por `montar_dossie` e não passa por
@@ -1158,12 +1334,21 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   de uso a desmentiu. Ela sobreviveu ao mesmo PR que corrigiu a afirmação gêmea
   vinte linhas acima, que é exatamente a armadilha do "número envelhece em silêncio"
   cometida dentro do conserto dela.
-- **O Diretor pode truncar com 900 tokens de saída.** Ele já morreu por truncamento com
-  1.600 (lote de 29/08), e agora tem menos espaço e não pode dobrá-lo. O `PROMPT_DIRETOR`
-  passou a pedir a oração que basta nas duas cópias literais, o que encolhe a maior
-  parte da resposta dele, e a retentativa manda encurtar — **nada disso foi medido em
-  produção**. Se o lote refeito trouxer "Diretor não devolveu JSON utilizável", as
-  saídas são fatiar a conferência em mais de uma chamada (custa cota) ou o Dev Tier.
+- **O Diretor não trunca, ele OMITE — medido em 09/09.** A ressalva era que ele morresse
+  por truncamento com 900 tokens de saída, como morrera com 1.600 em 29/08. Não foi o que
+  aconteceu: em 15 fotos **zero** ocorrências de "Diretor não devolveu JSON utilizável".
+  O que apareceu foi JSON válido com o campo `exigencia` em branco: **1 laudo dos 15**, e
+  nele os DOIS enquadramentos, que eram os dois certos de um poço sem proteção. Das 15
+  fotos, 11 tinham enquadramento a conferir, então a omissão foi de 1 em 11.
+  A saída registrada aqui ("fatiar a conferência") foi implementada como REPARO e não
+  como divisão fixa: `_reconferir_exigencias` só é chamada quando o trecho falta. **Falta
+  medir em produção** se a segunda pergunta é respondida — o dublê responde, o modelo de
+  verdade não foi testado.
+- **Por que ele omite continua sem resposta.** Não é truncamento (o JSON fecha) nem falta
+  de espaço declarada. As hipóteses não medidas: o schema pedir `exigencia` dentro de um
+  objeto que já tem `fato` e `decisao`, e o modelo economizar o campo mais longo; ou o
+  laudo com MAIS de um enquadramento gastar a atenção no primeiro. O laudo 15 tinha dois
+  enquadramentos e três pontos de atenção, que é o mais carregado do lote — mas n=1.
 
 - **Taxonomia de içamento — FEITA no #22, à espera de lote.** Três riscos novos em
   `construcao.py`: `dispositivo_icamento_deteriorado` (`NR-18 18.10.1.27`,

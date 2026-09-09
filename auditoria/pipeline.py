@@ -1081,6 +1081,84 @@ MOTIVO_CONFERENCIA_OMITIDA = (
 )
 
 
+PROMPT_RECONFERENCIA = """Você é o supervisor técnico. Na revisão anterior você decidiu sobre estes enquadramentos e NÃO devolveu o trecho do texto oficial que cada constatação descumpre. Sem esse trecho o enquadramento cai, e ele cai como falha de supervisão — não por você ter refutado nada.
+
+Faça só isso agora, um enquadramento por vez:
+
+{enquadramentos}
+
+Para cada [V<n>], COPIE do TEXTO OFICIAL dele o trecho literal que a constatação descumpre.
+Copiar, não parafrasear: a oração que basta, nunca menos que ela, e sempre palavras que
+estão no texto oficial acima.
+
+Se, relendo, você não achar no texto oficial um trecho que a constatação descumpra, deixe
+"exigencia" VAZIO — isso derruba o enquadramento, e é a resposta certa quando o item não
+trata da situação descrita. Não invente trecho para salvar um enquadramento.
+
+Responda SOMENTE com este JSON:
+{{"conferencia": [{{"ref": "V<n>", "exigencia": "<trecho literal do TEXTO OFICIAL, ou vazio>"}}]}}"""
+
+
+def _constatacao_conferida(aparo: dict | None, nc: NaoConformidade) -> str:
+    """A constatação que precisa descumprir o item: a aparada, se houver aparo.
+
+    O que vai ao laudo depois de um aparo é a constatação restrita, e é ela que
+    tem de descumprir o item — não a que o Analista escreveu antes do corte.
+    """
+    nova = str((aparo or {}).get("constatacao", "")).strip()
+    return nova or nc.constatacao
+
+
+def _reconferir_exigencias(
+    cliente: Conversador,
+    modelo: str,
+    faltantes: list[tuple[str, Item, str]],
+) -> dict[str, str]:
+    """Segunda chance para o trecho que o Diretor deixou de copiar.
+
+    Só para o trecho AUSENTE, nunca para o que veio e não ancorou. A distinção
+    é a mesma do #34 e aqui ela é a trava: trecho que não ancora é o supervisor
+    refutando o enquadramento, e repetir a pergunta seria dar ao modelo uma
+    segunda chance de INVENTAR a exigência — exatamente o que a rede existe
+    para impedir. Trecho ausente não refutou nada, então perguntar de novo não
+    afrouxa trava nenhuma: o enquadramento cai igual se a resposta vier vazia.
+
+    Medido no lote de 09/09: **1 laudo dos 15** veio sem o trecho, e nele os
+    DOIS enquadramentos — `19 PAV. POÇO GRUA SEM PROTEÇÃO`, um poço sem
+    proteção de piso nem de parede, com `NR-18 18.9.2` e `NR-08 8.3.2.2`
+    derrubados por omissão. O Analista tinha acertado; o laudo saiu com 0 NC.
+
+    A chamada é estreita de propósito — só os itens que faltaram, e a resposta
+    são duas ou três orações. É o "fatiar a conferência do Diretor" que o
+    CLAUDE.md registrava como saída, feito como REPARO em vez de divisão fixa:
+    não custa chamada nas 14 fotos de 15 em que a conferência não faltou.
+    """
+    if not faltantes:
+        return {}
+    blocos = "\n\n".join(
+        f"[{ref}] {item.nr} {item.item}\n"
+        f"  TEXTO OFICIAL: {item.resumo(340)}\n"
+        f"  CONSTATAÇÃO: {constatacao}"
+        for ref, item, constatacao in faltantes
+    )
+    try:
+        dados = _conversar_sem_cortar(
+            cliente, modelo,
+            PROMPT_RECONFERENCIA.format(enquadramentos=blocos),
+            600, 0.0, "Diretor",
+        )[0]
+    except RespostaIlegivel:
+        # A repescagem é um bônus: se ela falhar, o enquadramento cai como
+        # caía antes, com a trilha dizendo "Supervisão incompleta". Deixar a
+        # exceção subir mataria a foto inteira por causa de um reparo.
+        return {}
+    return {
+        str(c.get("ref", "")).strip().upper(): str(c.get("exigencia", "") or "")
+        for c in dados.get("conferencia", [])
+        if str(c.get("ref", "")).strip()
+    }
+
+
 def _rotular(itens: list[str], letra: str) -> str:
     return "\n".join(f"[{letra}{n}] {t}" for n, t in enumerate(itens, start=1)) or SEM_ITENS
 
@@ -1431,23 +1509,62 @@ def _executar(
         # `append` direto no laudo acumularia entre os ciclos do Gauntlet, que
         # é o que `laudo.vetos = motivos` evita logo abaixo.
         omitidas: list[str] = []
+
+        def exigencia_de(ref: str) -> str:
+            # A exigência mora na conferência; o aparo antigo a trazia no
+            # próprio bloco, e continua aceito para não depender da forma exata
+            # que o modelo escolheu devolver.
+            return str(
+                conferido.get(ref, {}).get("exigencia")
+                or (aparados.get(ref) or {}).get("exigencia")
+                or ""
+            )
+
+        # Repescagem do trecho que não veio — e SÓ dele. Trecho que veio e não
+        # ancora é refutação: perguntar de novo daria ao modelo uma segunda
+        # chance de inventar a exigência, que é o que esta rede existe para
+        # impedir. Ver `_reconferir_exigencias`.
+        #
+        # A constatação que vai à repescagem é a APARADA quando houver aparo, e
+        # nunca a original. O aparo corta o que o fato não sustenta, e o que
+        # tem de descumprir o item é o que SOBRA — é a distinção que o próprio
+        # `PROMPT_DIRETOR` carrega: a NR-35 exige piso estável E sapata (cortada
+        # a sapata, ainda descumpre → aparar), a NR-18 18.8.6.12 trata só de
+        # sapata (cortada a sapata, não descumpre mais nada → vetar). Perguntar
+        # sobre a constatação original salvaria justamente o segundo caso, com
+        # o laudo imprimindo a aparada: seria reabrir a porta que o #13 e o #15
+        # fecharam, dentro do conserto de outra coisa.
+        faltantes = [
+            (f"V{n}", nc.item, _constatacao_conferida(aparados.get(f"V{n}"), nc))
+            for n, nc in enumerate(aprovadas, start=1)
+            if f"V{n}" not in vetados and _exigencia_omitida(exigencia_de(f"V{n}"))
+        ]
+        # Quem entrou na repescagem entrou porque a supervisão ficou EM SILÊNCIO
+        # sobre ele, e esse fato não muda com o que o reparo devolver. Sem este
+        # registro, um trecho repescado que não ancore cairia em
+        # `MOTIVO_EXIGENCIA_NAO_ANCORA` e o laudo diria ao engenheiro "a
+        # constatação não descumpre o texto oficial deste item" — uma refutação
+        # que ninguém emitiu, que é exatamente o defeito que o #34 tirou deste
+        # mesmo laudo. Colapsar as duas causas de novo, dentro do conserto que
+        # cita o #34 como trava, seria a armadilha pela terceira vez.
+        repescados = {ref for ref, _, _ in faltantes}
+        if faltantes:
+            avisar(f"Reconferência de {len(faltantes)} enquadramento(s) sem trecho copiado…")
+            for ref, trecho in _reconferir_exigencias(
+                cliente, config.modelo_texto, faltantes
+            ).items():
+                if trecho.strip():
+                    conferido.setdefault(ref, {})["exigencia"] = trecho
+
         for n, nc in enumerate(aprovadas, start=1):
             ref = f"V{n}"
             if ref in vetados:
                 continue
-            aparo = aparados.get(ref)
-            # A exigência mora na conferência; o aparo antigo a trazia no
-            # próprio bloco, e continua aceito para não depender da forma exata
-            # que o modelo escolheu devolver.
-            exigencia = str(
-                conferido.get(ref, {}).get("exigencia")
-                or (aparo or {}).get("exigencia")
-                or ""
-            )
+            exigencia = exigencia_de(ref)
             if _exigencia_ancorada(exigencia, nc.item):
                 continue
             aparados.pop(ref, None)
-            if _exigencia_omitida(exigencia):
+            if _exigencia_omitida(exigencia) or ref in repescados:
                 # O enquadramento cai do mesmo jeito — sem a conferência não há
                 # como sustentá-lo, e reabrir essa porta devolveria o painel
                 # empoeirado ao laudo. O que muda é o que se diz ao engenheiro,

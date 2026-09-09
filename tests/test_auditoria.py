@@ -4343,3 +4343,224 @@ def test_sumario_de_lote_sem_marcacao_nao_ganha_o_bloco(base):
     texto = relatorio.consolidado([("sozinha.jpg", limpo)], base, HOJE)
     assert "apontado pelo inspetor" not in texto
     assert "*(apontada)*" not in texto
+
+
+# ---------------------------------------------------------------------------
+# Repescagem da conferência do Diretor (o laudo 15 de 09/09)
+# ---------------------------------------------------------------------------
+
+MARCA_RECONFERENCIA = "Na revisão anterior você decidiu"
+TRECHO_REAL = "deve ser apoiada em piso estável e possuir bases (sapatas) antiderrapantes"
+
+
+class _DubleQueOmiteAConferencia(_Duble):
+    """Diretor aprova e não copia a exigência; a repescagem responde `resposta`.
+
+    `resposta` é o que a segunda chamada devolve — string com o trecho, ou uma
+    exceção a levantar. `chamadas_de_reconferencia` conta quantas vezes ela foi
+    feita, que é como se trava a regra de não repescar refutação.
+    """
+
+    def __init__(self, item_alvo, constatacao, veredito_fn, resposta):
+        super().__init__(item_alvo, constatacao, veredito_fn)
+        self.resposta = resposta
+        self.chamadas_de_reconferencia = 0
+
+    def conversar(self, modelo, mensagens, teto_saida=1200, temperatura=0.0,
+                  json_estrito=False):
+        if MARCA_RECONFERENCIA in _texto_do_prompt(mensagens):
+            self.chamadas_de_reconferencia += 1
+            if isinstance(self.resposta, Exception):
+                raise self.resposta
+            return json.dumps(
+                {"conferencia": [{"ref": "V1", "exigencia": self.resposta}]},
+                ensure_ascii=False,
+            )
+        return super().conversar(modelo, mensagens, teto_saida, temperatura, json_estrito)
+
+
+def _rodar_com_omissao(base, resposta, exigencia_do_diretor=""):
+    duble = _DubleQueOmiteAConferencia(
+        "NR-35 Anexo III 5.2.2.5", CONSTATACAO,
+        lambda: {
+            "conferencia": [{"ref": "V1", "fato": FATO, "decisao": "aprovado",
+                             "exigencia": exigencia_do_diretor}],
+            "aparados": [], "vetados": [], "ajustes": [], "pontos_descartados": [],
+            "conformidades_descartadas": [], "parecer": "p",
+        },
+        resposta,
+    )
+    laudo = executar(duble, base, "img", "",
+                     Configuracao(modelo_visao="d", modelo_texto="d", data_referencia=HOJE))
+    return laudo, duble
+
+
+def test_reconferencia_recupera_o_enquadramento_sem_trecho_copiado(base):
+    """O laudo 15 do lote de 09/09, e o que ele custou.
+
+    `19 PAV. POÇO GRUA SEM PROTEÇÃO` foi a foto marcada pelo inspetor. A
+    marcação funcionou até o fim: o item entrou curado em D1 e o Analista
+    enquadrou `NR-18 18.9.2` e `NR-08 8.3.2.2`, os dois certos. Os dois caíram
+    porque o Diretor não copiou o trecho — pela segunda vez na MESMA foto, já
+    que o lote de 08/09 tinha falhado no mesmo lugar. O laudo saiu com 0 NC
+    sobre um poço sem proteção de piso nem de parede.
+
+    Perguntar de novo, só pelo que faltou, é barato: a resposta são duas ou
+    três orações, e nas 14 fotos de 15 em que a conferência não faltou não custa
+    chamada nenhuma.
+    """
+    laudo, duble = _rodar_com_omissao(base, TRECHO_REAL)
+    assert duble.chamadas_de_reconferencia == 1
+    assert [f"{nc.item.nr} {nc.item.item}" for nc in laudo.nao_conformidades] == [
+        "NR-35 Anexo III 5.2.2.5"
+    ], "a repescagem trouxe o trecho e o enquadramento continuou caindo"
+    assert laudo.conferencia_omitida == []
+
+
+def test_repescagem_vazia_deixa_o_enquadramento_cair_como_omissao(base):
+    """Sem trecho na segunda tentativa, tudo se comporta como antes do conserto.
+
+    É o que impede a repescagem de virar uma porta: ela dá ao supervisor uma
+    segunda chance de RESPONDER, não de aprovar. Silêncio duas vezes continua
+    derrubando o enquadramento, com a trilha dizendo que foi omissão.
+    """
+    from auditoria.pipeline import MOTIVO_CONFERENCIA_OMITIDA
+
+    laudo, duble = _rodar_com_omissao(base, "")
+    # Ao menos uma, e não exatamente uma: havendo veto, o Gauntlet devolve para
+    # um segundo ciclo, que refaz o Diretor e portanto repesca de novo.
+    assert duble.chamadas_de_reconferencia >= 1
+    assert not laudo.nao_conformidades
+    assert MOTIVO_CONFERENCIA_OMITIDA in " ".join(laudo.vetos)
+    assert laudo.conferencia_omitida == ["NR-35 Anexo III 5.2.2.5"]
+    assert laudo.sem_enquadramento, "o achado evaporou em vez de virar observação"
+
+
+def test_trecho_que_nao_ancora_nao_e_reperguntado(base):
+    """A trava, e ela é o coração deste conserto.
+
+    Trecho que VEIO e não está no item é o supervisor REFUTANDO o
+    enquadramento — o painel empoeirado citado em item de sinalização. Repetir
+    a pergunta ali daria ao modelo uma segunda chance de inventar a exigência,
+    que é precisamente o que esta rede existe para impedir. A repescagem só
+    alcança o silêncio.
+    """
+    from auditoria.pipeline import MOTIVO_EXIGENCIA_NAO_ANCORA
+
+    laudo, duble = _rodar_com_omissao(
+        base, TRECHO_REAL,
+        exigencia_do_diretor="os degraus devem ser mantidos limpos e desobstruídos",
+    )
+    assert duble.chamadas_de_reconferencia == 0, (
+        "refutação foi reperguntada — o modelo ganhou uma segunda chance de inventar"
+    )
+    assert not laudo.nao_conformidades
+    assert MOTIVO_EXIGENCIA_NAO_ANCORA in " ".join(laudo.vetos)
+
+
+def test_repescagem_ilegivel_nao_mata_a_foto(base):
+    """A repescagem é um bônus: quando ela falha, o laudo é o de antes.
+
+    Deixar `RespostaIlegivel` subir daqui perderia a foto inteira por causa de
+    um reparo — trocaria um enquadramento que já ia cair por um laudo que não
+    sai. É a armadilha do `except` largo pelo avesso: aqui o erro engolido não
+    faz o documento mentir, porque o caminho de saída é o mesmo de antes e a
+    trilha continua dizendo "Supervisão incompleta".
+    """
+    from auditoria.modelos import RespostaIlegivel
+    from auditoria.pipeline import MOTIVO_CONFERENCIA_OMITIDA
+
+    laudo, duble = _rodar_com_omissao(base, RespostaIlegivel("json quebrado"))
+    assert duble.chamadas_de_reconferencia >= 1
+    assert not laudo.nao_conformidades
+    assert MOTIVO_CONFERENCIA_OMITIDA in " ".join(laudo.vetos)
+    assert not laudo.visao_falhou, "a foto foi perdida por causa do reparo"
+
+
+class _DubleQueAparaEOmite(_Duble):
+    """Diretor APARA e não copia a exigência; guarda o prompt da repescagem."""
+
+    def __init__(self, item_alvo, constatacao, veredito_fn, resposta):
+        super().__init__(item_alvo, constatacao, veredito_fn)
+        self.resposta = resposta
+        self.prompt_de_reconferencia = ""
+
+    def conversar(self, modelo, mensagens, teto_saida=1200, temperatura=0.0,
+                  json_estrito=False):
+        p = _texto_do_prompt(mensagens)
+        if MARCA_RECONFERENCIA in p:
+            self.prompt_de_reconferencia = p
+            return json.dumps(
+                {"conferencia": [{"ref": "V1", "exigencia": self.resposta}]},
+                ensure_ascii=False,
+            )
+        return super().conversar(modelo, mensagens, teto_saida, temperatura, json_estrito)
+
+
+APARADA = "A escada portátil está apoiada sobre entulho, com a base fora do nível."
+
+
+def test_a_repescagem_pergunta_pela_constatacao_APARADA(base):
+    """O gap que o `/critico` pegou na primeira versão da repescagem.
+
+    O aparo corta da constatação o que o fato não sustenta, e quem tem de
+    descumprir o item é o que SOBRA. É a distinção que o `PROMPT_DIRETOR`
+    carrega desde o #13: a NR-35 Anexo III 5.2.2.5 exige piso estável E sapata,
+    então cortada a sapata ainda descumpre — aparar; a NR-18 18.8.6.12 trata só
+    de sapata, então cortada a sapata não descumpre mais nada — vetar.
+
+    Perguntar a repescagem sobre a constatação ORIGINAL salvaria justamente o
+    segundo caso: o modelo acharia o trecho que a frase inteira descumpre, e o
+    laudo imprimiria a aparada, que não descumpre. Seria reabrir por dentro a
+    porta que o #13 e o #15 fecharam — o aparo salvando enquadramento que era
+    veto — e dentro do conserto de outra coisa.
+    """
+    duble = _DubleQueAparaEOmite(
+        "NR-35 Anexo III 5.2.2.5", CONSTATACAO,
+        lambda: {
+            "conferencia": [{"ref": "V1", "fato": FATO, "decisao": "aparado",
+                             "exigencia": ""}],
+            "aparados": [{"ref": "V1", "constatacao": APARADA,
+                          "acao_corretiva": "Reposicionar a escada sobre piso estável.",
+                          "gravidade": "alta", "retirado": "a cláusula da sapata"}],
+            "vetados": [], "ajustes": [], "pontos_descartados": [],
+            "conformidades_descartadas": [], "parecer": "p",
+        },
+        TRECHO_REAL,
+    )
+    executar(duble, base, "img", "",
+             Configuracao(modelo_visao="d", modelo_texto="d", data_referencia=HOJE))
+
+    assert APARADA in duble.prompt_de_reconferencia, (
+        "a repescagem foi feita sobre a constatação que não vai ao laudo"
+    )
+    assert "sapatas antiderrapantes" not in duble.prompt_de_reconferencia, (
+        "a cláusula que o aparo retirou voltou para a pergunta da repescagem"
+    )
+
+
+def test_repescagem_que_devolve_trecho_ruim_continua_sendo_omissao(base):
+    """O segundo gap que o `/critico` pegou, e ele é o defeito do #34 de volta.
+
+    A supervisão ficou em SILÊNCIO sobre este enquadramento — foi por isso que
+    ele entrou na repescagem. Se o reparo devolver um trecho que não está no
+    item (paráfrase em vez de cópia, que é justamente por que
+    `_exigencia_ancorada` existe), o enquadramento cai — certo — mas o motivo
+    NÃO pode virar refutação: ninguém refutou nada. O laudo estaria afirmando
+    ao engenheiro que a situação não descumpre a norma, que é a frase exata que
+    o #34 tirou deste mesmo laudo, recriada dentro do conserto que cita o #34
+    como trava.
+    """
+    from auditoria.pipeline import MOTIVO_CONFERENCIA_OMITIDA, MOTIVO_EXIGENCIA_NAO_ANCORA
+
+    laudo, duble = _rodar_com_omissao(
+        base, "os degraus devem ser mantidos limpos e desobstruídos"
+    )
+    assert duble.chamadas_de_reconferencia >= 1
+    assert not laudo.nao_conformidades, "trecho que não ancora não pode salvar nada"
+    trilha = " ".join(laudo.vetos)
+    assert MOTIVO_CONFERENCIA_OMITIDA in trilha
+    assert MOTIVO_EXIGENCIA_NAO_ANCORA not in trilha, (
+        "o laudo está afirmando que a norma não foi descumprida, e ninguém conferiu"
+    )
+    assert laudo.conferencia_omitida == ["NR-35 Anexo III 5.2.2.5"]
