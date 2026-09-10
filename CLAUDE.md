@@ -16,8 +16,11 @@ reescrita inteira vivia numa branch nunca mergeada** — se `git diff main...HEA
 mostrar milhares de linhas de novo, desconfie do `main` local antes de concluir que o
 `main` remoto está desatualizado (ver armadilha do `git fetch` abaixo).
 
-**Sem acesso de rede à Groq a partir desta sessão remota.** `api.groq.com` é bloqueado
-pela política de egress do container (403 no proxy) — confirmado, não é intermitente.
+**Sem acesso de rede à Groq a partir desta sessão remota.** O domínio `groq.com`
+**inteiro** é bloqueado pela política de egress do container, não só a API — medido em
+10/09 tentando ler os termos de uso: `EGRESS_BLOCKED`, e não 403 da API. A frase anterior
+daqui dizia `api.groq.com`, o que fez supor que a documentação e os termos fossem
+alcançáveis. Não são: **nada em groq.com se lê daqui**, nem doc, nem termos, nem console.
 Isso significa: nada de `ClienteGroq` real aqui, só `ClienteDemonstracao` e testes da
 camada determinística (roteador, dossiê, aferição). Testar com o modelo de visão de
 verdade é sempre com o usuário, em produção, com fotos e laudos que ele manda de volta.
@@ -629,6 +632,7 @@ Lotes temáticos que valem, com as fotos já identificadas:
 | ~~Içamento~~ | 7 fotos | **RODADO em 02/09** — 2 de 5 achados do engenheiro. Ver acima. Só volta a valer depois de existir taxonomia de guindar e de o Olho nomear o equipamento |
 | Poço de elevador | **15 fotos — a lista nominal está na seção de validação de 08/09**, reconstruída e com a ressalva do que nela é inferência. É de lá que se monta o lote; esta linha guarda o histórico. As 14 originais eram as 12 do desenho + `GRUAA` e `GRUAAA` | **TENTADO em 04/09 e perdido: 1 foto auditada de 12, as outras recusadas pelo OTPM. Refazer.** Achado mais repetido do acervo; `vao_caixa_elevador_sem_fechamento` existe e nunca disparou em produção. O sinal FOI medido antes de gastar o lote, e o que se achou não era o 0,50 do lote de içamento: com o Olho escrevendo `elevador` e `cancela`, **os dois riscos de elevador disparavam com a proteção INSTALADA** (5 de 5 e 3 de 6). Sinais refeitos para ancorar na abertura, não no `sem`, e todo sinal de torre/base exige `elevador` (no canteiro há a torre da GRUA): 22 de 22 fatos com a proteção instalada ficam calados e 14 de 14 com ela ausente acionam o risco certo. É este lote que valida os dois consertos ao mesmo tempo. **Desenho recuperado em 07/09 e gravado aqui para não se perder de novo** — proteção presente (5): `18 PAV. PROTEÇÃO POÇO DE ELEVADOR`, `PROTEÇÃO POÇO DE ELEVADOR SOMENTE COM UM PONTO DE FIXAÇÃO`, `PROTEÇÃO POÇO ELEVADOR DIFERENTE DO PROJETO`, `PROTEÇÃO POÇO ELEVADOR DIFERENTE DAS ANTERIORES`, `19. PROTEÇÃO DE ELEVADOR NÃO FIXADA`; proteção ausente (5): `13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO`, `11 PAV. PROTEÇÃO POÇO ELEVADOR SEM PROTEÇÃO`, `3 PAV. POÇO ELEVADOR SEM PROTEÇÃO E SINALIZAÇÃO`, `19 PAV. POÇO ELEVADOR SEM PROTEÇÃO`, `20 PAV SEM PROTEÇÃO NO POÇO DE ELEVADOR`; grua (2): `GRUA`, `19 PAV. POÇO GRUA SEM PROTEÇÃO`. **As duas acrescentadas** são `GRUAA` e `GRUAAA`: nenhuma das duas de grua do desenho testa o nome da torre (`GRUA` já dava 0 NC e `19 PAV. POÇO GRUA` é poço), e **`GRUAAA` é a foto que produziu o `NR-18 18.11.14`** — sem ela o defeito da grua fica sem o seu teste. **E ela é o único experimento controlado do histórico**, cruzado em 07/09: a MESMA foto deu **0 NC** no lote de içamento de 02/09, ANTES do #27, e `NR-18 18.11.14` no lote de 05/09, DEPOIS dele (o #27 mergeou em 04/09). Uma foto, uma mudança, dois resultados opostos — é a prova causal de que foi o prompt que produziu o defeito, e não a variabilidade da visão. Por isso o aceite dela é forte: 0 NC no `GRUAAA` não é "pode ter sido sorte", é **volta a uma linha de base medida**. Cuidado com os dois arquivos gêmeos `19 PAV. POÇO ELEVADOR SEM PROTEÇÃO.jpg` e `...PROTEÇÃOO.jpg` (dois O): o desenho lista o de um O, o gabarito de 05/09 registra o de dois, e qual deles rodou não dá para saber sem os laudos — rode os dois |
 | Controle negativo | 5 documentos (POP, lista de presença, CREA, crachá) | devem dar **0 NC**; é a classe de erro que já apareceu e nunca foi testada de propósito |
+| **Variabilidade da visão** | as MESMAS 15 do lote de poço, rodadas **duas vezes no mesmo dia**, uma chave em cada conta | Mesmas fotos, mesmo código, mesmo dia: a diferença entre os dois lotes é variabilidade PURA do modelo, sem confundir com mudança de versão. É o primeiro dos "limites honestos" deste arquivo e até hoje só tem anedota — "um botão de emergência foi crítico numa foto e passou despercebido em outra do mesmo painel". **Só ficou possível em 10/09**, com a segunda conta: duas passadas de 15 dão ~234 mil tokens e não cabiam em conta nenhuma. O que se lê: quantas NCs mudam de foto para foto, se o Olho descreve os mesmos fatos, e se as fotos de 0 NC continuam em 0. Um número aqui diz quanto do gabarito de qualquer lote é ruído |
 
 Ao receber os laudos: o HTML traz o "Ambiente registrado" e a lista de fatos do Olho,
 então dá para **reproduzir o dossiê aqui sem rede** — `montar_dossie` é determinístico.
@@ -1021,6 +1025,27 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   **Um lote de 100 fotos não cabe num dia**: a ~25 fotos/dia pelo teto de 200.000,
   são ~4 dias, e dentro de cada dia o relógio ainda freia pela janela de 8.000 TPM
   (~1,1 foto/min). Os dois limites apertam; o diário é o que decide o calendário.
+
+  **O teto diário DOBRA com uma segunda conta Groq, e isso foi testado em 10/09.** O
+  usuário tem acesso a uma segunda conta (da esposa, que a emprestou) e confirmou que
+  funciona: cada conta tem balde próprio de 200.000 por modelo, então **~25 fotos/dia
+  viram ~50**, e o lote de 100 cai de ~4 dias para ~2. Não é preciso mexer em código —
+  a barra lateral já tem "Usar minha própria chave" com o campo, e trocar a chave entre
+  lotes basta.
+  **O que NÃO dobra**, e é onde a conta engana: cada foto continua levando ~45 s, porque
+  a janela de 8.000 TPM é por conta e o app roda um lote de cada vez, sequencial. E o
+  **OTPM de 900 continua igual** — a segunda conta tem o OTPM dela, mas cada chamada
+  segue limitada ao mesmo teto de saída, então o Diretor não ganha espaço nenhum. O ganho
+  é de CALENDÁRIO, não de relógio nem de tamanho de resposta.
+  **A pegadinha que vai enganar quem trocar a chave**: `Consumo` (em `consumo.py`) vive no
+  `st.session_state` e é indexado só pela DATA — ele **não sabe que a chave mudou**.
+  Depois de trocar, o painel continua somando no balde da conta anterior e vai anunciar
+  cota esgotada com a conta nova zerada. O botão **"Zerar contagem"** resolve, e é preciso
+  clicar nele a cada troca. O contador só informa: quem interrompe o lote de verdade é o
+  429 da API, então esquecer de zerar não perde foto, só mente na tela.
+  **Alternar as duas chaves DENTRO do mesmo lote não existe e seria outro ganho** — aí
+  dobraria também a janela de TPM e o relógio cairia junto. Custa fazer o contador ser por
+  chave e mexer na espera adaptativa, que vive dentro do `ClienteGroq`. Não foi feito.
 - **Documento gerado não substitui laudo assinado por profissional habilitado.**
 
 ---
