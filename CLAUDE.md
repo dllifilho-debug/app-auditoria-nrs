@@ -103,6 +103,193 @@ por chamada (fatiar a conferência do Diretor) ou o Dev Tier pago.
 
 ---
 
+## Validação em produção de 10/09/2026 — o lote de VARIABILIDADE, 15 fotos duas vezes
+
+As MESMAS 15 fotos do lote de poço, **duas passadas no mesmo dia**, sem marcação
+nenhuma em nenhuma delas, no `eb43354` (os PRs #39 e #40). Passada A na conta do
+usuário, passada B na conta da esposa, com "Zerar contagem" entre as duas. **30 laudos,
+0 não auditadas, 1 ciclo em todos, 0 falhas de leitura.** É o primeiro dos "limites
+honestos" deste arquivo medido de verdade: até hoje ele só tinha anedota.
+
+**As duas passadas são idênticas em toda entrada.** O usuário escreveu "chave 1" e
+"chave 2" para se orientar, mas escreveu no campo **Obra / unidade** (`app.py:397`), que
+só decora o cabeçalho do laudo — quem alimenta o Olho, o roteamento e a busca textual é
+o **Contexto da inspeção** (`app.py:408`), e ele ficou vazio nas duas. Não há variável de
+confusão: mesma foto, mesmo código, mesma entrada, mesmo dia. **Sorte que ele escolheu o
+campo decorativo**: medido aqui sem rede, pôr `"chave 1"` no campo de contexto mudaria o
+dossiê de **5 das 15 fotos** (tira um item em 04, 09, 10 e 14 e troca um por outro em
+02), sem introduzir item de "chave elétrica" — o efeito é indireto, pelo corte relativo
+do BM25. Vale para qualquer texto administrativo naquele campo.
+
+### 1. O Olho NÃO varia — e este é o achado do lote
+
+**Os fatos do Olho saíram byte a byte idênticos nas 15 fotos.** Lista de achados,
+posição de cada um, texto do ambiente e contagem de trabalhadores: 15 de 15, sem uma
+vírgula de diferença, em contas Groq diferentes. A temperatura 0,0/0,1 dos três agentes
+sempre foi conhecida; o que ninguém tinha medido é que ela basta para o modelo de visão
+ser reprodutível na prática.
+
+Isso reescreve o limite honesto nº 1. **A variabilidade que este app tem não está na
+visão: está no Analista e no Diretor.** O dossiê é determinístico por construção
+(`montar_dossie` é código puro sobre os fatos), então, com os fatos fixos, tudo o que
+diverge entre A e B nasceu depois deles.
+
+**Ressalva de escopo, e ela importa:** isto é UM par de passadas, no mesmo dia, com a
+mesma resolução (896px) e o mesmo modelo. Não é "o Qwen 3.8 é determinístico"; é "nestas
+15 fotos, nestas condições, ele foi". A anedota que motivou o limite honesto — o botão
+de emergência crítico numa foto e despercebido em outra — era de **fotos diferentes do
+mesmo painel**, que é outro fenômeno e continua de pé.
+
+### 2. Quanto do gabarito é ruído: dois números
+
+| o que se compara | A vs B |
+|---|---|
+| fatos do Olho (achados, ambiente, pessoas) | **15/15 idênticos** |
+| contagem de não conformidades por foto | **14/15 iguais** |
+| conjunto de itens enquadrados por foto | **13/15 iguais** |
+| gravidade de todos os itens da foto | 10/15 iguais |
+| citação complementar ("Também alcançado por") | 15/15 iguais (laudos 8, 10 e 11 nas duas) |
+| parecer da revisão técnica | **0/15 idênticos** |
+
+Totais: **11 NCs na passada A e 12 na B**. Vetos: 3 em A (laudos 1, 7 e 9), 2 em B
+(laudos 4 e 9); 25 dos 30 laudos saíram "aprovado sem vetos". Pontos de atenção: 5
+laudos/6 itens em A, 4 laudos/4 itens em B. Conformidades: **2 laudos dos 30** (B01 e
+B14) — o item "os pontos de atenção quase não saem" vale ainda mais para as
+conformidades.
+
+**A leitura prática para quem monta lote:** um gabarito de 15 fotos carrega ruído de
+**±1 NC no total** e **duas fotos** cuja resposta pode mudar. Diferença de uma ou duas
+fotos entre dois lotes **não é sinal** — é a faixa do ruído. Diferença de item na mesma
+foto tampouco, quando os dois itens são defensáveis. O que dá para comparar entre lotes é
+o que ficou igual nas duas passadas: os fatos, o dossiê, e o grosso dos enquadramentos.
+
+### 3. Onde as duas passadas discordaram, uma a uma
+
+- **Laudo 1** (`18 PAV. PROTEÇÃO POÇO DE ELEVADOR`) — **a divergência mais cara, e ela é
+  o defeito registrado em aberto**. Em A o Diretor VETOU `NR-18 18.9.2` com a razão
+  exata ("o item 18.9.2 regula especificamente aberturas no piso, enquanto a constatação
+  descreve uma abertura vertical"), a verificação foi para os pontos de atenção, e a NC
+  que ficou é `NR-08 8.3.2.2` — o item certo para vão vertical. Em B o mesmo `18.9.2`
+  passou, com a constatação reescrita para falar do painel de madeira sem fixação. **A
+  passada A conserta o defeito do laudo 1 de 09/09 e a B o repete.** Nada mudou entre as
+  duas exceto a chamada.
+- **Laudo 7** (`11 PAV.`) — a única divergência de CONTAGEM. Em A, vetado (0 NC); em B,
+  `NR-18 18.9.2` alta. Ver a cláusula (e), abaixo.
+- **Laudo 4** — mesmo item nos dois (`8.3.2.2`), gravidade alta em A e crítica em B, e
+  constatações sobre coisas diferentes da mesma foto: em A a tela frouxa no trecho
+  inferior, em B a tela não ser fechamento rígido. As duas defensáveis.
+- **Laudo 11** — os mesmos dois itens nos dois (`18.9.1` + `18.9.2`), com o `18.9.1`
+  subindo de alta para crítica em B e a ordem de encabeçamento trocando.
+- **Laudo 15** — mesmo item, alta em A e crítica em B.
+
+### 4. O PR #39 em produção, e o que não deu para medir
+
+- **A cláusula (e) mudou o comportamento nas duas passadas.** A "não conformidade que é
+  uma VERIFICAÇÃO" — `"Verificar no local se a grade metálica possui travamento"` como
+  constatação, que saiu duas vezes em 09/09 e escalou de alta para crítica — **não voltou
+  em nenhuma das 30**. Em A o enquadramento foi vetado e a verificação saiu em ponto de
+  atenção, que é o desenho da cláusula. Em B ele sobreviveu, mas **reformulado**: a
+  constatação virou afirmação ("a base está apoiada diretamente no piso, sem evidência
+  visual de travamento") e a gravidade caiu de crítica para alta, com o "verificar"
+  movido para a ação corretiva, onde ele é legítimo. Aceite parcial: a forma que a
+  cláusula proíbe morreu; o enquadramento sobre o que a foto não mostra sobrevive por
+  reescrita, e contra isso quem age é a regra da moldura, que pegou em A e não em B.
+- **O aparo que não vira linha de trilha: aceite limpo. 10 aparos nas 30, 5 em cada
+  passada, e TODOS com retirada real** — "a afirmação de que a grade não impede a queda,
+  que é uma inferência sobre a eficácia", "a exigência específica de altura mínima de
+  1,10 m … que não é verificável pela imagem". Nenhuma linha do tipo "retirado: Nenhuma
+  cláusula foi removida, pois…", que é o defeito do laudo 3 de 09/09 e o que o #39
+  fechou. **E o aparo é a decisão MAIS estável do Diretor**: os laudos 5, 6 e 15 foram
+  aparados nas duas passadas, no mesmo item, enquanto os vetos não coincidiram em nenhum
+  laudo (A vetou 1, 7 e 9; B vetou 4 e 9 — só o 9 nos dois).
+  **A ressalva de 09/09 continua de pé, e ela apareceu de novo:** o aparo do laudo B01
+  retirou a referência a "aberturas no piso" com a razão certa ("o fato descreve um
+  painel vertical contra estrutura") e **manteve o `NR-18 18.9.2`** — o mesmo item de
+  piso, o mesmo defeito, palavra por palavra. É a classe de erro 1 pelo caminho do aparo,
+  e ele não pergunta se o que sobrou ainda descumpre AQUELE item.
+- **A repescagem NÃO foi medida, e o motivo é instrumentação nossa.** Zero "Supervisão
+  incompleta" nas 30, e `_reconferir_exigencias` **não deixa marca quando dá certo**: o
+  enquadramento simplesmente sobrevive. Logo "zero omissões" não separa o Diretor não ter
+  omitido do reparo ter funcionado — e são conclusões opostas sobre o mecanismo. **É a
+  armadilha "o sumário não distingue enquadramento ausente de enquadramento vetado" um
+  nível abaixo**: a trilha registrava a omissão que MATOU e não a que foi REPARADA.
+  Consertado nesta sessão (`conferencia_reparada`, com linha própria na trilha); **há
+  três testes travando**, um deles a contraparte de a repescagem vazia não contar como
+  reparada. O próximo lote responde.
+
+### 5. Defeito novo, medido: o rótulo do dossiê impresso no laudo do cliente
+
+A conformidade do laudo B14 (`GRUA`) saiu com *"atendendo aos requisitos de proteção
+contra queda de pessoas **descritos no item D6**"*. `D6` é endereço interno do pipeline.
+**Um vazamento em 30 laudos** — e a causa é maior que o sintoma: `laudo.conformidades`
+era a **única lista do documento que não passava por limpeza nenhuma** (`pipeline.py`,
+onde `sem_enquadramento` ao lado dela já chamava `_limpar_citacoes`). Sem essa chamada,
+uma citação normativa digitada pelo modelo chegaria ao laudo **sem passar pela base** —
+que é a garantia central deste projeto.
+
+Consertado nesta sessão: `RE_ROTULO_DOSSIE` entra na mesma marcação de
+`_limpar_citacoes`, então os doze pontos de chamada ganham a limpeza de uma vez, e as
+conformidades passaram a chamá-la. O rótulo **nu** (`D6` solto) fica de propósito, pela
+mesma razão que `RE_ROTULO_INTERNO` só remove `(V1)` entre parênteses — "Bloco D3 da
+edificação" é frase de engenheiro. Exigimos o apresentador ("item D6", "conforme D6") ou
+o delimitador ("[D6]"). **Há cinco testes travando**, um deles a contraparte do rótulo nu.
+
+### 6. O que se confirmou sem divergência
+
+- **Zero "torre de elevador" nas 30**, terceira medição seguida. `GRUAA` e `GRUAAA`
+  trazem "Torre metálica treliçada"; `GRUAA` traz ainda "Torre de guindaste metálica
+  distante"; `GRUA` tem "grua ou torre de elevação" no ambiente, com a lança e os
+  contrapesos descritos.
+- **As três fotos de grua deram 0 NC nas duas passadas**, e `GRUAAA` está em **0 NC pela
+  terceira e pela quarta medição seguidas** (08/09, 09/09 e as duas de hoje), com 3
+  trabalhadores na cena.
+- **Zero riscos roteados continua prevendo 0 NC — agora com n=8.** As mesmas quatro fotos
+  de 08/09 routeiam risco nenhum (`SOMENTE COM UM PONTO DE FIXAÇÃO`, `GRUAA`, `GRUAAA`,
+  `GRUA`) e as oito execuções deram 0 NC. **Nenhum falso positivo saiu de dossiê sem
+  risco curado**, que é o que o `18.12.22` do `GRUA` fez em 08/09: o portão setorial do
+  #35 segurou nas oito.
+- **O achado do engenheiro na foto 2 continua não sendo visto**, nas duas passadas. A
+  fixação precária não está em fato nenhum do Olho, e por isso ela é o caso que o desenho
+  D **não** recupera — é a fronteira medida em 09/09, confirmada aqui: marcação dirige o
+  dossiê, não o Olho.
+
+### 7. Gabarito contra o nome do arquivo: 14 de 15 em A, 12 de 15 em B
+
+**Critério, declarado porque o número depende dele:** a foto fecha quando o laudo entrega
+o achado que o engenheiro escreveu no nome do arquivo, num item que se aplica àquela
+situação — ou quando devolve 0 NC e o nome não aponta defeito. Item verdadeiro na
+situação errada (a classe de erro 1) não fecha, mesmo com a norma citada corretamente.
+É o mesmo critério das quatro que 09/09 lista como não fechando (1, 2, 7 e 15).
+
+| # | foto | A | B | por quê |
+|---|---|---|---|---|
+| 1 | `18 PAV. PROTEÇÃO POÇO DE ELEVADOR` | ✅ | ❌ | A: `8.3.2.2`, item de parede para vão vertical. B: `18.9.2`, item de PISO, com o aparo tirando a referência a piso e mantendo o item |
+| 2 | `SOMENTE COM UM PONTO DE FIXAÇÃO` | ❌ | ❌ | a fixação precária não está em fato nenhum do Olho, nas duas |
+| 3 | `DIFERENTE DO PROJETO` | ✅ | ✅ | `8.3.2.2` |
+| 4 | `DIFERENTE DAS ANTERIORES` | ✅ | ✅ | `8.3.2.2` |
+| 5 | `19. PROTEÇÃO DE ELEVADOR NÃO FIXADA` | ✅ | ✅ | `18.9.2` |
+| 6 | `13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO` | ✅ | ✅ | `18.9.2` |
+| 7 | `11 PAV. PROTEÇÃO POÇO ELEVADOR SEM PROTEÇÃO` | ✅ | ❌ | A: vetado, verificação em ponto de atenção. B: NC sobre a ausência de evidência visual de travamento |
+| 8 | `3 PAV. POÇO ELEVADOR SEM PROTEÇÃO E SINALIZAÇÃO` | ✅ | ✅ | `18.9.2` + `8.3.2.2` complementar; a sinalização não sai em nenhuma |
+| 9 | `19 PAV. POÇO ELEVADOR SEM PROTEÇÃOO` | ✅ | ✅ | `8.3.2.2`, com `18.9.3` vetado nas duas |
+| 10 | `19 PAV. POÇO ELEVADOR SEM PROTEÇÃO` | ✅ | ✅ | `18.9.2` |
+| 11 | `20 PAV SEM PROTEÇÃO NO POÇO DE ELEVADOR` | ✅ | ✅ | `18.9.1` + `18.9.2`, com a dupla contagem da mesma abertura nas duas |
+| 12 | `GRUAA` | ✅ | ✅ | 0 NC |
+| 13 | `GRUAAA` | ✅ | ✅ | 0 NC |
+| 14 | `GRUA` | ✅ | ✅ | 0 NC |
+| 15 | `19 PAV. POÇO GRUA SEM PROTEÇÃO` | ✅ | ✅ | `8.3.2.2` |
+
+**A passada A falha só na foto 2; a B falha na 1, na 2 e na 7.** As duas fotos a mais que
+a B perde são exatamente as duas divergências da seção 3 — não há terceira fonte de
+diferença.
+
+**Contra 11 de 15 em 09/09**, pelo mesmo critério. E é aqui que o próprio lote manda ter
+cuidado: **as duas fotos que separam A de B são a largura inteira do ruído que ele acabou
+de medir**, então "melhorou de 11 para 14" não é conclusão — a mesma versão do app
+entregou 14 e 12 no mesmo dia.
+
+---
+
 ## Validação em produção de 09/09/2026 — o lote de 15 refeito, com marcação
 
 Rodado no código do #37 (o desenho D). **15 laudos, 0 não auditadas, 12 NCs.** O hash
@@ -632,7 +819,7 @@ Lotes temáticos que valem, com as fotos já identificadas:
 | ~~Içamento~~ | 7 fotos | **RODADO em 02/09** — 2 de 5 achados do engenheiro. Ver acima. Só volta a valer depois de existir taxonomia de guindar e de o Olho nomear o equipamento |
 | Poço de elevador | **15 fotos — a lista nominal está na seção de validação de 08/09**, reconstruída e com a ressalva do que nela é inferência. É de lá que se monta o lote; esta linha guarda o histórico. As 14 originais eram as 12 do desenho + `GRUAA` e `GRUAAA` | **TENTADO em 04/09 e perdido: 1 foto auditada de 12, as outras recusadas pelo OTPM. Refazer.** Achado mais repetido do acervo; `vao_caixa_elevador_sem_fechamento` existe e nunca disparou em produção. O sinal FOI medido antes de gastar o lote, e o que se achou não era o 0,50 do lote de içamento: com o Olho escrevendo `elevador` e `cancela`, **os dois riscos de elevador disparavam com a proteção INSTALADA** (5 de 5 e 3 de 6). Sinais refeitos para ancorar na abertura, não no `sem`, e todo sinal de torre/base exige `elevador` (no canteiro há a torre da GRUA): 22 de 22 fatos com a proteção instalada ficam calados e 14 de 14 com ela ausente acionam o risco certo. É este lote que valida os dois consertos ao mesmo tempo. **Desenho recuperado em 07/09 e gravado aqui para não se perder de novo** — proteção presente (5): `18 PAV. PROTEÇÃO POÇO DE ELEVADOR`, `PROTEÇÃO POÇO DE ELEVADOR SOMENTE COM UM PONTO DE FIXAÇÃO`, `PROTEÇÃO POÇO ELEVADOR DIFERENTE DO PROJETO`, `PROTEÇÃO POÇO ELEVADOR DIFERENTE DAS ANTERIORES`, `19. PROTEÇÃO DE ELEVADOR NÃO FIXADA`; proteção ausente (5): `13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO`, `11 PAV. PROTEÇÃO POÇO ELEVADOR SEM PROTEÇÃO`, `3 PAV. POÇO ELEVADOR SEM PROTEÇÃO E SINALIZAÇÃO`, `19 PAV. POÇO ELEVADOR SEM PROTEÇÃO`, `20 PAV SEM PROTEÇÃO NO POÇO DE ELEVADOR`; grua (2): `GRUA`, `19 PAV. POÇO GRUA SEM PROTEÇÃO`. **As duas acrescentadas** são `GRUAA` e `GRUAAA`: nenhuma das duas de grua do desenho testa o nome da torre (`GRUA` já dava 0 NC e `19 PAV. POÇO GRUA` é poço), e **`GRUAAA` é a foto que produziu o `NR-18 18.11.14`** — sem ela o defeito da grua fica sem o seu teste. **E ela é o único experimento controlado do histórico**, cruzado em 07/09: a MESMA foto deu **0 NC** no lote de içamento de 02/09, ANTES do #27, e `NR-18 18.11.14` no lote de 05/09, DEPOIS dele (o #27 mergeou em 04/09). Uma foto, uma mudança, dois resultados opostos — é a prova causal de que foi o prompt que produziu o defeito, e não a variabilidade da visão. Por isso o aceite dela é forte: 0 NC no `GRUAAA` não é "pode ter sido sorte", é **volta a uma linha de base medida**. Cuidado com os dois arquivos gêmeos `19 PAV. POÇO ELEVADOR SEM PROTEÇÃO.jpg` e `...PROTEÇÃOO.jpg` (dois O): o desenho lista o de um O, o gabarito de 05/09 registra o de dois, e qual deles rodou não dá para saber sem os laudos — rode os dois |
 | Controle negativo | 5 documentos (POP, lista de presença, CREA, crachá) | devem dar **0 NC**; é a classe de erro que já apareceu e nunca foi testada de propósito |
-| **Variabilidade da visão** | as MESMAS 15 do lote de poço, rodadas **duas vezes no mesmo dia**, uma chave em cada conta | Mesmas fotos, mesmo código, mesmo dia: a diferença entre os dois lotes é variabilidade PURA do modelo, sem confundir com mudança de versão. É o primeiro dos "limites honestos" deste arquivo e até hoje só tem anedota — "um botão de emergência danificado foi crítico numa foto e passou despercebido em outra do mesmo painel". **Só ficou possível em 10/09**, com a segunda conta: duas passadas de 15 dão ~234 mil tokens e não cabiam em conta nenhuma. O que se lê: quantas NCs mudam de foto para foto, se o Olho descreve os mesmos fatos, e se as fotos de 0 NC continuam em 0. Um número aqui diz quanto do gabarito de qualquer lote é ruído |
+| ~~Variabilidade da visão~~ | **RODADO em 10/09** — 30 laudos, o Olho idêntico em 15/15 e ~±1 NC de ruído no total. Ver a seção de validação. Esta linha guarda o desenho: as MESMAS 15 do lote de poço, rodadas **duas vezes no mesmo dia**, uma chave em cada conta | Mesmas fotos, mesmo código, mesmo dia: a diferença entre os dois lotes é variabilidade PURA do modelo, sem confundir com mudança de versão. É o primeiro dos "limites honestos" deste arquivo e até hoje só tem anedota — "um botão de emergência danificado foi crítico numa foto e passou despercebido em outra do mesmo painel". **Só ficou possível em 10/09**, com a segunda conta: duas passadas de 15 dão ~234 mil tokens e não cabiam em conta nenhuma. O que se lê: quantas NCs mudam de foto para foto, se o Olho descreve os mesmos fatos, e se as fotos de 0 NC continuam em 0. Um número aqui diz quanto do gabarito de qualquer lote é ruído |
 
 Ao receber os laudos: o HTML traz o "Ambiente registrado" e a lista de fatos do Olho,
 então dá para **reproduzir o dossiê aqui sem rede** — `montar_dossie` é determinístico.
@@ -660,7 +847,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 232 testes
+$VENV -m pytest tests/ -q          # 240 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -781,6 +968,8 @@ próprio comando composto (exit 144).
 | **O sumário não distingue enquadramento ausente de enquadramento vetado** | Lendo o sumário do lote de 09/09, concluí que o Analista tinha IGNORADO o item marcado na foto `19 PAV. POÇO GRUA SEM PROTEÇÃO` — porque ela não aparece no plano de ação. Errado: ele enquadrou os dois itens certos, e o Diretor os derrubou por não copiar a exigência. A ausência de linha no plano é compatível com as duas coisas, e elas pedem consertos OPOSTOS (dossiê/roteamento de um lado, conferência do supervisor do outro). O sumário só lista o que sobreviveu; **quem separa é a trilha do laudo**, que nomeia cada veto e sua causa. É a irmã da armadilha "medir o roteamento não vê o item que a busca textual traz", num nível acima: **ao medir um lote, o sumário conta QUANTO, e só o laudo conta POR QUÊ** — não conclua causa a partir dele. |
 | **Widget de framework traz afordância que o desenho não pediu** | O `st.multiselect` do Streamlit 1.63 oferece **"Select all"** por padrão (`select_all=1000`: aparece sempre que há até mil opções). No campo de marcação por foto, um clique nele marcaria os 40 riscos de uma vez — e como o item marcado entra na FRENTE num dossiê de 22 entradas, isso expulsaria o roteamento e a busca textual inteiros: o app pararia de auditar a foto e devolveria a lista que lhe deram. Não apareceu em teste nenhum e não está na assinatura que se lê de cabeça; **apareceu na tela**, no primeiro print do painel. Hoje vai `select_all=False` e `max_selections=3`. Ao pôr widget novo, leia a assinatura inteira do construtor e pergunte o que ele faz **por padrão** — e olhe a tela, que é onde o padrão do framework aparece. |
 | **Expansor do Streamlit fecha a cada rerun, e cada marcação é um rerun** | O painel de marcação nasceu sem `expanded`, e no navegador se viu o que teste nenhum veria: marcar a primeira foto fechava o painel, de modo que marcar a segunda de um lote de 100 exigiria reabrir e rolar, cem vezes. `expanded=com_marcacao > 0` resolve — a primeira marcação abre o painel para valer. Vale para todo expansor que contenha widget: o estado dele não sobrevive ao rerun que o próprio widget dispara. |
+| **Rede que só registra quando FALHA é rede que não se pode medir** | `_reconferir_exigencias` deixa linha na trilha quando o enquadramento cai ("Supervisão incompleta") e **nenhuma** quando o reparo dá certo — o enquadramento simplesmente sobrevive. No lote de 10/09 isso deu 30 laudos sem uma linha de omissão e nenhum jeito de dizer se o Diretor não omitiu ou se a repescagem salvou, que são conclusões opostas sobre o mesmo mecanismo. É a irmã da armadilha "o sumário não distingue enquadramento ausente de enquadramento vetado", um nível abaixo: lá o documento não separava duas causas de ausência, aqui ele não registra o sucesso. **Ao construir uma rede de segurança, pergunte o que o documento diz quando ela FUNCIONA** — se a resposta é "nada", o próximo lote não a mede. Consertado com `conferencia_reparada`; há três testes travando. |
+| **A lista que não passa pela limpeza é a que ninguém lembra que existe** | `laudo.conformidades` recebia as strings do Analista cruas — sem `_limpar_citacoes`, ao lado de `laudo.sem_enquadramento` que já chamava. Em 10/09 saiu impresso "atendendo aos requisitos … descritos no item **D6**", com o rótulo interno do dossiê no documento do cliente. O sintoma é cosmético; o buraco não: sem a limpeza, uma citação normativa digitada pelo modelo chegaria ao laudo **sem passar pela base**, que é a garantia central deste projeto. É a terceira aparição da armadilha "corte aplicado a um campo só", e o padrão é sempre o mesmo — a lista esquecida é a que quase nunca sai (conformidades apareceram em **2 de 30 laudos**), então ela não aparece em lote nenhum até aparecer. **Ao pôr uma limpeza num campo, liste TODOS os campos de texto livre que chegam ao documento e confira um a um** — inclusive os que costumam vir vazios. |
 | `git fetch origin main <branch-que-não-existe-mais>` falha inteiro, silenciosamente | Fetch de múltiplos refs é atômico: se um ref já foi deletado no remoto (branch mergeada), o comando inteiro falha e **nenhum ref é atualizado** — inclusive o `main`, que existia e seria atualizado sozinho. `origin/main` local fica congelado na versão de antes, e comparações feitas contra ele mentem. Já causou uma sessão inteira concluir errado que "a reescrita nunca foi mergeada". Se o histórico parecer suspeito, rode `git fetch origin main` sozinho antes de confiar em qualquer diff. |
 
 ---
@@ -801,7 +990,7 @@ próprio comando composto (exit 144).
   plano de ação. Um laudo dirigido em parte por quem inspecionou não tem o mesmo valor de
   evidência que um em que o app chegou sozinho ao item, e quem lê o documento precisa
   saber de qual dos dois se trata.
-- **232 testes**
+- **240 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
@@ -826,6 +1015,12 @@ próprio comando composto (exit 144).
   ninguém emitiu. Pega exigência **inventada**; não pega trecho verdadeiro citado fora de propósito, e contra
   esse continua agindo só o prompt. Este é o único uso em código do bloco `conferencia`:
   o `fato` copiado segue sem verificação automática.
+- **Todo texto livre do laudo passa por `_limpar_citacoes`** — a lista de conformidades
+  entrou por último, em 10/09, depois de sair impressa com o rótulo do dossiê dentro. A
+  função remove a citação normativa escrita à mão pelo modelo e o rótulo do dossiê
+  apresentado (`item D6`, `conforme D6`, `[D6]`); o rótulo NU fica de propósito, porque
+  "Bloco D3 da edificação" é frase de engenheiro. **Há cinco testes travando**, um deles
+  essa contraparte.
 - **A conferência do Diretor tem repescagem.** Quando ele deixa `exigencia` em branco,
   `_reconferir_exigencias` pergunta de novo, numa chamada estreita que leva só os
   enquadramentos que faltaram. **Só o trecho AUSENTE é repescado**: trecho que veio e não
@@ -834,6 +1029,11 @@ próprio comando composto (exit 144).
   enquadramento como antes, com "Supervisão incompleta" na trilha; repescagem ilegível
   também, sem matar a foto. Motivada pelo laudo 15 de 09/09, em que os dois
   enquadramentos certos de um poço sem proteção caíram por omissão.
+  **Repescagem que dá certo deixa linha na trilha** ("Conferência repescada"), desde o
+  lote de 10/09: sem ela o mecanismo era invisível no documento e um lote sem nenhuma
+  "Supervisão incompleta" não separava o Diretor não ter omitido do reparo ter
+  funcionado. **Há três testes travando**, um deles a contraparte de a repescagem vazia
+  não contar como reparada.
   **Havendo aparo, a pergunta é feita sobre a constatação APARADA**, nunca sobre a
   original: o que tem de descumprir o item é o que sobra do corte, e perguntar pela frase
   inteira salvaria justamente o caso que o aparo manda vetar. Foi o `/critico` que pegou,
@@ -980,10 +1180,16 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
 
 ## Limites honestos
 
-- **Variabilidade da visão.** A mesma foto, em duas execuções, produz leituras
-  diferentes. Um botão de emergência danificado foi crítico numa foto e passou
-  despercebido em outra do mesmo painel. O app é apoio, não substituto do olho do
-  engenheiro — e o rodapé do laudo diz isso a sério.
+- **Variabilidade — MEDIDA em 10/09, e não é onde se supunha.** A mesma foto, em duas
+  execuções do mesmo dia, produz **os mesmos fatos**: 15 de 15 byte a byte, achados,
+  posições, ambiente e contagem de gente, em contas Groq diferentes. **O Olho não varia
+  nestas condições**; quem varia é o Analista e o Diretor, e a faixa é ~±1 NC no total de
+  um lote de 15, com **duas fotos** de 15 mudando de resposta e o parecer reescrito em
+  15 de 15. A anedota que sustentava este item — o botão de emergência crítico numa foto
+  e despercebido em outra do mesmo painel — era de **fotos diferentes**, o que é outro
+  fenômeno e continua de pé. Ver a seção de validação de 10/09 para o que isso obriga ao
+  comparar dois lotes. O app é apoio, não substituto do olho do engenheiro — e o rodapé
+  do laudo diz isso a sério.
 - **Cota.** O teto diário é **por modelo**, e é de **200.000 tokens para os quatro**
   — `gpt-oss-120b`, `gpt-oss-20b`, `qwen3.6-27b` e o `qwen3.8-27b`. Por três sessões
   este arquivo e o registro em `modelos.py` deram **2.000.000 ao 3.8**, de uma leitura
@@ -1303,8 +1509,16 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   trava contra o clique errado é ele exigir o trecho literal do fato do Olho, e o #34
   mostrou que ela falha por omissão; (c) nas fotos sem marcação, que o laudo seja o de
   hoje.
-- **A não conformidade que é uma VERIFICAÇÃO — CLÁUSULA (e) ESCRITA em 09/09, à espera de
-  lote.** `11 PAV. PROTEÇÃO POÇO ELEVADOR SEM PROTEÇÃO` saiu duas vezes no mesmo dia com
+- **A não conformidade que é uma VERIFICAÇÃO — cláusula (e) MEDIDA em 10/09, aceite
+  parcial.** Nas 30 execuções do lote de variabilidade a forma que a cláusula proíbe
+  (a constatação sendo `"Verificar no local se…"`) **não voltou uma vez sequer**. Mas na
+  passada B a mesma foto produziu o enquadramento outra vez, **reformulado**: a
+  constatação virou afirmação ("a base está apoiada diretamente no piso, sem evidência
+  visual de travamento"), o "verificar" foi para a ação corretiva, onde é legítimo, e a
+  gravidade caiu de crítica para alta. Na passada A ele foi vetado. **A cláusula matou a
+  FORMA e não o enquadramento**; contra a versão reescrita quem age é a regra da moldura,
+  que pegou numa passada e não na outra. O histórico abaixo fica porque é ele que nomeia
+  o caso. `11 PAV. PROTEÇÃO POÇO ELEVADOR SEM PROTEÇÃO` saiu duas vezes no mesmo dia com
   a providência "Verificar no local se a grade metálica possui travamento" como **não
   conformidade** — na segunda vez CRÍTICA, prazo de 1 dia, cobrando em 24 horas uma ida
   ao local. n=2 com escalada de alta para crítica.
@@ -1335,7 +1549,14 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   **Fica a lição**: eu afirmei "corta sem marcar" olhando o laudo, e a função executada
   desmentiu em dois segundos. Defeito de saída de código se confere rodando o código,
   não lendo o produto dele.
-- **Item de abertura no PISO usado para vão VERTICAL, com o aparo agravando.** Laudo 1 de
+- **Item de abertura no PISO usado para vão VERTICAL — e em 10/09 ele saiu dos DOIS
+  jeitos na mesma foto.** Na passada A o Diretor vetou o `18.9.2` com a razão exata ("o
+  item regula especificamente aberturas no piso") e a NC ficou em `NR-08 8.3.2.2`, que é
+  o item certo; na passada B ele passou, com a constatação reescrita para o painel de
+  madeira. Mesma foto, mesmos fatos, mesmo código: **a trava existe e dispara em uma
+  passada de duas.** Não é caso de escrever cláusula nova antes de entender por que ela
+  não dispara sempre — e continua faltando conferir a foto, que é o que decide se existe
+  buraco no chão ali. O histórico abaixo é de 09/09. Laudo 1 de
   09/09: `NR-18 18.9.2` para um painel de madeira vertical encostado no concreto, e o
   aparo retirou a referência ao vão vertical — com a razão certa, "a norma regula
   especificamente aberturas no piso" — e **manteve o enquadramento**. É a classe de erro
@@ -1439,7 +1660,17 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   A saída registrada aqui ("fatiar a conferência") foi implementada como REPARO e não
   como divisão fixa: `_reconferir_exigencias` só é chamada quando o trecho falta. **Falta
   medir em produção** se a segunda pergunta é respondida — o dublê responde, o modelo de
-  verdade não foi testado.
+  verdade não foi testado. **O lote de 10/09 não respondeu isso, e o motivo era nosso**:
+  30 laudos sem uma linha de "Supervisão incompleta", e a repescagem bem-sucedida não
+  deixava marca nenhuma, de modo que não havia como separar "não omitiu" de "omitiu e o
+  reparo funcionou". Instrumentado nesta sessão (`conferencia_reparada`); o próximo lote
+  responde lendo a linha **"Conferência repescada"** na trilha.
+  **E não dá para dizer que a omissão caiu**: o lote de 10/09 mede omissões que MATARAM o
+  enquadramento (zero em 22), não omissões que houve — a repescagem pode ter reparado
+  todas em silêncio. O 1 em 11 de 09/09 é de um código SEM repescagem, então os dois
+  números não são a mesma grandeza e subtrair um do outro seria a armadilha do "rodou N
+  das M" outra vez. A frequência real da omissão só volta a ser observável no próximo
+  lote, pela linha nova.
 - **Por que ele omite continua sem resposta.** Não é truncamento (o JSON fecha) nem falta
   de espaço declarada. As hipóteses não medidas: o schema pedir `exigencia` dentro de um
   objeto que já tem `fato` e `decisao`, e o modelo economizar o campo mais longo; ou o

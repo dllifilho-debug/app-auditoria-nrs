@@ -4647,3 +4647,159 @@ def test_aparo_que_muda_uma_clausula_continua_virando_linha(base):
     assert laudo.nao_conformidades[0].constatacao == APARADA
     assert len(laudo.aparos) == 1
     assert "retirado: a cláusula da sapata" in laudo.aparos[0]
+
+
+# ---------------------------------------------------------------------------
+# Rótulo do dossiê vazando para o laudo (o lote de variabilidade de 10/09)
+# ---------------------------------------------------------------------------
+
+def test_rotulo_do_dossie_apresentado_sai_do_texto():
+    """`D6` é endereço interno do pipeline e não diz nada a quem lê o laudo.
+
+    Medido em produção: uma conformidade do lote de 10/09 saiu impressa como
+    "…atendendo aos requisitos de proteção contra queda de pessoas descritos
+    no item D6". Um vazamento em 30 laudos — raro, e ainda assim num documento
+    que vai ao cliente.
+    """
+    from auditoria.pipeline import _limpar_citacoes
+
+    limpo = _limpar_citacoes(
+        "Guarda-corpo metálico tubular delimitando a plataforma elevada, "
+        "atendendo aos requisitos de proteção contra queda de pessoas "
+        "descritos no item D6."
+    )
+    assert "D6" not in limpo
+    # O particípio que só apresentava a referência sai com ela, senão o texto
+    # termina em "…descritos." — gramatical, mas pendurado.
+    assert "descritos" not in limpo
+    assert "Guarda-corpo metálico tubular" in limpo
+    assert limpo.rstrip().endswith(".")
+
+
+def test_rotulo_do_dossie_entre_parenteses_sai():
+    from auditoria.pipeline import _limpar_citacoes
+
+    limpo = _limpar_citacoes("A proteção instalada atende ao exigido (D3).")
+    assert "D3" not in limpo
+    assert limpo.startswith("A proteção instalada atende ao exigido")
+
+
+def test_rotulo_do_dossie_NU_fica_de_proposito():
+    """A contraparte, e ela é deliberada.
+
+    É a mesma razão pela qual `RE_ROTULO_INTERNO` só remove `(V1)` entre
+    parênteses: notação de engenharia civil colide com rótulo curto, e mutilar
+    a frase de quem descreve a própria obra é pior que deixar o rótulo passar.
+    Sem o apresentador ou o delimitador não há como distinguir os dois.
+    """
+    from auditoria.pipeline import _limpar_citacoes
+
+    texto = "Bloco D3 da edificação com fôrma de pilar apoiada na laje."
+    assert _limpar_citacoes(texto) == texto
+
+
+def test_rotulo_do_dossie_nao_come_numero_de_item_de_nr():
+    """A regex do rótulo não pode alcançar "item 18.9.2" — quem cita é o código,
+    mas o número do item continua saindo pelo renderizador a partir da base."""
+    from auditoria.pipeline import RE_ROTULO_DOSSIE
+
+    assert RE_ROTULO_DOSSIE.search("item 18.9.2") is None
+    assert RE_ROTULO_DOSSIE.search("item D6") is not None
+
+
+class _DubleComConformidadeSuja(_Duble):
+    """Analista propõe uma conformidade com rótulo de dossiê e citação à mão."""
+
+    CONFORMIDADE = (
+        "Guarda-corpo metálico rígido e contínuo na borda, conforme o item D6 "
+        "e a NR-18 18.9.1."
+    )
+
+    def conversar(self, modelo, mensagens, teto_saida=1200, temperatura=0.0,
+                  json_estrito=False):
+        bruto = super().conversar(modelo, mensagens, teto_saida, temperatura, json_estrito)
+        dados = json.loads(bruto)
+        if "nao_conformidades" in dados:
+            dados["conformidades"] = [self.CONFORMIDADE]
+            return json.dumps(dados, ensure_ascii=False)
+        return bruto
+
+
+def test_conformidade_passa_pela_limpeza_de_citacao_e_rotulo(base):
+    """`conformidades` era a ÚNICA lista do laudo que ia crua ao documento.
+
+    O rótulo era o sintoma visível; o buraco real é a citação normativa escrita
+    à mão pelo modelo chegando ao laudo sem passar pela base, que é a garantia
+    central deste projeto — o modelo escolhe, o código cita.
+    """
+    duble = _DubleComConformidadeSuja(
+        "NR-35 Anexo III 5.2.2.5", CONSTATACAO,
+        lambda: {
+            "conferencia": [{"ref": "V1", "fato": FATO, "decisao": "aprovado",
+                             "exigencia": TRECHO_REAL}],
+            "aparados": [], "vetados": [], "ajustes": [], "pontos_descartados": [],
+            "conformidades_descartadas": [], "parecer": "p",
+        },
+    )
+    laudo = executar(duble, base, "img", "",
+                     Configuracao(modelo_visao="d", modelo_texto="d", data_referencia=HOJE))
+    assert laudo.conformidades, "a conformidade proposta sumiu do laudo"
+    saida = laudo.conformidades[0]
+    assert "D6" not in saida
+    assert "NR-18" not in saida and "18.9.1" not in saida
+    assert "Guarda-corpo metálico rígido e contínuo na borda" in saida
+
+
+# ---------------------------------------------------------------------------
+# A repescagem bem-sucedida precisa aparecer na trilha
+# ---------------------------------------------------------------------------
+
+def test_repescagem_bem_sucedida_vira_linha_na_trilha(base):
+    """Sem esta linha a repescagem é invisível no documento.
+
+    O enquadramento sobrevive e nada diz que ele passou pela rede — de modo que
+    um lote sem nenhuma "Supervisão incompleta" não separa o Diretor não ter
+    omitido do reparo ter funcionado, que são conclusões opostas sobre o mesmo
+    mecanismo. Aconteceu no lote de 10/09: 30 laudos, zero linhas de omissão, e
+    nenhum jeito de dizer qual das duas.
+    """
+    laudo, duble = _rodar_com_omissao(base, TRECHO_REAL)
+    assert duble.chamadas_de_reconferencia == 1
+    assert laudo.conferencia_reparada == ["NR-35 Anexo III 5.2.2.5"]
+    assert laudo.conferencia_omitida == []
+    texto = relatorio.markdown(laudo, base, "foto.jpg")
+    assert "Conferência repescada" in texto
+    assert "NR-35 Anexo III 5.2.2.5" in texto
+
+
+def test_conferencia_reparada_nao_duplica_com_dois_ciclos(base):
+    """Lista local atribuída no fim do ciclo, nunca `append` no laudo.
+
+    É a armadilha que o `conferencia_omitida` já pagou: `laudo.vetos = motivos`
+    é atribuição e por isso não duplica; `laudo.aparos.append(...)` não tem essa
+    proteção, e o padrão de `Configuracao` é `max_ciclos` maior que 1.
+    """
+    duble = _DubleQueOmiteAConferencia(
+        "NR-35 Anexo III 5.2.2.5", CONSTATACAO,
+        lambda: {
+            "conferencia": [{"ref": "V1", "fato": FATO, "decisao": "aprovado",
+                             "exigencia": ""}],
+            "aparados": [], "vetados": [], "ajustes": [], "pontos_descartados": [],
+            "conformidades_descartadas": [], "parecer": "p",
+        },
+        TRECHO_REAL,
+    )
+    laudo = executar(duble, base, "img", "",
+                     Configuracao(modelo_visao="d", modelo_texto="d",
+                                  data_referencia=HOJE, max_ciclos=2))
+    assert laudo.conferencia_reparada == ["NR-35 Anexo III 5.2.2.5"]
+
+
+def test_repescagem_vazia_nao_conta_como_reparada(base):
+    """A contraparte: silêncio duas vezes continua sendo omissão, e só isso."""
+    laudo, _ = _rodar_com_omissao(base, "")
+    assert laudo.conferencia_reparada == []
+    assert laudo.conferencia_omitida == ["NR-35 Anexo III 5.2.2.5"]
+    texto = relatorio.markdown(laudo, base, "foto.jpg")
+    assert "Conferência repescada" not in texto
+    assert "Supervisão incompleta" in texto

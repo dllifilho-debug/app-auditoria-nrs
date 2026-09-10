@@ -249,6 +249,16 @@ def markdown(
     if laudo.vetos:
         for v in laudo.vetos:
             p.append(f"  - Vetado — {v}")
+    if laudo.conferencia_reparada:
+        p.append(
+            "- **Conferência repescada**: a revisão técnica deixou o trecho "
+            f"oficial em branco em {len(laudo.conferencia_reparada)} "
+            "enquadramento(s) e o forneceu quando perguntada de novo. Eles "
+            "estão sustentados, e o registro fica porque a supervisão precisou "
+            "de duas perguntas:"
+        )
+        for r in laudo.conferencia_reparada:
+            p.append(f"  - {r}")
     if laudo.conferencia_omitida:
         p.append(
             "- **Supervisão incompleta**: a revisão técnica não conferiu "
