@@ -62,10 +62,13 @@ class Consumo:
     ) -> int:
         """Teto diário daquele modelo, ou o padrão quando ele é desconhecido.
 
-        Os tetos não são iguais entre si: o `qwen/qwen3.8-27b` tem 2.000.000 de
-        tokens por dia contra 200.000 dos demais. Tratar todos pelo mesmo número
-        subestimava o balde dele em dez vezes — o painel diria que a cota acabou
-        com nove décimos dela sobrando.
+        Os tetos podem não ser iguais entre si, e por isso a tabela é parâmetro
+        em vez de constante. Hoje os quatro modelos do registro estão em 200.000
+        (console de 04/09): por três sessões este projeto deu 2.000.000 ao
+        `qwen/qwen3.8-27b`, de uma leitura de tela de 30/08, e o painel anunciava
+        dez vezes a capacidade real. Número que vem de fora do repositório se
+        reconfere no console — ver a armadilha do limite de fornecedor no
+        `CLAUDE.md`.
         """
         return (tetos or {}).get(modelo, orcamento)
 
