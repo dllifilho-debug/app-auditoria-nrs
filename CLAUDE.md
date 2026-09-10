@@ -169,10 +169,14 @@ o que ficou igual nas duas passadas: os fatos, o dossiê, e o grosso dos enquadr
   o defeito registrado em aberto**. Em A o Diretor VETOU `NR-18 18.9.2` com a razão
   exata ("o item 18.9.2 regula especificamente aberturas no piso, enquanto a constatação
   descreve uma abertura vertical"), a verificação foi para os pontos de atenção, e a NC
-  que ficou é `NR-08 8.3.2.2` — o item certo para vão vertical. Em B o mesmo `18.9.2`
+  que ficou é `NR-08 8.3.2.2`, que cobre piso E parede. Em B o mesmo `18.9.2`
   passou, com a constatação reescrita para falar do painel de madeira sem fixação. **A
   passada A conserta o defeito do laudo 1 de 09/09 e a B o repete.** Nada mudou entre as
   duas exceto a chamada.
+  **O engenheiro conferiu a foto depois deste lote: não há buraco no chão, o piso está
+  fechado com tábuas.** Logo o `18.9.2` de B é falso positivo confirmado, e o veto de A
+  estava certo. O que a resposta não decide é se a fresta vertical que sustenta o
+  `8.3.2.2` de A existe — ver o item em aberto.
 - **Laudo 7** (`11 PAV.`) — a única divergência de CONTAGEM. Em A, vetado (0 NC); em B,
   `NR-18 18.9.2` alta. Ver a cláusula (e), abaixo.
 - **Laudo 4** — mesmo item nos dois (`8.3.2.2`), gravidade alta em A e crítica em B, e
@@ -263,7 +267,7 @@ situação errada (a classe de erro 1) não fecha, mesmo com a norma citada corr
 
 | # | foto | A | B | por quê |
 |---|---|---|---|---|
-| 1 | `18 PAV. PROTEÇÃO POÇO DE ELEVADOR` | ✅ | ❌ | A: `8.3.2.2`, item de parede para vão vertical. B: `18.9.2`, item de PISO, com o aparo tirando a referência a piso e mantendo o item |
+| 1 | `18 PAV. PROTEÇÃO POÇO DE ELEVADOR` | ✅* | ❌ | **O engenheiro conferiu a foto: não há buraco no chão, o piso está fechado com tábuas.** B usa `18.9.2`, item de PISO — falso positivo confirmado. A vetou esse item e ficou com `8.3.2.2`, que cobre parede; o ✅ leva asterisco porque depende de a fresta vertical existir, e isso não foi conferido |
 | 2 | `SOMENTE COM UM PONTO DE FIXAÇÃO` | ❌ | ❌ | a fixação precária não está em fato nenhum do Olho, nas duas |
 | 3 | `DIFERENTE DO PROJETO` | ✅ | ✅ | `8.3.2.2` |
 | 4 | `DIFERENTE DAS ANTERIORES` | ✅ | ✅ | `8.3.2.2` |
@@ -280,8 +284,15 @@ situação errada (a classe de erro 1) não fecha, mesmo com a norma citada corr
 | 15 | `19 PAV. POÇO GRUA SEM PROTEÇÃO` | ✅ | ✅ | `8.3.2.2` |
 
 **A passada A falha só na foto 2; a B falha na 1, na 2 e na 7.** As duas fotos a mais que
-a B perde são exatamente as duas divergências da seção 3 — não há terceira fonte de
-diferença.
+a B perde são as duas divergências de ITEM e de CONTAGEM da seção 3 (as outras três
+divergências de lá são só de gravidade e não mexem no gabarito) — não há terceira fonte
+de diferença.
+
+**O asterisco da foto 1 é o único número deste lote ainda em aberto.** O engenheiro
+confirmou que não há abertura de piso ali, o que torna o `18.9.2` de B falso positivo e
+dá razão ao veto de A. Se a fresta vertical que sustenta o `8.3.2.2` de A também não
+existir, **A cai para 13 de 15** e as duas passadas erram a mesma foto por caminhos
+diferentes.
 
 **Contra 11 de 15 em 09/09**, pelo mesmo critério. E é aqui que o próprio lote manda ter
 cuidado: **as duas fotos que separam A de B são a largura inteira do ruído que ele acabou
@@ -385,7 +396,9 @@ As quatro que não fecham:
   defeito): saiu com `NR-18 18.9.2` — item de abertura no **piso** — para um painel de
   madeira **vertical** encostado no concreto. Pior, o aparo retirou a referência ao vão
   vertical, com a razão certa ("a norma regula especificamente aberturas no piso"), e
-  **manteve o enquadramento**. Falta conferir a foto: há buraco no chão ali?
+  **manteve o enquadramento**. **Conferido em 10/09: não há buraco no chão** — o
+  engenheiro respondeu que o piso está protegido e fechado com tábuas. O `18.9.2` deste
+  laudo é falso positivo confirmado, classe de erro 1.
 - **Laudo 2** (`SOMENTE COM UM PONTO DE FIXAÇÃO`): 0 NC. A NC falsa pela ferrugem de
   08/09 morreu — a cláusula (d) aparece no parecer, descartando "suposições de dano
   estrutural ou infiltração sem lastro visual definitivo". Mas a fixação precária, que é
@@ -1549,20 +1562,31 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   **Fica a lição**: eu afirmei "corta sem marcar" olhando o laudo, e a função executada
   desmentiu em dois segundos. Defeito de saída de código se confere rodando o código,
   não lendo o produto dele.
-- **Item de abertura no PISO usado para vão VERTICAL — e em 10/09 ele saiu dos DOIS
-  jeitos na mesma foto.** Na passada A o Diretor vetou o `18.9.2` com a razão exata ("o
-  item regula especificamente aberturas no piso") e a NC ficou em `NR-08 8.3.2.2`, que é
-  o item certo; na passada B ele passou, com a constatação reescrita para o painel de
-  madeira. Mesma foto, mesmos fatos, mesmo código: **a trava existe e dispara em uma
-  passada de duas.** Não é caso de escrever cláusula nova antes de entender por que ela
-  não dispara sempre — e continua faltando conferir a foto, que é o que decide se existe
-  buraco no chão ali. O histórico abaixo é de 09/09. Laudo 1 de
-  09/09: `NR-18 18.9.2` para um painel de madeira vertical encostado no concreto, e o
-  aparo retirou a referência ao vão vertical — com a razão certa, "a norma regula
-  especificamente aberturas no piso" — e **manteve o enquadramento**. É a classe de erro
-  1 pelo caminho do aparo: ele corta o que não tem lastro e não pergunta se o que sobrou
-  ainda descumpre AQUELE item, que é justamente o que o `PROMPT_DIRETOR` manda fazer.
-  Falta conferir a foto antes de chamar de falso positivo.
+- **Item de abertura no PISO usado para vão VERTICAL — a foto FOI conferida em 10/09, e
+  o `18.9.2` ali é falso positivo.** O engenheiro olhou a `18 PAV. PROTEÇÃO POÇO DE
+  ELEVADOR` e respondeu: **não há buraco no chão. O piso está protegido e fechado com
+  tábuas.** Isso encerra a dúvida que atravessou três lotes — `NR-18 18.9.2` regula
+  abertura no PISO, e não existe abertura de piso nessa foto. É a **classe de erro 1**
+  confirmada por quem viu a obra, e não mais uma suspeita.
+  Onde ele saiu: nos dois laudos de 09/09 e na passada B de 10/09. **Na passada A de
+  10/09 o Diretor vetou**, com a razão exata ("o item regula especificamente aberturas no
+  piso"). Mesma foto, mesmos fatos, mesmo código: **a trava existe e dispara em uma
+  passada de duas.** Escrever cláusula nova não é o conserto óbvio — o texto que veta já
+  está no prompt e o Diretor o executa às vezes. O que falta entender é por que ele não
+  executa sempre, e isso é a mesma pergunta da variabilidade do Diretor medida em 10/09.
+  **A resposta responde o PISO e não responde a fresta.** A NC que sobrou na passada A é
+  `NR-08 8.3.2.2` sobre uma *"abertura vertical estreita entre o painel de madeira e o
+  pilar de concreto"* — item que cobre piso E parede, então o enquadramento é pertinente
+  SE a fresta existir. O engenheiro não apontou defeito no nome do arquivo, o que sugere
+  que não; mas ele respondeu sobre o chão, não sobre a fresta. **O gabarito de 10/09
+  segue com A em 14 de 15 até isso ser conferido** — se a fresta não existir, A cai para
+  13 e as duas passadas erram a mesma foto por caminhos diferentes.
+  O caminho do defeito em 09/09, que continua valendo como registro: o aparo retirou a
+  referência ao vão vertical — com a razão certa, "a norma regula especificamente
+  aberturas no piso" — e **manteve o enquadramento**. É a classe de erro 1 pelo caminho
+  do aparo: ele corta o que não tem lastro e não pergunta se o que sobrou ainda descumpre
+  AQUELE item, que é justamente o que o `PROMPT_DIRETOR` manda fazer. **Em 10/09 o aparo
+  do laudo B01 fez exatamente isso de novo, palavra por palavra.**
 - **A `cancela` entrega os itens de elevador sem passar por portão nenhum.** Achado pelo
   `/critico` no #35, e **medido**: os filtros do `dossie.py` valem só para a recuperação
   textual — item de risco CURADO entra por `montar_dossie` e não passa por
