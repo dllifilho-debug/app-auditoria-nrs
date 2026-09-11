@@ -308,11 +308,21 @@ enquadramento não existe ao alcance. Ver o item novo em aberto.
 defeito nenhum, porque a serra tem coifa; na foto 2 escondeu um achado real, mas abrir o
 portão não o teria recuperado.
 
-**A P6 continua aberta e é a mais cara das que sobraram.** Se o vão de acesso ao poço da
-foto 5 estava sem fechamento provisório, a âncora do lote tem uma segunda NC — o
-`NR-18 18.9.3` — que não saiu em nenhuma das quatro execuções com laudo lido (09/09, as
-duas de 10/09 e esta; a de 08/09 é a lista reconstruída), e "âncora manteve" passa a
-significar que o app repete a mesma resposta PARCIAL, não que ela esteja completa.
+**A P6 continua aberta, e o laudo 4 dá o contexto que faltava para reperguntá-la direito.**
+Se o vão de acesso ao poço da foto 5 estava sem fechamento provisório, a âncora do lote tem
+uma segunda NC — o `NR-18 18.9.3` — que não saiu em nenhuma das quatro execuções com laudo
+lido (09/09, as duas de 10/09 e esta; a de 08/09 é a lista reconstruída), e "âncora manteve"
+passa a significar que o app repete a mesma resposta PARCIAL, não que ela esteja completa.
+**Mas os fatos do Olho, lidos agora no HTML, não são silêncio sobre isso**: ele registrou
+*"Grade metálica de malha quadrada (treliça) instalada verticalmente, delimitando uma
+passagem ou vão lateral"* e *"Vão vertical (poço de elevador ou escada) visível ao fundo,
+com estrutura de concreto e **grade metálica na borda**"*, os dois à direita, ao fundo. **Se
+essa grade for o fechamento do vão de acesso, não há omissão nenhuma** — o Olho viu a
+proteção, o Analista é que não a usou para descartar o item. A pergunta que vai ao
+engenheiro precisa dizer QUAL vão: a leitura feita aqui falava de um rasgo grande na parede
+à ESQUERDA, e a grade que o Olho descreve está à direita. **É a única das sete cuja resposta
+o artefato podia ter estreitado com o material em mãos e não estreitou** — reperguntar sem
+isso gasta uma rodada com o engenheiro.
 
 **30 fatos nas 5 fotos. 9 divergências levantadas, das quais 5 estão CONFIRMADAS pelo
 engenheiro e 4 não têm pergunta nenhuma: a taxa é 5 a 9 em 30, com o PISO medido.** Das 3
@@ -407,7 +417,9 @@ perdeu uma vez:
 
 **E a P6 continua aberta**: o vão de acesso ao poço da foto 5 estava sem fechamento
 provisório? Ela não move a contagem de fatos errados — move o que o laudo deixou de
-reportar, que é onde está o dano ao cliente.
+reportar, que é onde está o dano ao cliente. **Reperguntar sem dizer QUAL vão desperdiça a
+rodada**: o Olho registrou uma grade metálica na borda do vão vertical, à direita ao fundo,
+e a leitura feita aqui falava de um rasgo na parede à esquerda — ver a seção 5.
 
 **Regra de atualização, para quando as respostas chegarem:**
 
