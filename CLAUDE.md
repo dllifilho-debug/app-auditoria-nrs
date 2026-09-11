@@ -144,7 +144,7 @@ mesmo painel**, que é outro fenômeno e continua de pé.
 
 | o que se compara | A vs B |
 |---|---|
-| fatos do Olho (achados, ambiente, pessoas) | **15/15 idênticos** |
+| fatos do Olho (achados, ambiente, pessoas) | **15/15 idênticos** — idênticos, não corretos: ver o erro de material da foto 1 |
 | contagem de não conformidades por foto | **14/15 iguais** |
 | conjunto de itens enquadrados por foto | **13/15 iguais** |
 | gravidade de todos os itens da foto | 10/15 iguais |
@@ -173,10 +173,11 @@ o que ficou igual nas duas passadas: os fatos, o dossiê, e o grosso dos enquadr
   passou, com a constatação reescrita para falar do painel de madeira sem fixação. **A
   passada A conserta o defeito do laudo 1 de 09/09 e a B o repete.** Nada mudou entre as
   duas exceto a chamada.
-  **O engenheiro conferiu a foto depois deste lote: não há buraco no chão, o piso está
-  fechado com tábuas.** Logo o `18.9.2` de B é falso positivo confirmado, e o veto de A
-  estava certo. O que a resposta não decide é se a fresta vertical que sustenta o
-  `8.3.2.2` de A existe — ver o item em aberto.
+  **A foto foi aberta e lida depois deste lote, e as DUAS passadas erram.** O poço está
+  cercado por dois painéis de tela metálica em quadro de aço e não há abertura de piso:
+  o `18.9.2` de B é falso positivo, e o `8.3.2.2` de A afirma que a abertura não tem
+  proteção quando ela tem. O que o Olho escreveu como *"painel rígido de madeira"* é
+  metal enferrujado — ver o item em aberto, que traz também a causa raiz no roteamento.
 - **Laudo 7** (`11 PAV.`) — a única divergência de CONTAGEM. Em A, vetado (0 NC); em B,
   `NR-18 18.9.2` alta. Ver a cláusula (e), abaixo.
 - **Laudo 4** — mesmo item nos dois (`8.3.2.2`), gravidade alta em A e crítica em B, e
@@ -257,7 +258,7 @@ o delimitador ("[D6]"). **Há cinco testes travando**, um deles a contraparte do
   D **não** recupera — é a fronteira medida em 09/09, confirmada aqui: marcação dirige o
   dossiê, não o Olho.
 
-### 7. Gabarito contra o nome do arquivo: 14 de 15 em A, 12 de 15 em B
+### 7. Gabarito contra o nome do arquivo: 13 de 15 em A, 12 de 15 em B
 
 **Critério, declarado porque o número depende dele:** a foto fecha quando o laudo entrega
 o achado que o engenheiro escreveu no nome do arquivo, num item que se aplica àquela
@@ -267,7 +268,7 @@ situação errada (a classe de erro 1) não fecha, mesmo com a norma citada corr
 
 | # | foto | A | B | por quê |
 |---|---|---|---|---|
-| 1 | `18 PAV. PROTEÇÃO POÇO DE ELEVADOR` | ✅* | ❌ | **O engenheiro conferiu a foto: não há buraco no chão, o piso está fechado com tábuas.** B usa `18.9.2`, item de PISO — falso positivo confirmado. A vetou esse item e ficou com `8.3.2.2`, que cobre parede; o ✅ leva asterisco porque depende de a fresta vertical existir, e isso não foi conferido |
+| 1 | `18 PAV. PROTEÇÃO POÇO DE ELEVADOR` | ❌ | ❌ | **A foto foi aberta e lida em 10/09.** O poço está cercado por dois painéis de tela metálica em quadro de aço, formando canto; não há abertura de piso. B usa `18.9.2`, item de PISO. A usa `8.3.2.2` afirmando que a abertura "não possui proteção" — e a proteção está instalada; o que existe é a fresta de montagem entre o painel e o pilar. **As duas passadas erram, por caminhos diferentes** |
 | 2 | `SOMENTE COM UM PONTO DE FIXAÇÃO` | ❌ | ❌ | a fixação precária não está em fato nenhum do Olho, nas duas |
 | 3 | `DIFERENTE DO PROJETO` | ✅ | ✅ | `8.3.2.2` |
 | 4 | `DIFERENTE DAS ANTERIORES` | ✅ | ✅ | `8.3.2.2` |
@@ -283,21 +284,19 @@ situação errada (a classe de erro 1) não fecha, mesmo com a norma citada corr
 | 14 | `GRUA` | ✅ | ✅ | 0 NC |
 | 15 | `19 PAV. POÇO GRUA SEM PROTEÇÃO` | ✅ | ✅ | `8.3.2.2` |
 
-**A passada A falha só na foto 2; a B falha na 1, na 2 e na 7.** As duas fotos a mais que
-a B perde são as duas divergências de ITEM e de CONTAGEM da seção 3 (as outras três
-divergências de lá são só de gravidade e não mexem no gabarito) — não há terceira fonte
-de diferença.
+**A passada A falha na 1 e na 2; a B falha na 1, na 2 e na 7.** A única foto que as
+separa é a 7 — na 1 as duas erram, ainda que por itens diferentes.
 
-**O asterisco da foto 1 é o único número deste lote ainda em aberto.** O engenheiro
-confirmou que não há abertura de piso ali, o que torna o `18.9.2` de B falso positivo e
-dá razão ao veto de A. Se a fresta vertical que sustenta o `8.3.2.2` de A também não
-existir, **A cai para 13 de 15** e as duas passadas erram a mesma foto por caminhos
-diferentes.
+**A foto 1 foi aberta e lida, e ela derrubou o número de A.** A fresta entre o painel e o
+pilar existe, mas a abertura que ela deixa ver é o poço, e o poço está cercado — logo o
+`8.3.2.2` de A ("a abertura não possui proteção que impeça a queda") também é falso
+positivo, por um caminho diferente do de B. **A caiu de 14 para 13 de 15.** As duas
+passadas erram a mesma foto; o que as separa é só a 7.
 
 **Contra 11 de 15 em 09/09**, pelo mesmo critério. E é aqui que o próprio lote manda ter
-cuidado: **as duas fotos que separam A de B são a largura inteira do ruído que ele acabou
-de medir**, então "melhorou de 11 para 14" não é conclusão — a mesma versão do app
-entregou 14 e 12 no mesmo dia.
+cuidado: **a foto que separa A de B cabe inteira no ruído que ele acabou de medir**,
+então "melhorou de 11 para 13" não é conclusão — a mesma versão do app entregou 13 e 12
+no mesmo dia.
 
 ---
 
@@ -396,9 +395,10 @@ As quatro que não fecham:
   defeito): saiu com `NR-18 18.9.2` — item de abertura no **piso** — para um painel de
   madeira **vertical** encostado no concreto. Pior, o aparo retirou a referência ao vão
   vertical, com a razão certa ("a norma regula especificamente aberturas no piso"), e
-  **manteve o enquadramento**. **Conferido em 10/09: não há buraco no chão** — o
-  engenheiro respondeu que o piso está protegido e fechado com tábuas. O `18.9.2` deste
-  laudo é falso positivo confirmado, classe de erro 1.
+  **manteve o enquadramento**. **Conferido em 10/09, na própria foto: não há buraco no
+  chão** — o poço está cercado por dois painéis de tela metálica em quadro de aço. O
+  `18.9.2` deste laudo é falso positivo confirmado, classe de erro 1, e o "painel de
+  madeira" que o sustenta é metal enferrujado lido errado pelo Olho.
 - **Laudo 2** (`SOMENTE COM UM PONTO DE FIXAÇÃO`): 0 NC. A NC falsa pela ferrugem de
   08/09 morreu — a cláusula (d) aparece no parecer, descartando "suposições de dano
   estrutural ou infiltração sem lastro visual definitivo". Mas a fixação precária, que é
@@ -866,13 +866,18 @@ $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
 
 **Fotos reais de teste**: repositório privado `dllifilho-debug/auditoria-nrs-fixtures`,
-pasta `fotos/` — 100 fotos de auditoria de verdade que o usuário subiu (obra BRASAL),
+pasta `fotos/` — **351 imagens** de auditoria de verdade que o usuário subiu (obra BRASAL),
 sem rosto nem placa de empresa identificável em boa parte, mas trate como sensível
 (é por isso que é privado; nunca proponha subir foto de auditoria no repo público do
 app). `add_repo` para anexar à sessão. Cada foto tem achados reais já auditados neste
 histórico — antes de inventar cenário sintético para testar algo, veja se uma dessas
 já serve; é mais convincente e já foi conferida contra o laudo de verdade pelo menos
 uma vez.
+**E ABRA a foto quando um laudo parecer errado.** Isto foi esquecido por seis sessões: o
+`add_repo` custa um minuto, e em 10/09 foi ele que transformou "o Diretor às vezes não
+veta" num defeito de MATERIAL do Olho mais um sinal de roteamento que casa a relação
+invertida. Reproduzir o dossiê sem rede diz o que o app fez com os fatos; só a imagem diz
+se os fatos são verdade — e o `fato` do Olho é justamente o que nenhuma trava confere.
 
 **Duas skills de revisão vivem no repositório** (`.claude/skills/`), commitadas
 justamente porque sessão remota é efêmera e skill fora do repo morre com o
@@ -983,6 +988,7 @@ próprio comando composto (exit 144).
 | **Expansor do Streamlit fecha a cada rerun, e cada marcação é um rerun** | O painel de marcação nasceu sem `expanded`, e no navegador se viu o que teste nenhum veria: marcar a primeira foto fechava o painel, de modo que marcar a segunda de um lote de 100 exigiria reabrir e rolar, cem vezes. `expanded=com_marcacao > 0` resolve — a primeira marcação abre o painel para valer. Vale para todo expansor que contenha widget: o estado dele não sobrevive ao rerun que o próprio widget dispara. |
 | **Rede que só registra quando FALHA é rede que não se pode medir** | `_reconferir_exigencias` deixa linha na trilha quando o enquadramento cai ("Supervisão incompleta") e **nenhuma** quando o reparo dá certo — o enquadramento simplesmente sobrevive. No lote de 10/09 isso deu 30 laudos sem uma linha de omissão e nenhum jeito de dizer se o Diretor não omitiu ou se a repescagem salvou, que são conclusões opostas sobre o mesmo mecanismo. É a irmã da armadilha "o sumário não distingue enquadramento ausente de enquadramento vetado", um nível abaixo: lá o documento não separava duas causas de ausência, aqui ele não registra o sucesso. **Ao construir uma rede de segurança, pergunte o que o documento diz quando ela FUNCIONA** — se a resposta é "nada", o próximo lote não a mede. Consertado com `conferencia_reparada`; há três testes travando. |
 | **A lista que não passa pela limpeza é a que ninguém lembra que existe** | `laudo.conformidades` recebia as strings do Analista cruas — sem `_limpar_citacoes`, ao lado de `laudo.sem_enquadramento` que já chamava. Em 10/09 saiu impresso "atendendo aos requisitos … descritos no item **D6**", com o rótulo interno do dossiê no documento do cliente. O sintoma é cosmético; o buraco não: sem a limpeza, uma citação normativa digitada pelo modelo chegaria ao laudo **sem passar pela base**, que é a garantia central deste projeto. É a terceira aparição da armadilha "corte aplicado a um campo só", e o padrão é sempre o mesmo — a lista esquecida é a que quase nunca sai (conformidades apareceram em **2 de 30 laudos**), então ela não aparece em lote nenhum até aparecer. **Ao pôr uma limpeza num campo, liste TODOS os campos de texto livre que chegam ao documento e confira um a um** — inclusive os que costumam vir vazios. |
+| **A âncora não protege contra a RELAÇÃO invertida entre os dois radicais** | A âncora de 01/09 exige dois radicais do PRÓPRIO achado, e isso fechou a porta do ambiente carregando o sinal sozinho. Não fecha esta: em 10/09, `"abertura no piso"` deu cobertura 1,00 e âncora 2 no fato *"**Piso** de concreto com aspecto áspero e irregular, visível na parte inferior da **abertura** ao fundo"* — os dois radicais no mesmo achado, e a relação entre eles **invertida**: o fato descreve o piso visto pelo PÉ de um vão vertical, não uma abertura no piso. Foi por aqui que `NR-18 18.9.2` chegou a D1 numa foto sem buraco no chão, três vezes em quatro execuções, e só um Diretor de quatro vetou. É a terceira armadilha da família, ao lado do `sem` e do ambiente, e a que menos se vê: o sinal está curto, os dois radicais são discriminantes, e ainda assim ele casa o oposto. A preposição que carregaria a relação (`no`) tem duas letras e some no filtro. **A hipótese do bigrama — exigir adjacência entre os dois radicais — cobre esta e a do `sem`**, e continua não medida. Ao revisar sinal de duas palavras, leia-o como frase e pergunte se a ordem inversa também casa. |
 | `git fetch origin main <branch-que-não-existe-mais>` falha inteiro, silenciosamente | Fetch de múltiplos refs é atômico: se um ref já foi deletado no remoto (branch mergeada), o comando inteiro falha e **nenhum ref é atualizado** — inclusive o `main`, que existia e seria atualizado sozinho. `origin/main` local fica congelado na versão de antes, e comparações feitas contra ele mentem. Já causou uma sessão inteira concluir errado que "a reescrita nunca foi mergeada". Se o histórico parecer suspeito, rode `git fetch origin main` sozinho antes de confiar em qualquer diff. |
 
 ---
@@ -1562,31 +1568,54 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   **Fica a lição**: eu afirmei "corta sem marcar" olhando o laudo, e a função executada
   desmentiu em dois segundos. Defeito de saída de código se confere rodando o código,
   não lendo o produto dele.
-- **Item de abertura no PISO usado para vão VERTICAL — a foto FOI conferida em 10/09, e
-  o `18.9.2` ali é falso positivo.** O engenheiro olhou a `18 PAV. PROTEÇÃO POÇO DE
-  ELEVADOR` e respondeu: **não há buraco no chão. O piso está protegido e fechado com
-  tábuas.** Isso encerra a dúvida que atravessou três lotes — `NR-18 18.9.2` regula
-  abertura no PISO, e não existe abertura de piso nessa foto. É a **classe de erro 1**
-  confirmada por quem viu a obra, e não mais uma suspeita.
-  Onde ele saiu: nos dois laudos de 09/09 e na passada B de 10/09. **Na passada A de
-  10/09 o Diretor vetou**, com a razão exata ("o item regula especificamente aberturas no
-  piso"). Mesma foto, mesmos fatos, mesmo código: **a trava existe e dispara em uma
-  passada de duas.** Escrever cláusula nova não é o conserto óbvio — o texto que veta já
-  está no prompt e o Diretor o executa às vezes. O que falta entender é por que ele não
-  executa sempre, e isso é a mesma pergunta da variabilidade do Diretor medida em 10/09.
-  **A resposta responde o PISO e não responde a fresta.** A NC que sobrou na passada A é
-  `NR-08 8.3.2.2` sobre uma *"abertura vertical estreita entre o painel de madeira e o
-  pilar de concreto"* — item que cobre piso E parede, então o enquadramento é pertinente
-  SE a fresta existir. O engenheiro não apontou defeito no nome do arquivo, o que sugere
-  que não; mas ele respondeu sobre o chão, não sobre a fresta. **O gabarito de 10/09
-  segue com A em 14 de 15 até isso ser conferido** — se a fresta não existir, A cai para
-  13 e as duas passadas erram a mesma foto por caminhos diferentes.
+- **A foto 1 foi ABERTA em 10/09, e o defeito é do Olho, não do Diretor. Ele errou o
+  MATERIAL da barreira.** O engenheiro respondeu que não há buraco no chão, e o acervo de
+  fixtures foi anexado à sessão para ler a imagem. O que ela mostra: o poço de elevador
+  **cercado por dois painéis de tela metálica expandida em quadro de aço**, enferrujados,
+  formando um canto, com a foto tirada rente ao plano de um deles. Não há abertura de
+  piso, e a proteção do poço está instalada — o que bate com o nome do arquivo, que não
+  aponta defeito.
+  **O primeiro fato do Olho é falso**: *"Painel rígido de madeira de cor marrom, com
+  superfície áspera e marcas de desgaste, posicionado verticalmente e apoiado contra a
+  estrutura de concreto, sem fixação visível"*. É metal, não madeira; a cor marrom é
+  ferrugem e a "superfície áspera" é a malha expandida vista de perfil. **É a terceira
+  classe de erro do Olho, e ela é nova**: as anteriores eram o NOME do equipamento (grua
+  chamada de torre de elevador) e a OMISSÃO (a abertura de piso não registrada no laudo
+  15 de 08/09). Errar o MATERIAL de uma barreira é pior que as duas, porque o
+  `PROMPT_OLHO` exige justamente material, rigidez, fixação, continuidade, altura e
+  estado — ele respondeu o campo e respondeu errado, e **nenhuma trava do pipeline confere
+  o `fato`**.
+  **O dano não é no dossiê — medido.** Reescrito o fato com o material certo, o
+  roteamento é o mesmo (`abertura_piso_desprotegida` + `abertura_parede_desprotegida`) e
+  `NR-18 18.9.2` continua em D1. O dano é na CONSTATAÇÃO: foi "madeira apoiada sem
+  fixação" que deu ao Analista da passada B a frase "não constituindo fechamento
+  provisório travado ou fixado à estrutura", com que ele enquadrou o item de piso.
+  **A CAUSA RAIZ do `18.9.2` em D1 é um sinal, e ele é uma armadilha NOVA.** Medido: o
+  único sinal que dispara `abertura_piso_desprotegida` nesta foto é `"abertura no piso"`,
+  com cobertura 1,00 e âncora 2, no fato *"**Piso** de concreto com aspecto áspero e
+  irregular, visível na parte inferior da **abertura** ao fundo"*. Os dois radicais vêm do
+  MESMO achado, então a âncora de 01/09 é satisfeita — **e a relação entre eles é a
+  inversa da que o sinal descreve**: o fato fala do piso visto pelo pé de um vão
+  VERTICAL, não de uma abertura no piso. A âncora protege contra radicais vindos de
+  achados diferentes; não protege contra "X no Y" casando "Y … da X". Não é a armadilha
+  do `sem` nem a do ambiente: é uma terceira, e a hipótese do **bigrama** já registrada
+  para o `sem` cobriria as duas (exigir adjacência entre `abertur` e `piso`). É mudança
+  estrutural no roteamento e **só um lote valida** — não se faz reagindo a uma foto.
+  **A conta do Diretor fica em 1 de 4.** O `18.9.2` saiu nos dois laudos de 09/09 e na
+  passada B de 10/09; só na passada A ele foi vetado, com a razão exata ("o item regula
+  especificamente aberturas no piso"). O texto que veta já está no prompt e ele o executa
+  às vezes — **cláusula nova não é o conserto**, e agora se sabe que o conserto de raiz
+  está um nível antes, no sinal.
   O caminho do defeito em 09/09, que continua valendo como registro: o aparo retirou a
   referência ao vão vertical — com a razão certa, "a norma regula especificamente
   aberturas no piso" — e **manteve o enquadramento**. É a classe de erro 1 pelo caminho
   do aparo: ele corta o que não tem lastro e não pergunta se o que sobrou ainda descumpre
-  AQUELE item, que é justamente o que o `PROMPT_DIRETOR` manda fazer. **Em 10/09 o aparo
-  do laudo B01 fez exatamente isso de novo, palavra por palavra.**
+  AQUELE item. **Em 10/09 o aparo do laudo B01 fez exatamente isso de novo, palavra por
+  palavra.**
+  **E a passada A também erra esta foto**, o que só a imagem mostrou: o `NR-08 8.3.2.2`
+  dela afirma que a abertura *"não possui proteção que impeça a queda de pessoas ou
+  objetos"*, e a proteção está lá. O que existe é a fresta de montagem entre o painel e o
+  pilar, por onde se vê o interior do poço — estreita, e não é o que o item cobra.
 - **A `cancela` entrega os itens de elevador sem passar por portão nenhum.** Achado pelo
   `/critico` no #35, e **medido**: os filtros do `dossie.py` valem só para a recuperação
   textual — item de risco CURADO entra por `montar_dossie` e não passa por
