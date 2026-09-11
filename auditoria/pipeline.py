@@ -112,6 +112,17 @@ class Laudo:
     # trilha dita assim — senão o laudo afirma ao engenheiro que a situação não
     # descumpre a norma, que é coisa que ninguém verificou.
     conferencia_omitida: list[str] = field(default_factory=list)
+    # Enquadramentos que a repescagem RECUPEROU: o Diretor deixou o trecho em
+    # branco e a segunda pergunta trouxe um que ancora. Sem este registro a
+    # repescagem é invisível no documento — o enquadramento sobrevive e nada
+    # diz que ele passou pela rede. É a irmã da armadilha "o sumário não
+    # distingue enquadramento ausente de enquadramento vetado": a trilha
+    # registrava a omissão que MATOU e não a que foi reparada, de modo que
+    # "zero supervisões incompletas num lote" não separava o Diretor não ter
+    # omitido do reparo ter funcionado — e são conclusões opostas sobre o
+    # mesmo mecanismo. Medido no lote de 10/09, em que as 30 fotos saíram sem
+    # uma única linha de omissão e não houve como dizer qual das duas foi.
+    conferencia_reparada: list[str] = field(default_factory=list)
     # Riscos que o engenheiro apontou nesta foto antes de rodar, pelo rótulo.
     # Vai à trilha do laudo porque muda o que o documento é: um laudo dirigido
     # em parte por quem inspecionou não tem o mesmo valor de evidência que um
@@ -773,6 +784,26 @@ RE_CITACAO_SOLTA = re.compile(
     re.IGNORECASE,
 )
 
+# Rótulo do DOSSIÊ (`D6`) escrito pelo modelo dentro de um texto do laudo.
+# É o mesmo defeito da citação à mão, um nível abaixo: notação interna do
+# pipeline vazando para o documento do cliente. Medido no lote de variabilidade
+# de 10/09 — uma conformidade saiu com "atendendo aos requisitos de proteção
+# contra queda de pessoas descritos no item D6", e `conformidades` era a única
+# lista do laudo que não passava por limpeza nenhuma.
+#
+# O rótulo NU (`D6` solto) fica de propósito, pela mesma razão que
+# `RE_ROTULO_INTERNO` só remove `(V1)` entre parênteses: notação de engenharia
+# civil colide com rótulo curto, e mutilar a frase de quem descreve a própria
+# obra é pior que deixar passar. Aqui exigimos o apresentador ("item D6",
+# "ref. D6") ou o delimitador ("[D6]", "(D6)"), que são inequívocos.
+RE_ROTULO_DOSSIE = re.compile(
+    r"\s*[(\[]\s*D\d{1,2}\s*[)\]]"
+    r"|\s*\b(?:(?:sub)?ite(?:m|ns)|refs?\.?|referências?|rótulos?|conforme|"
+    r"segundo|vide)\s+"
+    r"D\d{1,2}(?:\s*(?:,|e|ou)\s*D\d{1,2})*(?=[\s,.;:)\]]|$)",
+    re.IGNORECASE,
+)
+
 # Preposição que fica órfã quando a citação some do meio da frase.
 # O `\s*` (em vez de `\s+`) é essencial: quando a citação estava no fim da frase
 # ("…sistema de proteção conforme NR-18 18.9.2."), a remoção encosta a preposição
@@ -861,7 +892,13 @@ MARCA_CITACAO = "\x00"
 # não alcança: ela trata preposição encostada na pontuação, não no meio.
 RE_ANTES_DA_MARCA = re.compile(
     r"\b(?:de|do|da|dos|das|no|na|nos|nas|em|ao|aos|a|o|as|os|com|pelo|pela|"
-    r"conforme|segundo)\s*(?=" + MARCA_CITACAO + r")",
+    r"conforme|segundo|"
+    # Particípio que só existe para apresentar a referência. Sem ele o laço
+    # parava em "…requisitos descritos ." — gramatical, mas com o particípio
+    # pendurado sem complemento. Como o laço roda quatro vezes, "descritos no
+    # <marca>" some em duas voltas.
+    r"descrit[oa]s?|indicad[oa]s?|citad[oa]s?|previst[oa]s?|constantes?|"
+    r"elencad[oa]s?|list[oa]?ad[oa]s?|referid[oa]s?)\s*(?=" + MARCA_CITACAO + r")",
     re.IGNORECASE,
 )
 
@@ -890,17 +927,23 @@ def _so_apresentava_citacao(fragmento: str) -> bool:
 
 
 def _limpar_citacoes(texto: str) -> str:
-    """Remove citação escrita à mão pelo modelo — quem cita aqui é o renderizador.
+    """Remove citação e rótulo de dossiê escritos à mão pelo modelo.
 
     O laudo só pode conter as citações que o código emitiu a partir da base.
     Qualquer referência normativa que o modelo tenha digitado no meio da prosa
     é apagada aqui, junto com o número do item, antes de chegar ao documento.
+
+    O rótulo do dossiê (`item D6`) sai pela mesma porta e pelo mesmo motivo:
+    `D6` é endereço interno do pipeline, não diz nada a quem lê o laudo, e
+    trair a numeração interna no documento do cliente é o mesmo defeito da
+    citação à mão um nível abaixo. Ver `RE_ROTULO_DOSSIE` para o que fica de
+    fora de propósito.
     """
     # A citação é MARCADA antes de fatiar, não removida: ela atravessa vírgula
     # ("NR-35, item 5.2.2.5", "NR-18, itens 18.9.2 e 18.9.4.1") e fatiar antes a
     # partiria em dois, deixando o número do item para trás — que é pior do que
     # não limpar, porque o renderizador voltaria a lê-lo como citação legítima.
-    marcado = RE_CITACAO_SOLTA.sub(MARCA_CITACAO, texto)
+    marcado = RE_ROTULO_DOSSIE.sub(MARCA_CITACAO, RE_CITACAO_SOLTA.sub(MARCA_CITACAO, texto))
     if marcado == texto:
         return texto.strip()
     for _ in range(4):                        # "conforme o disposto na <cit.>"
@@ -1455,8 +1498,15 @@ def _executar(
             _limpar_citacoes(str(s).strip())
             for s in proposta.get("sem_enquadramento", []) if str(s).strip()
         ]
+        # A conformidade passa pela mesma limpeza dos demais textos do laudo.
+        # Ela era a ÚNICA lista do documento que ia crua, e no lote de 10/09
+        # saiu com o rótulo do dossiê impresso ("descritos no item D6"). O
+        # buraco não era só o rótulo: sem `_limpar_citacoes` aqui, uma citação
+        # normativa digitada pelo modelo chegaria ao laudo sem passar pela
+        # base — que é a garantia central deste projeto.
         laudo.conformidades = [
-            str(s).strip() for s in proposta.get("conformidades", []) if str(s).strip()
+            _limpar_citacoes(str(s).strip())
+            for s in proposta.get("conformidades", []) if str(s).strip()
         ]
 
         # O Diretor roda mesmo sem nenhuma não conformidade: um laudo com zero
@@ -1577,6 +1627,10 @@ def _executar(
         # mesmo laudo. Colapsar as duas causas de novo, dentro do conserto que
         # cita o #34 como trava, seria a armadilha pela terceira vez.
         repescados = {ref for ref, _, _ in faltantes}
+        # Lista local atribuída no fim do ciclo, como `motivos` e nunca como
+        # `aparos`: `append` direto no laudo duplica a linha quando o Gauntlet
+        # roda mais de um ciclo.
+        reparadas: list[str] = []
         if faltantes:
             avisar(f"Reconferência de {len(faltantes)} enquadramento(s) sem trecho copiado…")
             for ref, trecho in _reconferir_exigencias(
@@ -1591,6 +1645,11 @@ def _executar(
                 continue
             exigencia = exigencia_de(ref)
             if _exigencia_ancorada(exigencia, nc.item):
+                # Sobreviveu; se ele só chegou aqui porque a repescagem trouxe
+                # o trecho, o laudo tem de dizer isso — o enquadramento vale,
+                # mas a supervisão precisou de duas perguntas.
+                if ref in repescados:
+                    reparadas.append(f"{nc.item.nr} {nc.item.item}")
                 continue
             aparados.pop(ref, None)
             if _exigencia_omitida(exigencia) or ref in repescados:
@@ -1660,6 +1719,7 @@ def _executar(
         laudo.nao_conformidades = sobreviventes
         laudo.vetos = motivos
         laudo.conferencia_omitida = omitidas
+        laudo.conferencia_reparada = reparadas
         laudo.parecer_diretor = _parecer_coerente(
             _limpar_citacoes(_sem_rotulo_interno(str(veredito.get("parecer", "")).strip())),
             sobreviventes, motivos,
