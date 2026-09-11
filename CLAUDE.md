@@ -1697,9 +1697,16 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   não fechou**: a tabela `SETORES` mapeia os sete ramos (motosserras, panificação, açougue,
   prensas, injetoras, calçados, agrícola) e esses dois anexos não são ramo, são famílias de
   equipamento — cestas aéreas e plataformas. **O conserto é o mesmo do portão setorial da
-  NR-18**: exigir o equipamento na cena. Não foi feito porque o portão de máquina hoje
-  esconde o problema (fechado, nada entra) e só aparece quando ele abre — que é
-  exatamente o que a fase separada de VISÃO faria acontecer em todas as fotos de máquina.
+  NR-18**: exigir o equipamento na cena.
+  **São DOIS portões em série, e confundi-los manda a próxima sessão mexer no que não
+  decide.** `ha_maquina_na_cena` destranca a NR-12 para a busca textual; `nrs_candidatas`
+  decide antes se a NR-12 sequer disputa vaga. A foto da placa deste mesmo lote tem o
+  primeiro **ABERTO** e mesmo assim zero item de NR-12, porque o segundo não a elegeu (ver a
+  seção 2) — logo não é o portão de máquina fechado que esconde o ruído dos anexos; é
+  precisar dos dois abertos ao mesmo tempo, que nas cinco fotos nunca aconteceu. O ruído
+  aparece quando a cena nomeia a máquina E o vocabulário do fato faz a NR-12 pontuar, que é
+  o caso das fotos 1 e 2 com o nome trocado — e é o que a fase separada de VISÃO produziria
+  em toda foto de máquina de uma vez.
 - **O `NR-18 18.9.2` enquadrou uma abertura VERTICAL pela terceira vez, e desta não precisa
   de imagem para ver.** No laudo 2 de 11/09 a constatação diz *"abertura vertical na
   estrutura de concreto, sem porta ou fechamento, revelando o interior de outro cômodo"* e
