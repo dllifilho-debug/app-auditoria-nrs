@@ -258,8 +258,18 @@ cega ameaça as omissões; ela ameaçou, e no sentido de INVENTAR, não só no d
 **O que as respostas custaram ao laudo do cliente, que é o que importa fora daqui:** duas
 NCs erradas em cinco fotos. A do laudo 3 saiu e não devia (falso positivo, `NR-08 8.3.2.2`,
 alta, prazo de 1 dia, sobre um vão que não existe) e a da foto 2 devia sair e não saiu (a
-ausência de barreira de acesso, que é o achado do nome do arquivo). Nenhuma das duas tem
-nada a ver com recuperação de item: o dossiê da foto 2 trazia o `NR-18 18.10.2.6` em D6.
+ausência de barreira de acesso, que é o achado do nome do arquivo).
+**E a segunda É falha de recuperação, ao contrário do que uma redação anterior desta seção
+afirmou.** Ela citava o `NR-18 18.10.2.6` no D6 da foto 2 como prova de que o item certo
+estava à mão — mas aquele item é o **disco específico para o material cortado**, e não
+alcança barreira de acesso nenhuma. Usá-lo ali é a classe de erro 1 cometida dentro da
+análise, e foi o `/critico` que pegou. O item que cobre o achado confirmado mora na
+**NR-12**, na família da zona de perigo (`12.5.13` trata de proteção distante com
+possibilidade de alguém ficar nela), e a NR-12 estava trancada: o Olho escreveu *"ferramenta
+elétrica de disco"* em vez de `policorte`, e medido agora, `ha_maquina_na_cena` devolve
+**False** com a frase real e **True** trocando-a pelo nome. **É a mesma cadeia da foto 1, e
+aqui ela custou uma NC de verdade** — na foto 1 a serra tem coifa, então o portão fechado
+não escondeu defeito nenhum; na foto 2 escondeu.
 
 **A P6 continua aberta e é a mais cara das que sobraram.** Se o vão de acesso ao poço da
 foto 5 estava sem fechamento provisório, a âncora do lote tem uma segunda NC — o
@@ -313,6 +323,11 @@ gargalo não é recuperação:
   **D1 e D2**, curados, e o Analista foi ao `8.3.2.2` do D7.
 - foto 2: `NR-18 18.10.2.6` — *"a ferramenta elétrica utilizada para cortes deve ser
   provida de disco específico…"* — em **D6**, e o Analista foi ao `18.9.2` da abertura.
+  **Ressalva que as respostas de 11/09 obrigam**: esse item responde a OUTRA pergunta que
+  não a do nome do arquivo. O achado que a foto 2 perdeu é a ausência de barreira de acesso,
+  e para ele o dossiê **não** tinha a resposta certa — ver a seção 5. Logo são duas das
+  três fotos erradas só para o defeito que o Analista de fato enquadrou, não para o achado
+  do engenheiro.
 
 ### 6. O que ainda não fechou, e onde o número mora
 
@@ -375,10 +390,11 @@ medidos não pagavam a mudança de arquitetura. **A taxa agora é 5 a 9 divergê
 com o piso CONFIRMADO pelo engenheiro, num domínio novo e com uma classe que não estava
 mapeada** (o VÃO INEXISTENTE, confirmado). O que a taxa NÃO decide sozinha é a direção do
 conserto, e as respostas separam as duas metades melhor que o número:
-- **o que a fase separada recupera, e agora com os dois casos medidos**: o NOME (o
-  engenheiro escreveria "serra de bancada", o portão abriria — medido na seção 1) e a
-  OMISSÃO (ele escreveria "área de corte sem barreira de acesso", que é a NC real que o
-  lote perdeu na foto 2);
+- **o que a fase separada recupera, e agora com os dois casos medidos — e eles são a mesma
+  foto**: o NOME abre o portão (medido: `policorte` no lugar de "ferramenta elétrica de
+  disco" faz `ha_maquina_na_cena` virar True) e é a NR-12 destrancada que traz o item capaz
+  de enquadrar a barreira ausente. Na foto 2 o nome sozinho já recupera a NC perdida; na
+  foto 1 ele abre o portão e não há defeito atrás dele;
 - **o que ela não recupera é o VÃO INEXISTENTE da foto 3**, porque nada no desenho manda o
   engenheiro conferir fato por fato o que o modelo escreveu — e é dele que saiu o falso
   positivo confirmado do lote. Contra ele a marcação por lista age menos ainda: o item já
@@ -2018,9 +2034,10 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   **A primeira contagem chegou em 11/09 — 5 a 9 divergências em 30, com o piso confirmado
   pelo engenheiro (o que ainda não fechou está na seção 6 da validação de 11/09) — e ela NÃO
   decide sozinha, porque parte do erro fica fora do alcance da proposta.** O que ela
-  recupera tem agora os dois casos medidos: o NOME (o engenheiro escreveria "serra de
-  bancada", o portão de máquina abriria — medido na seção 1 daquele lote) e a OMISSÃO (ele
-  escreveria "área de corte sem barreira de acesso", que é a NC real que a foto 2 perdeu). O
+  recupera tem agora caso medido, e é um só: na foto 2 o nome da máquina (`policorte`, que
+  o Olho não escreveu) abre o portão, e é a NR-12 destrancada que traz o item capaz de
+  enquadrar a barreira de acesso ausente — a NC real que aquela foto perdeu. Na foto 1 o
+  mesmo mecanismo vale e não custou nada, porque a serra tem coifa. O
   que ela não alcança é o **VÃO INEXISTENTE** da foto 3: nada no desenho manda conferir fato
   a fato o que o modelo escreveu, e foi dele que saiu o falso positivo confirmado do lote.
   **Os dois lados têm caso medido e apontam para desenhos diferentes** — contra o que o Olho
