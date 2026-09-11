@@ -831,48 +831,58 @@ Lotes temáticos que valem, com as fotos já identificadas:
 | NR-12 | `SERRA DE BANCADA`, `SERRALHERIA SEM BARREIRA DE ACESSO` | as duas únicas com máquina de verdade no acervo novo |
 | ~~Içamento~~ | 7 fotos | **RODADO em 02/09** — 2 de 5 achados do engenheiro. Ver acima. Só volta a valer depois de existir taxonomia de guindar e de o Olho nomear o equipamento |
 | Poço de elevador | **15 fotos — a lista nominal está na seção de validação de 08/09**, reconstruída e com a ressalva do que nela é inferência. É de lá que se monta o lote; esta linha guarda o histórico. As 14 originais eram as 12 do desenho + `GRUAA` e `GRUAAA` | **TENTADO em 04/09 e perdido: 1 foto auditada de 12, as outras recusadas pelo OTPM. Refazer.** Achado mais repetido do acervo; `vao_caixa_elevador_sem_fechamento` existe e nunca disparou em produção. O sinal FOI medido antes de gastar o lote, e o que se achou não era o 0,50 do lote de içamento: com o Olho escrevendo `elevador` e `cancela`, **os dois riscos de elevador disparavam com a proteção INSTALADA** (5 de 5 e 3 de 6). Sinais refeitos para ancorar na abertura, não no `sem`, e todo sinal de torre/base exige `elevador` (no canteiro há a torre da GRUA): 22 de 22 fatos com a proteção instalada ficam calados e 14 de 14 com ela ausente acionam o risco certo. É este lote que valida os dois consertos ao mesmo tempo. **Desenho recuperado em 07/09 e gravado aqui para não se perder de novo** — proteção presente (5): `18 PAV. PROTEÇÃO POÇO DE ELEVADOR`, `PROTEÇÃO POÇO DE ELEVADOR SOMENTE COM UM PONTO DE FIXAÇÃO`, `PROTEÇÃO POÇO ELEVADOR DIFERENTE DO PROJETO`, `PROTEÇÃO POÇO ELEVADOR DIFERENTE DAS ANTERIORES`, `19. PROTEÇÃO DE ELEVADOR NÃO FIXADA`; proteção ausente (5): `13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO`, `11 PAV. PROTEÇÃO POÇO ELEVADOR SEM PROTEÇÃO`, `3 PAV. POÇO ELEVADOR SEM PROTEÇÃO E SINALIZAÇÃO`, `19 PAV. POÇO ELEVADOR SEM PROTEÇÃO`, `20 PAV SEM PROTEÇÃO NO POÇO DE ELEVADOR`; grua (2): `GRUA`, `19 PAV. POÇO GRUA SEM PROTEÇÃO`. **As duas acrescentadas** são `GRUAA` e `GRUAAA`: nenhuma das duas de grua do desenho testa o nome da torre (`GRUA` já dava 0 NC e `19 PAV. POÇO GRUA` é poço), e **`GRUAAA` é a foto que produziu o `NR-18 18.11.14`** — sem ela o defeito da grua fica sem o seu teste. **E ela é o único experimento controlado do histórico**, cruzado em 07/09: a MESMA foto deu **0 NC** no lote de içamento de 02/09, ANTES do #27, e `NR-18 18.11.14` no lote de 05/09, DEPOIS dele (o #27 mergeou em 04/09). Uma foto, uma mudança, dois resultados opostos — é a prova causal de que foi o prompt que produziu o defeito, e não a variabilidade da visão. Por isso o aceite dela é forte: 0 NC no `GRUAAA` não é "pode ter sido sorte", é **volta a uma linha de base medida**. Cuidado com os dois arquivos gêmeos `19 PAV. POÇO ELEVADOR SEM PROTEÇÃO.jpg` e `...PROTEÇÃOO.jpg` (dois O): o desenho lista o de um O, o gabarito de 05/09 registra o de dois, e qual deles rodou não dá para saber sem os laudos — rode os dois |
-| **MISTO — o próximo lote, desenhado em 11/09** | **16 fotos, lista nominal abaixo.** Conferidas uma a uma na imagem antes de gravar, como este arquivo manda | **NÃO repetir as 15 de poço.** O conjunto já rodou **quatro vezes completo** (08/09, 09/09 e as duas passadas de 10/09), mais duas rodadas parciais em 04 e 05/09, e é um domínio só: **os 23 enquadramentos das duas passadas de 10/09 são três itens apenas** — `NR-18 18.9.2` (12), `NR-08 8.3.2.2` (9) e `NR-18 18.9.1` (2), que é exatamente o que o app já domina. Repetir dá mais precisão sobre a mesma coisa. E para a contagem de erros do Olho (ver "Em aberto"), a taxa medida em 15 fotos de poço só valeria para fotos de poço. **Este lote vai dar gabarito PIOR que 13 de 15, e isso é o ponto** |
+| **MÁQUINA — o próximo lote, desenhado em 11/09** | **5 fotos, lista nominal abaixo**, com a fila dos lotes de 5 seguintes. Conferidas na imagem antes de gravar, como este arquivo manda — e duas das quatro que abri não eram o que o nome dizia | **NÃO repetir as 15 de poço.** O conjunto já rodou **quatro vezes completo** (08/09, 09/09 e as duas passadas de 10/09), mais duas rodadas parciais em 04 e 05/09, e é um domínio só: **os 23 enquadramentos das duas passadas de 10/09 são três itens apenas** — `NR-18 18.9.2` (12), `NR-08 8.3.2.2` (9) e `NR-18 18.9.1` (2), que é exatamente o que o app já domina. Repetir dá mais precisão sobre a mesma coisa. E para a contagem de erros do Olho (ver "Em aberto"), a taxa medida em 15 fotos de poço só valeria para fotos de poço. **Lote de 5 focado, e não de 15 misto**: 5 custam ~39 mil tokens, cabem três rodadas num dia, e permitem auditar TODAS as imagens em vez de amostrar. **O gabarito vai ser PIOR que 13 de 15, e isso é o ponto** |
 | Controle negativo | 5 documentos (POP, lista de presença, CREA, crachá) | devem dar **0 NC**; é a classe de erro que já apareceu e nunca foi testada de propósito |
 | ~~Variabilidade da visão~~ | **RODADO em 10/09** — 30 laudos, o Olho idêntico em 15/15 e ~±1 NC de ruído no total. Ver a seção de validação. Esta linha guarda o desenho: as MESMAS 15 do lote de poço, rodadas **duas vezes no mesmo dia**, uma chave em cada conta | Mesmas fotos, mesmo código, mesmo dia: a diferença entre os dois lotes é variabilidade PURA do modelo, sem confundir com mudança de versão. É o primeiro dos "limites honestos" deste arquivo e até hoje só tem anedota — "um botão de emergência danificado foi crítico numa foto e passou despercebido em outra do mesmo painel". **Só ficou possível em 10/09**, com a segunda conta: duas passadas de 15 dão ~234 mil tokens e não cabiam em conta nenhuma. O que se lê: quantas NCs mudam de foto para foto, se o Olho descreve os mesmos fatos, e se as fotos de 0 NC continuam em 0. Um número aqui diz quanto do gabarito de qualquer lote é ruído |
 
-### A lista nominal do lote MISTO (desenhada em 11/09, não rodada)
+### A lista nominal do lote de MÁQUINA — 5 fotos (desenhada em 11/09, não rodada)
 
-Todos os nomes conferidos contra `dllifilho-debug/auditoria-nrs-fixtures/fotos/`, e as
-quatro mais arriscadas **abertas e olhadas** antes de entrar — o arquivo avisa que o nome
-nem sempre descreve a imagem, e aqui isso decidiria o lote.
+**Cinco, não dezesseis, e a razão mudou o desenho.** O lote misto de 16 dava dois ou três
+por domínio, que é n pequeno em cada um: se der ruim em máquina, não se sabe se é o
+domínio ou aquela foto. **Cinco focadas num domínio só respondem UMA pergunta** e
+custam ~39 mil tokens, então cabem duas ou três rodadas no mesmo dia — erra, conserta,
+roda de novo. E com cinco eu audito TODAS as imagens contra os fatos do Olho, em vez de
+amostrar: a contagem de erros fica completa. O precedente é a segunda rodada de 09/09,
+três fotos desenhadas para responder três coisas, que produziu o achado conceitual do
+teto do desenho D.
 
-| # | Foto | Grupo | O que ela responde |
+**Por que MÁQUINA primeiro:** é a frente parada há mais tempo (desde 01/09) e são TRÊS
+mecanismos esperando a mesma validação — o portão `ha_maquina_na_cena`, os sinais de
+`coroa e pinhao expostos`/`engrenagem sem protecao`/`correia sem carenagem` dos #14/#15,
+e os 3 riscos com `itens_so_com_maquina`, que nunca foram exercidos. **E é o único
+domínio com contraparte natural no acervo**, o que faz o lote medir o portão nos dois
+sentidos com as mesmas cinco fotos.
+
+| # | Foto | Papel | O que ela responde |
 |---|---|---|---|
-| 1 | `SERRA DE BANCADA.jpg` | máquina | bancada com botoeira de comando e 1 trabalhador de capacete — **confirmado na imagem**. É a frente mais antiga parada: o portão `ha_maquina_na_cena`, os sinais de coroa/pinhão/correia dos #14/#15 e o Olho inspecionar a proteção, não só nomear a máquina |
-| 2 | `SERRALHERIA SEM BARREIRA DE ACESSO.jpg` | máquina | bancada e 3 trabalhadores ao fundo, área aberta — **confirmado**. Mesma frente, mais o portão de pessoa |
-| 3 | `SERRAGEM AREA DE CARPINTARIA.jpg` | máquina (CONTRAPARTE) | monte de serragem, sacos e madeira, **nenhuma máquina** — confirmado. É a contraparte do `na_cena` genérico que o `/critico` levantou: `serra` tolera três letras de sufixo e "serragem" abriria o portão da NR-12 numa foto sem máquina. **Aceite é 0 item de NR-12** |
-| 4 | `5 PAV. FIAÇÃO EXPOSTA NO CHÃO.jpg` | elétrica | fio desencapado é o caso ORIGINAL da classe de erro 1, e o conserto do plural de 4 letras só foi visto uma vez em produção |
-| 5 | `CABOS ELETRICOS DISPOSTOS DIRETAMENTE NO CHÃO.jpg` | elétrica | idem, com vocabulário diferente ("cabos" em vez de "fiação") |
-| 6 | `FIO EXPOSTO NO CHAO.jpg` | elétrica | idem, terceiro vocabulário. Os três juntos medem se o roteamento elétrico depende da palavra que o Olho escolhe |
-| 7 | `TRABALHADOR SEM EPI.jpg` | pessoa na cena | **25 dos 126 riscos exigem pessoa e esse portão nunca teve lote** |
-| 8 | `TRABALHADOR SEM PROTEÇÃO.jpg` | pessoa na cena | idem. Entrou no lugar de `COLABORADOR UTILIZANDO EPI SEM C.A`, que é 212x508 px e **não tem extensão de arquivo** — o uploader filtra por tipo e ela provavelmente nem subiria |
-| 9 | `ESCADA EM LOCAL INADEQUADO.jpg` | escada | "escada apoiada" virando "sem sapata antiderrapante" é classe de erro 2 registrada e nunca remedida |
-| 10 | `20 PROTEÇÃO DE ESCADA DANIFICADA.jpg` | escada | idem, e aqui o defeito está na proteção da escada, não na escada |
-| 11 | `19 PAV. CINTAS DE ELEVAÇÃO DE MATERIAS UTILIZADOS PELA CARPINTARIA.jpg` | içamento | **a foto que virou `NR-06 6.9.3` (EPI) por colisão de radical**. A taxonomia de guindar do #22 (`18.10.1.27`, `11.1.3.1`) existe desde 03/09 e **nunca foi validada em produção** |
-| 12 | `9 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO.jpg` | cancela | torre de cremalheira vermelha e duas folhas de porta no acesso — **confirmado na imagem**. `torre_elevador_sem_cancela` cita `NR-18 18.11.13` e **nunca disparou em produção**; em 02/09 a cobertura ficou em 0,50 porque o Olho não escrevia "cancela" |
-| 13 | `17 PAV AUSENCIA DE SINALIZAÇÃO NAS CANCELAS.jpg` | cancela | a segunda, para não concluir com n=1. **E é a contraparte do achado em aberto**: se o Olho escreve "cancela" numa cena que não é de elevador, os itens do `18.11` entram sem passar por portão nenhum |
-| 14 | `13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO.jpg` | **âncora** | deu `NR-18 18.9.2` nas cinco execuções do lote de poço. Se mudar aqui, é regressão e não domínio mais difícil |
-| 15 | `GRUAAA.jpg` | **âncora** | 0 NC em quatro medições seguidas, e é o único experimento controlado do histórico |
-| 16 | `PROTEÇÃO POÇO DE ELEVADOR SOMENTE COM UM PONTO DE FIXAÇÃO.jpg` **(MARCAR)** | desenho D | marcar `abertura_piso_desprotegida` + `vao_caixa_elevador_sem_fechamento`, os mesmos de 09/09, para ser comparável |
+| 1 | `SERRA DE BANCADA.jpg` | máquina real | bancada com botoeira de comando amarela e 1 trabalhador de capacete — **aberta e conferida**. O portão deve ABRIR. Aceite forte: item de NR-12 pertinente, e o Olho descrevendo a proteção de partes móveis, não só nomeando a máquina |
+| 2 | `SERRALHERIA SEM BARREIRA DE ACESSO.jpg` | máquina + pessoas | bancada e 3 trabalhadores, área aberta — **conferida**. Portão de máquina e o de pessoa ao mesmo tempo: **25 dos 126 riscos exigem pessoa na cena e esse portão nunca teve lote** |
+| 3 | `SERRAGEM AREA DE CARPINTARIA.jpg` | **CONTRAPARTE 1** | monte de serragem, sacos e madeira, **nenhuma máquina** — conferida. `_menciona` tolera três letras de sufixo, então `serra` casa "serragem". O `/critico` levantou isso no #35 e **nunca foi medido em produção**. Aceite: **0 item de NR-12** |
+| 4 | `OPERADOR BETONEIRA.jpg` | **CONTRAPARTE 2** | a PLACA "BETONEIRA — FUNCIONÁRIOS HABILITADOS", com pictogramas de capacete, protetor auricular e botina — **aberta e conferida, não há máquina nenhuma**. É a armadilha do "portão que só ABRE" em forma real e nunca testada: o Olho vai LER a palavra betoneira escrita na placa, e se ela entrar no fato o portão abre numa foto de placa. Os pictogramas podem ainda acionar risco de EPI sem gente na cena. Aceite: **0 item de NR-12 e 0 de NR-06** |
+| 5 | `13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO.jpg` | **âncora** | deu `NR-18 18.9.2` nas quatro execuções completas do lote de poço. Se mudar aqui, é regressão, não domínio mais difícil |
 
-**Sem as duas âncoras o lote não se lê.** Se todas as 16 fossem novas e o resultado viesse
-ruim, não haveria como separar regressão de domínio mais difícil. As duas escolhidas são
-as de resultado mais estável do histórico.
+**A âncora não é opcional.** Sem ela, resultado ruim nas quatro primeiras não separa
+regressão de domínio difícil — e o domínio É difícil, porque o app nunca acertou uma foto
+de máquina.
 
-**O que a foto 16 responde, e o que ela NÃO responde.** Em 09/09 a marcação nela levou o
-item certo ao dossiê e o Analista o pendurou no achado ERRADO — a corrosão da grade, e não
-o ponto de fixação, porque **quantos pontos de fixação a grade tem não aparece em fato
-nenhum**. Marcar de novo não conserta isso: a marcação dirige o dossiê, não o Olho. O que
-ela acrescenta é n=2 para essa fronteira, que hoje tem n=1. **E a auditoria da imagem dá o
-que faltava**: se os pontos de fixação não forem visíveis na escala em que o Olho recebe a
-foto, o conserto não é marcação nem prompt, é resolução.
+**Custo**: ~39 mil tokens (5 × 7.804). Cabe três vezes num dia de uma conta só.
+**Leia o hash em "Versão em execução"** antes de começar; o `main` de 11/09 é `b48f666`.
 
-**Custo**: ~125 mil tokens (16 × 7.804), cabe folgado numa conta só.
+### A fila dos lotes de 5 seguintes, já com as fotos identificadas
+
+Um domínio por lote, na ordem do que tem mais trabalho parado. As fotos foram levantadas
+em 11/09 e os nomes conferidos contra o acervo; **abra cada uma antes de montar o lote**,
+porque duas das quatro que eu abri não eram o que o nome dizia.
+
+| Lote | Fotos | O que ele decide |
+|---|---|---|
+| **Elétrica** | `5 PAV. FIAÇÃO EXPOSTA NO CHÃO`, `CABOS ELETRICOS DISPOSTOS DIRETAMENTE NO CHÃO`, `FIO EXPOSTO NO CHAO`, `8 PAV. FIAÇÃO NO CHÃO` + âncora | fio desencapado é o caso ORIGINAL da classe de erro 1, e o conserto do plural de 4 letras só foi visto uma vez. Os três vocabulários diferentes para o mesmo achado medem se o roteamento depende da palavra que o Olho escolhe |
+| **Içamento e cancela** | `19 PAV. CINTAS DE ELEVAÇÃO DE MATERIAS UTILIZADOS PELA CARPINTARIA`, `9 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO`, `17 PAV AUSENCIA DE SINALIZAÇÃO NAS CANCELAS`, `8 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO` + âncora | a taxonomia de guindar do #22 (`18.10.1.27`, `11.1.3.1`) existe desde 03/09 e **nunca foi validada**; `torre_elevador_sem_cancela` cita `18.11.13` e **nunca disparou em produção**. A foto das cintas é a que virou item de EPI por colisão de radical |
+| **Pessoa na cena** | `TRABALHADOR SEM EPI`, `TRABALHADOR SEM PROTEÇÃO`, `TRABALHADOR SE EPI`, `6 PAV. TRABALHADORES SEM DOCUMENTAÇÃO` + âncora | o portão `exige_pessoa` governa 25 riscos e nunca teve lote. **Não use `COLABORADOR UTILIZANDO EPI SEM C.A`**: 212x508 px e sem extensão de arquivo, o uploader filtra por tipo |
+| **Escada** | `ESCADA EM LOCAL INADEQUADO`, `20 PROTEÇÃO DE ESCADA DANIFICADA`, `18 PAV. PROTEÇÃO DE ESCADA QUEBRADA 18 PARA O 19`, `PROTEÇÃO DE ESCADA 17 PARA O 18 PAV` + âncora | "escada apoiada" virando "sem sapata antiderrapante" é classe de erro 2 registrada e nunca remediada. Nas três de proteção de escada o defeito está na proteção, não na escada |
+| **Marcação (o desenho D)** | `PROTEÇÃO POÇO DE ELEVADOR SOMENTE COM UM PONTO DE FIXAÇÃO`, marcando `abertura_piso_desprotegida` + `vao_caixa_elevador_sem_fechamento` | n=2 para a fronteira medida em 09/09: **marcação não recupera achado que o Olho não viu**. E a auditoria da imagem dá o que faltava — se os pontos de fixação não forem visíveis na escala em que o Olho recebe a foto (504 px de largura numa foto retrato), o conserto não é marcação nem prompt, é resolução |
+
+
 **Leia o hash em "Versão em execução"** antes de começar — é o dado que faltou em 09/09.
 
 Ao receber os laudos: o HTML traz o "Ambiente registrado" e a lista de fatos do Olho,
