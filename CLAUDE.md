@@ -131,7 +131,7 @@ movem**, como a seção 6 previa: a foto 3 continua falhando, agora por falso po
 confirmado em vez de discutível, e a 2 continua falhando, agora com a causa medida (achado
 não visto, não item errado). A auditoria das imagens é a seção 5, e ela não é gabarito.
 
-### 1. O portão de máquina não é o gargalo — o NOME é
+### 1. O portão de máquina não é o gargalo — e o NOME também não
 
 Reproduzido sem rede sobre os fatos reais dos cinco laudos:
 
@@ -354,8 +354,9 @@ sem pergunta, e a faixa é **5 a 9 com o piso medido**. Uma redação anterior a
 número que envelhece em silêncio, cometida dentro da correção que a declarava, e foi o
 `/critico` que pegou.
 
-**O dossiê já tinha a resposta certa em duas das três fotos erradas**, o que reforça que o
-gargalo não é recuperação:
+**Para o defeito que o Analista de fato enquadrou, o dossiê já tinha a resposta certa em
+duas das três fotos erradas** — ali a recuperação não é o gargalo, a escolha é (para o
+achado do ENGENHEIRO na foto 2 vale o oposto, e é o item novo em aberto):
 - foto 3: `NR-18 18.16.16` e `18.16.17` (remoção de entulho e resíduos acumulados) em
   **D1 e D2**, curados, e o Analista foi ao `8.3.2.2` do D7.
 - foto 2: `NR-18 18.10.2.6` — *"a ferramenta elétrica utilizada para cortes deve ser
