@@ -109,6 +109,11 @@ Rodado no `b48f666` (hash informado pelo usuário — os laudos não o carregam)
 "teste 6". **5 laudos, 4 NCs, 0 não auditadas, 1 ciclo em todos.** É o primeiro lote fora
 do domínio de poço de elevador desde o de içamento, de 02/09, e o primeiro em que TODAS as
 imagens foram abertas e auditadas contra os fatos do Olho.
+**Os cinco HTML foram lidos nesta sessão**, então as listas de fatos estão disponíveis e os
+dossiês são reproduzíveis sem rede — foi assim que as seções 1 e 5 derrubaram duas hipóteses
+sobre o portão de máquina que tinham sido escritas sem medir. Ao registrar o próximo lote,
+peça os laudos ANTES de concluir causa: a reprodução custa dois minutos e o palpite custou
+duas rodadas de `/critico` aqui.
 
 | # | Foto | Papel | NC | Aceite declarado | Resultado |
 |---|---|---|---|---|---|
@@ -148,12 +153,31 @@ desde o começo. **A leitura da imagem feita aqui dizia serra de FITA, e estava 
 a taxa de erro dessa leitura na seção 5. Para o portão o erro é indiferente e a medição
 fica mais limpa por causa disso: `serra de bancada` e `serra de fita` estão as DUAS em
 `MAQUINAS_NA_CENA`, e medido agora, `ha_maquina_na_cena` devolve **True** com qualquer uma
-das duas no lugar de "máquina industrial" no fato real. **A cadeia está fechada e é causal**:
-nome ausente → portão fechado → nenhum item de NR-12 alcançável, com ou sem defeito na
-máquina. Não é limite de leitura como o erro de material de 10/09 — a fenda e a lâmina
-aparecem nos 504 px em que o Olho recebe a foto —, é o Olho não inspecionar a máquina, que é o
-item em aberto desde 01/09. Três mecanismos esperavam este lote (o portão, os sinais dos
-#14/#15 e os `itens_so_com_maquina`) e **nenhum dos três chegou a ser exercido**.
+das duas no lugar de "máquina industrial" no fato real.
+
+**MAS abrir o portão não recupera nada, e isso foi medido nos laudos.** Com os cinco HTML em
+mãos, os dossiês das fotos 1 e 2 foram reproduzidos sem rede, com e sem o nome da máquina no
+fato. O portão abre nas duas, e o que entra é ruído:
+
+| foto | com o nome | itens de NR-12 que entram |
+|---|---|---|
+| 1 (`serra de bancada`) | 14 → **19 entradas** | `12.4.8`, `Anexo III 7`, `Anexo XII 2.1` (**cestas aéreas**), `Anexo XII 3.2.2` (plataformas condutivas), `Anexo XII 3.6.1` |
+| 2 (`policorte`) | 9 → **11 entradas** | `Anexo III 6.1` (**rampas com mais de 20º**), `Anexo XII 3.2.2` |
+
+**Nenhum item da família de proteção de partes móveis (`12.5.x`) chega em nenhuma das duas**,
+e na foto 2 a entrada dos dois itens de NR-12 **expulsa** o `NR-18 18.10.2.6`, que era o único
+item do dossiê com alguma relação com a ferramenta de corte. **É a medição de 08/09 repetida
+noutro portão**: destrancar não faz o item certo subir, e aqui piora o dossiê. Os anexos III e
+XII da NR-12 não são ramos setoriais, então `setor_pertinente` não os filtra — uma foto de
+serra de bancada recebe item de cesta aérea.
+**Logo a cadeia NÃO está fechada**, e a redação anterior desta seção afirmou que estava: nome
+ausente fecha o portão, mas o nome presente não entrega item pertinente. O gargalo é o Olho
+não inspecionar a máquina — não escrever a proteção, a lâmina, a zona de corte —, que é o item
+em aberto desde 01/09 e que nenhum dos três mecanismos que esperavam este lote (o portão, os
+sinais dos #14/#15 e os `itens_so_com_maquina`) chegou a exercer. O que exercita os três é
+FATO sobre a proteção, não o nome do objeto.
+Não é limite de leitura como o erro de material de 10/09 — a fenda e a lâmina aparecem nos
+504 px em que o Olho recebe a foto.
 
 **O dossiê da foto 1 mostra o custo**: 14 entradas, nenhuma de serra, com `NR-13 13.4.2.6`
 e `13.6.2.4` (caldeiras; o `13.4.2.6` fala de "painel de instrumentos", que é o caminho
@@ -259,17 +283,30 @@ cega ameaça as omissões; ela ameaçou, e no sentido de INVENTAR, não só no d
 NCs erradas em cinco fotos. A do laudo 3 saiu e não devia (falso positivo, `NR-08 8.3.2.2`,
 alta, prazo de 1 dia, sobre um vão que não existe) e a da foto 2 devia sair e não saiu (a
 ausência de barreira de acesso, que é o achado do nome do arquivo).
-**E a segunda É falha de recuperação, ao contrário do que uma redação anterior desta seção
-afirmou.** Ela citava o `NR-18 18.10.2.6` no D6 da foto 2 como prova de que o item certo
-estava à mão — mas aquele item é o **disco específico para o material cortado**, e não
-alcança barreira de acesso nenhuma. Usá-lo ali é a classe de erro 1 cometida dentro da
-análise, e foi o `/critico` que pegou. O item que cobre o achado confirmado mora na
-**NR-12**, na família da zona de perigo (`12.5.13` trata de proteção distante com
-possibilidade de alguém ficar nela), e a NR-12 estava trancada: o Olho escreveu *"ferramenta
-elétrica de disco"* em vez de `policorte`, e medido agora, `ha_maquina_na_cena` devolve
-**False** com a frase real e **True** trocando-a pelo nome. **É a mesma cadeia da foto 1, e
-aqui ela custou uma NC de verdade** — na foto 1 a serra tem coifa, então o portão fechado
-não escondeu defeito nenhum; na foto 2 escondeu.
+**A segunda É falha de recuperação, e o dossiê medido diz de que tipo.** Uma redação anterior
+citava o `NR-18 18.10.2.6` no D6 da foto 2 como prova de que o item certo estava à mão — mas
+aquele item é o **disco específico para o material cortado** e não alcança barreira de acesso
+nenhuma. Usá-lo ali era a classe de erro 1 cometida dentro da análise, e foi o `/critico` que
+pegou. **A redação seguinte errou de outro jeito**, apontando o `NR-12 12.5.13` como o item
+certo e o portão de máquina como o que o trancava. Com os laudos em mãos isso foi medido nos
+três desenhos, e nenhum entrega o item:
+
+| dossiê da foto 2 | o que chega |
+|---|---|
+| como saiu (fato real) | nada de NR-12; `18.10.2.6` em D6 |
+| com `policorte` no lugar de "ferramenta elétrica de disco" | NR-12 de **rampa** e de **plataforma condutiva**, e o `18.10.2.6` é **expulso** |
+| com o achado do engenheiro escrito como FATO ("área de corte sem barreira, cerca ou isolamento") | `area_carpintaria_armacao_irregular` dispara e traz `NR-18 18.7.3.1` e `18.7.3.2` em **D5 e D6**, curados |
+
+**O terceiro é o único que chega perto, e ainda assim não fecha**: o `18.7.3.1` cobre piso,
+cobertura, iluminação e remoção de resíduos da área de carpintaria — **não tem cláusula de
+isolamento** —, e o `18.7.3.2` isola especificamente a área de movimentação de VERGALHÕES. O
+`12.5.13` passa por `comprovavel_em_foto`, por `prescritivo` e por `setor_pertinente`, e
+**nunca ranqueia**. **Não há na base item que cubra de frente "área de corte sem barreira de
+acesso"** — é a situação dos itens de içamento de 03/09 outra vez: o achado é real, o
+enquadramento não existe ao alcance. Ver o item novo em aberto.
+**A diferença entre as duas fotos fica assim**: na foto 1 o portão fechado não escondeu
+defeito nenhum, porque a serra tem coifa; na foto 2 escondeu um achado real, mas abrir o
+portão não o teria recuperado.
 
 **A P6 continua aberta e é a mais cara das que sobraram.** Se o vão de acesso ao poço da
 foto 5 estava sem fechamento provisório, a âncora do lote tem uma segunda NC — o
@@ -390,11 +427,13 @@ medidos não pagavam a mudança de arquitetura. **A taxa agora é 5 a 9 divergê
 com o piso CONFIRMADO pelo engenheiro, num domínio novo e com uma classe que não estava
 mapeada** (o VÃO INEXISTENTE, confirmado). O que a taxa NÃO decide sozinha é a direção do
 conserto, e as respostas separam as duas metades melhor que o número:
-- **o que a fase separada recupera, e agora com os dois casos medidos — e eles são a mesma
-  foto**: o NOME abre o portão (medido: `policorte` no lugar de "ferramenta elétrica de
-  disco" faz `ha_maquina_na_cena` virar True) e é a NR-12 destrancada que traz o item capaz
-  de enquadrar a barreira ausente. Na foto 2 o nome sozinho já recupera a NC perdida; na
-  foto 1 ele abre o portão e não há defeito atrás dele;
+- **o que a fase separada recupera é o FATO, não o nome — e isso foi medido nos três
+  desenhos do dossiê da foto 2 (seção 5)**. Nomear o `policorte` abre o portão e traz item
+  de rampa e de plataforma condutiva, expulsando o que havia de pertinente; escrever o
+  achado do engenheiro como fato dispara um risco CURADO e põe a família da área de
+  carpintaria em D5 e D6. **É a declaração do achado que move o dossiê, não a declaração do
+  objeto** — o que é coerente com a fronteira medida em 09/09, onde a marcação por lista
+  dirigia o dossiê sem recuperar achado que o Olho não viu;
 - **o que ela não recupera é o VÃO INEXISTENTE da foto 3**, porque nada no desenho manda o
   engenheiro conferir fato por fato o que o modelo escreveu — e é dele que saiu o falso
   positivo confirmado do lote. Contra ele a marcação por lista age menos ainda: o item já
@@ -1632,6 +1671,46 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
 
 ## Em aberto
 
+- **"Área de corte sem barreira de acesso" não tem item alcançável — medido em 11/09, com
+  os laudos do lote de máquina em mãos.** É a NC real que a foto 2 perdeu, confirmada pelo
+  engenheiro, e os três desenhos de dossiê reproduzidos sem rede mostram que nenhum caminho
+  entrega o enquadramento: o fato como saiu não traz NR-12 nenhuma; nomear o `policorte`
+  abre o portão e traz `NR-12 Anexo III 6.1` (rampa com mais de 20º) e `Anexo XII 3.2.2`
+  (plataforma condutiva), **expulsando** o `NR-18 18.10.2.6`; e escrever o achado como fato
+  dispara `area_carpintaria_armacao_irregular`, que traz `NR-18 18.7.3.1` e `18.7.3.2` em D5
+  e D6 — mas o `18.7.3.1` cobre piso, cobertura, iluminação e resíduos, **sem cláusula de
+  isolamento**, e o `18.7.3.2` isola a área de movimentação de VERGALHÕES, não a de corte.
+  O `NR-12 12.5.13` passa por `comprovavel_em_foto`, por `prescritivo` e por
+  `setor_pertinente`, e **nunca ranqueia** — busca textual sobre o vocabulário do Olho não o
+  alcança. **É a situação dos itens de guindar de 03/09 outra vez**: o achado é real e o
+  enquadramento não existe ao alcance, então nem um Olho perfeito o produziria. Duas saídas,
+  nenhuma medida: risco curado novo para área de máquina sem delimitação, ou aceitar que a
+  NR-18 não cobre isso e citar a NR-12 por taxonomia curada, que é o caminho do
+  `itens_so_com_maquina`. **Meça o dossiê antes de escrever o risco** — foi medir que
+  derrubou duas hipóteses minhas seguidas aqui.
+- **Os anexos III e XII da NR-12 não são ramos setoriais, e por isso `setor_pertinente` não
+  os filtra — uma foto de serra de bancada recebe item de CESTA AÉREA.** Medido em 11/09:
+  com `serra de bancada` no fato, o dossiê da foto 1 vai de 14 para 19 entradas e ganha
+  `12.4.8`, `Anexo III 7`, `Anexo XII 2.1` (cestas aéreas), `Anexo XII 3.2.2` e
+  `Anexo XII 3.6.1`. **É a NR-12 voltando a ser a lixeira do dossiê pela porta que o #35
+  não fechou**: a tabela `SETORES` mapeia os sete ramos (motosserras, panificação, açougue,
+  prensas, injetoras, calçados, agrícola) e esses dois anexos não são ramo, são famílias de
+  equipamento — cestas aéreas e plataformas. **O conserto é o mesmo do portão setorial da
+  NR-18**: exigir o equipamento na cena. Não foi feito porque o portão de máquina hoje
+  esconde o problema (fechado, nada entra) e só aparece quando ele abre — que é
+  exatamente o que a fase separada de VISÃO faria acontecer em todas as fotos de máquina.
+- **O `NR-18 18.9.2` enquadrou uma abertura VERTICAL pela terceira vez, e desta não precisa
+  de imagem para ver.** No laudo 2 de 11/09 a constatação diz *"abertura vertical na
+  estrutura de concreto, sem porta ou fechamento, revelando o interior de outro cômodo"* e
+  cita o `18.9.2`, que é item de **abertura no PISO**; o `NR-08 8.3.2.2`, que cobre piso E
+  parede, entrou como citação complementar, quando é ele o item de frente. **E o aparo do
+  Diretor descreve a norma errado**: diz que "a norma exige fechamento provisório para
+  aberturas em paredes", e o texto do `18.9.2` fala de pisos. É a classe de erro 1 com a
+  fusão do `ITENS_EQUIVALENTES` invertendo a ordem — as ocorrências anteriores são o laudo 1
+  de 09/09 e a passada B de 10/09, as duas de poço de elevador. **Três casos em três lotes, e
+  todos com o `8.3.2.2` disponível**: o que cabe medir é se a fusão deve escolher o item pela
+  ORIENTAÇÃO da abertura descrita no fato, em vez de pelo primeiro que o Analista enquadrar.
+
 - **O `sem` satisfaz um sinal negando OUTRA coisa no mesmo fato — e isso derruba uma
   família inteira de riscos.** Achado no lote de 05/09 e **medido**: o fato *"Guarda-corpo
   metálico rígido instalado na borda da laje, com travessão superior e rodapé, **sem
@@ -2034,10 +2113,13 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   **A primeira contagem chegou em 11/09 — 5 a 9 divergências em 30, com o piso confirmado
   pelo engenheiro (o que ainda não fechou está na seção 6 da validação de 11/09) — e ela NÃO
   decide sozinha, porque parte do erro fica fora do alcance da proposta.** O que ela
-  recupera tem agora caso medido, e é um só: na foto 2 o nome da máquina (`policorte`, que
-  o Olho não escreveu) abre o portão, e é a NR-12 destrancada que traz o item capaz de
-  enquadrar a barreira de acesso ausente — a NC real que aquela foto perdeu. Na foto 1 o
-  mesmo mecanismo vale e não custou nada, porque a serra tem coifa. O
+  recupera tem agora caso medido, e ele é mais estreito do que eu escrevi duas vezes: o que
+  move o dossiê é o ACHADO declarado como fato, não o nome do objeto. Medido na foto 2 —
+  nomear o `policorte` abre o portão de máquina e traz item de rampa e de plataforma
+  condutiva, enquanto escrever "área de corte sem barreira, cerca ou isolamento" dispara um
+  risco curado e põe a família da área de carpintaria em D5 e D6. **E nem assim a NC perdida
+  fecha**, porque o item que a cobriria de frente não existe ao alcance: ver o item em aberto
+  sobre a área de corte sem isolamento. O
   que ela não alcança é o **VÃO INEXISTENTE** da foto 3: nada no desenho manda conferir fato
   a fato o que o modelo escreveu, e foi dele que saiu o falso positivo confirmado do lote.
   **Os dois lados têm caso medido e apontam para desenhos diferentes** — contra o que o Olho
