@@ -1269,7 +1269,7 @@ porque duas das quatro que eu abri não eram o que o nome dizia.
 
 | Lote | Fotos | O que ele decide |
 |---|---|---|
-| **Elétrica** | `5 PAV. FIAÇÃO EXPOSTA NO CHÃO`, `CABOS ELETRICOS DISPOSTOS DIRETAMENTE NO CHÃO`, `FIO EXPOSTO NO CHAO`, `8 PAV. FIAÇÃO NO CHÃO` + âncora | fio desencapado é o caso ORIGINAL da classe de erro 1, e o conserto do plural de 4 letras só foi visto uma vez. Os três vocabulários diferentes para o mesmo achado medem se o roteamento depende da palavra que o Olho escolhe |
+| **Elétrica** | `5 PAV. FIAÇÃO EXPOSTA NO CHÃO`, `CABOS ELETRICOS DISPOSTOS DIRETAMENTE NO CHÃO`, `FIO EXPOSTO NO CHAO`, `8 PAV. FIAÇÃO NO CHÃO` + âncora | fio desencapado é o caso ORIGINAL da classe de erro 1, e o conserto do plural de 4 letras só foi visto uma vez. Os três vocabulários diferentes para o mesmo achado medem se o roteamento depende da palavra que o Olho escolhe. **As quatro foram abertas em 12/09 e o lote está PRÉ-REGISTRADO**: nenhuma tem condutor desencapado, o item de frente (`NR-18 18.10.2.4`) é inalcançável porque a NR-18 nem é candidata, e `chão` no lugar de `piso` derruba o sinal — ver o item em aberto. **O aceite passa a se ler na LISTA DE FATOS**: qual palavra o Olho usa para o piso, e se ele diz que o isolamento está íntegro. Se sair NC de `NR-10 10.2.8.2` (partes vivas) sobre cabo íntegro, é a classe de erro 1 confirmada, e não falha de recuperação |
 | **Içamento e cancela** | `19 PAV. CINTAS DE ELEVAÇÃO DE MATERIAS UTILIZADOS PELA CARPINTARIA`, `9 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO`, `17 PAV AUSENCIA DE SINALIZAÇÃO NAS CANCELAS`, `8 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO` + âncora | a taxonomia de guindar do #22 (`18.10.1.27`, `11.1.3.1`) existe desde 03/09 e **nunca foi validada**; `torre_elevador_sem_cancela` cita `18.11.13` e **nunca disparou em produção**. A foto das cintas é a que virou item de EPI por colisão de radical |
 | **Pessoa na cena** | `TRABALHADOR SEM EPI`, `TRABALHADOR SEM PROTEÇÃO`, `TRABALHADOR SE EPI`, `6 PAV. TRABALHADORES SEM DOCUMENTAÇÃO` + âncora | o portão `exige_pessoa` governa 25 riscos e nunca teve lote. **Não use `COLABORADOR UTILIZANDO EPI SEM C.A`**: 212x508 px e sem extensão de arquivo, o uploader filtra por tipo |
 | **Escada** | `ESCADA EM LOCAL INADEQUADO`, `20 PROTEÇÃO DE ESCADA DANIFICADA`, `18 PAV. PROTEÇÃO DE ESCADA QUEBRADA 18 PARA O 19`, `PROTEÇÃO DE ESCADA 17 PARA O 18 PAV` + âncora | "escada apoiada" virando "sem sapata antiderrapante" é classe de erro 2 registrada e nunca remediada. Nas três de proteção de escada o defeito está na proteção, não na escada |
@@ -1767,6 +1767,41 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   NR-18 não cobre isso e citar a NR-12 por taxonomia curada, que é o caminho do
   `itens_so_com_maquina`. **Meça o dossiê antes de escrever o risco** — foi medir que
   derrubou duas hipóteses minhas seguidas aqui.
+- **"Cabo no piso" também não tem item alcançável, e a causa é um nível acima do BM25 —
+  medido em 12/09, ANTES do lote de elétrica.** As quatro fotos do lote foram abertas aqui e
+  as quatro mostram a mesma coisa: cabo com o isolamento APARENTEMENTE ÍNTEGRO atravessando
+  área de circulação, **nenhuma com condutor desencapado**. O `FIO EXPOSTO NO CHAO` é exposto
+  no sentido de descoberto, não de sem isolamento. O item que cobre isso de frente existe:
+  `NR-18 18.10.2.4` — *"o condutor de alimentação da ferramenta elétrica deve ser manuseado de
+  forma que não sofra torção, ruptura ou abrasão, nem obstrua o trânsito de trabalhadores e
+  equipamentos"*. Ele passa por `comprovavel_em_foto`, por `prescritivo` e por
+  `setor_pertinente`, **nenhum risco curado o cita**, e em quatro redações diferentes — a do
+  vocabulário do sinal, a do texto do próprio item, "extensão no chão" e "rolo de cabo" — ele
+  **nunca chega ao dossiê**. A causa não é ranquear baixo: a **NR-18 não chega a ser NR
+  candidata** com vocabulário elétrico. Medido: `nrs_candidatas` devolve `['NR-01','NR-08','NR-10']`
+  e, nomeando a furadeira, `['NR-08','NR-10','NR-12']`. **O que chega no lugar** é
+  `NR-10 10.2.8.2` e `10.2.8.2.1`, que tratam de desenergização e de isolação de PARTES VIVAS
+  — para cabo íntegro no chão é a classe de erro 1 pronta, e é a previsão registrada para este
+  lote. Duas saídas, nenhuma medida: risco curado novo para condutor obstruindo circulação,
+  citando o `18.10.2.4`, ou eleger a NR-18 quando o vocabulário elétrico aparece em cena de
+  canteiro — a segunda mexe em todas as fotos e pede lote próprio.
+  **E a palavra que o Olho escolher para o chão decide o dossiê**, o que faz deste lote a
+  medição direta do que a linha dele na fila promete. O sinal cadastrado é
+  `"cabo eletrico estendido sobre o piso"`, cinco radicais:
+
+  | fato | riscos | dossiê |
+  |---|---|---|
+  | "cabos elétricos dispostos diretamente no **chão**" | `sinalizacao_de_seguranca_ausente` | NR-26 e NR-08, **zero NR-10** |
+  | a mesma frase com **piso** | nenhum | NR-08, zero NR-10 |
+  | "cabos elétricos **estendidos sobre o piso**" | `cabo_eletrico_danificado` | `NR-10 10.2.8.2` em D1 |
+  | "fiação elétrica estendida no **chão** da laje" | nenhum | **vazio** |
+
+  Trocar `piso` por `chão` derruba a cobertura para 0,40, e **os QUATRO nomes de arquivo dizem
+  CHÃO**, um deles sem o til. As contrapartes ficam caladas: canaleta instalada, eletroduto rígido e extensão
+  suspensa com isolamento íntegro dão zero risco nas três.
+  **Medi X, afirmo Y**: o que se mediu é o dossiê sobre fatos SINTÉTICOS escritos aqui, não
+  sobre os fatos do Olho, que ainda não existem. O que o lote vai entregar é **hipótese** até os
+  laudos chegarem — o que está medido é que, dado o fato, o item de frente não é alcançável.
 - **Os anexos III e XII da NR-12 não são ramos setoriais, e por isso `setor_pertinente` não
   os filtra — uma foto de serra de bancada recebe item de CESTA AÉREA.** Medido em 11/09:
   com `serra de bancada` no fato, o dossiê da foto 1 vai de 14 para 19 entradas e ganha
