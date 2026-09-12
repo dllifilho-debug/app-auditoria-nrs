@@ -103,6 +103,133 @@ por chamada (fatiar a conferência do Diretor) ou o Dev Tier pago.
 
 ---
 
+## Validação em produção de 12/09/2026 — o lote de ELÉTRICA, 5 fotos
+
+Rodado no `ef3ca2c` — **inferido do merge, e não lido na barra lateral**, que é o mesmo dado
+que faltou em 09/09; leia o hash da próxima vez. Obra "teste". **5 laudos, 3 NCs, 0 não auditadas, 1 ciclo em todos.**
+É o **primeiro lote PRÉ-REGISTRADO** do histórico: as quatro fotos de elétrica foram abertas
+aqui e os dossiês medidos sobre fatos sintéticos ANTES de rodar (commit `490b152`), com a
+previsão escrita. Então esta seção compara previsão contra resultado, e não só resultado
+contra nome de arquivo. Os cinco HTML foram lidos e os cinco dossiês reproduzidos sem rede
+a partir dos fatos reais.
+
+| # | Foto | O que o Olho escreveu do cabo | NC entregue |
+|---|---|---|---|
+| 1 | `5 PAV. FIAÇÃO EXPOSTA NO CHÃO` | "Cabo elétrico preto **estendido sobre o piso**" | `NR-18 18.8.6.12` **escada sem sapata**, alta |
+| 2 | `CABOS ELETRICOS DISPOSTOS DIRETAMENTE NO CHÃO` | "Cabo elétrico preto enrolado em rolos sobre o **chão**" | 0 |
+| 3 | `FIO EXPOSTO NO CHAO` | "Cabo elétrico preto enrolado em rolos sobre o piso" | `NR-18 18.9.2` **abertura no piso**, crítica — **FALSO POSITIVO confirmado** |
+| 4 | `8 PAV. FIAÇÃO NO CHÃO` | "**Fiação** elétrica preta estendida ao longo do piso" | 0, com veto CERTO do Diretor |
+| 5 | `13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO` (âncora) | — | `NR-18 18.9.2`, crítica |
+
+**Gabarito contra o nome do arquivo: 1 de 5**, e o único acerto é a âncora. **As quatro de
+elétrica deram ZERO enquadramento elétrico** — é o lote de içamento de 02/09 repetido noutro
+domínio, com a diferença de que aqui a causa estava medida e escrita antes.
+
+### 1. A previsão acertou o item inalcançável, e é o achado principal
+
+O `NR-10 10.2.8.2` e o `10.2.8.2.1` chegaram em **D1 e D2, CURADOS, em três das quatro fotos**
+(1, 2 e 3), e **o Analista não usou nenhum dos dois em nenhuma delas**. Não é falha de
+recuperação nem escolha ruim: o item trata de desenergização e de isolação de PARTES VIVAS, e
+o cabo está íntegro. Ele recusou porque o item não serve.
+**O que serviria continua inalcançável**: o `NR-18 18.10.2.4` (condutor de ferramenta que não
+pode obstruir o trânsito) não apareceu em dossiê nenhum dos cinco, e a NR-18 sequer é candidata
+por vocabulário elétrico. Nas fotos 1 e 3 o cabo foi para **pontos de atenção**, que é o
+comportamento certo quando não há item — o app diz o que viu sem forçar citação imprópria.
+**A previsão de NC falsa de partes vivas NÃO se realizou**, e a razão é essa: o item em D1
+curado não vira NC quando não descreve a situação.
+
+### 2. O vocabulário decide, mas por `cabo` contra `fiação` — a previsão errou o par
+
+A previsão dizia que `chão` no lugar de `piso` derrubaria o roteamento. **Caiu.** Medido nos
+fatos reais, com o sinal `"cabo eletrico estendido sobre o piso"` (cinco radicais):
+
+| foto | cobertura | âncora | o que faltou | risco |
+|---|---|---|---|---|
+| 1 | **1,00** | 5 | — | `cabo_eletrico_danificado` |
+| 2 (escreveu "chão") | **0,80** | 3 | `estendid` | `cabo_eletrico_danificado` |
+| 4 (escreveu "fiação") | **0,60** | 3 | `cabo`, `sobr` | **nenhum** |
+
+Na foto 2 o `piso` que faltava no achado veio do **AMBIENTE** ("piso de concreto aparente"), e
+a âncora ficou satisfeita pelos três radicais do próprio achado. **A âncora de 01/09 impede o
+ambiente de carregar o sinal SOZINHO; não impede que ele COMPLETE um sinal já ancorado** — e
+foi isso que salvou a foto 2 da previsão.
+**O discriminante real é `cabo`.** Na foto 4 o Olho escreveu `fiação`, o risco calou, e o
+dossiê foi para **NR-13 vaso de pressão** e NR-17 mobiliário, com zero NR-10. É a mesma família
+do `"fio desencapado"` que nunca casava "fios desencapados": o Olho alterna cabo, fiação e fio
+para o mesmo objeto, e o sinal só conhece um deles.
+
+### 3. VÃO INEXISTENTE confirmado pela SEGUNDA vez, e de novo virou NC crítica
+
+O Olho escreveu na foto 3 *"Abertura retangular no piso, com bordas de concreto, localizada no
+canto da parede de tijolos"*. **O engenheiro confirmou em 12/09: não há abertura de piso ali.**
+A única NC daquele laudo — `NR-18 18.9.2`, crítica, prazo de 1 dia — nasceu de um vão que não
+existe, exatamente como o laudo 3 do lote de MÁQUINA.
+**São dois lotes seguidos, em domínios diferentes, e a classe se comporta igual**: o objeto
+inventado carrega a propriedade de risco no nome, o roteamento cura o item, o Analista enquadra
+e o Diretor aprova sem veto nem aparo — porque a conferência confere a constatação contra o
+FATO, e o fato está lá. **Deixa de ser achado de um lote e passa a ser o defeito mais caro do
+app**: nas duas vezes fabricou sozinha uma não conformidade crítica ou alta com prazo de 1 dia.
+
+### 4. O Diretor acertou duas vezes, e uma está confirmada pelo engenheiro
+
+Na foto 4 o Analista enquadrou `NR-18 18.9.2` para um **vão de PAREDE** coberto por tela
+metálica, e o Diretor **vetou** com a razão exata: *"o item normativo regula especificamente
+aberturas no piso"*. **O engenheiro confirmou que a tela é fechamento e está fixada**, então 0
+NC ali é o resultado certo pelos dois motivos: o item era impróprio e a proteção existe.
+**A conta do `18.9.2` sobre abertura VERTICAL fica assim**: ele passou em três laudos (o 1 de
+09/09, a passada B de 10/09 e o 2 de 11/09) e foi vetado em dois (a passada A de 10/09 e esta).
+É a segunda vez que o veto sai com a razão certa, e a **primeira em que a resposta do engenheiro
+fecha o caso**.
+**O `NR-08 8.3.2.2` nem estava disponível ali**: a NR-08 não é candidata na foto 4, então não
+havia como trocar o item de piso pelo que cobre parede.
+
+### 5. A escada da foto 1 é a classe de erro 2 reaparecendo, e o aparo não a matou
+
+A NC entregue é `NR-18 18.8.6.12`, com a constatação *"a escada de alumínio apoiada contra a
+parede não apresenta visivelmente sapatas antiderrapantes"*. **Aberta a foto, a base da escada
+não aparece no recorte** — ela está encostada no canto direito ao fundo e some atrás da pilha
+de blocos. É a frase que este arquivo registra nominalmente na classe de erro 2 ("escada
+apoiada" virando "sem sapata antiderrapante"), e é também a cláusula (e) falhando pelo caminho
+que 10/09 já mostrou: o aparo retirou *"descumprindo a exigência de estabilidade"* e manteve
+uma afirmação sobre o que a foto não mostra.
+**Pergunta em aberto ao engenheiro**: a escada da foto 1 tem sapata antiderrapante? A resposta
+não muda o defeito de moldura, mas diz se a NC é falso positivo ou acerto pelo motivo errado.
+
+### 6. Divergências candidatas, e por que NÃO há taxa fechada aqui
+
+**32 fatos nas 5 fotos.** A comparação de taxa que este lote prometia — a mesma contagem do
+lote de MÁQUINA noutro vocabulário — **não foi feita**, e é preciso dizer por quê: a auditoria
+exaustiva fato a fato não rodou. O que houve foi leitura das quatro imagens ANTES do lote (que
+é a regra 1 do desenho cumprida pela primeira vez) e duas reaberturas dirigidas depois. Anunciar
+"5 a 9 em 30 contra N em 32" seria comparar duas medições diferentes.
+
+| divergência candidata | foto | estado |
+|---|---|---|
+| "Abertura retangular no piso" onde não há abertura | 3 | **CONFIRMADA — VÃO INEXISTENTE** |
+| "piso de terra batida" numa laje de concreto do 13º pavimento | 5 | **já confirmada em 11/09** (P4), repetida byte a byte |
+| "Tambor cilíndrico de cor azul, possivelmente um compressor de ar" — na imagem é um galão de água sobre banquinho | 4 | sem pergunta — **e é a divergência mais cara depois do vão**: levou `NR-13 13.5.1.3` e `13.5.1.4` (placa de identificação de VASO DE PRESSÃO) a D1 e D2 |
+| "Estrutura metálica de quatro pés (mesa de trabalho) coberta por uma lona branca plástica" — parece cavalete com papel de projeto | 1 | sem pergunta |
+| "tubo de proteção amarelo fixado verticalmente na face" da coluna — parece cabo ou mangueira amarela | 2 | sem pergunta |
+
+**O que este lote acrescenta à decisão da fase separada de VISÃO** é o caso do compressor: um
+NOME errado num objeto secundário arrastou duas vagas do dossiê para outra NR inteira. Nas
+medições anteriores o nome errado custava item impertinente na mesma família; aqui ele troca a
+norma.
+
+### 7. O que se confirmou sem divergência
+
+- **A âncora manteve** `NR-18 18.9.2`, como em toda execução com laudo lido, e o
+  `NR-18 18.9.3` **continua fora do dossiê** — 7 entradas, reproduzidas aqui, exatamente o que
+  12/09 já tinha medido sobre o laudo 4 do lote de MÁQUINA.
+- **O portão de pessoa não foi exercido de novo.** A foto 2 tem 2 trabalhadores contados e a 1
+  tem 1, e nenhum risco com `exige_pessoa` routeou em foto nenhuma. Continua sem lote.
+- **A contagem de gente bate com a imagem** nas duas: 1 pedreiro na foto 1, e na 2 a perna de
+  uma pessoa mais a bota do fotógrafo.
+- **O parecer volta a carregar hipótese** no laudo 5 (*"pode ceder ou deslocar-se sob carga"*),
+  no campo que a cláusula (d) não governa. Terceira aparição da mesma armadilha.
+
+---
+
 ## Validação em produção de 11/09/2026 — o lote de MÁQUINA, 5 fotos
 
 Rodado no `b48f666` (hash informado pelo usuário — os laudos não o carregam), obra
@@ -1269,7 +1396,7 @@ porque duas das quatro que eu abri não eram o que o nome dizia.
 
 | Lote | Fotos | O que ele decide |
 |---|---|---|
-| **Elétrica** | `5 PAV. FIAÇÃO EXPOSTA NO CHÃO`, `CABOS ELETRICOS DISPOSTOS DIRETAMENTE NO CHÃO`, `FIO EXPOSTO NO CHAO`, `8 PAV. FIAÇÃO NO CHÃO` + âncora | fio desencapado é o caso ORIGINAL da classe de erro 1, e o conserto do plural de 4 letras só foi visto uma vez. Os três vocabulários diferentes para o mesmo achado medem se o roteamento depende da palavra que o Olho escolhe. **As quatro foram abertas em 12/09 e o lote está PRÉ-REGISTRADO**: nenhuma tem condutor desencapado, o item de frente (`NR-18 18.10.2.4`) é inalcançável porque a NR-18 nem é candidata, e `chão` no lugar de `piso` derruba o sinal — ver o item em aberto. **O aceite passa a se ler na LISTA DE FATOS**: qual palavra o Olho usa para o piso, e se ele diz que o isolamento está íntegro. Se sair NC de `NR-10 10.2.8.2` (partes vivas) sobre cabo íntegro, é a classe de erro 1 confirmada, e não falha de recuperação |
+| ~~**Elétrica**~~ | **RODADO em 12/09** — 5 laudos, 3 NCs, gabarito **1 de 5**, e o único acerto é a âncora: as quatro de elétrica deram **zero enquadramento elétrico**. Ver a seção de validação de 12/09. Esta linha guarda o desenho: `5 PAV. FIAÇÃO EXPOSTA NO CHÃO`, `CABOS ELETRICOS DISPOSTOS DIRETAMENTE NO CHÃO`, `FIO EXPOSTO NO CHAO`, `8 PAV. FIAÇÃO NO CHÃO` + âncora | Foi o **primeiro lote pré-registrado**, e é isso que o torna barato de ler: a previsão escrita em `490b152` acertou o item inalcançável (`NR-18 18.10.2.4`, e o `NR-10 10.2.8.2` em D1 curado que o Analista recusou nas três) e errou o par de palavras — o que decide é `cabo` contra `fiação`, não `chão` contra `piso`. O lote ainda confirmou o **VÃO INEXISTENTE pela segunda vez**, noutro domínio |
 | **Içamento e cancela** | `19 PAV. CINTAS DE ELEVAÇÃO DE MATERIAS UTILIZADOS PELA CARPINTARIA`, `9 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO`, `17 PAV AUSENCIA DE SINALIZAÇÃO NAS CANCELAS`, `8 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO` + âncora | a taxonomia de guindar do #22 (`18.10.1.27`, `11.1.3.1`) existe desde 03/09 e **nunca foi validada**; `torre_elevador_sem_cancela` cita `18.11.13` e **nunca disparou em produção**. A foto das cintas é a que virou item de EPI por colisão de radical |
 | **Pessoa na cena** | `TRABALHADOR SEM EPI`, `TRABALHADOR SEM PROTEÇÃO`, `TRABALHADOR SE EPI`, `6 PAV. TRABALHADORES SEM DOCUMENTAÇÃO` + âncora | o portão `exige_pessoa` governa 25 riscos e nunca teve lote. **Não use `COLABORADOR UTILIZANDO EPI SEM C.A`**: 212x508 px e sem extensão de arquivo, o uploader filtra por tipo |
 | **Escada** | `ESCADA EM LOCAL INADEQUADO`, `20 PROTEÇÃO DE ESCADA DANIFICADA`, `18 PAV. PROTEÇÃO DE ESCADA QUEBRADA 18 PARA O 19`, `PROTEÇÃO DE ESCADA 17 PARA O 18 PAV` + âncora | "escada apoiada" virando "sem sapata antiderrapante" é classe de erro 2 registrada e nunca remediada. Nas três de proteção de escada o defeito está na proteção, não na escada |
@@ -1767,8 +1894,13 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   NR-18 não cobre isso e citar a NR-12 por taxonomia curada, que é o caminho do
   `itens_so_com_maquina`. **Meça o dossiê antes de escrever o risco** — foi medir que
   derrubou duas hipóteses minhas seguidas aqui.
-- **"Cabo no piso" também não tem item alcançável, e a causa é um nível acima do BM25 —
-  medido em 12/09, ANTES do lote de elétrica.** As quatro fotos do lote foram abertas aqui e
+- **"Cabo no piso" não tem item alcançável — previsto em 12/09 e CONFIRMADO no lote do mesmo
+  dia.** O `NR-10 10.2.8.2` e o `10.2.8.2.1` chegaram em D1 e D2 curados em três das quatro
+  fotos e o Analista **não usou nenhum**, porque o item trata de partes vivas e o cabo está
+  íntegro; nas fotos 1 e 3 o cabo saiu em ponto de atenção. O `NR-18 18.10.2.4` não apareceu em
+  dossiê nenhum dos cinco. O que segue é o pré-registro, que continua valendo palavra por
+  palavra, com UMA correção marcada no fim.
+  **Medido em 12/09, ANTES do lote de elétrica.** As quatro fotos do lote foram abertas aqui e
   as quatro mostram a mesma coisa: cabo com o isolamento APARENTEMENTE ÍNTEGRO atravessando
   área de circulação, **nenhuma com condutor desencapado**. O `FIO EXPOSTO NO CHAO` é exposto
   no sentido de descoberto, não de sem isolamento. O item que cobre isso de frente existe:
@@ -1797,7 +1929,12 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   | "fiação elétrica estendida no **chão** da laje" | nenhum | **vazio** |
 
   Trocar `piso` por `chão` derruba a cobertura para 0,40, e **os QUATRO nomes de arquivo dizem
-  CHÃO**, um deles sem o til. As contrapartes ficam caladas: canaleta instalada, eletroduto rígido e extensão
+  CHÃO**, um deles sem o til.
+  **A CORREÇÃO que o lote obrigou**: o par `chão`/`piso` NÃO é o discriminante. Na foto 2 o Olho
+  escreveu "chão" e o risco disparou assim mesmo, a 0,80, porque o `piso` veio do AMBIENTE e a
+  âncora já estava satisfeita por três radicais do achado — a âncora impede o ambiente de
+  carregar o sinal sozinho, não de COMPLETAR um sinal ancorado. Quem decide é `cabo`: na foto 4
+  o Olho escreveu `fiação`, a cobertura caiu a 0,60 e o dossiê foi para NR-13 de vaso de pressão. As contrapartes ficam caladas: canaleta instalada, eletroduto rígido e extensão
   suspensa com isolamento íntegro dão zero risco nas três.
   **Medi X, afirmo Y**: o que se mediu é o dossiê sobre fatos SINTÉTICOS escritos aqui, não
   sobre os fatos do Olho, que ainda não existem. O que o lote vai entregar é **hipótese** até os
@@ -1831,6 +1968,10 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   de 09/09 e a passada B de 10/09, as duas de poço de elevador. **Três casos em três lotes, e
   todos com o `8.3.2.2` disponível**: o que cabe medir é se a fusão deve escolher o item pela
   ORIENTAÇÃO da abertura descrita no fato, em vez de pelo primeiro que o Analista enquadrar.
+  **O outro lado ganhou um caso em 12/09**: na foto 4 do lote de elétrica o Diretor VETOU o mesmo
+  `18.9.2` num vão de parede fechado com tela, com a razão certa, e o engenheiro confirmou que a
+  tela é fechamento e está fixada. A conta fica em **três laudos em que ele passou e dois vetos**
+  — e ali o `8.3.2.2` NÃO estava disponível, porque a NR-08 não é candidata naquela foto.
 
 - **O `sem` satisfaz um sinal negando OUTRA coisa no mesmo fato — e isso derruba uma
   família inteira de riscos.** Achado no lote de 05/09 e **medido**: o fato *"Guarda-corpo
@@ -2202,6 +2343,11 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   **O VÃO INEXISTENTE é a classe mais cara do histórico** porque não erra um atributo de um
   objeto real: cria o objeto, com a propriedade de risco embutida no nome, e nenhuma trava
   do pipeline pergunta se ele existe.
+  **CONFIRMADO PELA SEGUNDA VEZ em 12/09, noutro domínio**: na foto 3 do lote de elétrica o Olho
+  escreveu "abertura retangular no piso, com bordas de concreto" e o engenheiro respondeu que
+  não há abertura ali. A única NC daquele laudo saiu crítica, com prazo de 1 dia. Dois lotes
+  seguidos, dois falsos positivos inteiros, e o mesmo caminho nos dois: risco curado, item em
+  D1, Analista enquadra, Diretor aprova sem veto nem aparo. **Deixa de ser achado de um lote.**
   **E a regra 3 ganhou a validação que faltava, pelo pior caminho possível: a leitura de
   imagem feita aqui errou 2 das 7 respostas, e uma delas INVENTOU um achado** — "lâmina
   exposta sem coifa" numa serra que tem coifa, que é a mesma classe de erro que a auditoria
@@ -2255,6 +2401,12 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   fato a fato, que é o que a proposta não inclui. Antes de pagar a arquitetura, vale
   perguntar se o barato é mostrar a lista de fatos para CONFIRMAÇÃO, não só para complemento
   — e este lote é a primeira evidência de que a confirmação é a metade que falta.
+  **O lote de elétrica acrescentou um caso NOVO de nome errado, e ele é de outra espécie**: na
+  foto 4 o Olho chamou um galão de água sobre banquinho de *"tambor cilíndrico de cor azul,
+  possivelmente um compressor de ar"*, e isso levou `NR-13 13.5.1.3` e `13.5.1.4` — placa de
+  identificação de VASO DE PRESSÃO — a D1 e D2. Nas medições anteriores o nome errado custava
+  item impertinente dentro da mesma família; **aqui ele trocou a NORMA inteira**, e num objeto
+  secundário da cena. É argumento a favor da confirmação fato a fato, não do complemento.
   **O argumento da coifa MORREU, e vale registrar como**: a redação anterior deste item
   dizia que a pergunta da coifa era a que mais movia a decisão, porque confirmada faria da
   foto 1 o caso completo. O engenheiro respondeu que a serra TEM coifa. O caso completo é a
