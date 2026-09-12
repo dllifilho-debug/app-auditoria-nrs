@@ -121,7 +121,7 @@ duas rodadas de `/critico` aqui.
 | 2 (laudo 2) | `SERRALHERIA SEM BARREIRA DE ACESSO` | máquina + pessoas | `NR-18 18.9.2` crítica | portão de máquina e o de pessoa | **falhou nos dois — e a omissão da barreira está CONFIRMADA: NC real que o lote perdeu** |
 | 3 (laudo 3) | `SERRAGEM AREA DE CARPINTARIA` | contraparte 1 | `NR-08 8.3.2.2` alta | 0 item de NR-12 | **cumpriu o aceite — e a NC que saiu é FALSO POSITIVO confirmado pelo engenheiro** |
 | 4 (laudo **5**) | `OPERADOR BETONEIRA` | contraparte 2 | 0 | 0 de NR-12 e 0 de NR-06 | **cumpriu, com o portão ABERTO** |
-| 5 (laudo **4**) | `13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO` | âncora | `NR-18 18.9.2` crítica | mesmo item das 4 execuções | **âncora manteve — mas ver a omissão do `18.9.3` na seção 5** |
+| 5 (laudo **4**) | `13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO` | âncora | `NR-18 18.9.2` crítica | mesmo item das 4 execuções | **âncora manteve, e a omissão do `18.9.3` está CONFIRMADA: a resposta é PARCIAL nas quatro execuções** |
 
 **Gabarito contra o nome do arquivo: 2 de 5** (as fotos 4 e 5), pelo critério de 10/09 —
 e **este número não depende da leitura das imagens**, só do nome do arquivo contra o laudo:
@@ -130,6 +130,12 @@ aponta defeito e recebeu 1 NC. **As respostas do engenheiro chegaram em 11/09 e 
 movem**, como a seção 6 previa: a foto 3 continua falhando, agora por falso positivo
 confirmado em vez de discutível, e a 2 continua falhando, agora com a causa medida (achado
 não visto, não item errado). A auditoria das imagens é a seção 5, e ela não é gabarito.
+**Ressalva que a resposta da P6 obriga, e ela não move o número mas qualifica um dos dois
+acertos**: a foto 5 conta como fechada porque o laudo entrega UMA não conformidade sobre a
+falta de proteção do poço, num item que se aplica — mas o engenheiro confirmou que o vão de
+acesso também estava aberto, e esse enquadramento não saiu. **O acerto da âncora é parcial**,
+e quem apertar o critério pode ler 1 de 5. Ficou 2 de 5 porque o critério escrito em 10/09
+pede o achado do nome do arquivo num item aplicável, e isso o laudo entregou.
 
 ### 1. O portão de máquina não é o gargalo — e o NOME também não
 
@@ -255,9 +261,9 @@ seguem sem medição. Quem quiser medi-lo precisa de foto que roteie risco de EP
    laudo não trouxe, e foi exatamente o que a resposta do engenheiro confirmou na foto 2.
    Por isso as três foram perguntadas, e é de lá que veio o achado mais caro do lote.
 
-**AS RESPOSTAS CHEGARAM EM 11/09 — seis das sete.** As perguntas eram quatro sobre
-divergências e três sobre omissões; ficou de fora a P6. Esta tabela é o registro, e é dela
-que a contagem passa a depender:
+**AS RESPOSTAS CHEGARAM — seis em 11/09 e a sétima em 12/09.** As perguntas eram quatro
+sobre divergências e três sobre omissões. Esta tabela é o registro, e é dela que a contagem
+passa a depender:
 
 | # | pergunta | resposta do engenheiro | efeito |
 |---|---|---|---|
@@ -266,10 +272,10 @@ que a contagem passa a depender:
 | **P3** | foto 1 — a máquina é uma serra de fita? | **não: é serra de bancada** | a linha de NOME fica de pé (o Olho escreveu "máquina industrial"), e **a leitura feita aqui errou a máquina** |
 | **P4** | foto 5 — o piso fora do poço é laje empoeirada? | **laje empoeirada** | confirma uma linha de MATERIAL |
 | **P5** | foto 1 — a lâmina tem coifa? | **tem coifa** | **a omissão NÃO existe** — a leitura feita aqui inventou o achado |
-| **P6** | foto 5 — o vão de acesso ao poço estava sem fechamento? | *sem resposta* | **continua aberta**, e é a única |
+| **P6** | foto 5 — o vão de acesso ao poço estava sem fechamento? | **estava sem proteção no dia** | **omissão CONFIRMADA: a segunda NC real que o lote perdeu**, e o `NR-18 18.9.3` nunca saiu em quatro execuções |
 | **P7** | foto 2 — havia barreira isolando a área de corte? | **não havia barreira de acesso** | **omissão CONFIRMADA: NC real que o lote inteiro perdeu** |
 
-**A leitura de imagem feita aqui errou 2 das 6, e as duas na mesma foto.** A máquina da
+**A leitura de imagem feita aqui errou 2 das 7, e as duas na mesma foto.** A máquina da
 foto 1 não é serra de fita, e a lâmina dela TEM coifa. As duas são erros do mesmo sinal —
 afirmar o que não está lá —, e a segunda é grave de um jeito específico: **ela é a mesma
 classe de erro que esta seção estava acusando o Olho de cometer na foto 3**. Um achado
@@ -279,10 +285,17 @@ número**: tratada como gabarito, esta auditoria teria acrescentado ao laudo uma
 falsa, exatamente o dano que ela existe para medir. A ressalva 1 dizia que a leitura não
 cega ameaça as omissões; ela ameaçou, e no sentido de INVENTAR, não só no de deixar passar.
 
-**O que as respostas custaram ao laudo do cliente, que é o que importa fora daqui:** duas
-NCs erradas em cinco fotos. A do laudo 3 saiu e não devia (falso positivo, `NR-08 8.3.2.2`,
-alta, prazo de 1 dia, sobre um vão que não existe) e a da foto 2 devia sair e não saiu (a
-ausência de barreira de acesso, que é o achado do nome do arquivo).
+**O que as respostas custaram ao laudo do cliente, que é o que importa fora daqui:** TRÊS
+NCs erradas em cinco fotos. Uma saiu e não devia — o laudo 3, falso positivo, `NR-08
+8.3.2.2`, alta, prazo de 1 dia, sobre um vão que não existe. **Duas deviam sair e não
+saíram**: a ausência de barreira de acesso da foto 2, que é o achado do nome do arquivo, e o
+vão de acesso ao poço da foto 5 sem fechamento provisório, que é o `NR-18 18.9.3`.
+**A conta fica assim**: o app entregou 4 NCs nas cinco fotos, das quais **uma é falso
+positivo confirmado**; e **duas NCs reais não saíram**. As outras três entregues não são
+falso positivo, mas duas delas têm defeito de item registrado noutro lugar desta validação —
+o `NR-17 17.7.2.1` da foto 1 (ergonomia para fiação solta, classe de erro 1) e o
+`NR-18 18.9.2` da foto 2 (item de piso para abertura vertical). **Só a NC da âncora sai
+ilesa, e ainda assim parcial.**
 **A segunda É falha de recuperação, e o dossiê medido diz de que tipo.** Uma redação anterior
 citava o `NR-18 18.10.2.6` no D6 da foto 2 como prova de que o item certo estava à mão — mas
 aquele item é o **disco específico para o material cortado** e não alcança barreira de acesso
@@ -308,25 +321,45 @@ enquadramento não existe ao alcance. Ver o item novo em aberto.
 defeito nenhum, porque a serra tem coifa; na foto 2 escondeu um achado real, mas abrir o
 portão não o teria recuperado.
 
-**A P6 continua aberta, e o laudo 4 dá o contexto que faltava para reperguntá-la direito.**
-Se o vão de acesso ao poço da foto 5 estava sem fechamento provisório, a âncora do lote tem
-uma segunda NC — o `NR-18 18.9.3` — que não saiu em nenhuma das quatro execuções com laudo
-lido (09/09, as duas de 10/09 e esta; a de 08/09 é a lista reconstruída), e "âncora manteve"
-passa a significar que o app repete a mesma resposta PARCIAL, não que ela esteja completa.
-**Mas os fatos do Olho, lidos agora no HTML, não são silêncio sobre isso**: ele registrou
-*"Grade metálica de malha quadrada (treliça) instalada verticalmente, delimitando uma
-passagem ou vão lateral"* e *"Vão vertical (poço de elevador ou escada) visível ao fundo,
-com estrutura de concreto e **grade metálica na borda**"*, os dois à direita, ao fundo. **Se
-essa grade for o fechamento do vão de acesso, não há omissão nenhuma** — o Olho viu a
-proteção, o Analista é que não a usou para descartar o item. A pergunta que vai ao
-engenheiro precisa dizer QUAL vão: a leitura feita aqui falava de um rasgo grande na parede
-à ESQUERDA, e a grade que o Olho descreve está à direita. **É a única das sete cuja resposta
-o artefato podia ter estreitado com o material em mãos e não estreitou** — reperguntar sem
-isso gasta uma rodada com o engenheiro.
+**A P6 fechou em 12/09, e só depois de a FOTO ser aberta.** A pergunta estava ambígua: os
+fatos do Olho registram *"Grade metálica de malha quadrada (treliça) instalada verticalmente,
+delimitando uma passagem ou vão lateral"* e *"Vão vertical (poço de elevador ou escada)
+visível ao fundo, com estrutura de concreto e **grade metálica na borda**"*, os dois à
+DIREITA ao fundo, enquanto a leitura feita aqui falava de um rasgo na parede à ESQUERDA. Sem
+saber qual dos dois, reperguntar gastaria uma rodada.
+**A imagem separa os dois elementos.** Há um vão do tamanho de uma porta na parede de
+concreto à esquerda, por onde se entra direto no poço, com nada atravessando; o fundo do
+poço está coberto por tábuas assentadas, que é o que o laudo enquadrou. A grade metálica de
+malha que o Olho descreve está à direita, noutra abertura, **encostada e não instalada** —
+ela não é o fechamento do vão de acesso. O engenheiro confirmou: **estava sem proteção no
+dia**.
+**Logo a âncora do lote tem uma segunda NC que nunca saiu** — o `NR-18 18.9.3`, vãos de
+acesso às caixas dos elevadores — em nenhuma das quatro execuções com laudo lido (09/09, as
+duas de 10/09 e esta; a de 08/09 é a lista reconstruída). **"Âncora manteve" passa a
+significar que o app repete a mesma resposta PARCIAL quatro vezes, não que ela esteja
+completa** — e é por isso que uma âncora estável não é a mesma coisa que uma âncora certa.
+**A lição de método é a segunda deste lote e vale mais que o achado**: a pergunta só ficou
+respondível depois de a foto ser aberta aqui. O `add_repo` do acervo custa um minuto, e este
+arquivo já mandava fazer isso desde 10/09.
+
+**E a causa é de FATO, não de dossiê — medido no laudo 4.** Com os fatos como saíram, o
+dossiê da âncora tem 7 entradas e **o `NR-18 18.9.3` não está nele**: o Analista não podia
+enquadrar o que não lhe foi oferecido. O vão de acesso aparece nos fatos do Olho só como
+ENDEREÇO de outro achado (*"Esquerda, dentro do vão escuro"*), nunca como abertura que pede
+fechamento. Acrescentado um fato que o descreva, o roteamento passa a acionar
+`poco_elevador_carga_sem_cercamento` além do `abertura_piso_desprotegida`, e o dossiê ganha
+`NR-11 11.1.1` (*"os poços de elevadores e monta-cargas deverão ser cercados"*) e `11.1.2`
+**curados, em D3 e D4**, mais o `18.9.3` em D8 pela busca textual.
+**É o segundo caso medido a favor da fase separada de VISÃO, e o mais limpo dos dois**: uma
+frase do engenheiro recupera item CURADO na frente do dossiê. Na foto 2 o mesmo desenho
+levava a família da área de carpintaria, que não fecha o achado; aqui ele leva o item que
+fecha.
 
 **30 fatos nas 5 fotos. 9 divergências levantadas, das quais 5 estão CONFIRMADAS pelo
 engenheiro e 4 não têm pergunta nenhuma: a taxa é 5 a 9 em 30, com o PISO medido.** Das 3
-omissões levantadas, 1 confirmada, 1 refutada e 1 aberta.
+omissões levantadas, **2 confirmadas e 1 refutada** — as sete perguntas estão todas
+respondidas, e o que continua em aberto são só as quatro linhas que nunca foram
+perguntadas.
 
 | classe | n | onde | estado |
 |---|---|---|---|
@@ -335,7 +368,7 @@ omissões levantadas, 1 confirmada, 1 refutada e 1 aberta.
 | **VÃO INEXISTENTE** | 1 | "aberturas retangulares na parede de fundo, sem portas ou janelas instaladas" (3) | **CONFIRMADA — a classe existe, e é a mais cara das cinco** |
 | **FORMA / ORIENTAÇÃO** | 1 | "painel rígido de cor azul apoiado verticalmente" (3) é uma caixa deitada no chão | sem pergunta |
 | **POSIÇÃO** | 1 | o policorte repousa na bancada escura, não na mesa de pernas de madeira (2) | sem pergunta |
-| *omissões* | 3 | ~~lâmina exposta sem coifa (1)~~; ausência de barreira de isolamento da serralheria (2); vão de acesso ao poço sem fechamento — o `18.9.3` (5) | a da barreira **confirmada**; a da coifa **REFUTADA** (a serra tem coifa); a do `18.9.3` **aberta** |
+| *omissões* | 3 | ~~lâmina exposta sem coifa (1)~~; ausência de barreira de isolamento da serralheria (2); vão de acesso ao poço sem fechamento — o `18.9.3` (5) | **2 confirmadas** (a barreira e o `18.9.3`); a da coifa **REFUTADA** (a serra tem coifa) |
 
 **Qual pergunta fechou qual linha desta tabela, o que sobrou sem pergunta e o que se
 reescreve quando o resto chegar: seção 6.**
@@ -415,17 +448,19 @@ perdeu uma vez:
 - **Foto 3 (`SERRAGEM AREA DE CARPINTARIA`)** — o objeto azul é um **painel apoiado em pé**
   contra algo, ou uma caixa deitada no chão? (É a única linha de FORMA.)
 
-**E a P6 continua aberta**: o vão de acesso ao poço da foto 5 estava sem fechamento
-provisório? Ela não move a contagem de fatos errados — move o que o laudo deixou de
-reportar, que é onde está o dano ao cliente. **Reperguntar sem dizer QUAL vão desperdiça a
-rodada**: o Olho registrou uma grade metálica na borda do vão vertical, à direita ao fundo,
-e a leitura feita aqui falava de um rasgo na parede à esquerda — ver a seção 5.
+**A P6 fechou em 12/09**: o vão de acesso ao poço da foto 5 estava sem proteção, e o
+`NR-18 18.9.3` é a segunda NC real que o lote perdeu. Ela não moveu a contagem de fatos
+errados — omissão não é fato errado —, moveu o que o laudo deixou de reportar. **Ela só ficou
+respondível depois de a foto ser aberta**: o Olho registra uma grade metálica à direita ao
+fundo e a leitura daqui falava de um rasgo à esquerda, e são elementos diferentes. Ver a
+seção 5.
 
 **Regra de atualização, para quando as respostas chegarem:**
 
 - resposta que chegar sozinha fecha só as linhas dela, e o total já muda nas cinco cópias;
 - a palavra "provisória" só sai quando as **quatro perguntas acima** tiverem resposta —
-  não antes, e nenhuma resposta a uma pergunta de omissão a tira;
+  não antes, e nenhuma resposta a uma pergunta de omissão a tira (as três de omissão já
+  fecharam, em 11 e 12/09, e o total continua provisório, que é a regra funcionando);
 - a tabela de classes se mexe só na cópia 1; as outras quatro carregam o total.
 
 **O que nenhuma resposta muda**, e por isso não espera por elas: o gabarito **2 de 5** (nome
@@ -440,13 +475,15 @@ medidos não pagavam a mudança de arquitetura. **A taxa agora é 5 a 9 divergê
 com o piso CONFIRMADO pelo engenheiro, num domínio novo e com uma classe que não estava
 mapeada** (o VÃO INEXISTENTE, confirmado). O que a taxa NÃO decide sozinha é a direção do
 conserto, e as respostas separam as duas metades melhor que o número:
-- **o que a fase separada recupera é o FATO, não o nome — e isso foi medido nos três
-  desenhos do dossiê da foto 2 (seção 5)**. Nomear o `policorte` abre o portão e traz item
-  de rampa e de plataforma condutiva, expulsando o que havia de pertinente; escrever o
-  achado do engenheiro como fato dispara um risco CURADO e põe a família da área de
-  carpintaria em D5 e D6. **É a declaração do achado que move o dossiê, não a declaração do
-  objeto** — o que é coerente com a fronteira medida em 09/09, onde a marcação por lista
-  dirigia o dossiê sem recuperar achado que o Olho não viu;
+- **o que a fase separada recupera é o FATO, não o nome — medido agora em DUAS fotos**. Na
+  2, nomear o `policorte` abre o portão e traz item de rampa e de plataforma condutiva,
+  expulsando o que havia de pertinente, enquanto escrever o achado como fato dispara um risco
+  CURADO e põe a família da área de carpintaria em D5 e D6. Na 5, a âncora, o efeito é mais
+  limpo: uma frase sobre o vão de acesso aciona `poco_elevador_carga_sem_cercamento` e põe
+  `NR-11 11.1.1` e `11.1.2` **curados em D3 e D4**, com o `18.9.3` entrando em D8 — e sem o
+  fato o `18.9.3` **não está no dossiê**, então o Analista nunca teve o que enquadrar. **É a
+  declaração do achado que move o dossiê, não a declaração do objeto**, o que é coerente com
+  a fronteira medida em 09/09;
 - **o que ela não recupera é o VÃO INEXISTENTE da foto 3**, porque nada no desenho manda o
   engenheiro conferir fato por fato o que o modelo escreveu — e é dele que saiu o falso
   positivo confirmado do lote. Contra ele a marcação por lista age menos ainda: o item já
@@ -1187,7 +1224,7 @@ Lotes temáticos que valem, com as fotos já identificadas:
 | NR-12 | `SERRA DE BANCADA`, `SERRALHERIA SEM BARREIRA DE ACESSO` | as duas únicas com máquina de verdade no acervo novo |
 | ~~Içamento~~ | 7 fotos | **RODADO em 02/09** — 2 de 5 achados do engenheiro. Ver acima. Só volta a valer depois de existir taxonomia de guindar e de o Olho nomear o equipamento |
 | Poço de elevador | **15 fotos — a lista nominal está na seção de validação de 08/09**, reconstruída e com a ressalva do que nela é inferência. É de lá que se monta o lote; esta linha guarda o histórico. As 14 originais eram as 12 do desenho + `GRUAA` e `GRUAAA` | **TENTADO em 04/09 e perdido: 1 foto auditada de 12, as outras recusadas pelo OTPM. Refazer.** Achado mais repetido do acervo; `vao_caixa_elevador_sem_fechamento` existe e nunca disparou em produção. O sinal FOI medido antes de gastar o lote, e o que se achou não era o 0,50 do lote de içamento: com o Olho escrevendo `elevador` e `cancela`, **os dois riscos de elevador disparavam com a proteção INSTALADA** (5 de 5 e 3 de 6). Sinais refeitos para ancorar na abertura, não no `sem`, e todo sinal de torre/base exige `elevador` (no canteiro há a torre da GRUA): 22 de 22 fatos com a proteção instalada ficam calados e 14 de 14 com ela ausente acionam o risco certo. É este lote que valida os dois consertos ao mesmo tempo. **Desenho recuperado em 07/09 e gravado aqui para não se perder de novo** — proteção presente (5): `18 PAV. PROTEÇÃO POÇO DE ELEVADOR`, `PROTEÇÃO POÇO DE ELEVADOR SOMENTE COM UM PONTO DE FIXAÇÃO`, `PROTEÇÃO POÇO ELEVADOR DIFERENTE DO PROJETO`, `PROTEÇÃO POÇO ELEVADOR DIFERENTE DAS ANTERIORES`, `19. PROTEÇÃO DE ELEVADOR NÃO FIXADA`; proteção ausente (5): `13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO`, `11 PAV. PROTEÇÃO POÇO ELEVADOR SEM PROTEÇÃO`, `3 PAV. POÇO ELEVADOR SEM PROTEÇÃO E SINALIZAÇÃO`, `19 PAV. POÇO ELEVADOR SEM PROTEÇÃO`, `20 PAV SEM PROTEÇÃO NO POÇO DE ELEVADOR`; grua (2): `GRUA`, `19 PAV. POÇO GRUA SEM PROTEÇÃO`. **As duas acrescentadas** são `GRUAA` e `GRUAAA`: nenhuma das duas de grua do desenho testa o nome da torre (`GRUA` já dava 0 NC e `19 PAV. POÇO GRUA` é poço), e **`GRUAAA` é a foto que produziu o `NR-18 18.11.14`** — sem ela o defeito da grua fica sem o seu teste. **E ela é o único experimento controlado do histórico**, cruzado em 07/09: a MESMA foto deu **0 NC** no lote de içamento de 02/09, ANTES do #27, e `NR-18 18.11.14` no lote de 05/09, DEPOIS dele (o #27 mergeou em 04/09). Uma foto, uma mudança, dois resultados opostos — é a prova causal de que foi o prompt que produziu o defeito, e não a variabilidade da visão. Por isso o aceite dela é forte: 0 NC no `GRUAAA` não é "pode ter sido sorte", é **volta a uma linha de base medida**. Cuidado com os dois arquivos gêmeos `19 PAV. POÇO ELEVADOR SEM PROTEÇÃO.jpg` e `...PROTEÇÃOO.jpg` (dois O): o desenho lista o de um O, o gabarito de 05/09 registra o de dois, e qual deles rodou não dá para saber sem os laudos — rode os dois |
-| ~~MÁQUINA~~ | **RODADO em 11/09** — 5 laudos, 4 NCs, gabarito 2 de 5, e a auditoria das cinco imagens deu **5 a 9 divergências em 30, com o piso CONFIRMADO pelo engenheiro**. Duas NCs erradas em cinco fotos: um falso positivo confirmado (`NR-08 8.3.2.2` sobre um vão que não existe) e uma NC real perdida (a serralheria sem barreira de acesso). Ver a seção de validação; o que ainda não fechou, e as cinco cópias deste número, estão na seção 6 dela. Esta linha guarda o desenho: **5 fotos, lista nominal abaixo**, com a fila dos lotes de 5 seguintes. Conferidas na imagem antes de gravar, como este arquivo manda — e duas das quatro que abri não eram o que o nome dizia | **NÃO repetir as 15 de poço.** O conjunto já rodou **quatro vezes completo** (08/09, 09/09 e as duas passadas de 10/09), mais duas rodadas parciais em 04 e 05/09, e é um domínio só: **os 23 enquadramentos das duas passadas de 10/09 são três itens apenas** — `NR-18 18.9.2` (12), `NR-08 8.3.2.2` (9) e `NR-18 18.9.1` (2), que é exatamente o que o app já domina. Repetir dá mais precisão sobre a mesma coisa. E para a contagem de erros do Olho (ver "Em aberto"), a taxa medida em 15 fotos de poço só valeria para fotos de poço. **Lote de 5 focado, e não de 15 misto**: 5 custam ~39 mil tokens, cabem três rodadas num dia, e permitem auditar TODAS as imagens em vez de amostrar. **O gabarito vai ser PIOR que 13 de 15, e isso é o ponto** |
+| ~~MÁQUINA~~ | **RODADO em 11/09** — 5 laudos, 4 NCs, gabarito 2 de 5, e a auditoria das cinco imagens deu **5 a 9 divergências em 30, com o piso CONFIRMADO pelo engenheiro**. Três NCs erradas em cinco fotos: um falso positivo confirmado (`NR-08 8.3.2.2` sobre um vão que não existe) e DUAS NCs reais perdidas (a serralheria sem barreira de acesso e o vão de acesso ao poço da âncora, o `NR-18 18.9.3`). Ver a seção de validação; o que ainda não fechou, e as cinco cópias deste número, estão na seção 6 dela. Esta linha guarda o desenho: **5 fotos, lista nominal abaixo**, com a fila dos lotes de 5 seguintes. Conferidas na imagem antes de gravar, como este arquivo manda — e duas das quatro que abri não eram o que o nome dizia | **NÃO repetir as 15 de poço.** O conjunto já rodou **quatro vezes completo** (08/09, 09/09 e as duas passadas de 10/09), mais duas rodadas parciais em 04 e 05/09, e é um domínio só: **os 23 enquadramentos das duas passadas de 10/09 são três itens apenas** — `NR-18 18.9.2` (12), `NR-08 8.3.2.2` (9) e `NR-18 18.9.1` (2), que é exatamente o que o app já domina. Repetir dá mais precisão sobre a mesma coisa. E para a contagem de erros do Olho (ver "Em aberto"), a taxa medida em 15 fotos de poço só valeria para fotos de poço. **Lote de 5 focado, e não de 15 misto**: 5 custam ~39 mil tokens, cabem três rodadas num dia, e permitem auditar TODAS as imagens em vez de amostrar. **O gabarito vai ser PIOR que 13 de 15, e isso é o ponto** |
 | Controle negativo | 5 documentos (POP, lista de presença, CREA, crachá) | devem dar **0 NC**; é a classe de erro que já apareceu e nunca foi testada de propósito |
 | ~~Variabilidade da visão~~ | **RODADO em 10/09** — 30 laudos, o Olho idêntico em 15/15 e ~±1 NC de ruído no total. Ver a seção de validação. Esta linha guarda o desenho: as MESMAS 15 do lote de poço, rodadas **duas vezes no mesmo dia**, uma chave em cada conta | Mesmas fotos, mesmo código, mesmo dia: a diferença entre os dois lotes é variabilidade PURA do modelo, sem confundir com mudança de versão. É o primeiro dos "limites honestos" deste arquivo e até hoje só tem anedota — "um botão de emergência danificado foi crítico numa foto e passou despercebido em outra do mesmo painel". **Só ficou possível em 10/09**, com a segunda conta: duas passadas de 15 dão ~234 mil tokens e não cabiam em conta nenhuma. O que se lê: quantas NCs mudam de foto para foto, se o Olho descreve os mesmos fatos, e se as fotos de 0 NC continuam em 0. Um número aqui diz quanto do gabarito de qualquer lote é ruído |
 
@@ -1684,6 +1721,29 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
 
 ## Em aberto
 
+- **"O modelo ainda é o melhor?" não se responde desta sessão — remedido em 12/09.** O
+  usuário perguntou, e a verificação honesta é esta: `groq.com`, `api.groq.com` e
+  `console.groq.com` devolvem falha de conexão (código 000, não 403), então **não há como
+  ver o catálogo atual nem os limites de hoje**. Busca na web devolve só agregadores de
+  terceiros, que **divergem da medição deste projeto** — um deles anuncia 30.000 TPM no
+  plano gratuito contra os 8.000 medidos aqui, e lista modelos que não estão no registro.
+  É a mesma regra que vale para norma: **fonte oficial ou nada**, e a oficial é o console.
+  **O que sustenta o padrão continua sendo medição, não novidade**: o `qwen3.8-27b` emitiu
+  15/15 laudos contra 11/14 do `gpt-oss-120b` e gastou 7.804 tokens por foto contra 13.404,
+  e é por isso que ele é o primeiro item de `VISAO` e de `TEXTO` em `modelos.py`. Nada disso
+  envelheceu: o lote de 11/09 rodou nele nos dois campos, 5 laudos de 5, 1 ciclo em todos.
+  **Como verificar quando valer a pena**, e a ordem importa: (1) ler o catálogo e os limites
+  no console, anotando a DATA da leitura ao lado, como a armadilha do limite de fornecedor
+  manda; (2) usar o campo **"Outro (digitar o ID)"** da barra lateral, que aceita ID novo sem
+  mexer em código; (3) medir com a âncora do lote de máquina mais duas ou três fotos, no
+  mesmo dia, trocando UM campo por vez. O precedente é o `GRUAAA`, a única troca causal do
+  histórico. **Trocar os dois campos de uma vez não mede nada.**
+  **Risco imediato, visto no print de 12/09**: o campo **Texto (enquadramento e supervisão)**
+  aparece em `GPT-OSS 120B`, não no padrão. Rodar lote assim não é comparável com nada deste
+  arquivo — é o modelo que perdeu 3 laudos em 14 e custa ~13.400 tokens por foto, o que
+  derruba o rendimento de ~25 para ~16 fotos no dia. **Confira os dois campos antes de
+  executar.**
+
 - **"Área de corte sem barreira de acesso" não tem item alcançável — medido em 11/09, com
   os laudos do lote de máquina em mãos.** É a NC real que a foto 2 perdeu, confirmada pelo
   engenheiro, e os três desenhos de dossiê reproduzidos sem rede mostram que nenhum caminho
@@ -2109,8 +2169,13 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   trás disso.
   **As omissões mexem no outro sentido**: confirmadas, não mudam a contagem de fatos errados,
   mudam o que o LAUDO deixou de reportar — e é lá que está o dano ao cliente. Neste lote deu
-  uma confirmada (a serralheria sem barreira de acesso, NC real perdida), uma refutada e uma
-  ainda sem resposta. **Taxa medida num domínio só
+  **duas confirmadas** (a serralheria sem barreira de acesso e o vão de acesso ao poço da
+  âncora) e uma refutada, com as sete perguntas todas respondidas.
+  **A segunda só ficou respondível depois de a foto ser aberta aqui**, porque a pergunta
+  confundia dois elementos da mesma cena: a grade que o Olho registrou está à direita e
+  encostada, e o vão sem proteção está à esquerda. **Quem escrever a próxima leva abra as
+  imagens ANTES de perguntar** — perguntar sobre um objeto que a lista de fatos não localiza
+  gasta uma rodada com o engenheiro. **Taxa medida num domínio só
   não generaliza**, e por isso o próximo lote de 5 (elétrica) mede a mesma coisa noutro
   vocabulário; é a comparação que diz se 30% é do app ou daquelas fotos.
 - **Separar a fase de VISÃO da fase de ENQUADRAMENTO — proposto e REJEITADO por enquanto,
@@ -2134,12 +2199,14 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   pelo engenheiro (o que ainda não fechou está na seção 6 da validação de 11/09) — e ela NÃO
   decide sozinha, porque parte do erro fica fora do alcance da proposta.** O que ela
   recupera tem agora caso medido, e ele é mais estreito do que eu escrevi duas vezes: o que
-  move o dossiê é o ACHADO declarado como fato, não o nome do objeto. Medido na foto 2 —
-  nomear o `policorte` abre o portão de máquina e traz item de rampa e de plataforma
-  condutiva, enquanto escrever "área de corte sem barreira, cerca ou isolamento" dispara um
-  risco curado e põe a família da área de carpintaria em D5 e D6. **E nem assim a NC perdida
-  fecha**, porque o item que a cobriria de frente não existe ao alcance: ver o item em aberto
-  sobre a área de corte sem isolamento. O
+  move o dossiê é o ACHADO declarado como fato, não o nome do objeto. Medido em duas fotos.
+  Na 2, nomear o `policorte` traz item de rampa e de plataforma condutiva, enquanto escrever
+  "área de corte sem barreira, cerca ou isolamento" dispara um risco curado e põe a família
+  da área de carpintaria em D5 e D6 — **e nem assim a NC perdida fecha**, porque o item que a
+  cobriria de frente não existe ao alcance (ver o item em aberto sobre a área de corte sem
+  isolamento). Na 5 ela fecha: uma frase sobre o vão de acesso põe `NR-11 11.1.1` e `11.1.2`
+  curados em D3 e D4 e traz o `18.9.3`, que sem o fato **não está no dossiê**. **Dois casos,
+  e só um deles a arquitetura resolve sozinha** — o outro depende de cobertura de item. O
   que ela não alcança é o **VÃO INEXISTENTE** da foto 3: nada no desenho manda conferir fato
   a fato o que o modelo escreveu, e foi dele que saiu o falso positivo confirmado do lote.
   **Os dois lados têm caso medido e apontam para desenhos diferentes** — contra o que o Olho
