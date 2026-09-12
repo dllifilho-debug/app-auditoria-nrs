@@ -192,8 +192,17 @@ de blocos. É a frase que este arquivo registra nominalmente na classe de erro 2
 apoiada" virando "sem sapata antiderrapante"), e é também a cláusula (e) falhando pelo caminho
 que 10/09 já mostrou: o aparo retirou *"descumprindo a exigência de estabilidade"* e manteve
 uma afirmação sobre o que a foto não mostra.
-**Pergunta em aberto ao engenheiro**: a escada da foto 1 tem sapata antiderrapante? A resposta
-não muda o defeito de moldura, mas diz se a NC é falso positivo ou acerto pelo motivo errado.
+**O engenheiro respondeu em 12/09, e a resposta é de um TIPO que este arquivo ainda não tinha:
+"não consigo ver se a escada tem sapata".** Não é confirmação nem refutação — é a terceira
+resposta possível, e para a regra da moldura ela vale mais que as outras duas. **Quem esteve na
+obra não decide pela foto, e o app decidiu**: emitiu não conformidade de gravidade alta com prazo
+de 1 dia sobre uma peça que a imagem não mostra. A NC não é falso positivo (a sapata pode faltar
+mesmo), é **enquadramento sem lastro visual**, que é a classe de erro 2 e o caso exato que a
+cláusula (e) existe para mandar ao ponto de atenção.
+**Isso dá um critério externo para a moldura, e é barato de repetir**: quando a pergunta ao
+engenheiro for respondível só indo ao local, a constatação tinha de ser verificação. Vale pôr essa
+pergunta em toda auditoria de imagem daqui em diante — ela separa o que a foto mostra do que o
+laudo afirma, sem depender do meu julgamento sobre o recorte.
 
 ### 6. Divergências candidatas, e por que NÃO há taxa fechada aqui
 
@@ -207,14 +216,17 @@ exaustiva fato a fato não rodou. O que houve foi leitura das quatro imagens ANT
 |---|---|---|
 | "Abertura retangular no piso" onde não há abertura | 3 | **CONFIRMADA — VÃO INEXISTENTE** |
 | "piso de terra batida" numa laje de concreto do 13º pavimento | 5 | **já confirmada em 11/09** (P4), repetida byte a byte |
-| "Tambor cilíndrico de cor azul, possivelmente um compressor de ar" — na imagem é um galão de água sobre banquinho | 4 | sem pergunta — **e é a divergência mais cara depois do vão**: levou `NR-13 13.5.1.3` e `13.5.1.4` (placa de identificação de VASO DE PRESSÃO) a D1 e D2 |
+| "Tambor cilíndrico de cor azul, possivelmente um compressor de ar" | 4 | **CONFIRMADA em 12/09: é um galão de água** — e é a divergência mais cara depois do vão, porque levou `NR-13 13.5.1.3` e `13.5.1.4` (placa de identificação de VASO DE PRESSÃO) a D1 e D2 |
 | "Estrutura metálica de quatro pés (mesa de trabalho) coberta por uma lona branca plástica" — parece cavalete com papel de projeto | 1 | sem pergunta |
 | "tubo de proteção amarelo fixado verticalmente na face" da coluna — parece cabo ou mangueira amarela | 2 | sem pergunta |
 
-**O que este lote acrescenta à decisão da fase separada de VISÃO** é o caso do compressor: um
-NOME errado num objeto secundário arrastou duas vagas do dossiê para outra NR inteira. Nas
-medições anteriores o nome errado custava item impertinente na mesma família; aqui ele troca a
-norma.
+**Duas linhas fecharam em 12/09** — o vão da foto 3 e o galão da foto 4 —, e sobraram duas sem
+pergunta (a mesa com lona da foto 1 e o tubo amarelo da foto 2). A quinta linha já vinha
+confirmada de 11/09. **Mesmo assim não há taxa**, pela razão do parágrafo acima: sem a auditoria
+fato a fato das 32 linhas, o numerador é de uma amostra dirigida e o denominador é de outra.
+**O que este lote acrescenta à decisão da fase separada de VISÃO** é o caso do galão: um NOME
+errado num objeto secundário arrastou duas vagas do dossiê para outra NR inteira. Nas medições
+anteriores o nome errado custava item impertinente na mesma família; aqui ele troca a norma.
 
 ### 7. O que se confirmou sem divergência
 
@@ -2327,7 +2339,13 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
      de 10/09. Auditar as 15 produz dezenas de divergências sem valor, porque o Olho
      recebe a foto reduzida e tem 900 tokens de saída, e a lista longa afoga o achado.
   3. **A auditoria NÃO é gabarito.** Onde a leitura da imagem muda um enquadramento, isso
-     vira uma pergunta curta ao engenheiro, nunca uma conclusão. Ele viu a obra; a imagem
+     vira uma pergunta curta ao engenheiro, nunca uma conclusão.
+     **E a resposta dele tem TRÊS valores, não dois — achado de 12/09.** Sobre a escada da foto 1
+     ele respondeu *"não consigo ver se tem sapata"*, e essa é a resposta mais útil das três para a
+     regra da moldura: se quem esteve na obra não decide pela foto, o app que decidiu emitiu
+     enquadramento sem lastro visual, e o caso é da cláusula (e), não do gabarito. **Pergunte
+     sempre que a NC depender de uma peça no limite do recorte** — custa a mesma linha e dá um
+     critério externo, que não depende do meu julgamento sobre o que a imagem mostra. Ele viu a obra; a imagem
      é um recorte dela. Sem essa regra, o gabarito ganha uma segunda fonte que é um modelo
      julgando outro, e ninguém acima — a mesma estrutura que a regra "nunca ler o nome do
      arquivo" existe para impedir, contaminando pelo outro lado.
@@ -2402,8 +2420,8 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   perguntar se o barato é mostrar a lista de fatos para CONFIRMAÇÃO, não só para complemento
   — e este lote é a primeira evidência de que a confirmação é a metade que falta.
   **O lote de elétrica acrescentou um caso NOVO de nome errado, e ele é de outra espécie**: na
-  foto 4 o Olho chamou um galão de água sobre banquinho de *"tambor cilíndrico de cor azul,
-  possivelmente um compressor de ar"*, e isso levou `NR-13 13.5.1.3` e `13.5.1.4` — placa de
+  foto 4 o Olho chamou de *"tambor cilíndrico de cor azul, possivelmente um compressor de ar"* o que
+  o engenheiro confirmou ser **um galão de água**, e isso levou `NR-13 13.5.1.3` e `13.5.1.4` — placa de
   identificação de VASO DE PRESSÃO — a D1 e D2. Nas medições anteriores o nome errado custava
   item impertinente dentro da mesma família; **aqui ele trocou a NORMA inteira**, e num objeto
   secundário da cena. É argumento a favor da confirmação fato a fato, não do complemento.
