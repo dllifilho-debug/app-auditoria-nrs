@@ -491,7 +491,7 @@ laudo afirma, sem depender do meu julgamento sobre o recorte.
 lote de MÁQUINA noutro vocabulário — **não foi feita**, e é preciso dizer por quê: a auditoria
 exaustiva fato a fato não rodou. O que houve foi leitura das quatro imagens ANTES do lote (que
 é a regra 1 do desenho cumprida pela primeira vez) e duas reaberturas dirigidas depois. Anunciar
-"5 a 9 em 30 contra N em 32" seria comparar duas medições diferentes.
+"7 em 30 contra N em 32" seria comparar duas medições diferentes.
 
 | divergência candidata | foto | estado |
 |---|---|---|
@@ -775,23 +775,42 @@ frase do engenheiro recupera item CURADO na frente do dossiê. Na foto 2 o mesmo
 levava a família da área de carpintaria, que não fecha o achado; aqui ele leva o item que
 fecha.
 
-**30 fatos nas 5 fotos. 9 divergências levantadas, das quais 5 estão CONFIRMADAS pelo
-engenheiro e 4 não têm pergunta nenhuma: a taxa é 5 a 9 em 30, com o PISO medido.** Das 3
-omissões levantadas, **2 confirmadas e 1 refutada** — as sete perguntas estão todas
-respondidas, e o que continua em aberto são só as quatro linhas que nunca foram
-perguntadas.
+**30 fatos nas 5 fotos. 9 divergências levantadas, e o número FECHOU em 13/09: são 7
+confirmadas em 30, com 2 linhas permanentemente ABERTAS.** Cinco foram confirmadas pelo
+engenheiro em 11-12/09; as outras quatro nunca tiveram pergunta, e em 13/09 ele declarou que
+**não tem a memória deste acervo** — logo não haverá resposta, e elas foram decididas pela régua
+que essa declaração obrigou (ver a regra (a)-(d) no item em aberto *AUDITAR A FOTO CONTRA OS
+FATOS*):
+- **FORMA** (o objeto azul da foto 3) e **POSIÇÃO** (onde repousa a ferramenta de corte da foto
+  2) são geométricas, então a imagem decide. Reabertas e ampliadas em 13/09, **as duas se
+  confirmam como divergência**: a ferramenta está sobre a **bancada escura**, não sobre a mesa de
+  pernas de madeira; e o objeto azul é um **recipiente metálico volumétrico, inclinado e
+  apoiado** — nem o "painel rígido apoiado verticalmente" do Olho (é volume, não chapa plana),
+  **nem a "caixa deitada no chão" que eu escrevi em 11/09**, que estava igualmente errada.
+- **MATERIAL** (a laje da foto 1) e **NOME** (o policorte da foto 2) caem na regra (b) — a
+  imagem não decide nenhuma das duas — e ficam **ABERTAS**, não pendentes. Não entram na
+  contagem em nenhum sentido.
+**A palavra "provisória" sai**, e não porque tudo fechou: sai porque não há mais resposta a
+esperar. O teto de 9 é inalcançável por construção. Das 3 omissões levantadas, **2 confirmadas
+e 1 refutada**, com as sete perguntas do lote todas respondidas.
 
 | classe | n | onde | estado |
 |---|---|---|---|
-| **MATERIAL** | 4 | serragem chamada de "areia" (3); face de escavação em solo projetado chamada de "parede de alvenaria … expondo tijolos e blocos" (3); laje de concreto empoeirada chamada de "piso de terra batida" (1 e 5 — e a 5 é o **13º pavimento**) | **3 confirmadas** (serragem, contenção, laje da 5); a laje da foto 1 sem pergunta |
-| **NOME do equipamento** | 2 | serra de bancada → "máquina industrial" (1); serra de corte/policorte → "ferramenta elétrica de disco" (2) | **1 confirmada** (a 1 é serra de bancada, não de fita); o policorte sem pergunta |
+| **MATERIAL** | 4 | serragem chamada de "areia" (3); face de escavação em solo projetado chamada de "parede de alvenaria … expondo tijolos e blocos" (3); laje de concreto empoeirada chamada de "piso de terra batida" (1 e 5 — e a 5 é o **13º pavimento**) | **3 confirmadas** (serragem, contenção, laje da 5); **a laje da foto 1 fica ABERTA** — material, regra (b), e não há árbitro |
+| **NOME do equipamento** | 2 | serra de bancada → "máquina industrial" (1); ferramenta de corte → "ferramenta elétrica de disco" (2) | **1 confirmada** (a 1 é serra de bancada, não de fita); **a 2 fica ABERTA** — se é policorte é NOME, regra (b), a mesma classe do "serra de FITA" que eu errei |
 | **VÃO INEXISTENTE** | 1 | "aberturas retangulares na parede de fundo, sem portas ou janelas instaladas" (3) | **CONFIRMADA — a classe existe, e é a mais cara das cinco** |
-| **FORMA / ORIENTAÇÃO** | 1 | "painel rígido de cor azul apoiado verticalmente" (3) é uma caixa deitada no chão | sem pergunta |
-| **POSIÇÃO** | 1 | o policorte repousa na bancada escura, não na mesa de pernas de madeira (2) | sem pergunta |
+| **FORMA / ORIENTAÇÃO** | 1 | "painel rígido de cor azul apoiado verticalmente" (3) é um **recipiente metálico volumétrico, inclinado e apoiado** | **CONFIRMADA em 13/09 pela geometria** — e a descrição desta linha estava errada até então: eu escrevera "caixa deitada no chão", que a ampliação também derrubou |
+| **POSIÇÃO** | 1 | a ferramenta de corte repousa na **bancada escura**, e não na mesa de pernas de madeira, onde o Olho a situou (2) | **CONFIRMADA em 13/09 pela geometria** |
 | *omissões* | 3 | ~~lâmina exposta sem coifa (1)~~; ausência de barreira de isolamento da serralheria (2); vão de acesso ao poço sem fechamento — o `18.9.3` (5) | **2 confirmadas** (a barreira e o `18.9.3`); a da coifa **REFUTADA** (a serra tem coifa) |
 
-**Qual pergunta fechou qual linha desta tabela, o que sobrou sem pergunta e o que se
-reescreve quando o resto chegar: seção 6.**
+**Qual pergunta fechou qual linha desta tabela, e por que duas ficam ABERTAS em vez de
+pendentes: seção 6.** As duas linhas que 13/09 fechou pela geometria trazem a descrição
+corrigida aqui — **a tabela é a cópia canônica, e ela é a que quase escapou**: o commit que
+fechou o número atualizou as seis ocorrências do total e deixou esta tabela dizendo "sem
+pergunta" e "caixa deitada no chão", que ele mesmo acabara de refutar. Foi o `/critico` que
+pegou, e é a terceira vez na mesma sessão que a armadilha do número aparece pela via da cópia
+que ninguém listou. **Ao fechar uma linha, corrija a TABELA antes do total** — o total é o que
+o `grep` acha, a descrição não.
 
 **A classe candidata separou-se da FORMA de propósito.** A primeira redação punha as duas
 divergências da foto 3 juntas sob "vão inexistente", com n=2 — e a caixa azul não é um vão
@@ -810,12 +829,17 @@ retangulares, e a face é solo projetado com placas de ancoragem —, então o m
 mesmo do erro de material de 10/09; o que agrava é o *"sem portas ou janelas instaladas"*,
 conclusão pendurada no objeto inventado.
 **A contagem não caiu porque a resposta veio no sentido que a sustenta**: a P1 era a única
-capaz de derrubar duas linhas de uma vez, e ela confirmou as duas. A faixa 7 a 9 que esta
-seção anunciava era o efeito dela sozinha; hoje o que resta em aberto são as quatro linhas
-sem pergunta, e a faixa é **5 a 9 com o piso medido**. Uma redação anterior anunciava
-"entre 8 e 9" tratando as duas linhas da foto 3 como independentes — é a armadilha do
-número que envelhece em silêncio, cometida dentro da correção que a declarava, e foi o
-`/critico` que pegou.
+capaz de derrubar duas linhas de uma vez, e ela confirmou as duas. **O total fechou em 13/09 em
+7 em 30** (ver o parágrafo do fechamento, acima) — e escrever "7 **de** 30" aqui, como a primeira
+redação fez, tirava esta cópia do `grep -n "em 30"` que o próprio arquivo declara como handle. Uma redação anterior anunciava "entre 8 e 9"
+tratando as duas linhas da foto 3 como independentes — é a armadilha do número que envelhece em
+silêncio, cometida dentro da correção que a declarava, e foi o `/critico` que pegou.
+**E ela voltou a morder aqui, em 13/09.** A lista da seção 6 declarava CINCO cópias deste
+número; ao aplicar o fechamento, o `grep -n "em 30"` achou uma **SEXTA** — esta frase —, que a
+lista nunca mapeou. É a armadilha *"a correção do número não alcança as cópias dele"*, cometida
+dentro da lista escrita para impedi-la. **A lição que fica é do método, não do número: a lista
+de cópias é ela mesma uma cópia, e envelhece igual** — quem for corrigir confia no `grep` do
+denominador, nunca na contagem de cópias escrita ao lado.
 
 **Para o defeito que o Analista de fato enquadrou, o dossiê já tinha a resposta certa em
 duas das três fotos erradas** — ali a recuperação não é o gargalo, a escolha é (para o
@@ -832,20 +856,36 @@ achado do ENGENHEIRO na foto 2 vale o oposto, e é o item novo em aberto):
 
 ### 6. O que ainda não fechou, e onde o número mora
 
-**A contagem desta validação vive em CINCO lugares deste arquivo.** Esta lista existe
+**A contagem desta validação vive em VÁRIOS lugares deste arquivo, e esta frase deliberadamente
+não diz quantos.** Ela dizia: "cinco" até 13/09; "seis" quando o `grep` achou a cópia que a lista
+não mapeava; "sete" quando se viu que o parágrafo da regra encerrada, escrito no mesmo commit,
+criara outra; e o `/conferir` da mesma passada mostrou que eram **oito**. Quatro valores em dois
+dias, todos escritos de boa-fé — porque **cada correção mexe no texto e cria ou apaga uma cópia**,
+e a contagem envelhece no instante em que é escrita. **A lista nominal abaixo vale; o número não.**
+O que se usa é o handle: `grep -n "em 30"`. Se uma cópia nova aparecer nele e não estiver na lista,
+acrescente-a — sem recontar o total. Esta lista existe
 porque, sem ela, quem recebe uma resposta atualiza a seção que está lendo e deixa as outras
 quatro afirmando o valor velho — a armadilha do número que envelhece em silêncio, armada de
 propósito. Foi o `/critico` que pegou, na quarta rodada; as seis respostas de 11/09 foram
 aplicadas às cinco na mesma passada.
 
-1. **A seção 5 desta validação** — é a CANÔNICA, e a única que carrega as tabelas.
+1. **A seção 5 desta validação** — é a CANÔNICA, e a única que carrega as tabelas. **São DUAS
+   ocorrências nela**, não uma: o parágrafo do total e o parágrafo "a contagem não caiu". A
+   segunda escapou desta lista até 13/09 — ver lá o que isso ensina.
 2. **A seção 7, logo abaixo.**
 3. **A linha ~~MÁQUINA~~ da tabela de lotes temáticos**, em "Onde a coisa parou".
 4. **Em aberto → AUDITAR A FOTO CONTRA OS FATOS**, que é onde a contagem por classe vive.
 5. **Em aberto → Separar a fase de VISÃO da fase de ENQUADRAMENTO**, que decide por ela.
+6. **Esta seção 6**, no parágrafo que encerra a regra de atualização — cópia criada em 13/09
+   pelo próprio commit que corrigia as outras.
+7. **A seção 6 da validação de 12/09**, na frase que explica por que o lote de elétrica não
+   tem taxa ("7 em 30 contra N em 32"). É de outro lote e carrega este número mesmo assim.
 
 O handle de `grep` que sobrevive a mudança de número é o denominador: `grep -n "em 30"`.
 O numerador não serve de handle justamente porque muda — é ele que se está caçando.
+**E o handle só funciona se todas as cópias o escreverem igual**: em 13/09 uma delas foi
+reescrita como "7 **de** 30" e sumiu do `grep`, o que é o handle quebrado por quem o mantinha.
+Ao editar qualquer uma, preserve a forma literal `em 30`.
 
 **O que fecha o número, e não é o que a redação anterior desta seção dizia.** Ela afirmava
 que o total deixaria de ser provisório quando as quatro perguntas de divergência tivessem
@@ -854,19 +894,21 @@ contagem nunca fecha. As duas não podiam valer juntas, e foi o `/critico` que p
 segunda: **as quatro perguntas de divergência foram respondidas e o total continua
 provisório**, porque quatro das nove linhas nunca foram perguntadas.
 
-**As quatro perguntas que faltam ao engenheiro** — são elas que fecham o número, e elas
-existem escritas aqui para não se perderem no chat, como o desenho do lote de poço já se
-perdeu uma vez:
+**As quatro perguntas que faltavam — RESOLVIDAS em 13/09, e nenhuma delas pelo engenheiro.**
+Ele declarou que não tem a memória deste acervo, e a régua nova (regra (a)-(d) no item em aberto
+*AUDITAR A FOTO CONTRA OS FATOS*) separa as quatro em duas metades:
 
-- **Foto 1 (`SERRA DE BANCADA`)** — o piso ao redor da serra é **laje de concreto**
-  empoeirada, ou terra batida mesmo? (O Olho escreveu "piso de terra batida" nas fotos 1 e
-  5; a resposta de 11/09 cobriu só a 5.)
-- **Foto 2 (`SERRALHERIA`)** — a ferramenta de corte sobre a bancada é um **policorte**?
-  (O Olho escreveu "ferramenta elétrica de disco", que descreve e não nomeia.)
-- **Foto 2** — essa ferramenta está apoiada na **bancada escura** ou na mesa de pernas de
-  madeira? (É a única linha de POSIÇÃO da tabela.)
-- **Foto 3 (`SERRAGEM AREA DE CARPINTARIA`)** — o objeto azul é um **painel apoiado em pé**
-  contra algo, ou uma caixa deitada no chão? (É a única linha de FORMA.)
+- **Foto 2 (`SERRALHERIA`) — POSIÇÃO: DECIDIDA pela imagem.** A ferramenta de corte repousa
+  sobre a **bancada escura**, no tampo metálico; a mesa de pernas de madeira está à direita,
+  separada, e nada há sobre ela. **A divergência se confirma.**
+- **Foto 3 (`SERRAGEM AREA DE CARPINTARIA`) — FORMA: DECIDIDA pela imagem.** O objeto azul é um
+  **recipiente metálico volumétrico, inclinado e apoiado** — não é chapa plana em pé, como o Olho
+  escreveu, **nem caixa deitada no chão, como eu escrevi em 11/09**. A divergência se confirma, e
+  as duas leituras anteriores caem juntas.
+- **Foto 1 (`SERRA DE BANCADA`) — MATERIAL: ABERTA.** Laje empoeirada ou terra batida é
+  material, e a regra (b) não deixa a imagem decidir. Fica aberta e não conta.
+- **Foto 2 — NOME: ABERTA.** Se a ferramenta é um policorte é nome próprio de equipamento, a
+  mesma classe do "serra de FITA" que eu errei em 11/09. Fica aberta e não conta.
 
 **A P6 fechou em 12/09**: o vão de acesso ao poço da foto 5 estava sem proteção, e o
 `NR-18 18.9.3` é a segunda NC real que o lote perdeu. Ela não moveu a contagem de fatos
@@ -875,13 +917,13 @@ respondível depois de a foto ser aberta**: o Olho registra uma grade metálica 
 fundo e a leitura daqui falava de um rasgo à esquerda, e são elementos diferentes. Ver a
 seção 5.
 
-**Regra de atualização, para quando as respostas chegarem:**
-
-- resposta que chegar sozinha fecha só as linhas dela, e o total já muda nas cinco cópias;
-- a palavra "provisória" só sai quando as **quatro perguntas acima** tiverem resposta —
-  não antes, e nenhuma resposta a uma pergunta de omissão a tira (as três de omissão já
-  fecharam, em 11 e 12/09, e o total continua provisório, que é a regra funcionando);
-- a tabela de classes se mexe só na cópia 1; as outras quatro carregam o total.
+**A regra de atualização cumpriu o papel e foi encerrada em 13/09.** Ela dizia que a palavra
+"provisória" só sairia quando as quatro perguntas tivessem resposta, e travou o número por dois
+dias exatamente como devia. O que a encerrou não foi resposta: foi a fonte acabar. Com o
+engenheiro sem memória do acervo, esperar virou espera infinita, e o honesto é fechar o número
+no que há e marcar o resto como ABERTO por regra, não como pendente. **O total é 7 em 30**, e a
+tabela de classes continua se mexendo só na cópia 1 — as outras quatro carregam o total, e o
+handle de `grep` segue sendo o denominador.
 
 **O que nenhuma resposta muda**, e por isso não espera por elas: o gabarito **2 de 5** (nome
 do arquivo contra laudo, declarado independente na abertura desta validação), os **zero
@@ -891,9 +933,10 @@ seção 1. Saem de código executado e do texto dos laudos, não de leitura de i
 ### 7. O que este lote diz sobre a fase separada de VISÃO
 
 O item em aberto de 11/09 condicionava a decisão à taxa de erro do Olho: três casos
-medidos não pagavam a mudança de arquitetura. **A taxa agora é 5 a 9 divergências em 30,
-com o piso CONFIRMADO pelo engenheiro, num domínio novo e com uma classe que não estava
-mapeada** (o VÃO INEXISTENTE, confirmado). O que a taxa NÃO decide sozinha é a direção do
+medidos não pagavam a mudança de arquitetura. **A taxa fechou em 13/09: 7 divergências
+confirmadas em 30**, cinco pelo engenheiro e duas pela geometria da imagem, com 2 linhas
+permanentemente abertas e num domínio novo, com uma classe que não estava mapeada (o VÃO
+INEXISTENTE, confirmado). O que a taxa NÃO decide sozinha é a direção do
 conserto, e as respostas separam as duas metades melhor que o número:
 - **o que a fase separada recupera é o FATO, não o nome — medido agora em DUAS fotos**. Na
   2, nomear o `policorte` abre o portão e traz item de rampa e de plataforma condutiva,
@@ -1644,7 +1687,7 @@ Lotes temáticos que valem, com as fotos já identificadas:
 | NR-12 | `SERRA DE BANCADA`, `SERRALHERIA SEM BARREIRA DE ACESSO` | as duas únicas com máquina de verdade no acervo novo |
 | ~~Içamento~~ | 7 fotos | **RODADO em 02/09** — 2 de 5 achados do engenheiro. Ver acima. Só volta a valer depois de existir taxonomia de guindar e de o Olho nomear o equipamento |
 | Poço de elevador | **15 fotos — a lista nominal está na seção de validação de 08/09**, reconstruída e com a ressalva do que nela é inferência. É de lá que se monta o lote; esta linha guarda o histórico. As 14 originais eram as 12 do desenho + `GRUAA` e `GRUAAA` | **TENTADO em 04/09 e perdido: 1 foto auditada de 12, as outras recusadas pelo OTPM. Refazer.** Achado mais repetido do acervo; `vao_caixa_elevador_sem_fechamento` existe e nunca disparou em produção. O sinal FOI medido antes de gastar o lote, e o que se achou não era o 0,50 do lote de içamento: com o Olho escrevendo `elevador` e `cancela`, **os dois riscos de elevador disparavam com a proteção INSTALADA** (5 de 5 e 3 de 6). Sinais refeitos para ancorar na abertura, não no `sem`, e todo sinal de torre/base exige `elevador` (no canteiro há a torre da GRUA): 22 de 22 fatos com a proteção instalada ficam calados e 14 de 14 com ela ausente acionam o risco certo. É este lote que valida os dois consertos ao mesmo tempo. **Desenho recuperado em 07/09 e gravado aqui para não se perder de novo** — proteção presente (5): `18 PAV. PROTEÇÃO POÇO DE ELEVADOR`, `PROTEÇÃO POÇO DE ELEVADOR SOMENTE COM UM PONTO DE FIXAÇÃO`, `PROTEÇÃO POÇO ELEVADOR DIFERENTE DO PROJETO`, `PROTEÇÃO POÇO ELEVADOR DIFERENTE DAS ANTERIORES`, `19. PROTEÇÃO DE ELEVADOR NÃO FIXADA`; proteção ausente (5): `13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO`, `11 PAV. PROTEÇÃO POÇO ELEVADOR SEM PROTEÇÃO`, `3 PAV. POÇO ELEVADOR SEM PROTEÇÃO E SINALIZAÇÃO`, `19 PAV. POÇO ELEVADOR SEM PROTEÇÃO`, `20 PAV SEM PROTEÇÃO NO POÇO DE ELEVADOR`; grua (2): `GRUA`, `19 PAV. POÇO GRUA SEM PROTEÇÃO`. **As duas acrescentadas** são `GRUAA` e `GRUAAA`: nenhuma das duas de grua do desenho testa o nome da torre (`GRUA` já dava 0 NC e `19 PAV. POÇO GRUA` é poço), e **`GRUAAA` é a foto que produziu o `NR-18 18.11.14`** — sem ela o defeito da grua fica sem o seu teste. **E ela é o único experimento controlado do histórico**, cruzado em 07/09: a MESMA foto deu **0 NC** no lote de içamento de 02/09, ANTES do #27, e `NR-18 18.11.14` no lote de 05/09, DEPOIS dele (o #27 mergeou em 04/09). Uma foto, uma mudança, dois resultados opostos — é a prova causal de que foi o prompt que produziu o defeito, e não a variabilidade da visão. Por isso o aceite dela é forte: 0 NC no `GRUAAA` não é "pode ter sido sorte", é **volta a uma linha de base medida**. Cuidado com os dois arquivos gêmeos `19 PAV. POÇO ELEVADOR SEM PROTEÇÃO.jpg` e `...PROTEÇÃOO.jpg` (dois O): o desenho lista o de um O, o gabarito de 05/09 registra o de dois, e qual deles rodou não dá para saber sem os laudos — rode os dois |
-| ~~MÁQUINA~~ | **RODADO em 11/09** — 5 laudos, 4 NCs, gabarito 2 de 5, e a auditoria das cinco imagens deu **5 a 9 divergências em 30, com o piso CONFIRMADO pelo engenheiro**. Três NCs erradas em cinco fotos: um falso positivo confirmado (`NR-08 8.3.2.2` sobre um vão que não existe) e DUAS NCs reais perdidas (a serralheria sem barreira de acesso e o vão de acesso ao poço da âncora, o `NR-18 18.9.3`). Ver a seção de validação; o que ainda não fechou, e as cinco cópias deste número, estão na seção 6 dela. Esta linha guarda o desenho: **5 fotos, lista nominal abaixo**, com a fila dos lotes de 5 seguintes. Conferidas na imagem antes de gravar, como este arquivo manda — e duas das quatro que abri não eram o que o nome dizia | **NÃO repetir as 15 de poço.** O conjunto já rodou **quatro vezes completo** (08/09, 09/09 e as duas passadas de 10/09), mais duas rodadas parciais em 04 e 05/09, e é um domínio só: **os 23 enquadramentos das duas passadas de 10/09 são três itens apenas** — `NR-18 18.9.2` (12), `NR-08 8.3.2.2` (9) e `NR-18 18.9.1` (2), que é exatamente o que o app já domina. Repetir dá mais precisão sobre a mesma coisa. E para a contagem de erros do Olho (ver "Em aberto"), a taxa medida em 15 fotos de poço só valeria para fotos de poço. **Lote de 5 focado, e não de 15 misto**: 5 custam ~39 mil tokens, cabem três rodadas num dia, e permitem auditar TODAS as imagens em vez de amostrar. **O gabarito vai ser PIOR que 13 de 15, e isso é o ponto** |
+| ~~MÁQUINA~~ | **RODADO em 11/09** — 5 laudos, 4 NCs, gabarito 2 de 5, e a auditoria das cinco imagens deu **7 divergências confirmadas em 30** (cinco pelo engenheiro, duas pela geometria em 13/09, e 2 linhas permanentemente abertas). Três NCs erradas em cinco fotos: um falso positivo confirmado (`NR-08 8.3.2.2` sobre um vão que não existe) e DUAS NCs reais perdidas (a serralheria sem barreira de acesso e o vão de acesso ao poço da âncora, o `NR-18 18.9.3`). Ver a seção de validação; onde este número mora está na seção 6 dela, que lista os lugares sem contá-los. Esta linha guarda o desenho: **5 fotos, lista nominal abaixo**, com a fila dos lotes de 5 seguintes. Conferidas na imagem antes de gravar, como este arquivo manda — e duas das quatro que abri não eram o que o nome dizia | **NÃO repetir as 15 de poço.** O conjunto já rodou **quatro vezes completo** (08/09, 09/09 e as duas passadas de 10/09), mais duas rodadas parciais em 04 e 05/09, e é um domínio só: **os 23 enquadramentos das duas passadas de 10/09 são três itens apenas** — `NR-18 18.9.2` (12), `NR-08 8.3.2.2` (9) e `NR-18 18.9.1` (2), que é exatamente o que o app já domina. Repetir dá mais precisão sobre a mesma coisa. E para a contagem de erros do Olho (ver "Em aberto"), a taxa medida em 15 fotos de poço só valeria para fotos de poço. **Lote de 5 focado, e não de 15 misto**: 5 custam ~39 mil tokens, cabem três rodadas num dia, e permitem auditar TODAS as imagens em vez de amostrar. **O gabarito vai ser PIOR que 13 de 15, e isso é o ponto** |
 | Controle negativo | 5 documentos (POP, lista de presença, CREA, crachá) | devem dar **0 NC**; é a classe de erro que já apareceu e nunca foi testada de propósito |
 | ~~Variabilidade da visão~~ | **RODADO em 10/09** — 30 laudos, o Olho idêntico em 15/15 e ~±1 NC de ruído no total. Ver a seção de validação. Esta linha guarda o desenho: as MESMAS 15 do lote de poço, rodadas **duas vezes no mesmo dia**, uma chave em cada conta | Mesmas fotos, mesmo código, mesmo dia: a diferença entre os dois lotes é variabilidade PURA do modelo, sem confundir com mudança de versão. É o primeiro dos "limites honestos" deste arquivo e até hoje só tem anedota — "um botão de emergência danificado foi crítico numa foto e passou despercebido em outra do mesmo painel". **Só ficou possível em 10/09**, com a segunda conta: duas passadas de 15 dão ~234 mil tokens e não cabiam em conta nenhuma. O que se lê: quantas NCs mudam de foto para foto, se o Olho descreve os mesmos fatos, e se as fotos de 0 NC continuam em 0. Um número aqui diz quanto do gabarito de qualquer lote é ruído |
 
@@ -2634,7 +2677,7 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
      está escrita duas linhas acima: *ele viu a obra*. Perguntado sobre as seis do lote de
      içamento e cancela, o engenheiro respondeu que **não tem a memória daquele dia** — o que ele
      vê é a foto, igual a mim — e autorizou que eu validasse o que a imagem permite. Então, para
-     as 353 fotos do acervo, **não existe árbitro**: continuar formulando perguntas é gastar
+     as **351 imagens** do acervo, **não existe árbitro**: continuar formulando perguntas é gastar
      rodada com quem tem menos informação que a imagem, e tratar a minha leitura como gabarito
      por falta de alternativa é a regra 3 furada pela porta de trás. A regra que vale daqui em
      diante, e ela é mais estreita de propósito:
@@ -2655,10 +2698,11 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
      "a vegetação sugere nível de embarque" na foto 4 (a imagem não decide a altura). Ver a seção
      5 do pré-registro, que é onde as seis respostas moram.
   **O produto não é a lista de divergências, é a CONTAGEM por classe de erro do Olho.**
-**MEDIDA pela primeira vez em 11/09, no lote de máquina: 5 a 9 divergências em 30, com o
-  PISO CONFIRMADO pelo engenheiro** — cinco das nove linhas respondidas e confirmadas, quatro
-  ainda sem pergunta (a seção 6 da validação de 11/09 as escreve, e lista as cinco cópias
-  deste número, esta inclusive). As classes eram três, uma por lote — o NOME do equipamento
+**MEDIDA pela primeira vez em 11/09 e FECHADA em 13/09, no lote de máquina: 7 divergências
+  confirmadas em 30** — cinco pelo engenheiro, duas pela geometria da imagem depois de ele
+  declarar que não tem a memória do acervo, e **2 linhas permanentemente ABERTAS** porque são
+  MATERIAL e NOME, que a regra (b) não deixa decidir (a seção 6 da validação de 11/09 lista as
+  cinco cópias deste número, esta inclusive). As classes eram três, uma por lote — o NOME do equipamento
   (grua chamada de torre de elevador, 05/09), a OMISSÃO de um achado (a abertura de piso do
   laudo 15, 08/09) e o MATERIAL da barreira (metal chamado de madeira, 10/09) —, e o lote de
   máquina acrescentou o **VÃO INEXISTENTE**, confirmado, que fabricou sozinho uma NC inteira,
@@ -2705,9 +2749,9 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   engenheiro ler 100 listas de fatos; o padrão dele é subir as fotos e voltar com os laudos.
   **A contagem do item acima é o que decide**: taxa alta paga a fase separada, taxa baixa
   diz que o conserto é outro.
-  **A primeira contagem chegou em 11/09 — 5 a 9 divergências em 30, com o piso confirmado
-  pelo engenheiro (o que ainda não fechou está na seção 6 da validação de 11/09) — e ela NÃO
-  decide sozinha, porque parte do erro fica fora do alcance da proposta.** O que ela
+  **A contagem fechou em 13/09 — 7 divergências confirmadas em 30, com 2 linhas
+  permanentemente abertas — e ela NÃO decide sozinha, porque parte do erro fica fora do alcance
+  da proposta.** O que ela
   recupera tem agora caso medido, e ele é mais estreito do que eu escrevi duas vezes: o que
   move o dossiê é o ACHADO declarado como fato, não o nome do objeto. Medido em duas fotos.
   Na 2, nomear o `policorte` traz item de rampa e de plataforma condutiva, enquanto escrever
