@@ -103,6 +103,227 @@ por chamada (fatiar a conferência do Diretor) ou o Dev Tier pago.
 
 ---
 
+## Pré-registro do lote de IÇAMENTO E CANCELA — 5 fotos (escrito em 13/09/2026, ANTES de rodar)
+
+`main` em `cab299c`. **Segundo lote pré-registrado do histórico**, no molde do de elétrica: as
+quatro fotos foram abertas aqui, os dossiês medidos sobre fatos SINTÉTICOS e a previsão escrita
+antes de o lote existir. O que isso compra está medido em 12/09 — a previsão daquele lote
+acertou o item inalcançável e errou o par de palavras, e as duas coisas só foram legíveis
+porque estavam escritas antes.
+
+**Medi X, afirmo Y, e aqui X é estreito.** O que está medido é o DOSSIÊ sobre fatos que
+escrevi eu, imitando o Olho; o que o Olho vai escrever é hipótese até os laudos chegarem.
+Toda previsão abaixo é condicional ao fato, e a condição está dita em cada uma.
+
+| # | Foto | Papel | O que ela responde |
+|---|---|---|---|
+| 1 | `19 PAV. CINTAS DE ELEVAÇÃO DE MATERIAS UTILIZADOS PELA CARPINTARIA` | içamento | a taxonomia do #22 (`18.10.1.27`, `11.1.3.1`), escrita em 03/09 e **nunca validada**. É a foto que virou `NR-06 6.9.3` por colisão de radical no lote de 02/09 |
+| 2 | `9 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO` | cancela FECHADA | a **contraparte** do conserto do #27: o risco de cancela ausente deve calar com a cancela instalada |
+| 3 | `17 PAV AUSENCIA DE SINALIZAÇÃO NAS CANCELAS` | cancela FECHADA (duas) | a mesma contraparte noutro enquadramento, e o item de sinalização |
+| 4 | `8 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO` | cancela ABERTA, 1 pessoa | `torre_elevador_sem_cancela`, que **nunca disparou em produção** |
+| 5 | `13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO` | âncora | `NR-18 18.9.2` em toda execução com laudo lido — 09/09, as duas passadas de 10/09, 11/09 e 12/09 —, e já em 05/09 |
+
+### 1. A leitura das quatro imagens, feita antes de qualquer fato
+
+Cega por construção: não há fatos do Olho ainda. **Não é gabarito** — regra 3 do desenho, e ela
+tem número desde 11/09: a leitura de imagem feita nesta casa errou 2 das 7 respostas daquele
+lote, e uma delas INVENTOU um achado. O que segue vira pergunta ao engenheiro (seção 5), nunca
+veredito. As fotos foram lidas no original e na escala em que o Olho as recebe (`app.py:93` faz `img.thumbnail((lado, lado))`, e o
+`lado` padrão do seletor da barra lateral é **896**, ajustando pela maior dimensão: as três fotos
+retrato chegam com **504 px de largura**, e a foto 3, que é paisagem, com 896).
+
+- **Foto 1** — cinta têxtil plana laranja, de ~5 cm, com costuras longitudinais tracejadas,
+  amontoada e enrolada sobre laje de concreto. Três coisas visíveis: **bordas desfiadas**, com um
+  tufo de fios arrancados; **argamassa endurecida** aderida em boa parte da superfície, escurecendo
+  o tecido; e um **nó atado no próprio tecido**. Ao lado, uma barra metálica chata com um tubo na
+  ponta e um estribo metálico em U. Nenhuma pessoa. **Nenhuma etiqueta de identificação aparece** —
+  mas a peça está dobrada sobre si mesma, então isso é o caso da cláusula (e) e da terceira
+  resposta possível do engenheiro, não uma ausência que a foto demonstre.
+- **Foto 2** (retrato, 9º pav.) — vão de fachada para o exterior, com a torre da cremalheira do
+  lado de fora. No acesso há **cancela metálica de quadro tubular vermelho com tela de malha
+  soldada, instalada e fechada**, e painéis de compensado escuro fechando o resto do vão. Laje
+  varrida, dois blocos de concreto no chão. **Nenhuma placa de sinalização em lugar nenhum do
+  recorte.**
+- **Foto 3** (paisagem, 17º pav.) — a mesma configuração, mais aberta: **duas cancelas vermelhas
+  fechadas**, guarda-corpo vermelho horizontal atrás delas, painéis escuros nos demais trechos,
+  tela plástica laranja numa abertura à direita, caixas de comando nos montantes, um anel escuro
+  pendurado na parede. **Nenhuma placa.**
+- **Foto 4** (retrato, 8º pav.) — **a cancela está aberta**, girada para dentro do pavimento. Há
+  uma **chapa metálica de embarque** ligando o piso ao exterior, e **um trabalhador em pé sobre
+  ela**, de uniforme azul, capacete branco, óculos e luva. A cremalheira dentada aparece na torre;
+  há caixa azul de dispositivo elétrico no montante e tela laranja ao fundo. **Nenhuma placa.**
+  A vegetação verde aparece ao nível do piso, o que sugere recorte no nível de embarque e não em
+  pavimento elevado — apesar do "8 PAV." do nome. **É a pergunta P4**, e dela depende se a NC de
+  queda desta foto é real ou falso positivo.
+
+### 2. O que está MEDIDO: os cinco dossiês, sem rede
+
+Fatos sintéticos escritos no estilo do Olho a partir da leitura acima; `montar_dossie` é
+determinístico e roda sem rede.
+
+| # | riscos roteados | entradas | curadas | itens de NR-18 no dossiê |
+|---|---|---|---|---|
+| 1 | `dispositivo_icamento_deteriorado` | **3** | 2 | `18.10.1.27` em **D1** |
+| 2 | `sinalizacao_de_seguranca_ausente`, `espaco_confinado_sem_sinalizacao` | 11 | 5 | **nenhum** |
+| 3 | os mesmos dois | 13 | 5 | **nenhum** |
+| 4 | `torre_elevador_sem_cancela` + 4 | 13 | 9 | `18.11.13` **D1**, `18.11.14` D2, `18.16.18` D8, `18.16.19` D9 |
+| 5 | `abertura_piso_desprotegida` | 7 | 2 | `18.9.2` **D1** |
+
+A âncora reproduz o que 11 e 12/09 mediram, `18.9.2` em D1 e `8.3.2.2` em D2, e o
+`NR-18 18.9.3` **continua fora do dossiê**, como 11 e 12/09 já haviam medido sobre os fatos
+reais dessa mesma foto.
+
+### 3. A previsão, foto a foto
+
+**Foto 1 — o risco dispara, e o item que ele cita não cobre o defeito.**
+`dispositivo_icamento_deteriorado` casa por `tecido da cinta desfiado` (cobertura 1,00, âncora 3)
+e põe `NR-18 18.10.1.27` em D1 e `NR-11 11.1.3.1` em D2, **os dois curados**. A colisão
+`cinta`/`cinto` do #20 está morta: um cinturão paraquedista íntegro routeia
+`talabarte_mal_conectado` e nada de içamento, e **zero item de NR-06 entra neste dossiê**.
+**Mas o texto do item não alcança o achado.** O `18.10.1.27` tem três alíneas — identificação
+indelével (a), certificado ou projeto (b), inspeção pelo amarrador (c) — e **nenhuma fala de
+desgaste**; o `11.1.3.1` fala de "cabos de aço, cordas, correntes, roldanas e ganchos", não de
+cinta têxtil. A palavra **eslinga** aparece em dois itens vigentes da base, e os dois são de NR-12:
+`12.8.4` e `Anexo XII 4.24` (este do anexo de plataformas elevatórias, sobre sistemas de
+suspensão). O `12.8.4` só chega pelo risco CONCORRENTE (`cabo_aco_ou_lingada_deteriorados`, sinal `cinta rasgada`, gravidade base
+crítica em vez de alta). **Previsão: NC de identificação — a alínea (a) —, com o desfiamento
+evaporando.** É o aparo que apagou o desfiamento nesta mesma foto, registrado em 03/09 sobre o lote de
+içamento, mas a causa agora está medida no TEXTO do item e não na escolha do Diretor: ali eu
+registrei "o aparo apagou o achado grave"; aqui não havia item onde pendurá-lo.
+**E o vocabulário decide antes disso.** Oito redações plausíveis do mesmo achado, medidas:
+**2 alcançam o `18.10.1.27`** (as que trazem `tecid`+`cint`+`desfiad` ou `desgast`+`cint`+`icament`),
+**1 vai para o risco concorrente** (`cinta rasgada`) e **5 não routeiam risco nenhum** — entre elas
+"Cinta têxtil laranja com bordas desfiadas e fios soltos" (0,67, falta só `tecid`), "bordas
+puídas", "encoberta por argamassa, sem etiqueta legível" e "com nó atado no próprio tecido".
+Trocado `cinta` por `faixa`, o dossiê inteiro vai para **NR-26, cores de tubulação**, com zero
+item de içamento. **O discriminante é `cinta`**, como `cabo` foi em 12/09.
+**O nó e a argamassa não routeiam nada**, e o nó é achado real de içamento que a taxonomia não
+tem: sem a palavra `desfiada`, o dossiê desta foto cai para **uma entrada** (`NR-08 8.3.1`,
+pé-direito).
+
+**Fotos 2 e 3 — a contraparte do #27 deve passar, e o item certo é inalcançável.**
+Medido: `torre_elevador_sem_cancela` **cala nas duas** com a cancela nomeada, instalada e
+fechada. É a primeira vez que essa contraparte é exercida sobre uma cena real em vez de um fato
+escrito para testá-la.
+**O preço é o dossiê.** Nenhuma das duas recebe **um item de NR-18**: entram `NR-26 26.3.1` e
+`26.3.2` (cores) em D1/D2 curados, **`NR-33 33.5.13.1/.3/.4` — espaço confinado — em D3 a D5
+curados**, NR-01 documental e, na foto 3, **cinco itens de escada da NR-35**. O espaço confinado
+vem de `poço aberto sem placa` a 0,75 sobre "Sem placa de sinalização de advertência visível nas
+cancelas": quatro radicais, e o que falta é justo `poco`.
+**O item que cobre de frente é `NR-18 18.13.1`** — "o canteiro de obras deve ser sinalizado com
+o objetivo de … c) advertir quanto aos riscos existentes, tais como queda de materiais e pessoas
+e o choque elétrico; … e) identificar o isolamento das áreas de movimentação e transporte de
+materiais". Ele passa por
+`comprovavel_em_foto`, por `prescritivo` e por `setor_pertinente`, e **é inalcançável**: de seis
+redações testadas, só chega quando a frase contém "canteiro de obras", que é quase citar o item.
+A causa é medível e tem um gatilho estreito: o sinal `canteiro sem sinalizacao` tem três radicais
+e fica em **0,67** — falta `canteir` —, e **basta a palavra `canteiro` aparecer no AMBIENTE** para
+ele subir a 1,00 e pôr o `18.13.1` em **D1 curado**. **Previsão: 0 NC, ou NC de `NR-26 26.3.1`
+sobre CORES de segurança**, que seria classe de erro 1 — item verdadeiro, situação errada.
+**É o terceiro caso da série**, depois do item de barreira da área de corte (11/09) e do
+`NR-18 18.10.2.4` do cabo no piso (12/09): achado real, item existente, enquadramento fora de
+alcance.
+
+**Foto 4 — o risco de cancela dispara pela primeira vez, e três dos cinco riscos são defeito.**
+`cancela aberta` casa com cobertura 1,00 e põe `18.11.13` em D1 e `18.11.14` em D2. Os outros
+quatro riscos disparam assim:
+
+| risco | sinal | cobertura | por quê |
+|---|---|---|---|
+| `quadro_eletrico_aberto_ou_sem_sinalizacao` | `quadro aberto` | **1,00** | **colisão de radical**: `quadr` vem de "cancela metálica de **quadro** tubular" e `abert` da própria cancela. Traz `NR-10 10.10.1` a D3 curado |
+| `tapume_galeria_ausente` | `obra aberta para a rua` | 0,75 | 4 radicais, falta `rua`. Traz `18.16.18`/`18.16.19` a D8/D9 |
+| `poco_elevador_carga_sem_cercamento` | `vao do elevador sem protecao` | 0,75 | falta `sem`, e `proteca` vem de "óculos de **proteção**" do trabalhador. Traz `NR-11 11.1.1`/`11.1.2` a D6/D7 |
+| `sinalizacao_de_seguranca_ausente` | `sem placa` | 1,00 | dois radicais, um é cola — e é o formato que o `PROMPT_OLHO` manda escrever |
+
+A colisão do `quadro` é a do `cinta`/`cinto` noutro par, e é nova: trocada a palavra por
+"moldura tubular", o risco some e o `10.10.1` sai do dossiê. `quadro` é o que esta casa já usou
+para descrever moldura metálica — "dois painéis de tela metálica em **quadro** de aço", na
+leitura de 10/09.
+**A favor, e vale dizer**: o `NR-11 11.1.2` — "quando a cabina do elevador não estiver ao nível
+do pavimento, a abertura deverá estar protegida" — é o item CERTO para cancela aberta sem cabine,
+e ele chegou ao dossiê, ainda que pelo caminho errado. Se a P4 disser que o recorte é de
+pavimento elevado, esta é a NC certa da foto.
+**E o nome decide de novo**: se o Olho escrever "grade metálica de malha quadrada pintada de
+vermelho, aberta" — literalmente o que ele escreveu no lote de içamento de 02/09 —, o risco cala
+e **`18.11.13` e `18.11.14` saem do dossiê inteiro**.
+
+### 4. O falso positivo latente, e é ele o achado principal deste pré-registro
+
+Medido: com o achado nomeando *"Torre do elevador de obra de cremalheira … instalada junto à
+fachada"* e o ambiente contendo a palavra **aberto** (*"vão de fachada aberto para o exterior"*),
+o sinal `torre do elevador aberta` casa com **cobertura 1,00 e âncora 2** — `torr` e `elevador`
+vêm do próprio achado, e o `abert` vem do **AMBIENTE**. O risco de cancela AUSENTE dispara numa
+cena em que a cancela está instalada e fechada, e `18.11.13`/`18.11.14` vão para **D1 e D2
+curados**. Tirada a palavra "aberto" do ambiente, o risco cala e o `18.11.13` ainda chega, mas em
+**D3 e por busca textual** — que é a lição de 07/09 outra vez: destrancar ou trancar o roteamento
+não tira o item que o BM25 traz.
+
+**É a mesma família das armadilhas já registradas** — o `sem` que nega outra coisa no mesmo fato,
+o particípio da negação ("sem trechos abertos") e a relação invertida ("abertura no piso" casando
+"piso … da abertura") —, e o mecanismo aqui é o do AMBIENTE, com uma variante nova: **o adjetivo
+que qualifica outro objeto da cena**. A âncora impede o ambiente de carregar o sinal sozinho; não
+impede que ele forneça o único radical que discrimina. E o ambiente de qualquer foto de pavimento
+de obra tem boa chance de conter "aberto".
+
+**Medi X, afirmo Y**: o que está medido é o dossiê, dado o fato. Que o Olho escreva "aberto" no
+ambiente e "torre do elevador" no achado é **hipótese** — e é exatamente o que o #27 o ensinou a
+fazer. As fotos 2 e 3 são a medição dela.
+
+### 5. As perguntas ao engenheiro, escritas ANTES do lote
+
+Regra de 12/09: pergunte sempre que a NC depender de uma peça no limite do recorte, e abra as
+imagens antes de perguntar, para não gastar rodada com objeto que a lista de fatos não localiza.
+
+- **P1 (foto 1)** — a cinta tem etiqueta de identificação (razão social, capacidade de carga,
+  número de série)? Ela existe na peça, mesmo dobrada para dentro? *Decide se a NC prevista — a
+  alínea (a) do `18.10.1.27` — é verdadeira ou é enquadramento sem lastro visual.*
+- **P2 (foto 1)** — o nó atado na cinta estava assim em uso, ou é só o modo de guardar?
+- **P3 (foto 1)** — a peça metálica chata ao lado da cinta é o quê? (garfo, alavanca, estribo de
+  armação?) *É a linha de NOME desta foto.*
+- **P4 (foto 4)** — o recorte é no nível de embarque, com a plataforma no lugar, ou num pavimento
+  elevado com o vão exposto? *Decide se a NC de queda é real ou falso positivo, e é a pergunta
+  mais cara do lote.*
+- **P5 (fotos 2 e 3)** — as cancelas estavam travadas/intertravadas, ou só encostadas?
+- **P6 (foto 3)** — o anel escuro pendurado na parede é mangueira?
+
+### 6. Critério de aceite, e onde cada coisa se lê
+
+1. **Na LISTA DE FATOS do Olho** — se ele escreve `cinta` (foto 1) e `cancela` (fotos 2, 3 e 4),
+   e **se o AMBIENTE contém a palavra "aberto"**. Os três decidem o dossiê antes de qualquer
+   agente de texto, e os três estão medidos acima.
+2. **Na TRILHA dos laudos 2 e 3** — se `NR-18 18.11.13` aparece em foto de cancela fechada. Se
+   aparecer, o falso positivo da seção 4 saiu do papel e o conserto é um sinal, não um prompt.
+   **E o laudo 4 tem o mesmo aceite em duas metades que a foto 1, pela mesma razão — foi o
+   `/critico` que pegou, na foto que a primeira correção não alcançou.** Que
+   `torre_elevador_sem_cancela` DISPARE ali mede a recuperação, e é o que esta foto existe para
+   responder: o risco nunca disparou em produção. **Não mede o laudo.** O `18.11.13` cobra que a
+   barreira SEJA INSTALADA, e ela está — aberta, mas instalada —, e a leitura da imagem sugere
+   plataforma de embarque no lugar. Então NC de `18.11.13` ali é **classe de erro 1 até a P4
+   responder**: só conta como acerto se ele disser que o recorte é de pavimento elevado com o vão
+   exposto, e nesse caso o item de frente é o `NR-11 11.1.2`, não o `18.11.13`. Se a P4 disser
+   nível de embarque, qualquer NC de queda nesta foto é **falso positivo**, e o acerto seria 0 NC
+   de queda com a sinalização em ponto de atenção.
+3. **Nas NÃO CONFORMIDADES** — fotos 2 e 3 **não** entregando NC de NR-33 nem de
+   `NR-26 26.3.1` sobre cor; a âncora mantendo `18.9.2`.
+   **Para a foto 1 o aceite tem duas metades, e a primeira redação deste critério colapsou as
+   duas — foi o `/critico` que pegou.** Item de içamento em vez de EPI (`18.10.1.27` ou
+   `12.8.4`) mede a RECUPERAÇÃO, e só ela: é o que responde se a taxonomia do #22 funciona.
+   **Não mede o laudo.** A seção 3 prevê que a NC saia pela alínea (a) do `18.10.1.27` —
+   identificação —, e o próprio artefato diz que a etiqueta não aparece no recorte: contar isso
+   como acerto seria carimbar como sucesso um enquadramento sem lastro visual, que é a classe de
+   erro 3 e o caso que a cláusula (e) manda mandar a ponto de atenção. Então o aceite do LAUDO é
+   separado e condicional: a NC da foto 1 só conta como boa se a constatação se apoiar no que a
+   imagem mostra — o desfiamento, a argamassa sobre as marcações — ou se a **P1** confirmar que
+   não há etiqueta na peça. NC de identificação emitida antes da resposta da P1 conta como
+   **enquadramento pendente**, não como acerto, e entra no gabarito só depois que ele responder.
+
+**O gabarito previsto é ruim, e isso é o ponto**: o achado do nome do arquivo é SINALIZAÇÃO em
+três das quatro, e o item que a cobre é inalcançável. **Previsão registrada: 1 a 2 de 5**, com o
+acerto mais provável sendo a âncora. Se sair melhor que isso, a razão está no que o Olho
+escreveu, e é lá que se lê.
+
+---
+
 ## Validação em produção de 12/09/2026 — o lote de ELÉTRICA, 5 fotos
 
 Rodado no `ef3ca2c` — **inferido do merge, e não lido na barra lateral**, que é o mesmo dado
@@ -1409,7 +1630,7 @@ porque duas das quatro que eu abri não eram o que o nome dizia.
 | Lote | Fotos | O que ele decide |
 |---|---|---|
 | ~~**Elétrica**~~ | **RODADO em 12/09** — 5 laudos, 3 NCs, gabarito **1 de 5**, e o único acerto é a âncora: as quatro de elétrica deram **zero enquadramento elétrico**. Ver a seção de validação de 12/09. Esta linha guarda o desenho: `5 PAV. FIAÇÃO EXPOSTA NO CHÃO`, `CABOS ELETRICOS DISPOSTOS DIRETAMENTE NO CHÃO`, `FIO EXPOSTO NO CHAO`, `8 PAV. FIAÇÃO NO CHÃO` + âncora | Foi o **primeiro lote pré-registrado**, e é isso que o torna barato de ler: a previsão escrita em `490b152` acertou o item inalcançável (`NR-18 18.10.2.4`, e o `NR-10 10.2.8.2` em D1 curado que o Analista recusou nas três) e errou o par de palavras — o que decide é `cabo` contra `fiação`, não `chão` contra `piso`. O lote ainda confirmou o **VÃO INEXISTENTE pela segunda vez**, noutro domínio |
-| **Içamento e cancela** | `19 PAV. CINTAS DE ELEVAÇÃO DE MATERIAS UTILIZADOS PELA CARPINTARIA`, `9 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO`, `17 PAV AUSENCIA DE SINALIZAÇÃO NAS CANCELAS`, `8 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO` + âncora | a taxonomia de guindar do #22 (`18.10.1.27`, `11.1.3.1`) existe desde 03/09 e **nunca foi validada**; `torre_elevador_sem_cancela` cita `18.11.13` e **nunca disparou em produção**. A foto das cintas é a que virou item de EPI por colisão de radical |
+| **Içamento e cancela** | `19 PAV. CINTAS DE ELEVAÇÃO DE MATERIAS UTILIZADOS PELA CARPINTARIA`, `9 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO`, `17 PAV AUSENCIA DE SINALIZAÇÃO NAS CANCELAS`, `8 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO` + âncora | **PRÉ-REGISTRADO em 13/09 — a seção está no alto deste arquivo, e é de lá que se monta o lote.** A taxonomia de guindar do #22 (`18.10.1.27`, `11.1.3.1`) existe desde 03/09 e **nunca foi validada**; `torre_elevador_sem_cancela` cita `18.11.13` e **nunca disparou em produção**. A foto das cintas é a que virou item de EPI por colisão de radical |
 | **Pessoa na cena** | `TRABALHADOR SEM EPI`, `TRABALHADOR SEM PROTEÇÃO`, `TRABALHADOR SE EPI`, `6 PAV. TRABALHADORES SEM DOCUMENTAÇÃO` + âncora | o portão `exige_pessoa` governa 25 riscos e nunca teve lote. **Não use `COLABORADOR UTILIZANDO EPI SEM C.A`**: 212x508 px e sem extensão de arquivo, o uploader filtra por tipo |
 | **Escada** | `ESCADA EM LOCAL INADEQUADO`, `20 PROTEÇÃO DE ESCADA DANIFICADA`, `18 PAV. PROTEÇÃO DE ESCADA QUEBRADA 18 PARA O 19`, `PROTEÇÃO DE ESCADA 17 PARA O 18 PAV` + âncora | "escada apoiada" virando "sem sapata antiderrapante" é classe de erro 2 registrada e nunca remediada. Nas três de proteção de escada o defeito está na proteção, não na escada |
 | **Marcação (o desenho D)** | `PROTEÇÃO POÇO DE ELEVADOR SOMENTE COM UM PONTO DE FIXAÇÃO`, marcando `abertura_piso_desprotegida` + `vao_caixa_elevador_sem_fechamento` | n=2 para a fronteira medida em 09/09: **marcação não recupera achado que o Olho não viu**. E a auditoria da imagem dá o que faltava — se os pontos de fixação não forem visíveis na escala em que o Olho recebe a foto (504 px de largura numa foto retrato), o conserto não é marcação nem prompt, é resolução |
@@ -2459,6 +2680,15 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   frequência o Olho escreve "cancela" numa cena que não é de elevador. No lote de içamento
   ele chamou de "Grade metálica … pintada de vermelho, aberta" e não de cancela; depois do
   #32 ele nomeia mais.
+  **O pré-registro de 13/09 acrescentou um segundo caminho, medido, e ele não precisa da
+  palavra `cancela`:** com o achado dizendo *"Torre do elevador de obra … instalada junto à
+  fachada"* e o ambiente dizendo *"vão de fachada aberto"*, o sinal `torre do elevador aberta`
+  casa a **1,00 com âncora 2** — `torr` e `elevador` do achado, `abert` do AMBIENTE — e os
+  mesmos `18.11.13`/`18.11.14` vão a D1 e D2 curados, numa cena de cancela INSTALADA E
+  FECHADA. Os sinais de torre exigem `elevador` desde o #27, e isso não os protege: quem
+  fornece o radical que discrimina é a cena, não o achado. Tirada a palavra "aberto" do
+  ambiente, o risco cala. É a mesma família da âncora, pela variante do AMBIENTE (ver a
+  seção do lote de içamento e cancela), e as fotos 2 e 3 daquele lote são a medição dela em produção.
 - **Zero riscos roteados prevê laudo ruim, e o dossiê textual é oferecido do mesmo jeito.**
   Medido nas 15 fotos de 08/09: **4 routearam risco nenhum** — `SOMENTE COM UM PONTO DE
   FIXAÇÃO`, `GRUAA`, `GRUAAA` e `GRUA`. Três deram 0 NC (certo) e a quarta produziu **a
