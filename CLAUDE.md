@@ -145,16 +145,20 @@ retrato chegam com **504 px de largura**, e a foto 3, que é paisagem, com 896).
   varrida, dois blocos de concreto no chão. **Nenhuma placa de sinalização em lugar nenhum do
   recorte.**
 - **Foto 3** (paisagem, 17º pav.) — a mesma configuração, mais aberta: **duas cancelas vermelhas
-  fechadas**, guarda-corpo vermelho horizontal atrás delas, painéis escuros nos demais trechos,
-  tela plástica laranja numa abertura à direita, caixas de comando nos montantes, um anel escuro
-  pendurado na parede. **Nenhuma placa.**
+  — a da esquerda ABERTA, girada para dentro, e a da direita fechada** (a primeira redação desta
+  linha dizia "as duas fechadas", e a ampliação do montante central derrubou; ver a seção 5),
+  guarda-corpo vermelho horizontal atrás delas, painéis escuros nos demais trechos,
+  tela plástica laranja numa abertura à direita, **dispositivo de intertravamento com fiação nos
+  montantes**, um anel escuro pendurado na parede. **Nenhuma placa.**
 - **Foto 4** (retrato, 8º pav.) — **a cancela está aberta**, girada para dentro do pavimento. Há
   uma **chapa metálica de embarque** ligando o piso ao exterior, e **um trabalhador em pé sobre
   ela**, de uniforme azul, capacete branco, óculos e luva. A cremalheira dentada aparece na torre;
   há caixa azul de dispositivo elétrico no montante e tela laranja ao fundo. **Nenhuma placa.**
-  A vegetação verde aparece ao nível do piso, o que sugere recorte no nível de embarque e não em
-  pavimento elevado — apesar do "8 PAV." do nome. **É a pergunta P4**, e dela depende se a NC de
-  queda desta foto é real ou falso positivo.
+  **A plataforma do elevador está no nível do pavimento**: o piso atravessa a soleira sem
+  interrupção e o trabalhador está em pé sobre ela. A altura do pavimento a imagem não resolve —
+  a vegetação próxima puxa para a base e a fachada inteira do prédio vizinho puxa para o alto —,
+  e **não precisa resolver**: em qualquer altura, não há vão de queda exposto no instante da
+  foto. Era a pergunta P4, respondida na seção 5.
 
 ### 2. O que está MEDIDO: os cinco dossiês, sem rede
 
@@ -269,22 +273,76 @@ de obra tem boa chance de conter "aberto".
 ambiente e "torre do elevador" no achado é **hipótese** — e é exatamente o que o #27 o ensinou a
 fazer. As fotos 2 e 3 são a medição dela.
 
-### 5. As perguntas ao engenheiro, escritas ANTES do lote
+### 5. As perguntas ao engenheiro — RESPONDIDAS EM 13/09, E A RESPOSTA MUDA A REGRA 3
 
-Regra de 12/09: pergunte sempre que a NC depender de uma peça no limite do recorte, e abra as
-imagens antes de perguntar, para não gastar rodada com objeto que a lista de fatos não localiza.
+**O engenheiro não tem a memória destas fotos.** Perguntado sobre as seis, respondeu que o que
+eu vejo na foto é o que ele vê, que não se lembra do dia em que foram tiradas, e autorizou que
+eu validasse o que a imagem permite. **Isso não é uma resposta a mais: é a segunda fonte
+deixando de existir para este acervo**, e por isso vem antes das respostas.
 
-- **P1 (foto 1)** — a cinta tem etiqueta de identificação (razão social, capacidade de carga,
-  número de série)? Ela existe na peça, mesmo dobrada para dentro? *Decide se a NC prevista — a
-  alínea (a) do `18.10.1.27` — é verdadeira ou é enquadramento sem lastro visual.*
-- **P2 (foto 1)** — o nó atado na cinta estava assim em uso, ou é só o modo de guardar?
-- **P3 (foto 1)** — a peça metálica chata ao lado da cinta é o quê? (garfo, alavanca, estribo de
-  armação?) *É a linha de NOME desta foto.*
-- **P4 (foto 4)** — o recorte é no nível de embarque, com a plataforma no lugar, ou num pavimento
-  elevado com o vão exposto? *Decide se a NC de queda é real ou falso positivo, e é a pergunta
-  mais cara do lote.*
-- **P5 (fotos 2 e 3)** — as cancelas estavam travadas/intertravadas, ou só encostadas?
-- **P6 (foto 3)** — o anel escuro pendurado na parede é mangueira?
+**O que a regra 3 dizia, e por quê.** "Foto é pergunta, nunca veredito" se apoia numa premissa
+declarada: *ele viu a obra, a imagem é um recorte dela*. Quando a premissa vale, a leitura de
+imagem feita aqui é uma hipótese que ele arbitra — e o histórico mostra que o árbitro é
+necessário: das sete respostas do lote de máquina, **duas derrubaram leituras minhas**, e uma
+delas era um achado INVENTADO ("lâmina exposta sem coifa" numa serra que tem coifa).
+**Quando a premissa não vale, não há a quem arbitrar.** As fotos são de uma inspeção passada, e
+a memória acabou. Insistir em perguntar é gastar rodada com quem tem menos informação que a
+imagem; e tratar a minha leitura como gabarito por falta de alternativa é o erro que a regra 3
+existe para impedir, pela porta de trás.
+
+**A regra que substitui, e ela é mais estreita de propósito:**
+
+1. **A imagem decide o que é geométrico ou de presença** — há ou não há um objeto no recorte,
+   onde ele está, se uma folha está no plano ou girada, se um piso é contínuo. Isso se lê, se
+   amplia e se mostra; errar aqui é errar diante de um recorte que fica no repositório.
+2. **A imagem NÃO decide material, nome próprio de equipamento, nem estado de funcionamento.**
+   São exatamente as três classes de erro que este arquivo registra no Olho — MATERIAL, NOME,
+   e agora o funcional —, e a minha leitura corre as mesmas. Onde a resposta for de uma dessas,
+   ela fica **ABERTA**, e não vira gabarito nem contra o app nem a favor dele.
+3. **Onde a imagem não decide, a consequência é a cláusula (e), não o silêncio.** Se nem quem
+   inspecionou decide pela foto, uma NC que dependa daquela peça é enquadramento sem lastro
+   visual — é a terceira resposta de 12/09 ("não consigo ver se a escada tem sapata") virada em
+   procedimento, e agora ela vale para todo este acervo, não para uma escada.
+4. **Para lote NOVO a regra 3 continua inteira**, e é por isso que ela não foi apagada: fotos
+   tiradas agora, com o engenheiro em campo, têm árbitro. O que mudou vale para o acervo
+   histórico, que é de onde saem todos os lotes deste arquivo.
+
+**As respostas, lidas nas imagens originais com recorte ampliado**, e cada uma declarando se a
+imagem decide:
+
+| # | pergunta | o que a imagem mostra | decide? |
+|---|---|---|---|
+| **P1** | a cinta tem etiqueta de identificação? | **Os laços/olhais da fita aparecem no recorte e não há etiqueta em nenhum deles**; nenhum trecho visível traz etiqueta. Mas a peça está enrolada sobre si mesma, com trechos ocultos, e boa parte da superfície está sob crosta de argamassa | **PARCIAL** — decide que **não há identificação legível no que se vê**; não decide se existe etiqueta no trecho oculto |
+| **P2** | o nó estava em uso? | **O nó existe e está apertado**, dado na própria fita, com o tecido deformado e achatado na volta — marca de tração, não de dobra solta | **PARCIAL** — decide que há nó e que ele foi tracionado; não decide se era assim durante o içamento |
+| **P3** | o que é a peça metálica? | **Barra chata de aço, reta, com a ponta em bisel** e o gume polido pelo uso, com ferrugem e resíduo de concreto. Ao lado, um tubo metálico curto e um arame | **PARCIAL** — decide a GEOMETRIA, e por ela **exclui** o garfo de empilhadeira (que não tem gume biselado) e o estribo de armação (dobrado em U, não reto e chato). **O nome fica ABERTO**: "alavanca de desforma" é a leitura mais provável e é NOME, que a regra (b) não deixa decidir — foi o `/critico` que pegou, nesta mesma tabela |
+| **P4** | foto 4: embarque ou pavimento elevado com vão exposto? | **A plataforma do elevador está NO NÍVEL do pavimento**: há piso contínuo atravessando a soleira, e o trabalhador está em pé sobre ela. A altura do pavimento a imagem **não** resolve — a vegetação próxima puxa para a base, a fachada inteira do prédio vizinho puxa para o alto | **SIM no que importa** — **não há vão de queda exposto no instante da foto**, seja qual for o pavimento. A altura fica ABERTA e não é necessária |
+| **P5** | as cancelas estavam travadas ou só encostadas? | **Há dispositivo de intertravamento instalado nas três fotos**: caixa preta com fiação no montante nas fotos 2 e 3, caixa azul aparafusada na foto 4, com chapas de batente vermelhas. Não estão apenas encostadas | **PARCIAL** — decide que o dispositivo EXISTE e está montado; **não decide se funcionava**, que é estado, e cai na regra 2 acima |
+| **P6** | o anel na parede da foto 3 | **Rolo flexível de seção circular, pendurado num pino** na parede de concreto, com uma peça metálica na parte baixa do rolo. Mangueira e cabo são as duas leituras compatíveis | **PARCIAL** — decide que é objeto FLEXÍVEL pendurado, e por isso **exclui** dispositivo de ancoragem e elemento estrutural, que são rígidos e fixados. Entre mangueira e cabo é NOME, e fica **ABERTO** |
+
+**Nenhuma das seis decide um NOME, e isso não é acaso: é a regra 2 mordendo.** As três que
+excluem alternativas (P3, P6) o fazem por GEOMETRIA — gume biselado contra garfo, flexível
+contra rígido —, que é o que a regra 1 permite; o nome próprio de cada objeto continua aberto,
+e é assim que tem de ficar enquanto ninguém puder arbitrá-lo. O caso que sustenta a régua está
+neste arquivo com número: em 11/09 eu afirmei "serra de FITA" lendo pixels, e o engenheiro
+respondeu **serra de bancada**.
+
+**Duas correções à seção 1, e as duas são leituras minhas que a ampliação derrubou** — é a
+regra 2 funcionando sobre mim mesmo, no mesmo dia em que foi escrita:
+
+- **Foto 3 — "duas cancelas vermelhas fechadas" está ERRADO.** Ampliado o montante central, a
+  cancela da ESQUERDA está **aberta**, girada para dentro; só a da direita está fechada. Isso
+  muda o papel da foto no lote: ela deixa de ser a segunda contraparte de cancela fechada e
+  passa a ter as duas condições na mesma imagem.
+- **Foto 4 — "a vegetação sugere nível de embarque" está mal fundamentado.** A vegetação
+  aparece, mas a fachada do prédio vizinho é vista inteira e de frente, o que aponta para o
+  contrário. A imagem não decide a altura, e eu tinha declarado uma direção. O que ela decide
+  é a plataforma no nível, que é o que a previsão precisava.
+
+**E um achado que nenhuma das seis perguntas cobria**, encontrado ao ampliar os montantes: **as
+três fotos de cancela mostram dispositivo de intertravamento instalado**. É evidência de
+conformidade, e o que vigiar no lote é se o Olho o registra — se ele descrever a caixa como
+"quadro elétrico" ou "caixa de comando", ela vira o `quadro aberto` da seção 3 e o falso
+positivo elétrico ganha um segundo caminho.
 
 ### 6. Critério de aceite, e onde cada coisa se lê
 
@@ -296,13 +354,13 @@ imagens antes de perguntar, para não gastar rodada com objeto que a lista de fa
    **E o laudo 4 tem o mesmo aceite em duas metades que a foto 1, pela mesma razão — foi o
    `/critico` que pegou, na foto que a primeira correção não alcançou.** Que
    `torre_elevador_sem_cancela` DISPARE ali mede a recuperação, e é o que esta foto existe para
-   responder: o risco nunca disparou em produção. **Não mede o laudo.** O `18.11.13` cobra que a
-   barreira SEJA INSTALADA, e ela está — aberta, mas instalada —, e a leitura da imagem sugere
-   plataforma de embarque no lugar. Então NC de `18.11.13` ali é **classe de erro 1 até a P4
-   responder**: só conta como acerto se ele disser que o recorte é de pavimento elevado com o vão
-   exposto, e nesse caso o item de frente é o `NR-11 11.1.2`, não o `18.11.13`. Se a P4 disser
-   nível de embarque, qualquer NC de queda nesta foto é **falso positivo**, e o acerto seria 0 NC
-   de queda com a sinalização em ponto de atenção.
+   responder: o risco nunca disparou em produção. **Não mede o laudo, e a P4 já fechou esse
+   lado.** O `18.11.13` cobra que a barreira SEJA INSTALADA, e ela está — aberta, mas instalada,
+   e com intertravamento aparafusado no montante; a plataforma está no nível e o piso é contínuo.
+   Logo **qualquer NC de queda nesta foto é falso positivo**: nem o `18.11.13`, nem o
+   `NR-11 11.1.2` (que cobra proteção quando a cabina NÃO está no nível), nem o
+   `poco_elevador_carga_sem_cercamento`. O acerto desta foto é **0 NC de queda**, com a ausência
+   de sinalização em ponto de atenção — e é assim que o laudo 4 se lê.
 3. **Nas NÃO CONFORMIDADES** — fotos 2 e 3 **não** entregando NC de NR-33 nem de
    `NR-26 26.3.1` sobre cor; a âncora mantendo `18.9.2`.
    **Para a foto 1 o aceite tem duas metades, e a primeira redação deste critério colapsou as
@@ -311,11 +369,13 @@ imagens antes de perguntar, para não gastar rodada com objeto que a lista de fa
    **Não mede o laudo.** A seção 3 prevê que a NC saia pela alínea (a) do `18.10.1.27` —
    identificação —, e o próprio artefato diz que a etiqueta não aparece no recorte: contar isso
    como acerto seria carimbar como sucesso um enquadramento sem lastro visual, que é a classe de
-   erro 3 e o caso que a cláusula (e) manda mandar a ponto de atenção. Então o aceite do LAUDO é
-   separado e condicional: a NC da foto 1 só conta como boa se a constatação se apoiar no que a
-   imagem mostra — o desfiamento, a argamassa sobre as marcações — ou se a **P1** confirmar que
-   não há etiqueta na peça. NC de identificação emitida antes da resposta da P1 conta como
-   **enquadramento pendente**, não como acerto, e entra no gabarito só depois que ele responder.
+   erro 3 e o caso que a cláusula (e) manda mandar a ponto de atenção. **A P1 fechou esse lado
+   pela metade, e a metade decide a redação**: os laços da fita aparecem sem etiqueta e a crosta
+   de argamassa cobre onde a marcação estaria, mas a peça tem trechos ocultos. Então a NC de
+   identificação **tem lastro para "sem identificação LEGÍVEL"** — que é o que a foto mostra e o
+   que a alínea (a) do `18.10.1.27` cobra — e **não tem lastro para "sem identificação"**, que
+   afirma sobre o trecho oculto. A diferença é uma palavra no laudo do cliente, e é ela que
+   separa o acerto da classe de erro 2.
 
 **O gabarito previsto é ruim, e isso é o ponto**: o achado do nome do arquivo é SINALIZAÇÃO em
 três das quatro, e o item que a cobre é inalcançável. **Previsão registrada: 1 a 2 de 5**, com o
@@ -2570,6 +2630,30 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
      é um recorte dela. Sem essa regra, o gabarito ganha uma segunda fonte que é um modelo
      julgando outro, e ninguém acima — a mesma estrutura que a regra "nunca ler o nome do
      arquivo" existe para impedir, contaminando pelo outro lado.
+     **A REGRA 3 TEM UMA PREMISSA, E EM 13/09 ELA CAIU PARA O ACERVO HISTÓRICO.** A premissa
+     está escrita duas linhas acima: *ele viu a obra*. Perguntado sobre as seis do lote de
+     içamento e cancela, o engenheiro respondeu que **não tem a memória daquele dia** — o que ele
+     vê é a foto, igual a mim — e autorizou que eu validasse o que a imagem permite. Então, para
+     as 353 fotos do acervo, **não existe árbitro**: continuar formulando perguntas é gastar
+     rodada com quem tem menos informação que a imagem, e tratar a minha leitura como gabarito
+     por falta de alternativa é a regra 3 furada pela porta de trás. A regra que vale daqui em
+     diante, e ela é mais estreita de propósito:
+     **(a)** a imagem decide o que é GEOMÉTRICO ou de PRESENÇA — objeto no recorte, posição,
+     folha no plano ou girada, piso contínuo ou interrompido —, porque isso se amplia e se
+     mostra, e o recorte fica no repositório;
+     **(b)** a imagem NÃO decide MATERIAL, NOME próprio de equipamento nem ESTADO de
+     funcionamento, que são as três classes de erro que este arquivo registra no Olho e que a
+     minha leitura corre igual — ali a resposta fica **ABERTA**, e não conta nem contra o app nem
+     a favor dele;
+     **(c)** onde a imagem não decide, a consequência é a **cláusula (e)**, não o silêncio: uma NC
+     que dependa daquela peça é enquadramento sem lastro visual, que é a terceira resposta de
+     12/09 virada em procedimento;
+     **(d)** para lote NOVO, fotografado agora com o engenheiro em campo, a regra 3 continua
+     inteira — o que mudou vale para o acervo, que é de onde saem todos os lotes deste arquivo.
+     **E a regra (b) foi exercida sobre mim no mesmo dia**: a ampliação derrubou duas leituras
+     minhas do pré-registro — "duas cancelas fechadas" na foto 3 (a da esquerda está aberta) e
+     "a vegetação sugere nível de embarque" na foto 4 (a imagem não decide a altura). Ver a seção
+     5 do pré-registro, que é onde as seis respostas moram.
   **O produto não é a lista de divergências, é a CONTAGEM por classe de erro do Olho.**
 **MEDIDA pela primeira vez em 11/09, no lote de máquina: 5 a 9 divergências em 30, com o
   PISO CONFIRMADO pelo engenheiro** — cinco das nove linhas respondidas e confirmadas, quatro
