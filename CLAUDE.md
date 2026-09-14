@@ -108,8 +108,11 @@ por chamada (fatiar a conferência do Diretor) ou o Dev Tier pago.
 Obra "teste". **5 laudos, 5 NCs (uma por foto), 0 não auditadas, 1 ciclo em todos.** É o
 **segundo lote pré-registrado** do histórico, e o primeiro em que a previsão foi escrita foto a
 foto com o dossiê medido antes. Os cinco HTML foram lidos e os cinco dossiês reproduzidos sem
-rede a partir dos fatos reais. **O hash de "Versão em execução" não foi lido** — o `main` de
-13/09 é `6f735e0`, e os laudos não o carregam; é o mesmo dado que faltou em 09 e 12/09.
+rede a partir dos fatos reais. **Rodado no `6f735e0`, hash LIDO na barra lateral** — print de
+14/09, "Versão em execução: 6f735e0", que é o `main` de 13/09. **É a primeira vez no histórico
+que o hash é lido em vez de inferido do merge**: 09/09 e 12/09 o inferiram, e 11/09 dependeu de o
+usuário informá-lo. Os laudos não o carregam, então a fonte é a barra lateral, e a instrução de
+lê-la está neste arquivo desde 09/09.
 
 | # | Foto | O que o Olho escreveu do objeto do nome | NC entregue |
 |---|---|---|---|
