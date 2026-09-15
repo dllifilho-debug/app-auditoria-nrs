@@ -78,8 +78,9 @@ laudos chegarem.
 | 5 | `13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO` | âncora | `NR-18 18.9.2` em toda execução com laudo lido desde 09/09 |
 
 **Este é o primeiro lote desenhado para exercer o portão `exige_pessoa`**, que governa 25
-dos 126 riscos e nunca disparou em produção em nenhum dos oito lotes anteriores — nenhum
-routeou risco de EPI porque nenhum deles tinha o achado certo no vocabulário.
+dos 126 riscos e nunca disparou em produção em nenhum lote anterior — nenhum routeou
+risco de EPI porque nenhum deles tinha o achado certo no vocabulário. (Já estava
+registrado assim desde 03/09: "o portão de pessoa continua sem lote".)
 
 ### 1. A leitura das quatro imagens, feita antes de qualquer fato
 
