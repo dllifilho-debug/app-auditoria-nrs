@@ -103,7 +103,179 @@ por chamada (fatiar a conferência do Diretor) ou o Dev Tier pago.
 
 ---
 
+## Validação em produção de 14/09/2026 — o lote de IÇAMENTO E CANCELA, 5 fotos
+
+Obra "teste". **5 laudos, 5 NCs (uma por foto), 0 não auditadas, 1 ciclo em todos.** É o
+**segundo lote pré-registrado** do histórico, e o primeiro em que a previsão foi escrita foto a
+foto com o dossiê medido antes. Os cinco HTML foram lidos e os cinco dossiês reproduzidos sem
+rede a partir dos fatos reais. **Rodado no `6f735e0`, hash LIDO na barra lateral** — print de
+14/09, "Versão em execução: 6f735e0", que é o `main` de 13/09. **É a primeira vez no histórico
+que o hash é lido em vez de inferido do merge**: 09/09 e 12/09 o inferiram, e 11/09 dependeu de o
+usuário informá-lo. Os laudos não o carregam, então a fonte é a barra lateral, e a instrução de
+lê-la está neste arquivo desde 09/09.
+
+| # | Foto | O que o Olho escreveu do objeto do nome | NC entregue |
+|---|---|---|---|
+| 1 | `19 PAV. CINTAS DE ELEVAÇÃO…` | "**Cinta** de içamento de tecido laranja, com marcas de **desgaste** e sujeira, amarrada em nó simples" | `NR-18 18.10.1.27` alta |
+| 2 | `9 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO` | "Painéis rígidos … parcialmente cobrindo a **abertura** para a torre" — **nenhuma** `cancela` | `NR-08 8.3.2.2` alta |
+| 3 | `17 PAV AUSENCIA DE SINALIZAÇÃO NAS CANCELAS` | "Painéis rígidos de cor preta instalados na **abertura** frontal" — **nenhuma** `cancela` | `NR-08 8.3.2.2` alta |
+| 4 | `8 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO` | "**Grade metálica de malha quadrada, pintada de vermelho, aberta**" — **nenhuma** `cancela` | `NR-08 8.3.2.2` **crítica** |
+| 5 | `13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO` (âncora) | — | `NR-18 18.9.2` crítica |
+
+**Gabarito contra o nome do arquivo: 1 de 5**, e o único acerto é a âncora. **A previsão
+registrada era "1 a 2 de 5" e ela se sustentou.** As três fotos de cancela deram **zero
+enquadramento de cancela e zero de sinalização**; `torre_elevador_sem_cancela` continua **sem
+nunca ter disparado em produção**, agora em três fotos escolhidas para exercê-lo.
+
+### 1. O achado principal: `abertura` e `aberta` são radicais DIFERENTES
+
+É o que decidiu três das cinco fotos, e nenhuma medição anterior deste arquivo o registrava.
+Medido: `radical("abertura")` devolve **`abertur`** e `radical("aberta")`/`("aberto")` devolve
+**`abert`**. São radicais distintos e **não casam entre si** — a regra do `s` simples reduz o
+plural, e nada reduz o substantivo ao particípio.
+
+**Isso desarmou o falso positivo da seção 4 do pré-registro, e por um triz.** A previsão dizia
+que o sinal `torre do elevador aberta` casaria a 1,00 com âncora 2 numa cena de cancela
+instalada, com `torr` e `elevador` do achado e o `abert` vindo do AMBIENTE. Na foto 2 real o
+achado traz `torr` e o ambiente traz `elevador`, **e o `abert` nunca aparece**: o Olho escreveu
+`abertura` sete vezes e `aberto` nenhuma. Cobertura medida: **0,67 em todos os sete fragmentos**,
+faltando sempre `abert`. O risco calou, e o `18.11.13` ficou fora do dossiê.
+**O mecanismo continua armado, e é uma palavra.** Acrescentado ao ambiente REAL da foto 2 o
+trecho *"vão de fachada **aberto** para o exterior"* — que é a redação que o pré-registro
+escreveu e que qualquer pavimento de obra pode receber —, `torre_elevador_sem_cancela` **dispara**
+sobre a cena com a cancela instalada. **Medi X, afirmo Y**: o que está medido é o roteamento
+sobre o ambiente alterado; que o Olho venha a escrever `aberto` numa foto assim é hipótese, e
+esta é a segunda vez que ela não se realiza.
+**A previsão errou o alcance, não o mecanismo** — é o par `chão`/`piso` de 12/09 outra vez: o
+discriminante existia, e era um grau mais estreito do que eu tinha escrito.
+
+**A mesma régua matou a colisão do `quadro`.** A seção 3 previa que "cancela metálica de
+**quadro** tubular" acionaria `quadro_eletrico_aberto_ou_sem_sinalizacao` e traria `NR-10 10.10.1`
+a D3. O Olho escreveu "malha **quadrada**", e `radical("quadrada")` é **`quadrad`**, não `quadr`:
+o risco calou e nenhuma NR-10 entrou em dossiê nenhum. A colisão prevista era com a palavra
+`quadro`, e a palavra não veio.
+
+### 2. A foto 4 confirmou a previsão pela cláusula literal, e ela era a mais específica do lote
+
+O pré-registro dizia, com todas as letras: *"se o Olho escrever 'grade metálica de malha quadrada
+pintada de vermelho, aberta' — literalmente o que ele escreveu no lote de içamento de 02/09 —, o
+risco cala e `18.11.13` e `18.11.14` saem do dossiê inteiro"*. **Foi exatamente essa a frase que
+ele escreveu**, palavra por palavra, e o dossiê medido tem **3 entradas, todas de NR-08**, sem um
+item de NR-18. Dos cinco riscos previstos para esta foto, **nenhum** disparou: só
+`abertura_parede_desprotegida`, por um sinal que a previsão não listava.
+**É a medição mais limpa do lote**, porque a condição foi escrita antes e o modelo a cumpriu
+sozinho: o vocabulário do Olho decide o dossiê inteiro, e ele não aprendeu `cancela`.
+
+**E a NC desta foto é o falso positivo que o critério de aceite declarou de antemão.** O aceite
+dizia que *"qualquer NC de queda nesta foto é falso positivo"* — a plataforma está no nível, o
+piso é contínuo, a barreira está instalada (aberta) e com intertravamento aparafusado. O laudo
+entregou `NR-08 8.3.2.2` **crítica**, prazo de 1 dia, sobre *"vão vertical na estrutura de
+concreto **no teto**"*. **A previsão acertou a classe do erro e errou a porta**: ela vigiava
+`18.11.13` e `NR-11 11.1.2`, e o falso positivo veio de um item de abertura, por um achado de
+teto que nenhuma das duas previa.
+
+**O Diretor NOMEOU o defeito e manteve o enquadramento.** O aparo diz, literalmente: *"a norma
+regula aberturas em pisos e paredes, **não tetos**, mas a…"*. Ele releu o item, viu que ele não
+cobre teto, cortou a conclusão e deixou a citação de pé. **É a classe de erro 1 pelo caminho do
+aparo, pela terceira vez** — as duas anteriores são o laudo 1 de 09/09 e a passada B de 10/09 —,
+e esta é a primeira em que o texto do aparo **contém a razão do veto que ele não deu**. O aparo
+corta o que não tem lastro e não pergunta se o que sobrou ainda descumpre AQUELE item; aqui ele
+chegou a escrever que não descumpre.
+
+**O intertravamento foi registrado** — *"Dispositivo eletrônico azul e caixa vermelha fixados na
+estrutura da grade metálica"* —, que era o achado que a seção 5 do pré-registro mandou vigiar. Ele
+**não** virou "quadro elétrico" nem "caixa de comando", então o segundo caminho do falso positivo
+elétrico não se abriu. **O trabalhador da cena não routeou nada**: nenhum risco com
+`exige_pessoa` disparou, e o portão de pessoa segue sem lote.
+
+### 3. A foto 1 acertou a RECUPERAÇÃO e falhou o LAUDO — as duas metades, como o aceite pedia
+
+**A recuperação fechou.** `dispositivo_icamento_deteriorado` disparou com cobertura **1,00 e
+âncora 3**, e o dossiê tem `NR-18 18.10.1.27` em **D1** e `NR-11 11.1.3.1` em **D2**, os dois
+curados, com **zero item de NR-06**. A taxonomia do #22, escrita em 03/09 e nunca validada, está
+validada: **a cinta deixou de virar EPI**, que é o defeito do lote de 02/09.
+**Mas o sinal que casou não é o que a previsão apostou.** Ela media `tecido da cinta desfiado`
+(`tecid`+`cint`+`desfiad`); o Olho escreveu *"marcas de desgaste"* e quem casou foi
+`desgaste na cinta de icamento` — a **outra** das duas redações que o pré-registro mediu como
+alcançando o item (`desgast`+`cint`+`icament`). A lista de oito é o que tornou isso legível: sem
+ela, o acerto pareceria o mesmo acerto.
+**E o desfiamento não foi escrito.** O Olho registrou desgaste, sujeira e o nó; as **bordas
+desfiadas**, que a leitura da imagem de 13/09 nomeou e que são o defeito estrutural, não estão em
+fato nenhum. É a classe OMISSÃO, e sobre o achado mais grave da foto.
+
+**O laudo falhou na palavra que o aceite separou.** A NC saiu pela alínea (a) — identificação —,
+como previsto, e o título diz *"sem identificação **legível**"*, que é a redação com lastro. **A
+constatação diz outra coisa**: *"**não é possível verificar** a presença de identificação
+indelével"*. Isso não é afirmação, é verificação — e verificação é ponto de atenção, não não
+conformidade de gravidade alta com prazo de 1 dia. **É a cláusula (e) contornada pela segunda
+vez**, depois da passada B de 10/09 — o laudo 7 de 09/09 é o caso que a motivou, não uma falha
+dela —, e aqui pela variante que ela não alcança: ela proíbe a constatação na FORMA `"Verificar no local se…"`, e esta vem na forma
+`"não é possível verificar"`, que é a mesma coisa escrita ao contrário. A cláusula mata a forma
+que ela nomeia; a reformulação passa.
+**E o aparo piorou**: ele retirou *"nem certificado de conformidade"* — a alínea (b) —, deixando
+de pé justamente a metade que a foto não mostra.
+
+### 4. As fotos 2 e 3: a contraparte do #27 passou, e o preço é o previsto
+
+**A contraparte fechou nas duas.** Com a cancela instalada e fechada (foto 2) e com uma aberta e
+uma fechada (foto 3), `torre_elevador_sem_cancela` **calou nas duas**, e o `18.11.13` não aparece
+em NC nenhuma. É a primeira vez que essa contraparte é exercida sobre cena real — e a seção 1
+mostra que ela passou pelo radical, não pelo desenho do sinal.
+
+**O item que cobre de frente continua inalcançável.** `NR-18 18.13.1` — sinalização do canteiro —
+**não está em dossiê nenhum das cinco**, como previsto, e as duas fotos deram NC de `8.3.2.2`
+sobre a proteção da abertura, não sobre sinalização. **A previsão de `NR-26 26.3.1` sobre CORES
+não se realizou**: sem risco de sinalização roteado, a NR-26 nem foi candidata. **É o terceiro
+caso da série confirmado** — depois da barreira da área de corte (11/09) e do `18.10.2.4` do cabo
+no piso (12/09): achado real, item existente, enquadramento fora de alcance. **Três domínios
+seguidos**, e agora é o padrão, não a exceção.
+
+**A foto 3 rendeu o dossiê mais sujo do lote, e por dois radicais.** Onze entradas, das quais
+**seis curadas e QUATRO de escada** — `NR-18 18.8.6.13`, `18.8.6.14`, `18.8.6.12` e
+`NR-35 Anexo III 5.2.2.5` —, todas de `escada_mao_irregular`, disparado pelo sinal
+`escada apoiada solta na parede` a **0,75, faltando justamente `escad`**, sobre o fato *"Peça de
+material de construção … **apoiada solta** sobre o piso, próxima à base da abertura frontal"*.
+**Não há escada nenhuma na cena.** É a armadilha dos 4+ radicais em estado puro: o que falta é o
+substantivo que nomeia o objeto do risco. O pré-registro previu "cinco itens de escada da NR-35"
+nesta foto: **errou a contagem (são quatro) e errou a norma** (um é de NR-35, três são de NR-18).
+Acertou a família, e a causa medida agora é o sinal, não o BM25.
+**O mesmo fragmento também acionou `abertura_piso_desprotegida` a 1,00**, pelo par
+`abertur`+`piso` vindo os dois do bloco solto no chão: é a **relação invertida** de 10/09 outra vez, e foi ela que pôs `NR-18 18.9.2` em D1 numa foto sem buraco no chão. O Analista não a
+usou — foi ao `8.3.2.2` de D2 —, então o dano ficou no dossiê.
+
+### 5. A âncora manteve, e repetiu os dois defeitos conhecidos
+
+`NR-18 18.9.2` crítica, pela sexta execução com laudo lido. O dossiê reproduz **7 entradas**, com
+`18.9.2` em D1 e `8.3.2.2` em D2 curados, e o **`NR-18 18.9.3` continua fora dele**, como em
+toda execução medida desde 09/09 — a NC real do vão de acesso, confirmada pelo engenheiro em
+12/09, segue sem sair. **Ele entrou no dossiê da foto 3**, em D11 e por busca textual, numa foto
+sem poço nenhum: o item existe e é alcançável, só nunca na foto em que ele cabe.
+**O ambiente diz "piso de terra" e o primeiro fato diz "piso de terra batida", no 13º
+pavimento** — terceira execução com a mesma divergência de MATERIAL, confirmada pelo engenheiro
+em 11/09.
+**E o parecer volta a carregar hipótese** — *"pode deslocar-se e causar queda"* —, no campo que a
+cláusula (d) não governa. **Quarta aparição** da mesma armadilha.
+
+### 6. O que este lote acrescenta à decisão da fase separada de VISÃO
+
+Três das cinco fotos foram decididas por **uma palavra do Olho**: `desgaste` em vez de `desfiado`
+(foto 1, que salvou a recuperação), `abertura` em vez de `aberto` (foto 2, que desarmou o falso
+positivo) e `quadrada` em vez de `quadro` (foto 4, que matou a colisão elétrica). **Nas três o
+acaso léxico jogou a favor**, e é isso que torna o lote desconfortável de ler: o app não acertou
+por desenho, e as três armadilhas continuam armadas atrás de um radical.
+**A favor da fase separada**: o achado que faltou na foto 1 é o desfiamento, e ele é FATO, não
+nome — é o caso do vão de acesso da âncora de 11/09 repetido, e o que o desenho recupera.
+**Contra**: nenhuma das três fotos de cancela perdeu por falta de fato. Elas perderam porque o
+item que cobre o achado do nome do arquivo não existe ao alcance, e descrever melhor a foto não
+cria item.
+
+---
+
 ## Pré-registro do lote de IÇAMENTO E CANCELA — 5 fotos (escrito em 13/09/2026, ANTES de rodar)
+
+**RODADO em 14/09 — o resultado está na seção de validação acima.** O que esta seção previu e
+o que ela errou se lê lá, previsão por previsão; ela fica intacta porque é o artefato contra o
+qual o lote foi medido.
 
 `main` em `cab299c`. **Segundo lote pré-registrado do histórico**, no molde do de elétrica: as
 quatro fotos foram abertas aqui, os dossiês medidos sobre fatos SINTÉTICOS e a previsão escrita
@@ -1733,7 +1905,7 @@ porque duas das quatro que eu abri não eram o que o nome dizia.
 | Lote | Fotos | O que ele decide |
 |---|---|---|
 | ~~**Elétrica**~~ | **RODADO em 12/09** — 5 laudos, 3 NCs, gabarito **1 de 5**, e o único acerto é a âncora: as quatro de elétrica deram **zero enquadramento elétrico**. Ver a seção de validação de 12/09. Esta linha guarda o desenho: `5 PAV. FIAÇÃO EXPOSTA NO CHÃO`, `CABOS ELETRICOS DISPOSTOS DIRETAMENTE NO CHÃO`, `FIO EXPOSTO NO CHAO`, `8 PAV. FIAÇÃO NO CHÃO` + âncora | Foi o **primeiro lote pré-registrado**, e é isso que o torna barato de ler: a previsão escrita em `490b152` acertou o item inalcançável (`NR-18 18.10.2.4`, e o `NR-10 10.2.8.2` em D1 curado que o Analista recusou nas três) e errou o par de palavras — o que decide é `cabo` contra `fiação`, não `chão` contra `piso`. O lote ainda confirmou o **VÃO INEXISTENTE pela segunda vez**, noutro domínio |
-| **Içamento e cancela** | `19 PAV. CINTAS DE ELEVAÇÃO DE MATERIAS UTILIZADOS PELA CARPINTARIA`, `9 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO`, `17 PAV AUSENCIA DE SINALIZAÇÃO NAS CANCELAS`, `8 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO` + âncora | **PRÉ-REGISTRADO em 13/09 — a seção está no alto deste arquivo, e é de lá que se monta o lote.** A taxonomia de guindar do #22 (`18.10.1.27`, `11.1.3.1`) existe desde 03/09 e **nunca foi validada**; `torre_elevador_sem_cancela` cita `18.11.13` e **nunca disparou em produção**. A foto das cintas é a que virou item de EPI por colisão de radical |
+| ~~**Içamento e cancela**~~ | **RODADO em 14/09** — 5 laudos, 5 NCs, gabarito **1 de 5**, e o único acerto é a âncora. Ver a seção de validação de 14/09. Esta linha guarda o desenho: `19 PAV. CINTAS DE ELEVAÇÃO DE MATERIAS UTILIZADOS PELA CARPINTARIA`, `9 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO`, `17 PAV AUSENCIA DE SINALIZAÇÃO NAS CANCELAS`, `8 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO` + âncora | **PRÉ-REGISTRADO em 13/09 — a seção está no alto deste arquivo, e é de lá que se monta o lote.** A taxonomia de guindar do #22 (`18.10.1.27`, `11.1.3.1`) existe desde 03/09 e **nunca foi validada**; `torre_elevador_sem_cancela` cita `18.11.13` e **nunca disparou em produção**. A foto das cintas é a que virou item de EPI por colisão de radical |
 | **Pessoa na cena** | `TRABALHADOR SEM EPI`, `TRABALHADOR SEM PROTEÇÃO`, `TRABALHADOR SE EPI`, `6 PAV. TRABALHADORES SEM DOCUMENTAÇÃO` + âncora | o portão `exige_pessoa` governa 25 riscos e nunca teve lote. **Não use `COLABORADOR UTILIZANDO EPI SEM C.A`**: 212x508 px e sem extensão de arquivo, o uploader filtra por tipo |
 | **Escada** | `ESCADA EM LOCAL INADEQUADO`, `20 PROTEÇÃO DE ESCADA DANIFICADA`, `18 PAV. PROTEÇÃO DE ESCADA QUEBRADA 18 PARA O 19`, `PROTEÇÃO DE ESCADA 17 PARA O 18 PAV` + âncora | "escada apoiada" virando "sem sapata antiderrapante" é classe de erro 2 registrada e nunca remediada. Nas três de proteção de escada o defeito está na proteção, não na escada |
 | **Marcação (o desenho D)** | `PROTEÇÃO POÇO DE ELEVADOR SOMENTE COM UM PONTO DE FIXAÇÃO`, marcando `abertura_piso_desprotegida` + `vao_caixa_elevador_sem_fechamento` | n=2 para a fronteira medida em 09/09: **marcação não recupera achado que o Olho não viu**. E a auditoria da imagem dá o que faltava — se os pontos de fixação não forem visíveis na escala em que o Olho recebe a foto (504 px de largura numa foto retrato), o conserto não é marcação nem prompt, é resolução |
@@ -1901,6 +2073,7 @@ próprio comando composto (exit 144).
 | **Rede que só registra quando FALHA é rede que não se pode medir** | `_reconferir_exigencias` deixa linha na trilha quando o enquadramento cai ("Supervisão incompleta") e **nenhuma** quando o reparo dá certo — o enquadramento simplesmente sobrevive. No lote de 10/09 isso deu 30 laudos sem uma linha de omissão e nenhum jeito de dizer se o Diretor não omitiu ou se a repescagem salvou, que são conclusões opostas sobre o mesmo mecanismo. É a irmã da armadilha "o sumário não distingue enquadramento ausente de enquadramento vetado", um nível abaixo: lá o documento não separava duas causas de ausência, aqui ele não registra o sucesso. **Ao construir uma rede de segurança, pergunte o que o documento diz quando ela FUNCIONA** — se a resposta é "nada", o próximo lote não a mede. Consertado com `conferencia_reparada`; há três testes travando. |
 | **A lista que não passa pela limpeza é a que ninguém lembra que existe** | `laudo.conformidades` recebia as strings do Analista cruas — sem `_limpar_citacoes`, ao lado de `laudo.sem_enquadramento` que já chamava. Em 10/09 saiu impresso "atendendo aos requisitos … descritos no item **D6**", com o rótulo interno do dossiê no documento do cliente. O sintoma é cosmético; o buraco não: sem a limpeza, uma citação normativa digitada pelo modelo chegaria ao laudo **sem passar pela base**, que é a garantia central deste projeto. É a terceira aparição da armadilha "corte aplicado a um campo só", e o padrão é sempre o mesmo — a lista esquecida é a que quase nunca sai (conformidades apareceram em **2 de 30 laudos**), então ela não aparece em lote nenhum até aparecer. **Ao pôr uma limpeza num campo, liste TODOS os campos de texto livre que chegam ao documento e confira um a um** — inclusive os que costumam vir vazios. |
 | **A âncora não protege contra a RELAÇÃO invertida entre os dois radicais** | A âncora de 01/09 exige dois radicais do PRÓPRIO achado, e isso fechou a porta do ambiente carregando o sinal sozinho. Não fecha esta: em 10/09, `"abertura no piso"` deu cobertura 1,00 e âncora 2 no fato *"**Piso** de concreto com aspecto áspero e irregular, visível na parte inferior da **abertura** ao fundo"* — os dois radicais no mesmo achado, e a relação entre eles **invertida**: o fato descreve o piso visto pelo PÉ de um vão vertical, não uma abertura no piso. Foi por aqui que `NR-18 18.9.2` chegou a D1 numa foto sem buraco no chão, três vezes em quatro execuções, e só um Diretor de quatro vetou. É a terceira armadilha da família, ao lado do `sem` e do ambiente, e a que menos se vê: o sinal está curto, os dois radicais são discriminantes, e ainda assim ele casa o oposto. A preposição que carregaria a relação (`no`) tem duas letras e some no filtro. **A hipótese do bigrama — exigir adjacência entre os dois radicais — cobre esta e a do `sem`**, e continua não medida. Ao revisar sinal de duas palavras, leia-o como frase e pergunte se a ordem inversa também casa. |
+| **`abertura` e `aberta` são radicais DIFERENTES, e três sinais dependem disso** | `radical("abertura")` devolve `abertur` e `radical("aberto"/"aberta"/"abertas")` devolve `abert`; nada aproxima o substantivo do particípio. Medido em 14/09, e decidiu três das cinco fotos do lote: `torre do elevador aberta` ficou em **0,67 nos sete fragmentos** da foto de cancela instalada, faltando sempre `abert`, porque o Olho escreveu `abertura` sete vezes e `aberto` nenhuma — o falso positivo latente que o pré-registro mediu **não se realizou por uma letra**, e acrescentado `aberto` ao ambiente REAL daquela foto ele dispara. A mesma régua matou a colisão prevista de `quadro`: o Olho escreveu `malha quadrada`, e `quadrad` não é `quadr`. **Ao escrever ou medir sinal, rode `_radicais` na palavra que o Olho de fato usa**, não na que você escreveria — e note que isso corta nos dois sentidos: um sinal que ancora no particípio não pega o substantivo, e vice-versa. |
 | `git fetch origin main <branch-que-não-existe-mais>` falha inteiro, silenciosamente | Fetch de múltiplos refs é atômico: se um ref já foi deletado no remoto (branch mergeada), o comando inteiro falha e **nenhum ref é atualizado** — inclusive o `main`, que existia e seria atualizado sozinho. `origin/main` local fica congelado na versão de antes, e comparações feitas contra ele mentem. Já causou uma sessão inteira concluir errado que "a reescrita nunca foi mergeada". Se o histórico parecer suspeito, rode `git fetch origin main` sozinho antes de confiar em qualquer diff. |
 | **Medir um INTERMEDIÁRIO e relatar o DESFECHO** | Não é falta de medição — nas três vezes de 11-12/09 havia medição, e ela era de outra coisa. Afirmei *"nome ausente fecha o portão, logo a NC se perde"* tendo medido só o booleano de `ha_maquina_na_cena`; rodado `montar_dossie` sobre os fatos reais, abrir o portão traz **cesta aérea** na foto 1 e **rampa com mais de 20º** na foto 2, onde ainda **expulsa** o `NR-18 18.10.2.6`, e nenhuma das duas recebe um item da família `12.5.x`. Afirmei que o `NR-12 12.5.13` era o item que cobriria a barreira da serralheria tendo medido só que a palavra existe na base, por `grep`; ele passa por `comprovavel_em_foto`, por `prescritivo` e por `setor_pertinente`, e **nunca ranqueia**. Afirmei que a máquina da foto 1 era serra de FITA tendo medido pixels numa foto reduzida; o engenheiro respondeu que é serra de BANCADA. **Portão é intermediário do dossiê, `grep` é intermediário da recuperação, foto é intermediário da obra.** O teste é escrito no molde da cláusula (d) do Diretor — um procedimento que se executa na frente do texto: **antes de escrever afirmação causal, escreva literalmente "medi X, afirmo Y"** — se X e Y forem coisas diferentes, ou mede Y, ou rebaixa a frase a hipótese, com a palavra *hipótese* dentro. E ele aponta para dois lugares diferentes: afirmação sobre **o que o app entrega** termina no dossiê ou no laudo, nunca num portão, num sinal ou num `grep` (`montar_dossie` é determinístico, roda sem rede e custa dois minutos); afirmação sobre **o mundo** — material, nome, existência de um objeto — só tem duas fontes, o engenheiro e a foto, e **foto é pergunta, nunca veredito** (é a regra 3 do desenho da auditoria, e agora tem número: a leitura de imagem feita na sessão errou 2 das 7 respostas, e uma delas INVENTOU um achado). É a **forma geral** de três casos particulares que este arquivo já registrava um a um: *"medir o roteamento não vê o item que a busca textual traz"* (nesta tabela), *"a alcançabilidade NÃO era o conserto — medido"* (validação de 08/09) e *"defeito de saída de código se confere rodando o código, não lendo o produto dele"* (o item do aparo, em Em aberto). Como a (d), ele tem UM passo de julgamento — decidir se X e Y são a mesma coisa —, e a diferença é que esse passo fica escrito, onde o `/critico` e o `/conferir` o alcançam. **Nenhuma das três foi pega antes do commit, e nenhuma delas pelo `/critico`**: duas caíram quando os cinco HTML chegaram e `montar_dossie` rodou sobre os fatos reais, a terceira na resposta do engenheiro. O `/critico` rejeitou oito vezes ao longo do registro deste lote e, destas, pegou só o ECO que sobrou no título da seção 1 depois de a medição já existir — porque ele lê o artefato e acredita nele, e medição de intermediário parece medição. |
 
