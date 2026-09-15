@@ -38,10 +38,11 @@ print: um único balde de consumo), ciclos Padrão, resolução 896, OTPM 1000 �
 padrão. **5 laudos, 6 NCs, 0 não auditadas, 1 ciclo em todos. Gabarito: 3 de 5**, no teto
 da previsão ("2 a 3 de 5") — mas por um mecanismo quase todo diferente do previsto. O
 achado mais caro: **a contraparte (foto 4) recebeu a NC mais grave do lote, crítica,
-prazo de 1 dia, confirmada como falso positivo ao abrir a foto real** — terceira
-confirmação da classe VÃO INEXISTENTE, agora numa variante nova (uma junta de dilatação
-de concreto inflada para "abertura sem proteção contra quedas", não um vão fabricado do
-zero). Ver a seção de validação para as cinco fotos, foto a foto.
+prazo de 1 dia** — e, aberta a foto (leitura própria, sem engenheiro a confirmar; é
+acervo histórico), parece falso positivo: uma junta de dilatação de concreto inflada
+para "abertura sem proteção contra quedas". Terceira ocorrência da classe VÃO INEXISTENTE,
+as duas anteriores confirmadas pelo engenheiro, esta não. Ver a seção de validação para as
+cinco fotos, foto a foto.
 
 **A fila agora**, na tabela de lotes de 5: **Pessoa na cena** (o portão `exige_pessoa`
 governa 25 dos 126 riscos e nunca teve lote) e **Marcação (o desenho D)**.
@@ -217,13 +218,18 @@ provisório fixado na estrutura nem sistema de proteção contra quedas visível
 prazo de 1 dia**, na foto que o desenho do lote existia para testar como controle
 negativo.
 
-**É a terceira confirmação da classe VÃO INEXISTENTE** (depois da foto 3 do lote de
-máquina em 11/09 e da foto 3 do lote de elétrica em 12/09), numa variante que a régua
-(a)-(d) cobre igual mas que o registro anterior não tinha: nas duas primeiras o vão era
+**É a terceira ocorrência da classe VÃO INEXISTENTE** (depois da foto 3 do lote de máquina
+em 11/09 e da foto 3 do lote de elétrica em 12/09) — **mas com uma proveniência diferente
+das outras duas, e vale marcar a diferença.** Naquelas, quem confirmou foi o ENGENHEIRO,
+segunda fonte humana independente ("o engenheiro respondeu que não há abertura ali",
+12/09). Aqui não há engenheiro a perguntar — é o acervo histórico, sem memória — e quem
+decide é a leitura geométrica de quem escreve este registro, pela régua (a)-(d): existe um
+vão de queda no recorte? Não. A régua autoriza tratar isso como decidido mesmo sem árbitro
+humano ("errar aqui é errar diante de um recorte que fica no repositório"), mas é uma
+fonte mais fraca que as duas anteriores, e chamá-la de "confirmação" no mesmo grau seria
+misturar duas proveniências de evidência diferentes. Nas duas primeiras o vão era
 **inteiramente fabricado** (nada ali); aqui há uma feature real — a junta —, só que
-**inflada** para "abertura sem proteção contra quedas". A régua (a)-(d) diz que a imagem
-decide GEOMETRIA e PRESENÇA, e é exatamente isso que decide aqui: existe um vão de queda?
-Não — decide a foto, sem depender de material, nome ou estado de nada.
+**inflada** para "abertura sem proteção contra quedas".
 
 **O aparo tentou reconciliar uma contradição interna do próprio Olho e não resolveu o
 problema de fundo.** O fato 4 diz que a grade está "instalada em uma abertura no piso"
@@ -2349,7 +2355,7 @@ porque duas das quatro que eu abri não eram o que o nome dizia.
 | ~~**Elétrica**~~ | **RODADO em 12/09** — 5 laudos, 3 NCs, gabarito **1 de 5**, e o único acerto é a âncora: as quatro de elétrica deram **zero enquadramento elétrico**. Ver a seção de validação de 12/09. Esta linha guarda o desenho: `5 PAV. FIAÇÃO EXPOSTA NO CHÃO`, `CABOS ELETRICOS DISPOSTOS DIRETAMENTE NO CHÃO`, `FIO EXPOSTO NO CHAO`, `8 PAV. FIAÇÃO NO CHÃO` + âncora | Foi o **primeiro lote pré-registrado**, e é isso que o torna barato de ler: a previsão escrita em `490b152` acertou o item inalcançável (`NR-18 18.10.2.4`, e o `NR-10 10.2.8.2` em D1 curado que o Analista recusou nas três) e errou o par de palavras — o que decide é `cabo` contra `fiação`, não `chão` contra `piso`. O lote ainda confirmou o **VÃO INEXISTENTE pela segunda vez**, noutro domínio |
 | ~~**Içamento e cancela**~~ | **RODADO em 14/09** — 5 laudos, 5 NCs, gabarito **1 de 5**, e o único acerto é a âncora. Ver a seção de validação de 14/09. Esta linha guarda o desenho: `19 PAV. CINTAS DE ELEVAÇÃO DE MATERIAS UTILIZADOS PELA CARPINTARIA`, `9 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO`, `17 PAV AUSENCIA DE SINALIZAÇÃO NAS CANCELAS`, `8 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO` + âncora | **PRÉ-REGISTRADO em 13/09 — a seção está no alto deste arquivo, e é de lá que se monta o lote.** A taxonomia de guindar do #22 (`18.10.1.27`, `11.1.3.1`) existe desde 03/09 e **nunca foi validada**; `torre_elevador_sem_cancela` cita `18.11.13` e **nunca disparou em produção**. A foto das cintas é a que virou item de EPI por colisão de radical |
 | **Pessoa na cena** | `TRABALHADOR SEM EPI`, `TRABALHADOR SEM PROTEÇÃO`, `TRABALHADOR SE EPI`, `6 PAV. TRABALHADORES SEM DOCUMENTAÇÃO` + âncora | o portão `exige_pessoa` governa 25 riscos e nunca teve lote. **Não use `COLABORADOR UTILIZANDO EPI SEM C.A`**: 212x508 px e sem extensão de arquivo, o uploader filtra por tipo |
-| ~~**Escada**~~ | **RODADO em 15/09** — 5 laudos, 6 NCs, gabarito **3 de 5** (no teto da previsão, por mecanismo quase todo diferente). Ver a seção de validação de 15/09. Esta linha guarda o desenho: `ESCADA EM LOCAL INADEQUADO`, `20 PROTEÇÃO DE ESCADA DANIFICADA`, `18 PAV. PROTEÇÃO DE ESCADA QUEBRADA 18 PARA O 19`, `PROTEÇÃO DE ESCADA 17 PARA O 18 PAV` (contraparte) + âncora | O falso positivo do andaime nunca rotou (o Olho não escreveu "guarda-corpo"), mas a contraparte recebeu a NC mais grave do lote — `NR-18 18.9.2` crítica sobre uma junta de dilatação inflada para vão de queda, **terceira confirmação da classe VÃO INEXISTENTE** |
+| ~~**Escada**~~ | **RODADO em 15/09** — 5 laudos, 6 NCs, gabarito **3 de 5** (no teto da previsão, por mecanismo quase todo diferente). Ver a seção de validação de 15/09. Esta linha guarda o desenho: `ESCADA EM LOCAL INADEQUADO`, `20 PROTEÇÃO DE ESCADA DANIFICADA`, `18 PAV. PROTEÇÃO DE ESCADA QUEBRADA 18 PARA O 19`, `PROTEÇÃO DE ESCADA 17 PARA O 18 PAV` (contraparte) + âncora | O falso positivo do andaime nunca rotou (o Olho não escreveu "guarda-corpo"), mas a contraparte recebeu a NC mais grave do lote — `NR-18 18.9.2` crítica sobre uma junta de dilatação inflada para vão de queda, **terceira ocorrência da classe VÃO INEXISTENTE, esta sem engenheiro a confirmar** |
 | **Marcação (o desenho D)** | `PROTEÇÃO POÇO DE ELEVADOR SOMENTE COM UM PONTO DE FIXAÇÃO`, marcando `abertura_piso_desprotegida` + `vao_caixa_elevador_sem_fechamento` | n=2 para a fronteira medida em 09/09: **marcação não recupera achado que o Olho não viu**. E a auditoria da imagem dá o que faltava — se os pontos de fixação não forem visíveis na escala em que o Olho recebe a foto (504 px de largura numa foto retrato), o conserto não é marcação nem prompt, é resolução |
 
 
@@ -3336,12 +3342,15 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   estava medindo no Olho. Tratada como gabarito, ela teria acrescentado uma NC de NR-12
   falsa ao laudo. **Auditoria de imagem é pergunta, nunca veredito**, e agora há número por
   trás disso.
-  **CONFIRMADO PELA TERCEIRA VEZ em 15/09, numa variante nova.** No lote de ESCADA, a foto
-  4 (a contraparte, desenhada para dar 0 NC) recebeu `NR-18 18.9.2` crítica sobre
-  "abertura vertical no piso, com bordas de concreto, localizada ao lado da grade
-  metálica". Aberta a foto: não é um vão fabricado do zero como nas duas ocorrências
-  anteriores — é uma **junta de dilatação de concreto real, ínfima, inflada** para
-  "abertura sem proteção contra quedas". A classe cobre as duas variantes: cria o objeto
+  **TERCEIRA OCORRÊNCIA em 15/09, numa variante nova, e desta vez SEM engenheiro a
+  confirmar.** No lote de ESCADA, a foto 4 (a contraparte, desenhada para dar 0 NC)
+  recebeu `NR-18 18.9.2` crítica sobre "abertura vertical no piso, com bordas de
+  concreto, localizada ao lado da grade metálica". Aberta a foto, pela leitura geométrica
+  de quem escreve este registro (é acervo histórico, sem árbitro humano — a régua (a)-(d)
+  é o que autoriza tratar isso como decidido): não é um vão fabricado do zero como nas
+  duas ocorrências anteriores, as duas confirmadas pelo ENGENHEIRO — é uma **junta de
+  dilatação de concreto real, ínfima, inflada** para "abertura sem proteção contra
+  quedas". A classe cobre as duas variantes: cria o objeto
   do zero, ou infla um objeto real até ele carregar a propriedade de risco que não tem. Ver
   a validação de 15/09, seção 2.
   **As omissões mexem no outro sentido**: confirmadas, não mudam a contagem de fatos errados,
