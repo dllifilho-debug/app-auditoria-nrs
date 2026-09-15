@@ -190,7 +190,19 @@ de escada, a `18 PAV. PROTEÇÃO POÇO DE ELEVADOR` do lote de poço): naquelas,
 mostrava uma condição de segurança em ordem que um risco curado PODERIA capturar e não
 capturava por engano do Olho. Aqui, a cena não tem nada de errado (os dois trabalhadores
 usam capacete) **e** o achado que o nome pede não é do tipo que uma foto resolve —
-documento é papel, e a foto não mostra papel nenhum. **Previsão: 0 NC**, mas por um
+documento é papel, e a foto não mostra papel nenhum.
+
+**O `/critico` rejeitou a primeira redação: a previsão de 0 NC não testava a hipótese
+concorrente mais repetida do histórico deste arquivo — o vão da porta sendo descrito como
+abertura de parede desprotegida.** Medido: com o achado dizendo "vão de acesso na parede
+de alvenaria, sem porta instalada", `abertura_parede_desprotegida` **não dispara** — os
+dois sinais do risco (`"abertura vertical"`, `"vao de janela aberto"`) exigem a palavra
+`vertical` ou `janela`, e nenhuma delas é vocabulário natural para uma porta interna
+comum. **Mas dispara se o Olho escrever "abertura vertical"** para o mesmo vão — medido
+também —, trazendo `NR-08 8.3.2.2` numa foto sem vão de queda nenhum. É condicional a uma
+palavra específica, a mesma classe da fragilidade do risco de solda na seção 3: **o risco
+não é zero, é estreito**, e vale vigiar se o Olho usa "vertical" para descrever o vão.
+**Previsão: 0 NC**, mas por um
 motivo estrutural que nenhuma foto futura de "documentação" vai resolver sozinha.
 
 ### 5. Critério de aceite, e onde cada coisa se lê
@@ -199,9 +211,11 @@ motivo estrutural que nenhuma foto futura de "documentação" vai resolver sozin
    decide isso, presença); se escreve "sem luva"/"sem óculos de proteção"/"sem protetor
    auricular" nas fotos 2 e 3 (é o vocabulário que o `PROMPT_OLHO` manda usar, e é ele
    que sustenta tanto o acerto quanto o ruído); se menciona "bancada"/"madeira" nas fotos
-   2 e 3 (decide se `area_carpintaria` e `esmeril` disparam); e se **não** escreve nada
+   2 e 3 (decide se `area_carpintaria` e `esmeril` disparam); se **não** escreve nada
    sobre documentos, crachá ou identificação na foto 4 (não deveria — não há nada disso
-   no recorte).
+   no recorte); e se descreve o vão da porta da foto 4 como **"abertura vertical"** (é o
+   único vocabulário que dispararia `abertura_parede_desprotegida` ali, uma NC falsa sem
+   relação com documentação — ver a seção 4).
 2. **Na CONTAGEM de trabalhadores** — a foto 4 tem dois trabalhadores; se
    `quantidade_pessoas` sair 1 ou 0, é o portão de pessoa contado errado, e vale medir
    separado da questão de documentação.
