@@ -27,26 +27,38 @@ verdade é sempre com o usuário, em produção, com fotos e laudos que ele mand
 
 ---
 
-## COMECE POR AQUI — estado em 16/09/2026, lote de PESSOA NA CENA pré-registrado
+## COMECE POR AQUI — estado em 15/09/2026, lote de PESSOA NA CENA RODADO e lido
 
-**`main` em `2cb0eee`** (PR #53, só o registro do lote de ESCADA — nenhum código mudou
-desde `f7449a2`). 240 testes passam.
+**`main` em `706424b`** (PR #54, merge do registro do lote — nenhum código mudou desde
+`2cb0eee`; `git diff --stat 2cb0eee..706424b -- . ':!CLAUDE.md'` está vazio). 240 testes
+passam.
 
-**O que está pronto e esperando rodar: o lote de PESSOA NA CENA.** A seção de
-pré-registro está logo abaixo desta, com as cinco fotos, os dossiês medidos e a
-previsão escrita. **O achado principal do pré-registro**: nas fotos 2 e 3 (trabalhador
-com serra circular manual), o vocabulário "sem luva/sem óculos de proteção/sem
-protetor auricular" que o Olho escreve para reportar EPI ausente colide, pela
-armadilha dos 4+ radicais, com riscos inteiramente alheios — `serra_bancada_sem_protecao_disco`
-(gravidade **crítica**), `esmeril_sem_protecao_rebolo`, `solda_sem_protecao_contra_radiacao`,
-`transporte_manual_sem_meio_mecanico`. Nenhuma esmerilhadeira, solda ou carrinho existe
-nessas cenas. Ver a seção de pré-registro para a medição sinal a sinal.
+**O lote de PESSOA NA CENA rodou e foi lido nesta sessão — gabarito 1 de 5, abaixo do
+piso da previsão (3 a 5 de 5), e por um motivo que o pré-registro não tinha como medir.**
+Ver a seção de validação logo abaixo desta, escrita com os cinco HTML lidos, os cinco
+dossiês reproduzidos sem rede e as quatro fotos de pessoa abertas no acervo.
 
-**Antes de executar**: leia o hash em "Versão em execução" e confira os dois campos de
-modelo, como sempre.
+**O achado principal, e ele é maior que o lote**: o portão `exige_pessoa` (25 riscos)
+continua **sem nunca ter disparado em produção**, e agora a causa está confirmada no
+código, não é mais hipótese — `PROMPT_OLHO` (`auditoria/pipeline.py:314-383`) não tem
+uma palavra sobre capacete, luva, óculos ou protetor auricular; os parágrafos de atributo
+cobrem barreira/tela, máquina/painel/andaime/cinta/cabo, e pulam a pessoa por inteiro. E
+o único campo que poderia carregar isso — `pessoas.descricao` (`"<o que fazem, ou
+vazio>"`, pedido em `pipeline.py:327`) — é lido em `pipeline.py:416` e **descartado**: só
+`presentes` e `quantidade` viram `Visao`, a descrição nunca chega a lugar nenhum. Nas
+três fotos que este lote desenhou para o EPI (1, 2, 3), o Olho não escreveu uma palavra
+sobre o que o trabalhador veste, em nenhuma — é a explicação simultânea das três, e é
+código, não leitura de imagem.
+
+**A foto 4 (a contraparte, desenhada para fechar em 0 NC) produziu a NC mais cara do
+lote**: `NR-18 18.9.2` **crítica**, sobre um vão de piso que a foto real não mostra —
+**quarta ocorrência confirmada da classe VÃO INEXISTENTE**. Os dois trabalhadores
+aparecem exatamente como o pré-registro previu (de costas, os dois com capacete, sacos
+de cimento encostados na parede), mas o piso do corredor é contínuo.
 
 **A fila depois deste lote**: **Marcação (o desenho D)**, a única linha que sobra na
-tabela de lotes de 5.
+tabela de lotes de 5 — mas antes disso vale decidir se o prompt do Olho ganha vocabulário
+de EPI, porque sem isso o portão de pessoa não tem como disparar em lote nenhum futuro.
 
 **O que mudou de método nestas duas sessões, e vale mais que os lotes:**
 
@@ -58,6 +70,146 @@ tabela de lotes de 5.
 - **O aceite de toda foto que preveja NC tem DUAS metades** — recuperação (o item chegou
   ao Analista) e laudo (a NC tem lastro visual). O `/critico` rejeitou três vezes por
   colapsá-las, e nos dois últimos lotes a diferença entre as duas foi o resultado.
+
+---
+
+## Validação em produção de 15/09/2026 — o lote de PESSOA NA CENA
+
+Obra "teste 7". **5 laudos, 6 NCs, 0 não auditadas, 1 ciclo em todos.** Hash não lido na
+barra lateral nesta sessão — os cinco HTML chegaram prontos e o `main` de então
+(`2cb0eee`/`706424b`, sem diferença de código entre os dois) foi inferido do merge, o
+mesmo dado que já faltou em 09/09 e 12/09. Os cinco dossiês foram reproduzidos sem rede a
+partir dos fatos reais (`rotear_riscos` + `montar_dossie`, sem tocar a Groq), e as quatro
+fotos de pessoa foram abertas no acervo (`auditoria-nrs-fixtures`) antes de concluir
+causa — a foto do vão da âncora não precisou, é a oitava execução com o mesmo padrão.
+
+| # | Foto | O Olho escreveu sobre a pessoa/EPI? | NC entregue |
+|---|---|---|---|
+| 1 | `TRABALHADOR SEM EPI` | **nada** — nenhum achado menciona o trabalhador | `NR-08 8.3.2.2` alta (aberturas na parede) |
+| 2 | `TRABALHADOR SEM PROTEÇÃO` | **nada** — só "Operador segurando uma serra circular..." | **0 NC** |
+| 3 | `TRABALHADOR SE EPI` | **nada** | `NR-18 18.10.2.4` média (cabo) + `NR-08 8.3.2.1` baixa (piso) |
+| 4 | `6 PAV. TRABALHADORES SEM DOCUMENTAÇÃO` (contraparte) | **nada** — "2" na contagem, nenhum fato sobre os dois | `NR-18 18.9.2` **CRÍTICA** (piso) + `NR-11 11.3.3` média (empilhamento) |
+| 5 | `13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO` (âncora) | — | `NR-18 18.9.2` **alta** (não crítica — ver seção 4) |
+
+**Gabarito contra o nome do arquivo: 1 de 5** (só a âncora) — **abaixo do piso da
+previsão registrada ("3 a 5 de 5")**, e por um mecanismo que o pré-registro não tinha
+como medir: nenhuma das quatro fotos de pessoa produziu um único fato sobre o que o
+trabalhador veste.
+
+### 1. O achado principal: o portão `exige_pessoa` continua mudo, e agora a causa está no código, não é mais hipótese
+
+O registro "o portão de pessoa continua sem lote" vem se repetindo desde 03/09, inclusive
+nas validações de 11/09, 12/09 e 14/09 (cada uma com foto de gente na cena e nenhum dos 25
+riscos disparando) — este era o primeiro lote desenhado especificamente para isso, com
+três fotos de trabalhador operando ferramenta sem EPI visível. **Aberta cada uma no acervo,
+a ausência de capacete (foto 1) e de luva (fotos 2 e 3) está lá, visível, exatamente como
+a leitura cega do pré-registro previu.** Mas nenhum dos três laudos registrou o fato, e a
+causa não é sorte de amostra: é `PROMPT_OLHO` (`auditoria/pipeline.py:314-383`).
+
+Medido em `PROMPT_OLHO` (grep contra o texto que vai para a Groq, não leitura): **zero**
+ocorrências de `epi`, `capacete`, `luva`, `óculos`, `protetor` ou `bota`. Os parágrafos
+que instruem o Olho a descrever atributo — linhas 339-346 — cobrem barreira/tela/rede,
+máquina/painel elétrico/andaime/escada/cinta/cabo, e não dizem uma palavra sobre a
+pessoa. O único lugar em que a pessoa aparece no schema é `pessoas: {presentes,
+quantidade, descricao}` (linha 327), com `descricao` documentada como "**o que fazem**,
+ou vazio" — nunca "o que veste". E mesmo que o modelo escrevesse ali, não adiantaria:
+`agente_olho` (linha 416) lê `dados.get("pessoas")` e só repassa `presentes` e
+`quantidade` para a `Visao` (linhas 428-429) — **`descricao` é lida e descartada**, nunca
+chega a `achados`, ao roteamento nem ao dossiê. Duas causas, não uma: o prompt não pede
+o atributo, e o único campo que poderia carregá-lo é jogado fora antes de sair do Olho.
+
+**É por isso que os três mecanismos do pré-registro nunca tiveram chance.** A seção 3 do
+pré-registro apostava que "sem luva"/"sem óculos de proteção"/"sem protetor auricular"
+routearia `epi_nao_utilizado` (`auditoria/riscos/ambiental.py:30`) e, pela armadilha dos
+4+ radicais, também `serra_bancada_sem_protecao_disco`
+(`auditoria/riscos/industria.py:124`, crítica) e mais quatro ou cinco riscos alheios —
+medido e reproduzido aqui: **nenhum dos dois disparou em foto nenhuma**, porque a frase que os
+sustentava nunca foi escrita. Não é o mecanismo errado; é a matéria-prima que nunca
+chegou. `epi_nao_utilizado` continua com **zero disparos em produção desde 02/09**,
+agora mesmo nas três fotos que este lote desenhou de propósito para ele.
+
+### 2. A foto 4 é a quarta ocorrência confirmada da classe VÃO INEXISTENTE, e é a mais cara: NC crítica numa foto de controle
+
+A foto real mostra exatamente o que o pré-registro leu às cegas: dois trabalhadores de
+costas dentro de um vão de porta em alvenaria de tijolos aparentes, **os dois com
+capacete** (um vermelho, um cinza claro), sacos de cimento encostados na parede à
+esquerda, mesa metálica ao fundo. **O piso do corredor é contínuo — não há abertura
+nenhuma.** O Olho escreveu, mesmo assim: *"Abertura retangular no piso de concreto, sem
+tampa ou proteção, localizada no centro do corredor"* e *"Estrutura metálica de cor
+escura, com formato de escada ou suporte, posicionada sobre a abertura no piso"* — a
+mesa metálica virou uma estrutura sobre um vão que não existe. `abertura_piso_desprotegida`
+casou a 1,00 no sinal `"abertura no piso"` (dois radicais, os dois do próprio achado),
+pôs `NR-18 18.9.2` em D1 curado, e o Analista o enquadrou como **crítica, prazo de 1
+dia** — a foto que o desenho do lote existia para fechar em 0 NC virou a pior NC do lote.
+
+É a mesma classe das três ocorrências anteriores (foto 3 do lote de máquina em 11/09,
+confirmada pelo engenheiro; foto 3 do lote de elétrica em 12/09, idem; a contraparte do
+lote de escada em 15/09, pela leitura geométrica sem árbitro) — **mas aqui o objeto é
+fabricado do zero**, não uma feature real inflada, e ela nasce sobre uma cena que a
+imagem mostra sem defeito nenhum. **Nenhuma trava do pipeline pergunta se o vão existe**;
+o Diretor confere a constatação contra o fato, e o fato mente.
+
+**A segunda NC da foto, `NR-11 11.3.3` (empilhamento a menos de 0,50 m da estrutura), tem
+lastro real** — os sacos de cimento estão de fato encostados na parede branca na foto —,
+o que faz deste laudo um caso raro de uma NC real e uma fabricada lado a lado, sem que
+nada no documento distinga as duas.
+
+### 3. Fotos 2 e 3: o ruído de NR-12 nunca teve chance, mas o dossiê tem duas armadilhas novas não usadas pelo Analista
+
+**Foto 2 fechou em 0 NC**, e a reprodução mostra por quê: só `abertura_piso_desprotegida`
+roteou, e sozinho — nenhum risco de EPI, nenhum de máquina. Mas ele **não devia ter
+roteado**: o sinal `"placa apoiada sobre abertura"` (4 radicais — `plac`, `apoiad`,
+`abertur`, `sobr`) casou a 0,75 (faltando `abertur`) contra o achado *"Placa metálica
+clara... apoiada sobre a bancada"* — uma chapa sobre uma mesa, sem abertura nenhuma
+por perto. É a armadilha dos 4+ radicais de sempre, e o Analista não a usou (não haveria
+como: o fato não sustenta a constatação), mas ela entrou curada em D1 do dossiê.
+
+**Foto 3 fechou com duas NCs reais** — `NR-18 18.10.2.4` (cabo elétrico estendido pelo
+piso, cruzando a circulação) e `NR-08 8.3.2.1` (resíduos no piso) —, as duas com lastro
+visual confirmado na foto. Mas o roteamento também trouxe `escavacao_sem_escoramento_ou_talude`
+(gravidade **crítica**), numa sala de acabamento sem vala nenhuma: o sinal
+`"buraco com parede reta"` (`pared`, `reta`, `com`, `burac`) casou a 0,75 — `reta` e `com`
+vêm do achado da bancada ("com tampo plano e pernas **retas**"), `pared` vem do ambiente
+("**paredes** brancas"), faltando só `burac`. É uma variante nova da mesma família: `com`
+já está em `PALAVRAS_COLA` (`auditoria/riscos/__init__.py:55`), mas continua contando
+para a âncora de 2 radicais próprios exigida pelo roteador — ela barra o ambiente
+sozinho, não barra a cola do próprio achado. Não chegou ao laudo porque o Analista não a
+usou, mas é a primeira vez que essa combinação específica (mobília + parede) é medida.
+
+**E o mecanismo "abertura vertical" que o usuário pediu para vigiar de fato disparou —
+na foto 3, não na 4, e sem produzir NC falsa.** O achado *"Abertura vertical sem
+fechamento (janela ou vão) ao fundo... com uma tela de malha metálica visível na lateral
+esquerda"* casou `"abertura vertical"` a 1,00 e pôs `NR-08 8.3.2.2` em D3 curado. O
+Analista não o usou — corretamente: o próprio fato registra a tela de malha presente, e
+não há lastro para "sem proteção". É o que a régua (a)-(d) previa: o roteamento oferece,
+o Analista lê o fato inteiro antes de enquadrar.
+
+### 4. A âncora manteve o item, mas não a gravidade — primeira queda de crítica para alta em oito execuções
+
+O dossiê reproduz o de sempre: `18.9.2` em D1 e `8.3.2.2` em D2 curados, `NR-18 18.9.3`
+continua fora. **Mas o laudo saiu com `NR-18 18.9.2` ALTA, não crítica** — a primeira
+vez, nas oito execuções com laudo lido desde 09/09, em que esse item não sai crítico
+nesta foto. A trilha mostra o caminho provável: o Diretor aparou a constatação,
+retirando *"a afirmação categórica de que não há evidência de travamento, que é uma
+limitação da moldura fotográfica e não um fato visível"* — e é plausível que a
+gravidade tenha caído junto, no mesmo aparo (o schema do Diretor permite ajustar
+`gravidade` dentro do próprio aparo). Não é um veto nem um erro óbvio — é a mesma
+regra da moldura de sempre, só que desta vez ela também mexeu na gravidade, e isso
+nunca tinha sido registrado. Vale ficar de olho no próximo lote se a âncora volta a
+crítica ou se "alta" é o novo normal depois de um aparo assim.
+
+### 5. O que este lote muda no método
+
+**O pré-registro mediu o mecanismo certo sobre uma premissa que nunca foi checada**: que
+o Olho, ao ver um trabalhador sem capacete ou sem luva, escreveria isso. As fotos
+anteriores deste acervo com pessoa na cena nunca tinham testado essa premissa
+especificamente — o gap estava sempre coberto pela explicação "o Olho não viu o achado
+certo" (a classe já registrada nas fotos de içamento e elétrica). Aqui ficou claro que
+não é falta de sorte de amostra: **é o prompt nunca ter pedido o atributo, e o único
+campo que poderia carregá-lo (`pessoas.descricao`) ser descartado no parse.** Isso muda
+o próximo passo — não é "tente outra foto de pessoa", é "mude o prompt e o parse, e só
+então meça de novo". Ver "Em aberto" para a proposta e o porquê de não ter sido aplicada
+nesta sessão sem o usuário decidir primeiro.
 
 ---
 
@@ -2536,7 +2688,7 @@ porque duas das quatro que eu abri não eram o que o nome dizia.
 |---|---|---|
 | ~~**Elétrica**~~ | **RODADO em 12/09** — 5 laudos, 3 NCs, gabarito **1 de 5**, e o único acerto é a âncora: as quatro de elétrica deram **zero enquadramento elétrico**. Ver a seção de validação de 12/09. Esta linha guarda o desenho: `5 PAV. FIAÇÃO EXPOSTA NO CHÃO`, `CABOS ELETRICOS DISPOSTOS DIRETAMENTE NO CHÃO`, `FIO EXPOSTO NO CHAO`, `8 PAV. FIAÇÃO NO CHÃO` + âncora | Foi o **primeiro lote pré-registrado**, e é isso que o torna barato de ler: a previsão escrita em `490b152` acertou o item inalcançável (`NR-18 18.10.2.4`, e o `NR-10 10.2.8.2` em D1 curado que o Analista recusou nas três) e errou o par de palavras — o que decide é `cabo` contra `fiação`, não `chão` contra `piso`. O lote ainda confirmou o **VÃO INEXISTENTE pela segunda vez**, noutro domínio |
 | ~~**Içamento e cancela**~~ | **RODADO em 14/09** — 5 laudos, 5 NCs, gabarito **1 de 5**, e o único acerto é a âncora. Ver a seção de validação de 14/09. Esta linha guarda o desenho: `19 PAV. CINTAS DE ELEVAÇÃO DE MATERIAS UTILIZADOS PELA CARPINTARIA`, `9 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO`, `17 PAV AUSENCIA DE SINALIZAÇÃO NAS CANCELAS`, `8 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO` + âncora | **PRÉ-REGISTRADO em 13/09 — a seção está no alto deste arquivo, e é de lá que se monta o lote.** A taxonomia de guindar do #22 (`18.10.1.27`, `11.1.3.1`) existe desde 03/09 e **nunca foi validada**; `torre_elevador_sem_cancela` cita `18.11.13` e **nunca disparou em produção**. A foto das cintas é a que virou item de EPI por colisão de radical |
-| **Pessoa na cena** | `TRABALHADOR SEM EPI`, `TRABALHADOR SEM PROTEÇÃO`, `TRABALHADOR SE EPI`, `6 PAV. TRABALHADORES SEM DOCUMENTAÇÃO` + âncora | **PRÉ-REGISTRADO em 16/09 — a seção está no alto deste arquivo, e é de lá que se monta o lote.** O portão `exige_pessoa` governa 25 riscos e nunca teve lote. O achado medido: nas fotos 2 e 3 (serra circular manual), o vocabulário de EPI ausente colide com `serra_bancada_sem_protecao_disco` (crítica) e mais quatro riscos alheios. **Não use `COLABORADOR UTILIZANDO EPI SEM C.A`**: 212x508 px e sem extensão de arquivo, o uploader filtra por tipo |
+| ~~**Pessoa na cena**~~ | **RODADO em 15/09** — 5 laudos, 6 NCs, gabarito **1 de 5**, abaixo do piso previsto. Ver a seção de validação de 15/09. Esta linha guarda o desenho: `TRABALHADOR SEM EPI`, `TRABALHADOR SEM PROTEÇÃO`, `TRABALHADOR SE EPI`, `6 PAV. TRABALHADORES SEM DOCUMENTAÇÃO` (contraparte) + âncora | O portão `exige_pessoa` (25 riscos) **continua sem nunca ter disparado**, e a causa está confirmada no código: `PROMPT_OLHO` não pede atributo de EPI e `pessoas.descricao` é descartado no parse (`pipeline.py:416`). A contraparte produziu a **quarta ocorrência da classe VÃO INEXISTENTE** — `NR-18 18.9.2` crítica sobre um vão de piso que a foto não mostra |
 | ~~**Escada**~~ | **RODADO em 15/09** — 5 laudos, 6 NCs, gabarito **3 de 5** (no teto da previsão, por mecanismo quase todo diferente). Ver a seção de validação de 15/09. Esta linha guarda o desenho: `ESCADA EM LOCAL INADEQUADO`, `20 PROTEÇÃO DE ESCADA DANIFICADA`, `18 PAV. PROTEÇÃO DE ESCADA QUEBRADA 18 PARA O 19`, `PROTEÇÃO DE ESCADA 17 PARA O 18 PAV` (contraparte) + âncora | O falso positivo do andaime nunca rotou (o Olho não escreveu "guarda-corpo"), mas a contraparte recebeu a NC mais grave do lote — `NR-18 18.9.2` crítica sobre uma junta de dilatação inflada para vão de queda, **terceira ocorrência da classe VÃO INEXISTENTE, esta sem engenheiro a confirmar** |
 | **Marcação (o desenho D)** | `PROTEÇÃO POÇO DE ELEVADOR SOMENTE COM UM PONTO DE FIXAÇÃO`, marcando `abertura_piso_desprotegida` + `vao_caixa_elevador_sem_fechamento` | n=2 para a fronteira medida em 09/09: **marcação não recupera achado que o Olho não viu**. E a auditoria da imagem dá o que faltava — se os pontos de fixação não forem visíveis na escala em que o Olho recebe a foto (504 px de largura numa foto retrato), o conserto não é marcação nem prompt, é resolução |
 
@@ -2993,6 +3145,25 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
 
 ## Em aberto
 
+- **`PROMPT_OLHO` não pede atributo de EPI, e o campo que poderia carregá-lo é
+  descartado no parse — achado em 15/09, confirmado no código.** É a causa raiz de o
+  portão `exige_pessoa` (25 riscos, `epi_nao_utilizado` entre eles) nunca ter disparado
+  em produção desde 03/09 (repetido nas validações de 11/09, 12/09 e 14/09) — o lote de
+  15/09 foi o primeiro desenhado de propósito para isso e mediu a causa: `PROMPT_OLHO`
+  (`auditoria/pipeline.py:314-383`) tem parágrafos de
+  atributo para barreira, tela, máquina, painel, andaime e cabo, e nenhuma palavra sobre
+  capacete, luva, óculos ou protetor auricular; e `pessoas.descricao` — o único campo do
+  schema que fala da pessoa além de contá-la — é lido em `pipeline.py:416` e nunca
+  repassado à `Visao` (só `presentes` e `quantidade` sobrevivem). Nas três fotos do lote
+  de 15/09 desenhadas para EPI ausente, a ausência estava visível na foto real e o Olho
+  não escreveu uma palavra sobre ela, nas três. **O conserto proposto, não aplicado nesta
+  sessão**: acrescentar ao `PROMPT_OLHO` um parágrafo de atributo para a pessoa (mesmo
+  molde dos existentes — o que ela veste na cabeça, mãos, olhos, ouvidos, pés, e o que
+  falta visivelmente) e passar a guardar `pessoas.descricao` em `Visao` (ou, mais simples,
+  dobrar como um achado a mais quando não vazia). **É mudança de prompt de agente — vale
+  lote**, pela própria regra deste arquivo: mexe em toda foto com gente, e só um lote diz
+  se o Olho obedece e se o risco simétrico (inventar "sem luva" numa mão que a foto não
+  mostra) aparece. Perguntar ao usuário antes de aplicar, dado que consome cota do dia.
 - **"O modelo ainda é o melhor?" não se responde desta sessão — remedido em 12/09.** O
   usuário perguntou, e a verificação honesta é esta: `groq.com`, `api.groq.com` e
   `console.groq.com` devolvem falha de conexão (código 000, não 403), então **não há como
