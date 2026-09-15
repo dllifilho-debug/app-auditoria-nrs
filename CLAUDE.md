@@ -27,25 +27,26 @@ verdade é sempre com o usuário, em produção, com fotos e laudos que ele mand
 
 ---
 
-## COMECE POR AQUI — estado em 15/09/2026, depois do lote de ESCADA
+## COMECE POR AQUI — estado em 16/09/2026, lote de PESSOA NA CENA pré-registrado
 
-**`main` em `f7449a2`** (PR #52, só handoff de texto — nenhum código mudou desde
-`ab9afe4`). 240 testes passam.
+**`main` em `2cb0eee`** (PR #53, só o registro do lote de ESCADA — nenhum código mudou
+desde `f7449a2`). 240 testes passam.
 
-**O lote de ESCADA rodou e está registrado na seção de validação logo abaixo.** Hash lido
-na barra lateral (`f7449a2`), modelo `qwen/qwen3.8-27b` nos dois campos (confirmado pelo
-print: um único balde de consumo), ciclos Padrão, resolução 896, OTPM 1000 — tudo no
-padrão. **5 laudos, 6 NCs, 0 não auditadas, 1 ciclo em todos. Gabarito: 3 de 5**, no teto
-da previsão ("2 a 3 de 5") — mas por um mecanismo quase todo diferente do previsto. O
-achado mais caro: **a contraparte (foto 4) recebeu a NC mais grave do lote, crítica,
-prazo de 1 dia** — e, aberta a foto (leitura própria, sem engenheiro a confirmar; é
-acervo histórico), parece falso positivo: uma junta de dilatação de concreto inflada
-para "abertura sem proteção contra quedas". Terceira ocorrência da classe VÃO INEXISTENTE,
-as duas anteriores confirmadas pelo engenheiro, esta não. Ver a seção de validação para as
-cinco fotos, foto a foto.
+**O que está pronto e esperando rodar: o lote de PESSOA NA CENA.** A seção de
+pré-registro está logo abaixo desta, com as cinco fotos, os dossiês medidos e a
+previsão escrita. **O achado principal do pré-registro**: nas fotos 2 e 3 (trabalhador
+com serra circular manual), o vocabulário "sem luva/sem óculos de proteção/sem
+protetor auricular" que o Olho escreve para reportar EPI ausente colide, pela
+armadilha dos 4+ radicais, com riscos inteiramente alheios — `serra_bancada_sem_protecao_disco`
+(gravidade **crítica**), `esmeril_sem_protecao_rebolo`, `solda_sem_protecao_contra_radiacao`,
+`transporte_manual_sem_meio_mecanico`. Nenhuma esmerilhadeira, solda ou carrinho existe
+nessas cenas. Ver a seção de pré-registro para a medição sinal a sinal.
 
-**A fila agora**, na tabela de lotes de 5: **Pessoa na cena** (o portão `exige_pessoa`
-governa 25 dos 126 riscos e nunca teve lote) e **Marcação (o desenho D)**.
+**Antes de executar**: leia o hash em "Versão em execução" e confira os dois campos de
+modelo, como sempre.
+
+**A fila depois deste lote**: **Marcação (o desenho D)**, a única linha que sobra na
+tabela de lotes de 5.
 
 **O que mudou de método nestas duas sessões, e vale mais que os lotes:**
 
@@ -57,6 +58,172 @@ governa 25 dos 126 riscos e nunca teve lote) e **Marcação (o desenho D)**.
 - **O aceite de toda foto que preveja NC tem DUAS metades** — recuperação (o item chegou
   ao Analista) e laudo (a NC tem lastro visual). O `/critico` rejeitou três vezes por
   colapsá-las, e nos dois últimos lotes a diferença entre as duas foi o resultado.
+
+---
+
+## Pré-registro do lote de PESSOA NA CENA — 5 fotos (escrito em 16/09/2026, ANTES de rodar)
+
+`main` em `2cb0eee`. **Quarto lote pré-registrado do histórico.** As quatro fotos foram
+abertas aqui, os dossiês medidos sobre fatos SINTÉTICOS e a previsão escrita antes de o
+lote existir. **Medi X, afirmo Y, e aqui X é estreito**: o que está medido é o DOSSIÊ
+sobre fatos que escrevi eu, imitando o Olho; o que o Olho vai escrever é hipótese até os
+laudos chegarem.
+
+| # | Foto | Papel | O que ela responde |
+|---|---|---|---|
+| 1 | `TRABALHADOR SEM EPI` | EPI ausente, sem ruído | trabalhador aplicando massa, sem capacete visível — nenhuma ferramenta de corte na cena |
+| 2 | `TRABALHADOR SEM PROTEÇÃO` | EPI ausente + ferramenta de corte | trabalhador operando serra circular manual sobre bancada, sem luva/óculos/protetor auricular |
+| 3 | `TRABALHADOR SE EPI` | idem, segunda medição | mesma configuração da foto 2 — nome sem o "M" de "SEM", provável erro de digitação do engenheiro |
+| 4 | `6 PAV. TRABALHADORES SEM DOCUMENTAÇÃO` | **CONTRAPARTE / controle** | dois trabalhadores de costas, os dois **com capacete** — o nome pede algo (documentação) que nenhuma foto pode comprovar |
+| 5 | `13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO` | âncora | `NR-18 18.9.2` em toda execução com laudo lido desde 09/09 |
+
+**Este é o primeiro lote desenhado para exercer o portão `exige_pessoa`**, que governa 25
+dos 126 riscos e nunca disparou em produção em nenhum dos oito lotes anteriores — nenhum
+routeou risco de EPI porque nenhum deles tinha o achado certo no vocabulário.
+
+### 1. A leitura das quatro imagens, feita antes de qualquer fato
+
+Cega por construção, e **não é gabarito** — regra (a)-(d) do acervo histórico: a imagem
+decide GEOMETRIA e PRESENÇA (há ou não capacete no recorte), não decide MATERIAL, NOME
+nem ESTADO.
+
+- **Foto 1** — trabalhador ajoelhado no canto de uma sala já pintada, aplicando massa
+  corrida na parede com espátula, camisa de manga longa com logotipo de empresa
+  ("RPJA"), calça jeans. **Nenhum capacete no recorte.** Óculos e luvas não são
+  decidíveis com confiança na escala em que a foto chega. Placa de gesso/drywall
+  encostada na parede, vassoura, saco de massa, pallets de madeira no chão — nenhuma
+  ferramenta de corte na cena.
+- **Foto 2** — trabalhador de manga longa azul operando serra circular manual amarela
+  sobre uma bancada de madeira tosca (tábuas apoiadas em cavalete improvisado), cortando
+  uma placa clara. **Mão segurando a serra sem luva visível.** Rosto não aparece de
+  frente o bastante para decidir óculos/protetor auricular com segurança, mas nenhum dos
+  dois é visível na lateral da cabeça.
+- **Foto 3** — mesma configuração: trabalhador de manga longa azul ("FORTLEV"), boné (não
+  capacete), calça jeans, bota, operando serra circular manual amarela sobre bancada com
+  trilho guia, cortando placa clara. **Sem luva visível na mão que segura a serra, sem
+  óculos de proteção.**
+- **Foto 4** — dois trabalhadores de costas, dentro de um vão de porta em alvenaria de
+  tijolos, **os dois com capacete** (um vermelho, um cinza claro). Sacos de cimento
+  empilhados ao lado, mesa metálica ao fundo. Nada na cena sugere ausência de
+  documentação — documento é papel, não aparece numa foto de dois trabalhadores de
+  costas.
+
+### 2. O que está MEDIDO: os cinco dossiês, sem rede
+
+| # | riscos roteados | entradas | curadas | o que encabeça |
+|---|---|---|---|---|
+| 1 | `epi_nao_utilizado` | 7 | 2 | `NR-06 6.5.1` **D1**, `6.6.1` D2 |
+| 2 | `epi_nao_utilizado` + 5 outros (ver seção 3) | 22 | 12 | `NR-06 6.5.1`/`6.6.1` **D1-D2**, `NR-12 12.5.1`/`12.5.10` D3-D4 |
+| 3 | `epi_nao_utilizado` + 4 outros | 22 | 10 | idem, sem `area_carpintaria_armacao_irregular` |
+| 4 | **nenhum** | 6 | 0 | busca textual só, `NR-01`/`NR-06` genéricos |
+| 5 | `abertura_piso_desprotegida` | 7 | 2 | `18.9.2` **D1**, `8.3.2.2` D2 |
+
+A âncora reproduz o que sete execuções anteriores mediram, `18.9.3` continua fora do
+dossiê.
+
+**A foto 1 é limpa: 7 entradas, sem ruído de outra NR.** `epi_nao_utilizado` casa com
+três sinais a cobertura 1,00 cada (`"sem capacete"`, e o `pontos` acumulado o deixa muito
+à frente de tudo mais no ranqueamento), e o dossiê inteiro é NR-01/NR-06. **É a foto mais
+segura do lote.**
+
+### 3. O achado principal: o vocabulário do EPI ausente colide com máquina, solda e transporte manual
+
+Nas fotos 2 e 3, junto com `epi_nao_utilizado` (que também dispara limpo, 1,00 em três
+sinais: `"sem luva"`, `"sem oculos de protecao"`, `"sem protetor auricular"`), roteiam
+**mais quatro ou cinco riscos que não têm nada a ver com a cena**:
+
+| risco | sinal | cobertura | falta | itens | gravidade |
+|---|---|---|---|---|---|
+| `serra_bancada_sem_protecao_disco` | `"serra de bancada improvisada"` | **1,00** | — | `NR-12 12.5.1`, `12.5.10` | **crítica** |
+| `esmeril_sem_protecao_rebolo` | `"esmerilhadeira de bancada sem protecao"` | 0,75 | `esmerilhadeir` | `NR-12 12.5.10`, `12.5.11` | alta |
+| `area_carpintaria_armacao_irregular` | `"sobras de madeira embaixo da serra"` | 0,75 | `embaix` | `NR-18 18.7.3.1`, `18.7.3.2` | média |
+| `transporte_manual_sem_meio_mecanico` | `"carrinho sem protecao de mao"` | 0,75 | `carrinh` | `NR-17 17.5.3`, `NR-11 11.2.2.1`, `11.1.4` | média |
+| `solda_sem_protecao_contra_radiacao` | `"corte com maçarico sem protecao"` | 0,80 | `macaric` | `NR-09 9.5.2`, `NR-06 6.5.1`/`6.5.2` | alta |
+
+**Quatro dos cinco são robustos** — não dependem de nenhuma palavra frágil que eu tenha
+escolhido: `serra_bancada` casa porque o achado tem `serr`+`bancad` e o ambiente tem
+`improvisada` (a bancada real É tosca, então é provável que o Olho a descreva assim);
+`area_carpintaria` casa inteiramente dentro do achado da serra (`serr`+`madeir`+`sobr`,
+de "sobre bancada de madeira"); `transporte_manual` casa inteiramente dentro do achado da
+mão (`mao`+`sem`+`proteca`); `esmeril` casa com `sem`+`proteca` do achado dos óculos e
+`bancad` do ambiente. **O de solda é o mais frágil**: medido de novo sem a palavra
+"corte" no ambiente, ele **não dispara** — os outros quatro continuam. Ele depende
+especificamente de eu ter escrito "bancada de **corte**" no ambiente sintético, e é a
+única linha desta tabela que pode não se realizar.
+
+**É a armadilha dos 4+ radicais em estado puro, mas numa forma nova**: não é o `sem`
+completando um sinal alheio — é o vocabulário que o `PROMPT_OLHO` **manda** usar para
+reportar EPI ausente ("sem luva", "sem óculos de proteção", "sem protetor auricular")
+que, somado a "serra"/"bancada"/"madeira"/"mão" do achado da ferramenta, casa com sinais
+de risco de máquina ESTACIONÁRIA, transporte manual e solda — nenhum dos quais tem
+qualquer relação com um trabalhador usando uma serra circular **manual e portátil** sobre
+um cavalete. **Quanto mais completo o Olho descreve a ausência de EPI, mais sinais de
+outras NRs ele alimenta.**
+
+**O `serra_bancada_sem_protecao_disco` é o mais caro dos cinco**: gravidade **crítica**,
+mesma classe da âncora, e o item que ele cita (`NR-12 12.5.1`/`12.5.10`, zonas de perigo
+e risco de ruptura de máquina) não tem nada a ver com uma serra circular manual — é
+vocabulário de serra de bancada **estacionária**, com disco fixo. Não há essa máquina em
+nenhuma das duas fotos.
+
+**O que isso NÃO decide**: `epi_nao_utilizado` pontua mais alto que qualquer um dos cinco
+(três sinais a 1,00, cada um valendo mais que um sinal só de `serra_bancada`), então ele
+deve ficar em D1/D2 do dossiê ranqueado, à frente do ruído. **O risco não é o item certo
+sumir — é o Analista enxergar 22 entradas, boa parte delas de "proteção" de máquina, e
+acrescentar uma SEGUNDA não conformidade falsa** (a de NR-12, gravidade crítica) ao lado
+da certa, ou trocar a certa pela errada. **Previsão: a NC de EPI sai; o risco real é uma
+NC extra e falsa de `12.5.1`/`12.5.10` junto dela.**
+
+### 4. A foto 4 é inalcançável por construção, não por mérito da cena
+
+Buscado no catálogo inteiro: o único sinal que menciona documentação/identificação de
+trabalhador é `"operador sem cracha"`, em `empilhadeira_operacao_irregular`
+(`industria.py`) — específico de **operador de empilhadeira**, e nada na foto (dois
+trabalhadores parados num vão de porta) aciona vocabulário de empilhadeira. **Não existe,
+hoje, risco genérico para "trabalhador sem documentação" fora do contexto de
+empilhadeira.** Reproduzido: zero riscos roteiam, dossiê de seis entradas por busca
+textual, nenhuma pertinente.
+
+**Isso é diferente das fotos de "contraparte" anteriores** (a `17 PARA O 18 PAV` do lote
+de escada, a `18 PAV. PROTEÇÃO POÇO DE ELEVADOR` do lote de poço): naquelas, a cena
+mostrava uma condição de segurança em ordem que um risco curado PODERIA capturar e não
+capturava por engano do Olho. Aqui, a cena não tem nada de errado (os dois trabalhadores
+usam capacete) **e** o achado que o nome pede não é do tipo que uma foto resolve —
+documento é papel, e a foto não mostra papel nenhum. **Previsão: 0 NC**, mas por um
+motivo estrutural que nenhuma foto futura de "documentação" vai resolver sozinha.
+
+### 5. Critério de aceite, e onde cada coisa se lê
+
+1. **Na LISTA DE FATOS do Olho** — se ele escreve "sem capacete" na foto 1 (a imagem
+   decide isso, presença); se escreve "sem luva"/"sem óculos de proteção"/"sem protetor
+   auricular" nas fotos 2 e 3 (é o vocabulário que o `PROMPT_OLHO` manda usar, e é ele
+   que sustenta tanto o acerto quanto o ruído); se menciona "bancada"/"madeira" nas fotos
+   2 e 3 (decide se `area_carpintaria` e `esmeril` disparam); e se **não** escreve nada
+   sobre documentos, crachá ou identificação na foto 4 (não deveria — não há nada disso
+   no recorte).
+2. **Na CONTAGEM de trabalhadores** — a foto 4 tem dois trabalhadores; se
+   `quantidade_pessoas` sair 1 ou 0, é o portão de pessoa contado errado, e vale medir
+   separado da questão de documentação.
+3. **Nas NÃO CONFORMIDADES**:
+   - **Foto 1** — NC de EPI ausente (sem capacete) deve sair, `NR-06 6.5.1` ou `6.6.1`,
+     sem concorrência de outra NR. Se sair limpa, fecha o gabarito e o laudo ao mesmo
+     tempo — não há a divisão em duas metades que os últimos lotes exigiram, porque
+     aqui o achado é geometria pura (há ou não capacete) e a foto decide sozinha.
+   - **Fotos 2 e 3** — a NC de EPI (certa) deve sair. **O que vigiar é se uma SEGUNDA NC,
+     falsa, de `NR-12 12.5.1`/`12.5.10` (proteção de disco de serra de bancada,
+     crítica) aparece ao lado dela** — isso é falso positivo declarado de antemão: não
+     há serra de bancada estacionária em nenhuma das duas fotos, só serra circular
+     manual. Se a NC de EPI sair sozinha, essas duas fotos fecham limpo.
+   - **Foto 4** — 0 NC é o acerto. Qualquer NC nesta foto é falso positivo, porque a cena
+     mostra os dois EPIs (capacete) em ordem.
+   - A âncora mantendo `18.9.2`.
+
+**O gabarito previsto: 3 a 5 de 5**, a faixa mais larga registrada neste arquivo — porque
+a foto 1 e a foto 4 são previsões fortes (uma quase certa de fechar, a outra quase certa
+de dar 0 NC certo), e as fotos 2 e 3 dependem inteiramente de uma coisa só: se o Analista
+resiste à tentação do `NR-12 12.5.1`/`12.5.10` crítico que o dossiê pobre em vocabulário
+de máquina põe ao lado do item certo. **É o primeiro lote em que o risco não é o item
+certo ficar de fora — é um item errado e mais grave entrar junto.**
 
 ---
 
@@ -2354,7 +2521,7 @@ porque duas das quatro que eu abri não eram o que o nome dizia.
 |---|---|---|
 | ~~**Elétrica**~~ | **RODADO em 12/09** — 5 laudos, 3 NCs, gabarito **1 de 5**, e o único acerto é a âncora: as quatro de elétrica deram **zero enquadramento elétrico**. Ver a seção de validação de 12/09. Esta linha guarda o desenho: `5 PAV. FIAÇÃO EXPOSTA NO CHÃO`, `CABOS ELETRICOS DISPOSTOS DIRETAMENTE NO CHÃO`, `FIO EXPOSTO NO CHAO`, `8 PAV. FIAÇÃO NO CHÃO` + âncora | Foi o **primeiro lote pré-registrado**, e é isso que o torna barato de ler: a previsão escrita em `490b152` acertou o item inalcançável (`NR-18 18.10.2.4`, e o `NR-10 10.2.8.2` em D1 curado que o Analista recusou nas três) e errou o par de palavras — o que decide é `cabo` contra `fiação`, não `chão` contra `piso`. O lote ainda confirmou o **VÃO INEXISTENTE pela segunda vez**, noutro domínio |
 | ~~**Içamento e cancela**~~ | **RODADO em 14/09** — 5 laudos, 5 NCs, gabarito **1 de 5**, e o único acerto é a âncora. Ver a seção de validação de 14/09. Esta linha guarda o desenho: `19 PAV. CINTAS DE ELEVAÇÃO DE MATERIAS UTILIZADOS PELA CARPINTARIA`, `9 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO`, `17 PAV AUSENCIA DE SINALIZAÇÃO NAS CANCELAS`, `8 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO` + âncora | **PRÉ-REGISTRADO em 13/09 — a seção está no alto deste arquivo, e é de lá que se monta o lote.** A taxonomia de guindar do #22 (`18.10.1.27`, `11.1.3.1`) existe desde 03/09 e **nunca foi validada**; `torre_elevador_sem_cancela` cita `18.11.13` e **nunca disparou em produção**. A foto das cintas é a que virou item de EPI por colisão de radical |
-| **Pessoa na cena** | `TRABALHADOR SEM EPI`, `TRABALHADOR SEM PROTEÇÃO`, `TRABALHADOR SE EPI`, `6 PAV. TRABALHADORES SEM DOCUMENTAÇÃO` + âncora | o portão `exige_pessoa` governa 25 riscos e nunca teve lote. **Não use `COLABORADOR UTILIZANDO EPI SEM C.A`**: 212x508 px e sem extensão de arquivo, o uploader filtra por tipo |
+| **Pessoa na cena** | `TRABALHADOR SEM EPI`, `TRABALHADOR SEM PROTEÇÃO`, `TRABALHADOR SE EPI`, `6 PAV. TRABALHADORES SEM DOCUMENTAÇÃO` + âncora | **PRÉ-REGISTRADO em 16/09 — a seção está no alto deste arquivo, e é de lá que se monta o lote.** O portão `exige_pessoa` governa 25 riscos e nunca teve lote. O achado medido: nas fotos 2 e 3 (serra circular manual), o vocabulário de EPI ausente colide com `serra_bancada_sem_protecao_disco` (crítica) e mais quatro riscos alheios. **Não use `COLABORADOR UTILIZANDO EPI SEM C.A`**: 212x508 px e sem extensão de arquivo, o uploader filtra por tipo |
 | ~~**Escada**~~ | **RODADO em 15/09** — 5 laudos, 6 NCs, gabarito **3 de 5** (no teto da previsão, por mecanismo quase todo diferente). Ver a seção de validação de 15/09. Esta linha guarda o desenho: `ESCADA EM LOCAL INADEQUADO`, `20 PROTEÇÃO DE ESCADA DANIFICADA`, `18 PAV. PROTEÇÃO DE ESCADA QUEBRADA 18 PARA O 19`, `PROTEÇÃO DE ESCADA 17 PARA O 18 PAV` (contraparte) + âncora | O falso positivo do andaime nunca rotou (o Olho não escreveu "guarda-corpo"), mas a contraparte recebeu a NC mais grave do lote — `NR-18 18.9.2` crítica sobre uma junta de dilatação inflada para vão de queda, **terceira ocorrência da classe VÃO INEXISTENTE, esta sem engenheiro a confirmar** |
 | **Marcação (o desenho D)** | `PROTEÇÃO POÇO DE ELEVADOR SOMENTE COM UM PONTO DE FIXAÇÃO`, marcando `abertura_piso_desprotegida` + `vao_caixa_elevador_sem_fechamento` | n=2 para a fronteira medida em 09/09: **marcação não recupera achado que o Olho não viu**. E a auditoria da imagem dá o que faltava — se os pontos de fixação não forem visíveis na escala em que o Olho recebe a foto (504 px de largura numa foto retrato), o conserto não é marcação nem prompt, é resolução |
 
