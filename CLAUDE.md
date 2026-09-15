@@ -103,6 +103,242 @@ por chamada (fatiar a conferência do Diretor) ou o Dev Tier pago.
 
 ---
 
+## Pré-registro do lote de ESCADA — 5 fotos (escrito em 15/09/2026, ANTES de rodar)
+
+`main` em `0212227`. **Terceiro lote pré-registrado do histórico.** As quatro fotos foram abertas
+aqui, os dossiês medidos sobre fatos SINTÉTICOS e a previsão escrita antes de o lote existir. O
+que isso compra está medido duas vezes: em 12/09 a previsão acertou o item inalcançável e errou o
+par de palavras; em 14/09 acertou a cláusula literal da foto 4 e errou o alcance do mecanismo da
+seção 4.
+
+**Medi X, afirmo Y, e aqui X é estreito.** O que está medido é o DOSSIÊ sobre fatos que escrevi
+eu, imitando o Olho; o que o Olho vai escrever é hipótese até os laudos chegarem.
+
+| # | Foto | Papel | O que ela responde |
+|---|---|---|---|
+| 1 | `ESCADA EM LOCAL INADEQUADO` | escada de mão real | a única do lote com escada portátil. `NR-18 18.8.6.8` — o item que o nome pede — é **alcançável**, e é a primeira vez em quatro lotes que isso acontece |
+| 2 | `20 PROTEÇÃO DE ESCADA DANIFICADA` | proteção rasgada | escada FIXA de concreto com tela plástica no lugar do guarda-corpo. O item certo chega **pelo risco errado** |
+| 3 | `18 PAV. PROTEÇÃO DE ESCADA QUEBRADA 18 PARA O 19` | proteção rompida | a mesma coisa, com o rasgo no meio do pano |
+| 4 | `PROTEÇÃO DE ESCADA 17 PARA O 18 PAV` | **CONTRAPARTE** | o nome **não aponta defeito** e a tela está íntegra. É a contraparte natural do lote, e o desenho da fila não a tinha reconhecido como tal |
+| 5 | `13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO` | âncora | `NR-18 18.9.2` em toda execução com laudo lido desde 09/09, mais 14/09 |
+
+**Correção ao desenho da fila, e ela muda o lote.** A linha da fila diz *"nas três de proteção de
+escada o defeito está na proteção, não na escada"*. **São duas, não três**: a foto 4 mostra a tela
+instalada, esticada, em várias camadas sobrepostas e **sem rasgo no recorte**, e o nome dela não
+traz adjetivo de defeito — é o mesmo padrão de `18 PAV. PROTEÇÃO POÇO DE ELEVADOR` no lote de
+poço, cujo aceite é 0 NC. O lote ganhou de graça a contraparte que os dois anteriores não tinham.
+
+### 1. A leitura das quatro imagens, feita antes de qualquer fato
+
+Cega por construção. **Não é gabarito** — regra (a)-(d) do acervo histórico, e ela tem número: a
+leitura feita nesta casa errou 2 das 7 respostas do lote de máquina, e uma delas INVENTOU um
+achado. Lidas no original e na escala em que o Olho as recebe (a foto 1 é retrato e chega com
+**504 px de largura**; as outras três são paisagem e chegam com 896).
+
+- **Foto 1** (retrato) — **escada de mão de alumínio apoiada contra parede de blocos cerâmicos**,
+  dentro de um vão de passagem estreito entre duas paredes, num ambiente escuro sem iluminação.
+  Um montante é pintado de **azul** e o outro é alumínio natural; ampliado o topo, aparece uma
+  peça metálica de encaixe — compatível com escada extensível de duas seções, mas isso é NOME e
+  fica **ABERTO**. **Os DOIS PÉS aparecem no recorte**, apoiados sobre o piso, e cada um termina
+  numa ponta escura. Ripa de madeira solta no chão à esquerda. Piso claro com linhas paralelas
+  regulares. Nenhuma pessoa.
+- **Foto 2** (paisagem) — **lance de escada FIXA de concreto**, degraus moldados, sem guarda-corpo
+  rígido nem corrimão. O vão lateral do lance é fechado por **tela plástica flexível laranja**,
+  com uma tábua de madeira acima. Ampliada a borda direita: **a malha está rasgada e esgarçada
+  junto ao pilar**, com fios soltos pendendo ao longo de toda a aresta, e a tela não está fixada
+  continuamente ali. Detritos e uma embalagem de papel nos degraus.
+- **Foto 3** (paisagem) — a mesma configuração noutro lance. **A tela está ROMPIDA no trecho
+  central**: os dois panos aparecem separados e pendurados soltos, com o vazio visível entre eles,
+  e a borda junto ao pilar esgarçada como na foto 2.
+- **Foto 4** (paisagem) — a tela laranja **instalada, esticada e contínua**, em camadas
+  sobrepostas, cobrindo o vão lateral do lance; ampliada, **não há rasgo nem fio solto**, e a
+  borda inferior está acabada. Ao fundo, patamar de concreto com **cabos elétricos pretos
+  enrolados no piso**, sacos plásticos e entulho fino, e **tela metálica de malha romboidal em
+  moldura de madeira** — proteção rígida — instalada num vão ao fundo.
+
+**O que a imagem DECIDE e o que fica ABERTO**, pela régua do acervo histórico:
+
+| | decide? |
+|---|---|
+| os pés da escada da foto 1 aparecem no recorte | **SIM** — é presença, e é o que separa esta foto da escada de 12/09, cuja base sumia atrás de uma pilha de blocos |
+| se aquela ponta escura no pé é sapata ou sujeira | **ABERTO** — material, regra (b) |
+| a tela das fotos 2 e 3 está rasgada / rompida | **SIM** — é geometria: descontinuidade e fios soltos se ampliam e se mostram |
+| a tela da foto 4 está íntegra no recorte | **SIM**, com a ressalva de que "no recorte" é o que se afirma |
+| se a escada da foto 1 é extensível, e de que material é o piso | **ABERTO** — nome e material, regra (b) |
+
+### 2. O que está MEDIDO: os cinco dossiês, sem rede
+
+| # | riscos roteados | entradas | curadas | o que encabeça |
+|---|---|---|---|---|
+| 1 | `escada_mao_irregular`, `area_circulacao_maquinas_obstruida` | 19 | 8 | `18.8.6.13`, `18.8.6.14`, `18.8.6.12`, `NR-35 Anexo III 5.2.2.5` |
+| 2 | `andaime_sem_guarda_corpo`, `escada_mao_irregular`, `escada_provisoria_coletiva_irregular`, `rampa_passarela_irregular` | 18 | 12 | `18.9.1` **D1**, `18.9.4.2` **D2**, `18.12.15.2` D3 |
+| 3 | os mesmos quatro | 18 | 12 | idem |
+| 4 | `escada_provisoria_coletiva_irregular`, `escada_mao_irregular`, `cabo_eletrico_danificado` | 13 | 8 | `18.8.6.1` D1, `18.8.1` D2, e **`18.8.6.12`/`18.8.6.14` em D5/D4** |
+| 5 | `abertura_piso_desprotegida` | 7 | 2 | `18.9.2` **D1**, `8.3.2.2` D2 |
+
+A âncora reproduz o que 11, 12 e 14/09 mediram, e o `NR-18 18.9.3` **continua fora do dossiê**.
+
+### 3. O achado principal: o item CERTO das fotos 2 e 3 chega pelo risco de ANDAIME
+
+Medido: `NR-18 18.9.1` ("proteção coletiva onde houver risco de queda") em **D1** e
+**`NR-18 18.9.4.2`** em **D2**, os dois curados — e o `18.9.4.2` é o item que diz que a proteção,
+*"quando constituída de anteparos **rígidos** em sistema de guarda-corpo e rodapé"*, deve ter
+travessão a 1,20 m e resistir a 90 kgf/m. **É o item de frente do achado**: é por ele que tela
+plástica não substitui guarda-corpo.
+
+**Os dois chegam inteiramente por `andaime_sem_guarda_corpo`**, que é falso positivo — não há
+andaime nenhum nas duas cenas. O sinal `andaime sem guarda corpo` casa a **0,75 faltando
+`andaim`**, sobre *"Lance de escada fixa de concreto … sem corrimão nem guarda-corpo rígido"*:
+quatro radicais, e o que falta é justo o substantivo que nomeia o objeto do risco. É a armadilha
+dos 4+ radicais, já registrada, num par novo.
+
+**E tirar o falso positivo TIRA o item certo — medido.** Reescrito o fato sem a palavra
+"guarda-corpo" (*"…fechado lateralmente apenas por tela plástica"*), o risco de andaime cala e o
+dossiê inteiro vira **quatro itens de escada de mão** — sapata antiderrapante, montante único,
+comprimento máximo e piso estável — sobre um lance de concreto moldado. O `18.9.1` e o `18.9.4.2`
+**somem**. É a lição de 07/09 pelo avesso: lá, destrancar o roteamento não tirava o item que o
+BM25 trazia; aqui, trancar o risco errado tira o único item certo que existia.
+**Previsão: NC de `18.9.1` ou `18.9.4.2` nas fotos 2 e 3, pelo motivo errado** — que é a classe
+"laudo certo pelo motivo errado" que o controle da auditoria de imagem existe para pegar, e que
+até hoje só apareceu uma vez (passada A na foto 1 de 10/09).
+
+**O rótulo da NC é o que vigiar, e a trava está medida.** `itens_compartilhados()` marca os itens
+que mais de um risco reivindica, e para eles o rótulo do risco cai. Medido: o `18.9.1` e o
+`18.9.4.2` vêm com **rótulo vazio** (são compartilhados, então a NC será nomeada pela
+constatação), e o `18.12.15.2` de D3 vem com o rótulo **"Andaime sem guarda-corpo e rodapé no
+perímetro da plataforma"**. **Se o Analista escolher o D3, a NC sai intitulada com andaime numa
+foto de escada** — que é, palavra por palavra, o defeito que motivou `itens_compartilhados()` em
+01/09. A trava cobre D1 e D2 e não cobre D3.
+
+### 4. O falso positivo latente, e este não precisa de palavra nenhuma do Olho
+
+`escada_mao_irregular` tem **quatro itens** e eles entram em **BLOCO**: `18.8.6.13` (comprimento
+máximo de 7 m), `18.8.6.14` (**proibido montante único**), `18.8.6.12` (**sapata antiderrapante**)
+e `NR-35 Anexo III 5.2.2.5` (piso estável). Disparado por **qualquer** dos doze sinais, o risco
+entrega os quatro — e os quatro afirmam defeitos DIFERENTES e independentes entre si.
+
+**Medido nas oito redações da foto 1**: o `18.8.6.14` entra em **8 de 8**, inclusive na que diz
+*"escada de mão de alumínio com **dois montantes laterais**"*. Duas causas somadas:
+
+1. basta um sinal qualquer casar — `escada apoiada solta na parede` fica em 0,75 faltando `solt`,
+   sobre "apoiada contra a parede" — e o bloco inteiro entra;
+2. o sinal `escada de um montante so` reduz a **DOIS radicais, `escad` e `montant`**: `de`, `um` e
+   `so` têm duas letras e somem no filtro. Medido, ele casa a **1,00 com âncora 2** sobre a frase
+   que diz o oposto. **O numeral é que discriminava, e é ele que o filtro apaga** — o sinal não
+   consegue expressar "um só", apenas "escada" e "montante".
+
+É parente da armadilha `"t em cima de t"`, e mais difícil de ver: lá o sinal inteiro virava cola e
+o validador quebra no import; aqui sobram dois radicais **discriminantes**, e os dois são o
+vocabulário que o `PROMPT_OLHO` manda usar para descrever uma escada direito. **Quanto melhor o
+Olho descreve, mais garantido o falso positivo.**
+
+**A consequência prática é a classe de erro 2 registrada e nunca remediada**: `18.8.6.12` em D3
+curado põe "sem sapata antiderrapante" à mão do Analista em toda foto que mencione escada. Foi ele
+que saiu no laudo 1 do lote de elétrica, em 12/09, sobre uma escada cuja base não aparecia. **Nesta
+foto a base APARECE**, o que muda o caso: se a NC de sapata sair aqui, ela terá lastro visual — e
+se o Olho registrar o que há no pé, o Diretor tem fato para conferir.
+
+### 5. A contraparte dispara os MESMOS riscos das fotos de defeito
+
+Medido na foto 4, com a tela íntegra: `escada_provisoria_coletiva_irregular` dispara por
+**`escada de concreto sem protecao lateral` a 0,80**, faltando `proteca`, sobre o fato *"Tela
+plástica flexível laranja **instalada e contínua** cobrindo o vão lateral do lance"*. O `sem` do
+sinal é cola, o `proteca` que discriminaria é o que falta, e a frase afirma o contrário do risco.
+`escada de obra sem patamar` casa a 0,75 no mesmo fato.
+
+**E o dossiê dela oscila entre 0 e 4 entradas por uma palavra**, medido em quatro redações:
+
+| o que o Olho escrever | riscos | dossiê |
+|---|---|---|
+| "tela … instalada e contínua cobrindo o vão **lateral**" | `escada_provisoria_coletiva_irregular` | 3 entradas |
+| a mesma frase **sem** "lateral" | nenhum | **vazio** |
+| "guarda-corpo metálico rígido instalado no lance" | nenhum | 1 entrada |
+| só "**lance de escada** de concreto com degraus moldados e patamar" | `escada_mao_irregular` | 4 entradas, com **`18.8.6.12` e `18.8.6.14`** |
+
+A última linha é a mais provável das quatro, e é a pior: a redação mais natural e mais correta que
+o Olho pode escrever para esta foto põe item de **sapata antiderrapante** e de **montante único**
+no dossiê de uma escada de concreto moldada in loco. **Previsão para a foto 4: 0 NC é o acerto, e
+o risco é uma NC de escada de mão sobre uma escada que não é de mão.**
+
+**Ela também traz NR-10.** `cabo_eletrico_danificado` casa a **0,80** (falta `estendid`) sobre os
+cabos enrolados no patamar, e põe `NR-10 10.2.8.2` e `10.2.8.2.1` em **D7 e D8 curados**. É
+exatamente o par que o lote de elétrica mediu em 12/09 e que o Analista **recusou nas três fotos**,
+porque o item trata de partes vivas e o cabo está íntegro. **Previsão: ele recusa de novo** — e se
+enquadrar, é regressão sobre um caso já medido.
+
+### 6. A foto 1 é a primeira em quatro lotes cujo item de frente é ALCANÇÁVEL
+
+`NR-18 18.8.6.8` — *"É proibido utilizar escada portátil: a) nas proximidades de portas ou áreas
+de circulação, de aberturas e vãos e em locais onde haja risco de queda de objetos…"* — é o item
+que o nome do arquivo pede, e o risco que o cita é `escada_mao_local_perigoso`. Medido nas oito
+redações:
+
+- **3 de 8 alcançam** e põem o `18.8.6.8` em **D1 curado**, com o `18.8.6.9` em D2: as que contêm
+  `corredor`, `porta` ou `area de circulacao`;
+- **5 não alcançam**, entre elas *"apoiada dentro do **vão de passagem**, sem isolamento"* — que é
+  a redação mais provável, porque é o que o recorte mostra: um vão de porta sem porta instalada.
+
+**Isso quebra a série dos três últimos lotes**, em que o item de frente era inalcançável por
+construção (barreira da área de corte 11/09, `18.10.2.4` 12/09, `18.13.1` 14/09). Aqui ele existe,
+passa pelos três filtros e **está a uma palavra de distância**. O gatilho é estreito e conhecido:
+`circulaca`, `corredor` ou `port` no achado.
+**Previsão: NC de `18.8.6.13`/`18.8.6.12` (escada de mão genérica), não de `18.8.6.8`** — porque a
+palavra que destrava é do vocabulário do inspetor, não do descritor de imagem.
+
+**E há ruído de NR-12 nesta foto.** `area_circulacao_maquinas_obstruida` dispara por `passagem
+estreita entre maquinas` a 0,75, **faltando `maquin`**, e traz `NR-12 12.2.1`, `12.2.1.2`, `12.2.2`
+e `12.2.3` a **D5-D8 curados**, numa foto sem máquina nenhuma. O risco tem
+`itens_so_com_maquina=()` **vazio**, então nem o portão que existe para isso o alcança — é a
+armadilha já registrada de o item curado não passar por `setor_pertinente`, agora com um risco que
+poderia declarar a dependência e não declara.
+
+### 7. Critério de aceite, e onde cada coisa se lê
+
+1. **Na LISTA DE FATOS do Olho** — se ele escreve `guarda-corpo` (fotos 2 e 3, que é o que traz o
+   item certo pelo caminho errado), se escreve `corredor`/`porta`/`circulação` (foto 1) e se
+   escreve `lateral` (foto 4). As três decidem o dossiê antes de qualquer agente de texto, e as
+   três estão medidas acima.
+2. **No RÓTULO da não conformidade das fotos 2 e 3** — se sair "Andaime sem guarda-corpo e rodapé"
+   numa foto de escada, o Analista escolheu o D3 e a trava de `itens_compartilhados()` não alcança
+   o item que ele usou. Se sair nomeada pela constatação, ela alcançou.
+3. **Nas NÃO CONFORMIDADES**, e **o aceite tem duas metades em TODAS as fotos que preveem NC**,
+   pela razão que o lote de 14/09 obrigou a separar duas vezes:
+   - **Fotos 2 e 3 — e são elas que sustentam o número previsto, então esta é a metade que mais
+     importa.** Que o `18.9.1` ou o `18.9.4.2` seja enquadrado mede a RECUPERAÇÃO, e só ela: é o
+     que responde se o item de frente chega ao Analista, ainda que pela porta do andaime.
+     **Não mede o laudo.** O `18.9.4.2` cobra **travessão superior a 1,20 m de altura e
+     resistência à carga horizontal de 90 kgf/m** — dois números que a foto **não mostra**. Então
+     a NC **tem lastro** para "a proteção do vão lateral é tela plástica flexível, rasgada, e não
+     anteparo rígido" — que é geometria, e a régua deixa decidir — e **não tem lastro** para
+     qualquer afirmação sobre altura ou resistência, que é enquadramento sem lastro visual e o
+     caso que a cláusula (e) manda a ponto de atenção. **É o aparo de 10/09 nominalmente**: lá o
+     Diretor retirou *"a exigência específica de altura mínima de 1,10 m … que não é verificável
+     pela imagem"*, e este é o mesmo item pedindo a mesma coisa. Se a constatação citar o
+     travessão ou os 90 kgf/m e sobreviver, o acerto de recuperação virou classe de erro 3.
+   - **A foto 1**, pela mesma razão:
+   - **RECUPERAÇÃO**: que `escada_mao_local_perigoso` dispare e ponha o `18.8.6.8` em D1. É o que
+     responde se o item do nome é alcançável na prática, e só isso.
+   - **LAUDO**: uma NC de `18.8.6.14` (montante único) nesta foto é **falso positivo**, porque a
+     imagem mostra dois montantes — isso é geometria e a régua deixa decidir. Uma NC de
+     `18.8.6.12` (sapata) **tem lastro** se o Olho descrever o que há no pé, porque os pés
+     aparecem no recorte; não tem lastro se ele afirmar a ausência sem descrever o pé, e aí é a
+     cláusula (e) outra vez.
+   - **A foto 4 é 0 NC**, e qualquer NC de escada de MÃO nela é falso positivo declarado de
+     antemão: não há escada portátil na cena.
+   - A âncora mantendo `18.9.2`.
+
+**O gabarito previsto: 2 a 3 de 5, pelo critério de 10/09** — o achado do nome do arquivo num
+item que se aplica. Melhor que os dois lotes anteriores por uma razão estrutural: duas das cinco
+fotos (2 e 3) têm o item certo no dossiê, ainda que pela porta errada, e a contraparte (4) fecha
+se o app calar. **Mas esse número é do gabarito, não do laudo**, e os dois podem divergir aqui
+mais do que em qualquer lote anterior: as fotos 2 e 3 podem fechar o gabarito e falhar a metade
+do laudo pela cláusula (e), exatamente como a foto 1 do lote de 14/09 fechou a recuperação e
+falhou o laudo. **Quem for ler este lote leia as duas metades separadas**, e não anuncie "melhorou
+para 3 de 5" sem dizer quantas das NCs tinham lastro. **O risco de o número ser pior está todo na
+foto 4**: a redação mais natural dela abre o bloco de escada de mão.
+
+---
+
 ## Validação em produção de 14/09/2026 — o lote de IÇAMENTO E CANCELA, 5 fotos
 
 Obra "teste". **5 laudos, 5 NCs (uma por foto), 0 não auditadas, 1 ciclo em todos.** É o
@@ -1907,7 +2143,7 @@ porque duas das quatro que eu abri não eram o que o nome dizia.
 | ~~**Elétrica**~~ | **RODADO em 12/09** — 5 laudos, 3 NCs, gabarito **1 de 5**, e o único acerto é a âncora: as quatro de elétrica deram **zero enquadramento elétrico**. Ver a seção de validação de 12/09. Esta linha guarda o desenho: `5 PAV. FIAÇÃO EXPOSTA NO CHÃO`, `CABOS ELETRICOS DISPOSTOS DIRETAMENTE NO CHÃO`, `FIO EXPOSTO NO CHAO`, `8 PAV. FIAÇÃO NO CHÃO` + âncora | Foi o **primeiro lote pré-registrado**, e é isso que o torna barato de ler: a previsão escrita em `490b152` acertou o item inalcançável (`NR-18 18.10.2.4`, e o `NR-10 10.2.8.2` em D1 curado que o Analista recusou nas três) e errou o par de palavras — o que decide é `cabo` contra `fiação`, não `chão` contra `piso`. O lote ainda confirmou o **VÃO INEXISTENTE pela segunda vez**, noutro domínio |
 | ~~**Içamento e cancela**~~ | **RODADO em 14/09** — 5 laudos, 5 NCs, gabarito **1 de 5**, e o único acerto é a âncora. Ver a seção de validação de 14/09. Esta linha guarda o desenho: `19 PAV. CINTAS DE ELEVAÇÃO DE MATERIAS UTILIZADOS PELA CARPINTARIA`, `9 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO`, `17 PAV AUSENCIA DE SINALIZAÇÃO NAS CANCELAS`, `8 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO` + âncora | **PRÉ-REGISTRADO em 13/09 — a seção está no alto deste arquivo, e é de lá que se monta o lote.** A taxonomia de guindar do #22 (`18.10.1.27`, `11.1.3.1`) existe desde 03/09 e **nunca foi validada**; `torre_elevador_sem_cancela` cita `18.11.13` e **nunca disparou em produção**. A foto das cintas é a que virou item de EPI por colisão de radical |
 | **Pessoa na cena** | `TRABALHADOR SEM EPI`, `TRABALHADOR SEM PROTEÇÃO`, `TRABALHADOR SE EPI`, `6 PAV. TRABALHADORES SEM DOCUMENTAÇÃO` + âncora | o portão `exige_pessoa` governa 25 riscos e nunca teve lote. **Não use `COLABORADOR UTILIZANDO EPI SEM C.A`**: 212x508 px e sem extensão de arquivo, o uploader filtra por tipo |
-| **Escada** | `ESCADA EM LOCAL INADEQUADO`, `20 PROTEÇÃO DE ESCADA DANIFICADA`, `18 PAV. PROTEÇÃO DE ESCADA QUEBRADA 18 PARA O 19`, `PROTEÇÃO DE ESCADA 17 PARA O 18 PAV` + âncora | "escada apoiada" virando "sem sapata antiderrapante" é classe de erro 2 registrada e nunca remediada. Nas três de proteção de escada o defeito está na proteção, não na escada |
+| **Escada** | `ESCADA EM LOCAL INADEQUADO`, `20 PROTEÇÃO DE ESCADA DANIFICADA`, `18 PAV. PROTEÇÃO DE ESCADA QUEBRADA 18 PARA O 19`, `PROTEÇÃO DE ESCADA 17 PARA O 18 PAV` + âncora | **PRÉ-REGISTRADO em 15/09 — a seção está no alto deste arquivo, e é de lá que se monta o lote.** "escada apoiada" virando "sem sapata antiderrapante" é classe de erro 2 registrada e nunca remediada. **Correção ao desenho desta linha, feita ao abrir as fotos**: são DUAS de proteção danificada, não três — a `17 PARA O 18 PAV` tem a tela íntegra e o nome não aponta defeito, então ela é a CONTRAPARTE do lote |
 | **Marcação (o desenho D)** | `PROTEÇÃO POÇO DE ELEVADOR SOMENTE COM UM PONTO DE FIXAÇÃO`, marcando `abertura_piso_desprotegida` + `vao_caixa_elevador_sem_fechamento` | n=2 para a fronteira medida em 09/09: **marcação não recupera achado que o Olho não viu**. E a auditoria da imagem dá o que faltava — se os pontos de fixação não forem visíveis na escala em que o Olho recebe a foto (504 px de largura numa foto retrato), o conserto não é marcação nem prompt, é resolução |
 
 
