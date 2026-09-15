@@ -27,6 +27,50 @@ verdade é sempre com o usuário, em produção, com fotos e laudos que ele mand
 
 ---
 
+## COMECE POR AQUI — estado em 15/09/2026, fim da sessão
+
+**`main` em `ab9afe4`.** 240 testes passam. Nenhum código foi tocado nas últimas duas
+sessões: os PRs #48 a #51 são todos deste arquivo — dois lotes registrados e dois
+pré-registrados.
+
+**O que está pronto e esperando você rodar: o lote de ESCADA.** A seção de pré-registro
+está logo abaixo desta, com as cinco fotos nomeadas, os dossiês medidos e a previsão
+escrita. **Não remonte o lote pelo nome do arquivo** — a lista nominal é a de lá, e a
+correção mais importante dela é que `PROTEÇÃO DE ESCADA 17 PARA O 18 PAV` **não** é foto
+de defeito: é a contraparte.
+
+**Antes de executar, três coisas, nesta ordem:**
+
+1. **Leia o hash em "Versão em execução"** na barra lateral e anote-o no registro do
+   lote. Em 14/09 ele foi lido pela primeira vez; antes disso era inferido do merge, e
+   laudo medido contra a versão errada não vale.
+2. **Confira os DOIS campos de modelo.** O print de 12/09 pegou o campo *Texto
+   (enquadramento e supervisão)* em `GPT-OSS 120B`, que não é o padrão — rodar assim não
+   é comparável com nada deste arquivo.
+3. **Não mergeie nada com lote rodando.** O merge redeploya o Streamlit Cloud e apaga o
+   `st.session_state`, onde o lote em andamento vive.
+
+**Quando os laudos chegarem**, o caminho é o mesmo das quatro últimas validações e está
+medido: reproduza os cinco dossiês sem rede a partir dos fatos reais do HTML (`montar_dossie`
+é determinístico), **antes** de concluir causa. Depois `/conferir`, depois `/critico`, e só
+então o PR.
+
+**A fila depois deste lote**, na tabela de lotes de 5: **Pessoa na cena** (o portão
+`exige_pessoa` governa 25 dos 126 riscos e nunca teve lote) e **Marcação (o desenho D)**.
+
+**O que mudou de método nestas duas sessões, e vale mais que os lotes:**
+
+- **A regra 3 caiu para o acervo histórico.** O engenheiro declarou em 13/09 que não tem
+  a memória destas fotos — o que ele vê é a imagem, igual a mim. A régua (a)-(d) que a
+  substitui está em *Em aberto → AUDITAR A FOTO CONTRA OS FATOS*, e ela é mais estreita de
+  propósito: a imagem decide GEOMETRIA e PRESENÇA, não decide MATERIAL, NOME nem ESTADO.
+  **Para lote NOVO, fotografado com ele em campo, a regra 3 continua inteira.**
+- **O aceite de toda foto que preveja NC tem DUAS metades** — recuperação (o item chegou
+  ao Analista) e laudo (a NC tem lastro visual). O `/critico` rejeitou três vezes por
+  colapsá-las, e nos dois últimos lotes a diferença entre as duas foi o resultado.
+
+---
+
 ## O que travou o lote de 04/09/2026: o OTPM, e não o TPM
 
 O lote de 12 fotos de poço de elevador rodou e **só 1 foto foi auditada**. As outras
@@ -2077,7 +2121,7 @@ sempre a entrada de VISAO — era assim que o campo de TEXTO rotulava o 3.8 como
 o padrão dos dois campos virou o mesmo modelo.
 
 **O acervo de fotos triplicou e ganhou um gabarito.** O repositório
-`dllifilho-debug/auditoria-nrs-fixtures` tem agora **353 fotos** (106 MB), e **138 das
+`dllifilho-debug/auditoria-nrs-fixtures` tem agora **353 entradas / 351 imagens** (106 MB — as duas que não são imagem são um arquivo sem extensão e um `.mp4`), e **138 das
 253 novas trazem o achado no próprio nome do arquivo**, escrito pelo engenheiro na
 inspeção: `10 PAV. ABERTURA NA PROTEÇÃO PISO A PISO.jpg`, `19 PAV. PREGOS EXPOSTOS.jpg`,
 `13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO.jpg`. Isso permite medir **acerto contra o que o
