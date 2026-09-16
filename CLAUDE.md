@@ -27,28 +27,43 @@ verdade é sempre com o usuário, em produção, com fotos e laudos que ele mand
 
 ---
 
-## COMECE POR AQUI — estado em 16/09/2026, conserto → medição → defeito pior → trava nova
+## COMECE POR AQUI — estado em 16/09/2026, segunda trava → medida de novo (1 de 3) → defeito novo achado → terceira trava aplicada
 
-**`main` em `b444beb`** (PR #57, merge do conserto do prompt de EPI — código e testes,
-`CLAUDE.md`). 244 testes passam nele. Confirmado por `git fetch origin main` nesta
-sessão, não inferido. **Esta sessão já tem uma segunda rodada em cima disso, ainda sem
-PR mergeado**: 248 testes na branch local (244 + 4 novos).
+**`main` em `a72b33d`** (PR #58, merge das quatro regras contra a alucinação de EPI —
+código e testes, `CLAUDE.md`). 248 testes passam nele. Confirmado por `git fetch origin
+main` nesta sessão, não inferido. **Esta sessão já tem uma terceira rodada em cima
+disso, ainda sem PR mergeado**: 250 testes na branch local (248 + 2 novos).
 
-**O conserto do prompt de EPI (PR #57) foi medido em produção nas mesmas três fotos do
-lote de 15/09, e o resultado foi pior do que "não funcionou": a cadeia técnica FECHOU —
-`epi_nao_utilizado` disparou pela primeira vez na história deste projeto — mas o Olho
-passou a ALUCINAR sobre o corpo da pessoa, de três formas diferentes, uma em cada foto**
-(gabarito 0 de 3, pior que o 1 de 5 de 15/09— lá o Olho ao menos não inventava dado).
-Ver a seção de validação logo abaixo. **A trava contra essa alucinação foi escrita na
-sequência, nesta mesma sessão** — quatro regras no parágrafo de pessoa do
-`PROMPT_OLHO`, uma por variante medida, com quatro testes novos travando o texto. Ainda
-não tem lote de produção medindo se ela resistiu; ver "Em aberto".
+**As quatro regras do PR #58 foram medidas nas MESMAS três fotos, e seguraram pela
+metade: gabarito subiu de 0 para 1 de 3, mas a alucinação do boné — o caso que motivou a
+regra 3 — reapareceu na MESMA foto, quase palavra por palavra.** Ver a seção de
+validação logo abaixo. As regras 1 e 2 (mão que segura aparece; não afirmar estado fora
+do que foi listado) seguraram contra as duas contradições que existiam para prevenir,
+mas com efeito colateral novo: o Olho passou a **omitir** o estado da luva em vez de
+afirmá-lo, mesmo em mão claramente nua e visível — troca invenção por lacuna, e a NC de
+EPI **com lastro pleno** só saiu na foto 3 (a foto 1 teve uma NC de luva, mas sobre a
+mesma mão cuja proteção a régua (b) deixa aberta). **E apareceu um defeito fora do escopo das
+quatro regras, mais caro que qualquer uma delas**: a foto 1 produziu `NR-18 18.9.2`
+**crítica** sobre um vão de piso que não existe — uma régua de madeira de nivelamento
+deitada sobre piso plano e contínuo, lida como abertura. É a quinta ocorrência da classe
+VÃO INEXISTENTE do histórico, e a primeira vez que ela desloca justamente a NC de EPI
+que a foto pedia.
+
+**Duas travas novas foram escritas nesta mesma sessão, ainda sem lote medindo**: (1) o
+parágrafo do boné ganhou um critério checável — só escrever "boné"/"capacete" havendo
+borda, aba ou viseira distinta do couro cabeludo, senão "cabeça descoberta, cabelo
+escuro" ou "não dá para determinar com confiança"; (2) o parágrafo da barreira ganhou
+uma exigência de profundidade real (sombra, borda com espessura, visão através) antes de
+afirmar abertura/vão/buraco — marcação, régua ou objeto sobre piso plano não é abertura.
+**Dois testes novos travam o texto**, 250 testes passam (248 + 2). Verificado no
+navegador em Modo Demonstração, sem regressão. Perguntar ao usuário antes de rodar de
+novo, dado que consome cota do dia.
 
 **Isso esgota a tabela de "lotes de 5 seguintes"** — Elétrica, Içamento e cancela,
-Pessoa na cena, Escada e Marcação rodaram todos, e o conserto de EPI já teve uma volta
-completa de medição e reação. Não há lote de 5 pré-desenhado na fila; o próximo passo é
-rodar as mesmas três fotos de novo para medir a trava nova, ou decidir entre os outros
-itens de "Em aberto", ou desenhar um lote novo.
+Pessoa na cena, Escada e Marcação rodaram todos, e o conserto de EPI já teve duas voltas
+completas de medição e reação. Não há lote de 5 pré-desenhado na fila; o próximo passo é
+rodar as mesmas três fotos pela quarta vez para medir as duas travas novas, ou decidir
+entre os outros itens de "Em aberto", ou desenhar um lote novo.
 
 **O que mudou de método nestas três sessões, e vale mais que os lotes:**
 
@@ -60,6 +75,98 @@ itens de "Em aberto", ou desenhar um lote novo.
 - **O aceite de toda foto que preveja NC tem DUAS metades** — recuperação (o item chegou
   ao Analista) e laudo (a NC tem lastro visual). O `/critico` rejeitou três vezes por
   colapsá-las, e nos dois últimos lotes a diferença entre as duas foi o resultado.
+
+---
+
+## Validação em produção de 16/09/2026 — a trava do PR #58 medida (1 de 3), e um defeito novo mais caro que a alucinação
+
+Obra "teste". **3 laudos, 4 NCs (2 + 0 + 2), 0 não auditadas, 1 ciclo em todos.** Mesmas
+três fotos do lote anterior, sem marcação. As três fotos foram abertas no acervo
+(`auditoria-nrs-fixtures`) e ampliadas ponto a ponto (cabeça, mão, piso) antes de
+concluir causa — não é leitura à distância, é pixel contra fato.
+
+| # | Foto | O que o Olho escreveu sobre a pessoa | Confronto com a foto real | NC entregue |
+|---|---|---|---|---|
+| 1 | `TRABALHADOR SEM EPI` | "Usa **boné preto** na cabeça e óculos de proteção" | Cabeça **nitidamente descoberta**, cabelo curto à mostra — confirmado na ampliação. Óculos: correto, existem de verdade | `NR-18 18.9.2` **crítica** — fabricada (ver seção 3) |
+| 2 | `TRABALHADOR SEM PROTEÇÃO` | "segurando... com a mão direita; cabeça, rosto e pés não aparecem" — **luva não é mencionada** | Mão nua, sem luva, perfeitamente visível — confirmado na ampliação | 0 NC |
+| 3 | `TRABALHADOR SE EPI` | 1º homem: boné azul, "sem óculos, sem luvas, sem protetor auricular". 2º homem, no MESMO achado do 1º: "apenas tronco e pernas visíveis" | 1º homem: tudo confirmado real. 2º homem: a mão dele **também aparece** (canto superior direito) — sub-relato, não erro grave | `NR-06 6.5.1` alta (1º homem, **com lastro real**) + `NR-18 18.10.2.4` média (cabo, real) |
+
+**Gabarito contra o nome do arquivo: 1 de 3** — contra 0 de 3 na medição anterior, antes
+do PR #58. É a primeira vez nas três rodadas deste acervo (15/09, 16/09 conserto, agora)
+que uma NC de EPI real e com lastro sai de uma destas três fotos.
+
+### 1. As regras 1 e 2 seguraram contra a contradição que existia para prevenir — com um efeito colateral novo: omissão no lugar de invenção
+
+Nas fotos 2 e 3 sumiu a contradição medida na rodada anterior ("segura com a mão" +
+"mão não aparece"; "cabeça descoberta" sobre quem estava fora do recorte). Mas nas
+duas fotos o Olho também deixou de **afirmar** o que a foto mostra com clareza: na foto
+2 a mão seguindo o disco está nua, sem luva, plenamente visível — e o fato não diz nada
+sobre a luva, nem presença nem ausência. Na foto 3 o 2º homem tem a mão erguida também
+visível no recorte (canto superior direito), e o fato o limita a "tronco e pernas". As
+duas regras foram escritas para impedir a AFIRMAÇÃO contraditória; o preço, não previsto,
+é o modelo ficar conservador demais e não afirmar nada onde antes inventava ou
+contradizia. **É melhor que o defeito anterior** (nenhuma NC nasce de um fato falso), mas
+ainda deixa a NC de EPI fora em duas das três fotos — por um mecanismo diferente do de
+15/09 (lá era o prompt não pedir o atributo; hoje é o modelo pedir e preferir não
+responder a arriscar).
+
+### 2. A regra 3 falhou no caso exato que a motivou
+
+A foto 1 é a MESMA foto onde a invenção do boné foi medida na rodada anterior. O Olho
+escreveu "usa boné preto na cabeça" de novo — quase palavra por palavra —, e a
+ampliação confirma o que já estava registrado: cabelo curto à mostra, nenhum boné,
+nenhuma borda de objeto sobre a cabeça. A regra 3 (PR #58) proibia deduzir "usa boné"
+por contexto; o texto pedia exatamente o oposto do que o modelo escreveu, e ele escreveu
+do mesmo jeito. **Isso desloca o diagnóstico**: não é (só) que o modelo estava
+deduzindo por contexto e a proibição não bastou — é possível que ele genuinamente
+"visse" um objeto ali, um erro de percepção em baixa resolução (a imagem chega em
+~674 px de largura, retrato de 1204×1600 reduzida a 896 na maior dimensão), não uma
+falha de obediência à instrução. Proibir de novo, do mesmo jeito, teria retorno
+decrescente. A trava nova (ver "COMECE POR AQUI") muda de tática: em vez de só proibir,
+pede um critério CHECÁVEL (borda/aba/viseira distinta do couro cabeludo) e dá uma saída
+de baixa confiança explícita — mais perto de como a regra da moldura já trata
+material/nome ambíguos do que de uma proibição a mais.
+**Óculos, ao contrário, saiu certo desta vez**: "óculos de proteção" está confirmado na
+ampliação (armação visível). Não é a mesma classe de erro se repetindo em todo atributo,
+só no boné.
+
+### 3. A regra 4 não foi aplicada estruturalmente, sem dano desta vez
+
+Na foto 3 os dois homens continuam no MESMO achado ("um homem... segura...; ao lado, um
+segundo homem... observa"), não em achados separados como o texto pede desde o PR #58.
+n=1 sem dano visível: nenhuma palavra como "bota" apareceu para colidir entre os dois
+desta vez. A regra continua sem confirmação de que segura sob a condição que a motivou.
+
+### 4. O achado fora do escopo das quatro regras, e o mais caro do lote: VÃO INEXISTENTE pela quinta vez
+
+Na foto 1, o piso **não tem abertura nenhuma**. A ampliação mostra uma régua/guia de
+madeira de nivelamento (com marcações numéricas visíveis) deitada sobre um piso de
+concreto plano e contínuo, com um pallet pequeno apoiado em cima — nenhuma sombra de
+profundidade, nenhuma borda com espessura, nada que sugira vão. O Olho escreveu
+"abertura retangular... contendo um palet de madeira apoiado solto no interior do vão",
+e isso virou a NC de frente do laudo: `NR-18 18.9.2`, **crítica, prazo de 1 dia**. É a
+quinta ocorrência confirmada da classe VÃO INEXISTENTE deste histórico (as anteriores:
+foto 3 do lote de máquina em 11/09, foto 3 do lote de elétrica em 12/09, a contraparte
+do lote de pessoa na cena em 15/09, a contraparte do lote de escada em 15/09) — e a
+primeira em que ela nasce dentro do próprio lote desenhado para medir a alucinação de
+EPI, deslocando justamente a NC que a foto pedia. Diferente da alucinação do boné (que
+tem duas rodadas de medição e uma trava dedicada), esta classe nunca tinha recebido
+conserto de prompt — só era documentada e deixada em aberto. A trava nova (ver "COMECE
+POR AQUI") é a primeira tentativa: exigir profundidade real antes de afirmar abertura,
+vão ou buraco, e nomear explicitamente que marcação/régua/objeto sobre piso plano não é
+abertura — o caso exato medido aqui.
+
+### 5. O que isso muda no método
+
+A regra 3 sozinha não bastou (n=2 rodadas no mesmo defeito); desta vez a trava do boné
+reforçada e a trava do vão inexistente vão juntas para a próxima medição, para não gastar
+duas rodadas de cota em vez de uma — não é padrão estabelecido (n=1 não sustenta isso),
+é só a economia óbvia quando dois defeitos do mesmo agente estão medidos ao mesmo tempo.
+E a régua de aceite continua a mesma:
+vocabulário aparecer não basta, tem que resistir à foto real, achado por achado, sem
+contradição, sem invenção e sem sub-relato do que está claramente visível. **Ainda não
+tem lote de produção medindo se as duas travas novas seguram — perguntar ao usuário
+antes de rodar, dado que consome cota do dia.**
 
 ---
 
@@ -2911,7 +3018,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 248 testes
+$VENV -m pytest tests/ -q          # 250 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -3067,7 +3174,7 @@ próprio comando composto (exit 144).
   plano de ação. Um laudo dirigido em parte por quem inspecionou não tem o mesmo valor de
   evidência que um em que o app chegou sozinho ao item, e quem lê o documento precisa
   saber de qual dos dois se trata.
-- **248 testes**
+- **250 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
