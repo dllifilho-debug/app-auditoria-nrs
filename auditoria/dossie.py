@@ -356,6 +356,71 @@ SETORES: dict[str, tuple[Setor, ...]] = {
                 "colheita",
             ),
         ),
+        # Estes dois não são ramo setorial (não competem entre si nem com o
+        # corpo principal da norma, ao contrário de V-XI acima): são famílias
+        # de EQUIPAMENTO que qualquer obra pode ter, e ficaram de fora da
+        # tabela até 16/09 por isso. O preço, medido no lote de máquina de
+        # 11/09: uma foto de SERRA DE BANCADA, sem cesta aérea nem meio de
+        # acesso nenhum na cena, recebeu no dossiê `Anexo III 7` (proteção
+        # contra quedas nos meios de acesso DA MÁQUINA) e `Anexo XII 2.1`,
+        # `3.2.2`, `3.6.1` (cesta aérea, plataforma condutiva) — 5 vagas do
+        # dossiê gastas em equipamento que a cena não tinha. Sem anexo próprio
+        # na tabela, `setor_do_item` devolvia None para os dois e eles
+        # passavam livres, exatamente como os itens genéricos da NR-18 — só
+        # que estes NÃO são genéricos, nomeiam equipamento como qualquer outro
+        # anexo setorial.
+        Setor(
+            # Anexo III: "meios de acesso às máquinas e equipamentos" —
+            # elevadores, rampas, passarelas, plataformas ou escadas de
+            # degraus PARA CHEGAR ao ponto de operação da máquina (item 1.1).
+            # `elevador`/`rampa`/`escada`/`plataforma`/`passarela` soltos
+            # ficam de fora do `na_cena` de propósito: são o vocabulário mais
+            # genérico de todo canteiro (poço de elevador, escada de mão,
+            # rampa de acesso ao pavimento), e bastaria uma máquina qualquer
+            # aparecer na mesma foto de uma escada comum para destrancar os
+            # 24 itens do anexo. As frases abaixo são as do próprio texto do
+            # item 1.1 e do item 13 (gaiola de proteção) — mais estreitas, sem
+            # medição de caso positivo ainda: é a mesma aposta de "mais
+            # contido e mais seguro" que motivou não usar `elevador` sozinho
+            # no portão de elevadores de obra da NR-18.
+            nome="meios de acesso a máquinas e equipamentos",
+            anexos=("III",),
+            no_item=(
+                "escada de degraus", "rampa de acesso", "passarela de acesso",
+                "plataforma de acesso", "gaiola de protecao",
+            ),
+            na_cena=(
+                "escada de degraus", "escadas de degraus",
+                "rampa de acesso", "rampas de acesso",
+                "passarela de acesso", "passarelas de acesso",
+                "plataforma de acesso", "plataformas de acesso",
+                "gaiola de protecao", "gaiolas de protecao",
+            ),
+        ),
+        Setor(
+            # Anexo XII: equipamentos que IÇAM PESSOAS — cesta aérea, cesto
+            # acoplado, cesto suspenso, cesta de transferência (transbordo em
+            # plataforma marítima). Não é o mesmo objeto do risco de guindar
+            # de carga (`grua`, `guindaste`, `moitao`, no Setor acima): aqui é
+            # o cesto/cesta que carrega o TRABALHADOR, e é isso que os itens
+            # regulam (ancoragem, isolamento elétrico, placa de identificação,
+            # peso máximo). Singular e plural entram separados porque o
+            # plural muda a PRIMEIRA palavra ("cestas aéreas"), e a tolerância
+            # de sufixo do `_menciona` só cobre a ÚLTIMA — a mesma armadilha
+            # do bigrama registrada no CLAUDE.md para o `sem`.
+            nome="equipamentos de içamento de pessoas (cesta e cesto)",
+            anexos=("XII",),
+            no_item=(
+                "cesta aerea", "cesto acoplado", "cesto suspenso",
+                "cesta de transferencia",
+            ),
+            na_cena=(
+                "cesta aerea", "cestas aereas",
+                "cesto acoplado", "cestos acoplados",
+                "cesto suspenso", "cestos suspensos",
+                "cesta de transferencia", "cestas de transferencia",
+            ),
+        ),
     ),
     "NR-18": (
         # AUDITORIA COMPLETA DO QUE ESTE PORTÃO PRENDE, feita de uma vez depois
@@ -484,12 +549,15 @@ SETORES: dict[str, tuple[Setor, ...]] = {
     ),
 }
 
-# Os demais anexos da NR-12 valem para qualquer máquina e ficam de fora da
-# tabela de propósito: I (distâncias de segurança e cortina de luz), II
-# (capacitação do operador), III (meios de acesso a máquinas) e sobretudo
-# XII (equipamentos de guindar, transportar e descarregar — cesta aérea, grua,
-# elevador de carga), que é justamente o que uma obra tem. A contraparte a
-# vigiar é essa: NR-12 Anexo XII e NR-35 Anexo III (escadas) devem passar.
+# Os Anexos III e XII entraram na tabela em 16/09, atrás do dano medido no
+# lote de máquina de 11/09 (ver os dois `Setor` acima). Ficam de fora de
+# propósito, sem `Setor` — porque não são ramo, são requisito geral que vale
+# para qualquer máquina, e trancá-los seria a classe de erro 1 ao contrário
+# (item certo barrado): I (distâncias de segurança e cortina de luz) e II
+# (capacitação do operador). A NR-35 Anexo III (escadas) é outra NORMA e
+# nunca passou por este portão — a contraparte a vigiar é essa: ela deve
+# continuar passando livre, junto com o corpo principal da NR-12 (12.5.x) e
+# o Anexo I.
 
 
 def _menciona(alvo: str, termos) -> bool:
