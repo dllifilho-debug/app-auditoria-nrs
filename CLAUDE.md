@@ -29,8 +29,18 @@ verdade é sempre com o usuário, em produção, com fotos e laudos que ele mand
 
 ## COMECE POR AQUI — estado em 16/09/2026, a tabela de lotes de 5 está ESGOTADA
 
-**`main` em `1849518`** (PR #55, merge da validação do lote de PESSOA NA CENA — nenhum
-código mudou, só `CLAUDE.md`). 240 testes passam.
+**`main` em `a76dc8d`** (PR #56, merge da validação do lote de MARCAÇÃO — nenhum código
+mudou, só `CLAUDE.md`; confirmado por `git fetch origin main` nesta sessão, não inferido).
+240 testes passam nele. **A frase anterior daqui dizia `1849518`/PR #55** — desatualizada
+no próprio commit que a escreveu, porque aquela sessão rodou o lote de marcação e abriu
+o PR #56 depois de anotar o hash do início dela; é a armadilha do número que envelhece
+em silêncio, pela via mais simples: o cabeçalho não foi atualizado ao final da sessão que
+o escreveu.
+
+**Esta sessão (nova, começada depois do merge do #56) implementou o conserto do prompt de
+EPI numa branch nova (`claude/practical-rubin-4c46zb`), ainda sem PR aberto contra o
+`main`** — ver o parágrafo abaixo e o item em "Em aberto". 244 testes passam nela
+(240 + 4 novos).
 
 **O lote de MARCAÇÃO (o desenho D) rodou nesta sessão — n=2 agora para a mesma
 fronteira medida em 09/09, e ela se confirma de novo, quase palavra por palavra.** Foto
@@ -48,12 +58,18 @@ contar os pontos de fixação com confiança — o que desloca a hipótese regis
 em resolução nenhuma.
 
 **Isso esgota a tabela de "lotes de 5 seguintes"** — Elétrica, Içamento e cancela,
-Pessoa na cena, Escada e Marcação rodaram todos. **O achado mais importante que sobrou
-em aberto continua sendo o do lote anterior**: `PROMPT_OLHO` não pede atributo de EPI e
-`pessoas.descricao` é descartado no parse — é a causa raiz de `exige_pessoa` (25 riscos)
-nunca ter disparado, e o conserto proposto (não aplicado) está em "Em aberto". Não há
-mais lote de 5 pré-desenhado na fila; o próximo passo é decidir entre esse conserto de
-prompt, os outros itens de "Em aberto", ou desenhar um lote novo.
+Pessoa na cena, Escada e Marcação rodaram todos.
+
+**O achado mais importante do lote anterior — `PROMPT_OLHO` não pedia atributo de EPI e
+`pessoas.descricao` era descartado no parse — foi CONSERTADO nesta sessão (16/09), código
+e testes, ainda sem lote de produção.** O detalhe do conserto está em "Em aberto", no
+mesmo item que registrava o achado. Faltam duas coisas antes de considerar isso fechado:
+(1) abrir PR e mergear — o app publicado continua rodando o `PROMPT_OLHO` antigo até lá;
+(2) rodar um lote nas mesmas três fotos de EPI ausente do lote de 15/09 (ou fotos novas)
+para medir se o Olho de fato passa a escrever o atributo, e se o risco simétrico (inventar
+"sem luva"/"sem capacete" fora do que a foto mostra) aparece. Não há mais lote de 5
+pré-desenhado na fila depois deste; o próximo passo, depois de mergear e medir este
+conserto, é decidir entre os outros itens de "Em aberto" ou desenhar um lote novo.
 
 **O que mudou de método nestas duas sessões, e vale mais que os lotes:**
 
@@ -2783,7 +2799,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 240 testes
+$VENV -m pytest tests/ -q          # 244 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -2939,7 +2955,7 @@ próprio comando composto (exit 144).
   plano de ação. Um laudo dirigido em parte por quem inspecionou não tem o mesmo valor de
   evidência que um em que o app chegou sozinho ao item, e quem lê o documento precisa
   saber de qual dos dois se trata.
-- **240 testes**
+- **244 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
@@ -3207,25 +3223,40 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
 
 ## Em aberto
 
-- **`PROMPT_OLHO` não pede atributo de EPI, e o campo que poderia carregá-lo é
-  descartado no parse — achado em 15/09, confirmado no código.** É a causa raiz de o
-  portão `exige_pessoa` (25 riscos, `epi_nao_utilizado` entre eles) nunca ter disparado
-  em produção desde 03/09 (repetido nas validações de 11/09, 12/09 e 14/09) — o lote de
-  15/09 foi o primeiro desenhado de propósito para isso e mediu a causa: `PROMPT_OLHO`
-  (`auditoria/pipeline.py:314-383`) tem parágrafos de
-  atributo para barreira, tela, máquina, painel, andaime e cabo, e nenhuma palavra sobre
+- **`PROMPT_OLHO` não pedia atributo de EPI, e o campo que poderia carregá-lo era
+  descartado no parse — achado em 15/09, CONSERTADO em 16/09, à espera de lote.** Era a
+  causa raiz de o portão `exige_pessoa` (25 riscos, `epi_nao_utilizado` entre eles) nunca
+  ter disparado em produção desde 03/09 (repetido nas validações de 11/09, 12/09 e
+  14/09) — o lote de 15/09 foi o primeiro desenhado de propósito para isso e mediu a
+  causa: `PROMPT_OLHO` (`auditoria/pipeline.py:314-383`, antes do conserto — hoje
+  314-389, seis linhas a mais) tinha parágrafos de atributo
+  para barreira, tela, máquina, painel, andaime e cabo, e nenhuma palavra sobre
   capacete, luva, óculos ou protetor auricular; e `pessoas.descricao` — o único campo do
-  schema que fala da pessoa além de contá-la — é lido em `pipeline.py:416` e nunca
-  repassado à `Visao` (só `presentes` e `quantidade` sobrevivem). Nas três fotos do lote
+  schema que fala da pessoa além de contá-la — era lido em `pipeline.py` e nunca
+  repassado à `Visao` (só `presentes` e `quantidade` sobreviviam). Nas três fotos do lote
   de 15/09 desenhadas para EPI ausente, a ausência estava visível na foto real e o Olho
-  não escreveu uma palavra sobre ela, nas três. **O conserto proposto, não aplicado nesta
-  sessão**: acrescentar ao `PROMPT_OLHO` um parágrafo de atributo para a pessoa (mesmo
-  molde dos existentes — o que ela veste na cabeça, mãos, olhos, ouvidos, pés, e o que
-  falta visivelmente) e passar a guardar `pessoas.descricao` em `Visao` (ou, mais simples,
-  dobrar como um achado a mais quando não vazia). **É mudança de prompt de agente — vale
-  lote**, pela própria regra deste arquivo: mexe em toda foto com gente, e só um lote diz
-  se o Olho obedece e se o risco simétrico (inventar "sem luva" numa mão que a foto não
-  mostra) aparece. Perguntar ao usuário antes de aplicar, dado que consome cota do dia.
+  não escreveu uma palavra sobre ela, nas três.
+  **O conserto aplicado**, os dois lados: um parágrafo novo no `PROMPT_OLHO` pedindo o
+  que a pessoa usa na cabeça, mãos, olhos, ouvidos e pés (mesma forma canônica dos
+  parágrafos existentes — "sem capacete, cabeça descoberta" só quando a parte do corpo
+  aparece vazia no recorte, senão "não dá para ver"), e `pessoas.descricao` deixou de ser
+  descartada: quando não vazia, vira um achado PRÓPRIO em `Visao.achados` — fragmento
+  isolado, não concatenado a outro achado, para respeitar a regra de que cada achado é
+  seu pedaço isolado no roteamento (a mesma que motivou a âncora de dois radicais em
+  01/09). Optei pela via "mais simples" que este item já cogitava, em vez de um campo
+  novo em `Visao`, porque ela reaproveita o roteamento tal como está: o achado extra
+  passa pelas mesmas âncoras e fragmentação de sempre, sem caminho novo a validar.
+  **Quatro testes travam isso, sem rede**: o prompt contém o vocabulário de EPI; o parse
+  guarda `descricao` como achado próprio; a contraparte — sem `descricao`, nenhum achado
+  extra — para não passar por acaso; e a cadeia fechada ponta a ponta, um achado sintético
+  de "sem capacete" roteando `epi_nao_utilizado` de fato. 244 testes passam (240 + 4).
+  Verificado no navegador em Modo Demonstração: pipeline roda inteiro sem regressão (o
+  dublê já tinha `descricao: ""`, então o comportamento dele não muda).
+  **É mudança de prompt de agente — vale lote de produção antes de considerar fechada**,
+  pela própria regra deste arquivo: mexe em toda foto com gente, e só um lote diz se o
+  Olho obedece e se o risco simétrico aparece (inventar "sem luva" numa mão que a foto
+  não mostra, ou "sem capacete" num rosto fora do recorte). Perguntar ao usuário antes de
+  rodar esse lote, dado que consome cota do dia.
 - **"O modelo ainda é o melhor?" não se responde desta sessão — remedido em 12/09.** O
   usuário perguntou, e a verificação honesta é esta: `groq.com`, `api.groq.com` e
   `console.groq.com` devolvem falha de conexão (código 000, não 403), então **não há como

@@ -1616,6 +1616,103 @@ def test_visao_preserva_resposta_crua_quando_nao_da_para_ler():
     assert "não consigo analisar" in visao.bruto
 
 
+def test_prompt_do_olho_pede_atributo_de_epi_da_pessoa():
+    """`PROMPT_OLHO` não tinha uma palavra sobre o que a pessoa veste.
+
+    Achado em 15/09: os parágrafos de atributo cobrem barreira, máquina,
+    painel, andaime, escada, cinta e cabo, e nenhum fala de capacete, luva,
+    óculos ou protetor auricular — o vocabulário de que `epi_nao_utilizado`
+    (e o portão `exige_pessoa`, 25 riscos) depende inteiramente. Sem ele, três
+    fotos desenhadas de propósito para EPI ausente saíram sem o Olho escrever
+    uma palavra sobre a pessoa, nas três.
+    """
+    from auditoria.pipeline import PROMPT_OLHO
+
+    for palavra in ("capacete", "luva", "óculos de proteção", "protetor auricular",
+                     "bota de segurança"):
+        assert palavra in PROMPT_OLHO.lower(), palavra
+    assert "pessoas.descricao" in PROMPT_OLHO
+
+
+def test_agente_olho_guarda_descricao_de_pessoas_como_achado_proprio():
+    """`pessoas.descricao` era lido e descartado — a causa raiz confirmada.
+
+    `pipeline.py` lia `dados.get("pessoas")` e só repassava `presentes` e
+    `quantidade` à `Visao`; `descricao` nunca chegava a `achados`, ao
+    roteamento nem ao dossiê. Aqui ela vira achado PRÓPRIO — fragmento
+    isolado, não concatenado a outro texto — para não violar a regra de que
+    cada achado é seu pedaço isolado no roteamento.
+    """
+    from auditoria.pipeline import agente_olho
+
+    resposta = (
+        '{"ambiente": "canteiro de obra", '
+        '"pessoas": {"presentes": true, "quantidade": 1, '
+        '"descricao": "Operador sem capacete, cabeça descoberta, e sem luva '
+        'na mão que segura a ferramenta"}, '
+        '"achados": [{"fato": "Serra circular manual amarela sobre bancada de madeira"}]}'
+    )
+
+    class ComPessoa:
+        ultimo_corte_por_limite = False
+
+        def conversar(self, modelo, mensagens, teto_saida=1200, temperatura=0.0,
+                      json_estrito=False):
+            return resposta
+
+    visao = agente_olho(ComPessoa(), "imagem", "modelo-x")
+    fatos = [a.fato for a in visao.achados]
+    assert len(fatos) == 2
+    assert any("sem capacete" in f and "sem luva" in f for f in fatos)
+
+
+def test_agente_olho_nao_dobra_achado_quando_pessoas_descricao_vazia():
+    """Contraparte: sem `descricao`, nenhum achado extra é criado.
+
+    Sem esta contraparte, o teste acima passaria com qualquer taxonomia —
+    inclusive uma que sempre acrescentasse achado vazio.
+    """
+    from auditoria.pipeline import agente_olho
+
+    resposta = (
+        '{"ambiente": "escritório", '
+        '"pessoas": {"presentes": true, "quantidade": 1, "descricao": ""}, '
+        '"achados": [{"fato": "Mesa de escritório com computador"}]}'
+    )
+
+    class SemDescricao:
+        ultimo_corte_por_limite = False
+
+        def conversar(self, modelo, mensagens, teto_saida=1200, temperatura=0.0,
+                      json_estrito=False):
+            return resposta
+
+    visao = agente_olho(SemDescricao(), "imagem", "modelo-x")
+    assert [a.fato for a in visao.achados] == ["Mesa de escritório com computador"]
+
+
+def test_descricao_de_pessoas_sem_epi_chega_a_rotear_epi_nao_utilizado():
+    """Fecha a cadeia: o achado de `pessoas.descricao` precisa ROTEAR, não só existir.
+
+    É a causa raiz registrada em 15/09 — `epi_nao_utilizado` nunca disparou em
+    produção desde 03/09 porque o Olho nunca escrevia o vocabulário de EPI da
+    pessoa. Com o achado próprio no lugar, o mesmo vocabulário que o catálogo
+    já espera (`"sem capacete"`, `"sem luva"`) precisa disparar o risco.
+    """
+    visao = Visao(
+        ambiente="Canteiro de obra em fase de acabamento",
+        pessoas_presentes=True,
+        quantidade_pessoas=1,
+        achados=[
+            Achado(fato="Placa de gesso encostada na parede, sem uso aparente"),
+            Achado(fato="Trabalhador sem capacete, cabeça descoberta, aplicando "
+                        "massa corrida na parede"),
+        ],
+    )
+    riscos = rotear_riscos(visao)
+    assert any(r.id == "epi_nao_utilizado" for r in riscos)
+
+
 def test_texto_da_norma_nao_carrega_numero_de_pagina(base):
     """O extrator colava o número da página no fim do item, e ele saía no laudo."""
     import re
