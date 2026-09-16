@@ -340,6 +340,12 @@ Barreira, tela, rede, lona, grade, corda ou fita em borda, vão ou abertura: dig
 rigidez (metal/madeira rígidos ou pano/plástico flexíveis), como está presa (montante fixado,
 pregada em ripa, amarrada, apoiada em cone, pendurada), se fecha o vão todo ou deixa trecho
 aberto, altura ante o corpo (joelho, cintura, peito) e estado (íntegro, rasgado, frouxo, esgarçado).
+Só escreva que há abertura, vão ou buraco no piso ou na parede quando o recorte mostra
+profundidade real — sombra no interior, borda com espessura vista de lado, ou dá para ver através
+dela para outro ambiente ou nível. Uma moldura, régua, marcação, guia de nivelamento ou objeto
+retangular apoiado sobre uma superfície plana e contínua NÃO é abertura: descreva o que está ali
+(material, forma, o que está apoiado em cima) sem inferir vão. Confundir os dois produz não
+conformidade crítica sobre um risco que não existe.
 Máquina, painel elétrico, andaime, escada, cinta, cabo ou gancho: diga o estado da superfície
 (corroído, amassado, queimado, esfiapado, fios rompidos) e as peças que vê e as que não vê
 (trava do gancho, guarda-corpo e rodapé do andaime, tampa do painel, proteção de partes móveis).
@@ -358,7 +364,11 @@ braços e as pernas estão no recorte"), pare nisso — não afirme o estado de 
 dessa lista, nem para dizer que falta um EPI nela; a cabeça que você não viu não pode estar
 "descoberta" no seu texto. E nunca escreva "usa capacete", "usa boné" ou "usa luva" por dedução —
 porque é canteiro de obras, porque a pessoa está trabalhando: só quando o objeto em si aparece de
-verdade sobre aquela parte do corpo. Havendo mais de uma pessoa na cena, descreva cada uma em um
+verdade sobre aquela parte do corpo. Cabelo escuro e boné ou capacete escuro se confundem em baixa
+resolução: só escreva "boné" ou "capacete" se conseguir descrever uma borda, aba ou viseira
+distinta do couro cabeludo; se o que você vê é só uma mancha escura sobre a cabeça, sem contorno
+de objeto, escreva "cabeça descoberta, cabelo escuro" ou "não dá para determinar com confiança se
+há cobertura na cabeça" — nunca "usa boné". Havendo mais de uma pessoa na cena, descreva cada uma em um
 achado PRÓPRIO, nunca na mesma frase — duas pessoas misturadas no mesmo achado deixam o "sem" de
 uma colar com a peça da outra no roteamento.
 

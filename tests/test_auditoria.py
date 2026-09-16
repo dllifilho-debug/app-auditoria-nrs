@@ -1751,6 +1751,37 @@ def test_prompt_do_olho_proibe_deduzir_epi_pelo_contexto():
     assert "nunca escreva \"usa capacete\", \"usa boné\" ou \"usa luva\" por dedução" in PROMPT_OLHO
 
 
+def test_prompt_do_olho_trava_bone_confundido_com_cabelo_escuro():
+    """Medido em produção em 16/09, DEPOIS da trava acima já estar no ar: o Olho
+
+    repetiu "usa boné preto na cabeça" na MESMA foto em que a cabeça está
+    nitidamente descoberta — proibir a dedução por contexto não bastou, porque
+    o modelo genuinamente "viu" um objeto onde há só cabelo escuro. A trava
+    nova pede um critério checável (borda/aba distinta do couro cabeludo) em
+    vez de só reforçar a proibição.
+    """
+    from auditoria.pipeline import PROMPT_OLHO
+
+    assert "Cabelo escuro e boné ou capacete escuro se confundem" in PROMPT_OLHO
+    assert "borda, aba ou viseira" in PROMPT_OLHO
+    assert "não dá para determinar com confiança se" in PROMPT_OLHO
+
+
+def test_prompt_do_olho_trava_vao_inexistente_no_piso():
+    """Medido em produção em 16/09: o Olho descreveu uma régua/guia de madeira
+
+    de nivelamento deitada sobre piso plano e contínuo, com um pallet apoiado
+    em cima, como "abertura retangular... vão" — quinta ocorrência da classe
+    VÃO INEXISTENTE do histórico, e a mais cara: virou NR-18 18.9.2 crítica.
+    A trava exige profundidade real (sombra, borda com espessura, visão
+    através) antes de afirmar abertura, vão ou buraco.
+    """
+    from auditoria.pipeline import PROMPT_OLHO
+
+    assert "quando o recorte mostra\nprofundidade real" in PROMPT_OLHO
+    assert "NÃO é abertura" in PROMPT_OLHO
+
+
 def test_prompt_do_olho_pede_pessoa_por_achado_proprio():
     """Achado em produção em 16/09: duas pessoas descritas no MESMO achado
 
