@@ -27,38 +27,33 @@ verdade é sempre com o usuário, em produção, com fotos e laudos que ele mand
 
 ---
 
-## COMECE POR AQUI — estado em 15/09/2026, lote de PESSOA NA CENA RODADO e lido
+## COMECE POR AQUI — estado em 16/09/2026, a tabela de lotes de 5 está ESGOTADA
 
-**`main` em `706424b`** (PR #54, merge do registro do lote — nenhum código mudou desde
-`2cb0eee`; `git diff --stat 2cb0eee..706424b -- . ':!CLAUDE.md'` está vazio). 240 testes
-passam.
+**`main` em `1849518`** (PR #55, merge da validação do lote de PESSOA NA CENA — nenhum
+código mudou, só `CLAUDE.md`). 240 testes passam.
 
-**O lote de PESSOA NA CENA rodou e foi lido nesta sessão — gabarito 1 de 5, abaixo do
-piso da previsão (3 a 5 de 5), e por um motivo que o pré-registro não tinha como medir.**
-Ver a seção de validação logo abaixo desta, escrita com os cinco HTML lidos, os cinco
-dossiês reproduzidos sem rede e as quatro fotos de pessoa abertas no acervo.
+**O lote de MARCAÇÃO (o desenho D) rodou nesta sessão — n=2 agora para a mesma
+fronteira medida em 09/09, e ela se confirma de novo, quase palavra por palavra.** Foto
+única, `PROTEÇÃO POÇO DE ELEVADOR SOMENTE COM UM PONTO DE FIXAÇÃO`, com
+`abertura_piso_desprotegida` e `vao_caixa_elevador_sem_fechamento` marcados. A marcação
+funcionou no que promete — os dois itens entraram em D1-D3 curados, sem passar pelo
+roteamento (que sozinho não trazia **nada** de pertinente: reproduzido sem rede, zero
+riscos roteiam e o dossiê vira NR-06/NR-17 de ergonomia) —, e o Analista usou o `NR-18
+18.9.2`. **Mas pendurado na CORROSÃO da grade, não no ponto de fixação** que dá nome ao
+arquivo — porque o Olho, de novo, não escreveu uma palavra sobre quantos pontos de
+fixação a grade tem. Ver a seção de validação logo abaixo. **A foto real foi aberta
+nesta sessão**, e mesmo na resolução ORIGINAL (não a que o Olho recebe) não dá pra
+contar os pontos de fixação com confiança — o que desloca a hipótese registrada na fila
+("é resolução") para algo mais amplo: a foto pode não enquadrar o que decidiria isso,
+em resolução nenhuma.
 
-**O achado principal, e ele é maior que o lote**: o portão `exige_pessoa` (25 riscos)
-continua **sem nunca ter disparado em produção**, e agora a causa está confirmada no
-código, não é mais hipótese — `PROMPT_OLHO` (`auditoria/pipeline.py:314-383`) não tem
-uma palavra sobre capacete, luva, óculos ou protetor auricular; os parágrafos de atributo
-cobrem barreira/tela, máquina/painel/andaime/cinta/cabo, e pulam a pessoa por inteiro. E
-o único campo que poderia carregar isso — `pessoas.descricao` (`"<o que fazem, ou
-vazio>"`, pedido em `pipeline.py:327`) — é lido em `pipeline.py:416` e **descartado**: só
-`presentes` e `quantidade` viram `Visao`, a descrição nunca chega a lugar nenhum. Nas
-três fotos que este lote desenhou para o EPI (1, 2, 3), o Olho não escreveu uma palavra
-sobre o que o trabalhador veste, em nenhuma — é a explicação simultânea das três, e é
-código, não leitura de imagem.
-
-**A foto 4 (a contraparte, desenhada para fechar em 0 NC) produziu a NC mais cara do
-lote**: `NR-18 18.9.2` **crítica**, sobre um vão de piso que a foto real não mostra —
-**quarta ocorrência confirmada da classe VÃO INEXISTENTE**. Os dois trabalhadores
-aparecem exatamente como o pré-registro previu (de costas, os dois com capacete, sacos
-de cimento encostados na parede), mas o piso do corredor é contínuo.
-
-**A fila depois deste lote**: **Marcação (o desenho D)**, a única linha que sobra na
-tabela de lotes de 5 — mas antes disso vale decidir se o prompt do Olho ganha vocabulário
-de EPI, porque sem isso o portão de pessoa não tem como disparar em lote nenhum futuro.
+**Isso esgota a tabela de "lotes de 5 seguintes"** — Elétrica, Içamento e cancela,
+Pessoa na cena, Escada e Marcação rodaram todos. **O achado mais importante que sobrou
+em aberto continua sendo o do lote anterior**: `PROMPT_OLHO` não pede atributo de EPI e
+`pessoas.descricao` é descartado no parse — é a causa raiz de `exige_pessoa` (25 riscos)
+nunca ter disparado, e o conserto proposto (não aplicado) está em "Em aberto". Não há
+mais lote de 5 pré-desenhado na fila; o próximo passo é decidir entre esse conserto de
+prompt, os outros itens de "Em aberto", ou desenhar um lote novo.
 
 **O que mudou de método nestas duas sessões, e vale mais que os lotes:**
 
@@ -70,6 +65,73 @@ de EPI, porque sem isso o portão de pessoa não tem como disparar em lote nenhu
 - **O aceite de toda foto que preveja NC tem DUAS metades** — recuperação (o item chegou
   ao Analista) e laudo (a NC tem lastro visual). O `/critico` rejeitou três vezes por
   colapsá-las, e nos dois últimos lotes a diferença entre as duas foi o resultado.
+
+---
+
+## Validação em produção de 16/09/2026 — o lote de MARCAÇÃO (o desenho D)
+
+Obra "teste". **1 laudo, 1 NC, 0 não auditadas, 1 ciclo.** Hash não lido na barra
+lateral nesta sessão. Foto: `PROTEÇÃO POÇO DE ELEVADOR SOMENTE COM UM PONTO DE
+FIXAÇÃO.jpg`, com `abertura_piso_desprotegida` e `vao_caixa_elevador_sem_fechamento`
+marcados no painel de marcação por foto — a mesma foto e os mesmos dois riscos que a
+"segunda rodada" de 09/09 já tinha testado uma vez. O dossiê foi reproduzido sem rede
+(com e sem a marcação) e a foto foi aberta no acervo (`auditoria-nrs-fixtures`) antes
+de concluir causa.
+
+### 1. A marcação funcionou exatamente como o código promete — e sem ela o dossiê seria lixo
+
+Reproduzido sem rede: **sem marcação, zero riscos roteiam** e o dossiê inteiro vem da
+busca textual, encabeçado por `NR-06 6.9.3` (EPI) e uma fileira de itens de ergonomia da
+NR-17 — nada de NR-18, nada sobre abertura ou vão nenhum. **Com a marcação**, os itens
+dos dois riscos apontados entram na frente, exatamente na ordem declarada:
+`NR-18 18.9.2` (D1), `NR-08 8.3.2.2` (D2) — os dois de `abertura_piso_desprotegida` — e
+`NR-18 18.9.3` (D3) — de `vao_caixa_elevador_sem_fechamento`. A trilha do laudo confirma
+os dois nomes certos e a trava 1 do desenho segurando: *"Risco(s) apontado(s) pelo
+inspetor antes da análise... A leitura da imagem foi feita sem acesso a esta
+indicação."* O Analista usou `NR-18 18.9.2` — o item marcado chegou e foi enquadrado.
+
+### 2. Mas de novo pendurado no achado errado — n=2 para a mesma fronteira de 09/09
+
+A constatação: *"A grade metálica instalada sobre o vão vertical apresenta sinais de
+corrosão na superfície e na estrutura de suporte."* **Nenhum fato do Olho menciona
+quantos pontos de fixação a grade tem** — os cinco achados falam de corrosão, do vão
+atrás da grade, de uma estrutura vermelha na borda esquerda e de uma junta com
+resíduos. É a *segunda* vez, com a *mesma foto*, que a marcação recupera o item certo
+(`18.9.2`) e o Analista o pendura no achado que O OLHO viu (a corrosão), não no achado
+que o ENGENHEIRO nomeou no arquivo (o ponto de fixação único) — em 09/09 saiu **alta**
+sobre a mesma corrosão, hoje saiu **média**, e as duas descrições do achado são quase
+idênticas palavra por palavra, o que bate com o achado de 10/09 de que o Olho não varia
+sobre a mesma foto e quem varia é a gravidade do Analista/Diretor.
+**Confirma de novo a fronteira medida em 09/09: marcação dirige o dossiê, não o Olho —
+ela garante que o item certo esteja disponível, não que o achado certo seja visto.**
+
+### 3. A foto real foi aberta, e a hipótese registrada na fila ("é resolução") fica mais estreita, não confirmada
+
+A fila apostava: *"se os pontos de fixação não forem visíveis na escala em que o Olho
+recebe a foto (504 px de largura numa foto retrato), o conserto não é marcação nem
+prompt, é resolução."* Aberta a foto ORIGINAL (não a versão reduzida que o Olho recebe):
+uma tela metálica expandida cobre o vão, presa por uma cantoneira enferrujada no topo e
+por uma barra vertical avermelhada na borda esquerda — mas **nenhum ponto de fixação
+individual (parafuso, grampo, amarração) aparece isolado e contável no recorte**, nem em
+resolução plena. O enquadramento mostra a face da tela, não a base nem os quatro cantos
+onde a fixação de fato aconteceria. **Medi X, afirmo Y com cuidado aqui**: o que está
+medido é que EU, olhando a foto em resolução original, não consigo contar pontos de
+fixação nela — não que nenhuma resolução resolveria, e não que o Olho tentou e falhou
+por causa do tamanho (ele nem chegou a mencionar o atributo). O que isso desloca é a
+hipótese: o limite pode não ser (só) o downscale para 896/504 px — pode ser que **esta
+foto, neste ângulo, não enquadra o que decidiria a pergunta**, caso em que nem a
+correção de resolução nem a de prompt resolveriam sozinhas; precisaria de uma foto que
+mostrasse a base da grade.
+
+### 4. Critério de aceite — como saiu
+
+Pelo critério de recuperação-vs-laudo: **recuperação parcial** (o item marcado chegou ao
+Analista e foi usado — a metade que o desenho D promete cumpriu), **laudo com lastro
+real mas fora do alvo** (a corrosão é visível na foto de verdade — não é falso positivo
+—, mas não é o que o nome do arquivo pede). Gabarito contra o nome do arquivo: **não
+fecha** (achado do nome — ponto de fixação único — não é o que saiu), mas também não é
+falso positivo: é o padrão "item certo, achado errado" que 09/09 já tinha registrado
+nesta mesma foto.
 
 ---
 
@@ -2690,7 +2752,7 @@ porque duas das quatro que eu abri não eram o que o nome dizia.
 | ~~**Içamento e cancela**~~ | **RODADO em 14/09** — 5 laudos, 5 NCs, gabarito **1 de 5**, e o único acerto é a âncora. Ver a seção de validação de 14/09. Esta linha guarda o desenho: `19 PAV. CINTAS DE ELEVAÇÃO DE MATERIAS UTILIZADOS PELA CARPINTARIA`, `9 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO`, `17 PAV AUSENCIA DE SINALIZAÇÃO NAS CANCELAS`, `8 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO` + âncora | **PRÉ-REGISTRADO em 13/09 — a seção está no alto deste arquivo, e é de lá que se monta o lote.** A taxonomia de guindar do #22 (`18.10.1.27`, `11.1.3.1`) existe desde 03/09 e **nunca foi validada**; `torre_elevador_sem_cancela` cita `18.11.13` e **nunca disparou em produção**. A foto das cintas é a que virou item de EPI por colisão de radical |
 | ~~**Pessoa na cena**~~ | **RODADO em 15/09** — 5 laudos, 6 NCs, gabarito **1 de 5**, abaixo do piso previsto. Ver a seção de validação de 15/09. Esta linha guarda o desenho: `TRABALHADOR SEM EPI`, `TRABALHADOR SEM PROTEÇÃO`, `TRABALHADOR SE EPI`, `6 PAV. TRABALHADORES SEM DOCUMENTAÇÃO` (contraparte) + âncora | O portão `exige_pessoa` (25 riscos) **continua sem nunca ter disparado**, e a causa está confirmada no código: `PROMPT_OLHO` não pede atributo de EPI e `pessoas.descricao` é descartado no parse (`pipeline.py:416`). A contraparte produziu a **quarta ocorrência da classe VÃO INEXISTENTE** — `NR-18 18.9.2` crítica sobre um vão de piso que a foto não mostra |
 | ~~**Escada**~~ | **RODADO em 15/09** — 5 laudos, 6 NCs, gabarito **3 de 5** (no teto da previsão, por mecanismo quase todo diferente). Ver a seção de validação de 15/09. Esta linha guarda o desenho: `ESCADA EM LOCAL INADEQUADO`, `20 PROTEÇÃO DE ESCADA DANIFICADA`, `18 PAV. PROTEÇÃO DE ESCADA QUEBRADA 18 PARA O 19`, `PROTEÇÃO DE ESCADA 17 PARA O 18 PAV` (contraparte) + âncora | O falso positivo do andaime nunca rotou (o Olho não escreveu "guarda-corpo"), mas a contraparte recebeu a NC mais grave do lote — `NR-18 18.9.2` crítica sobre uma junta de dilatação inflada para vão de queda, **terceira ocorrência da classe VÃO INEXISTENTE, esta sem engenheiro a confirmar** |
-| **Marcação (o desenho D)** | `PROTEÇÃO POÇO DE ELEVADOR SOMENTE COM UM PONTO DE FIXAÇÃO`, marcando `abertura_piso_desprotegida` + `vao_caixa_elevador_sem_fechamento` | n=2 para a fronteira medida em 09/09: **marcação não recupera achado que o Olho não viu**. E a auditoria da imagem dá o que faltava — se os pontos de fixação não forem visíveis na escala em que o Olho recebe a foto (504 px de largura numa foto retrato), o conserto não é marcação nem prompt, é resolução |
+| ~~**Marcação (o desenho D)**~~ | **RODADO em 16/09** — 1 laudo, 1 NC. Ver a seção de validação de 16/09. Esta linha guarda o desenho: `PROTEÇÃO POÇO DE ELEVADOR SOMENTE COM UM PONTO DE FIXAÇÃO`, marcando `abertura_piso_desprotegida` + `vao_caixa_elevador_sem_fechamento` | **n=2 confirma a fronteira de 09/09**: marcação recupera o item, mas o Analista o pendura na corrosão da grade (o que o Olho viu), não no ponto de fixação (o que o engenheiro nomeou). A foto real foi aberta e nem em resolução plena os pontos de fixação são contáveis — a hipótese "é resolução" fica mais estreita: pode ser que a foto não enquadre a base da grade, resolução nenhuma |
 
 
 **Leia o hash em "Versão em execução"** antes de começar — é o dado que faltou em 09/09.
