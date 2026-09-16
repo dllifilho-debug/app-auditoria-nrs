@@ -324,7 +324,7 @@ Se não houver pessoa na imagem, "pessoas.presentes" é false — não invente n
 Responda SOMENTE com este JSON:
 {
   "ambiente": "<que tipo de local é, em uma frase>",
-  "pessoas": {"presentes": <true|false>, "quantidade": <n>, "descricao": "<o que fazem, ou vazio>"},
+  "pessoas": {"presentes": <true|false>, "quantidade": <n>, "descricao": "<o que fazem e o que vestem — cabeça, mãos, olhos, ouvidos, pés —, ou vazio>"},
   "achados": [
     {"fato": "<uma condição física concreta e verificável>", "onde": "<posição na imagem>", "confianca": "alta|media|baixa"}
   ]
@@ -344,6 +344,12 @@ Máquina, painel elétrico, andaime, escada, cinta, cabo ou gancho: diga o estad
 (corroído, amassado, queimado, esfiapado, fios rompidos) e as peças que vê e as que não vê
 (trava do gancho, guarda-corpo e rodapé do andaime, tampa do painel, proteção de partes móveis).
 Só escreva "sem <peça> visível" quando o lugar dela aparece vazio na foto; senão, "não dá para ver".
+Pessoa presente executando atividade: diga também o que ela usa na cabeça, nas mãos, nos olhos,
+nos ouvidos e nos pés (capacete, luva, óculos de proteção, protetor auricular, bota de segurança).
+Mesma forma canônica: "sem capacete, cabeça descoberta" só quando aquela parte do corpo aparece
+no recorte sem a peça; se a mão ou o rosto não aparecem claros o bastante, "não dá para ver".
+Escreva isso em "pessoas.descricao", junto do que ela faz — nunca só "sem EPI" solto, sem dizer
+qual peça falta em qual parte do corpo.
 
 NOMEIE o que a forma identifica — máquina e também elemento de canteiro: betoneira, serra
 circular, policorte, martelete, esmerilhadeira, guincho, grua, guindaste, torre de elevador de
@@ -423,6 +429,14 @@ def agente_olho(cliente: Conversador, imagem_b64: str, modelo: str, contexto: st
         for a in dados.get("achados", [])
         if str(a.get("fato", "")).strip()
     ]
+    # `pessoas.descricao` era lido e jogado fora aqui — o único campo do schema
+    # que fala do que a pessoa veste nunca chegava ao roteamento, e por isso
+    # `exige_pessoa` (25 riscos, epi_nao_utilizado entre eles) nunca disparava
+    # em produção. Vira achado PRÓPRIO, não concatenado a outro: mantém a
+    # regra de que cada achado é seu fragmento isolado para o roteamento.
+    descricao_pessoas = str(pessoas.get("descricao") or "").strip()
+    if descricao_pessoas:
+        achados.append(Achado(fato=descricao_pessoas))
     return Visao(
         ambiente=str(dados.get("ambiente", "")).strip(),
         pessoas_presentes=bool(pessoas.get("presentes")),
