@@ -1713,6 +1713,57 @@ def test_descricao_de_pessoas_sem_epi_chega_a_rotear_epi_nao_utilizado():
     assert any(r.id == "epi_nao_utilizado" for r in riscos)
 
 
+def test_prompt_do_olho_trava_a_mao_que_segura_mas_e_dita_fora_do_recorte():
+    """Achado em produção em 16/09: o Olho escreveu, na mesma frase, que a mão
+
+    segurava a ferramenta e que "mãos... não aparecem no recorte" — contradição
+    interna que apagou a NC real (a mão estava visível e sem luva). O prompt
+    agora proíbe essa contradição explicitamente.
+    """
+    from auditoria.pipeline import PROMPT_OLHO
+
+    assert "essa mão APARECE no recorte" in PROMPT_OLHO
+    assert "nunca diga depois que ela" in PROMPT_OLHO
+
+
+def test_prompt_do_olho_trava_afirmar_estado_de_parte_fora_do_recorte():
+    """Achado em produção em 16/09: "apenas o tronco, braços e pernas estão no
+
+    recorte, sem capacete, cabeça descoberta" — o próprio fato do Olho negava a
+    visibilidade da cabeça e afirmava o estado dela na mesma frase, produzindo
+    uma NC sem lastro sobre a pessoa errada. A trava proíbe isso mecanicamente.
+    """
+    from auditoria.pipeline import PROMPT_OLHO
+
+    assert "não afirme o estado de nenhuma parte fora" in PROMPT_OLHO
+    assert "não pode estar" in PROMPT_OLHO
+
+
+def test_prompt_do_olho_proibe_deduzir_epi_pelo_contexto():
+    """Achado em produção em 16/09: o Olho escreveu "usa boné preto e luvas" numa
+
+    foto em que a cabeça está nitidamente descoberta — inventou presença de EPI
+    por dedução (é canteiro de obras, a pessoa está trabalhando), não por
+    observação. É pior que a omissão original: esconde a NC real.
+    """
+    from auditoria.pipeline import PROMPT_OLHO
+
+    assert "nunca escreva \"usa capacete\", \"usa boné\" ou \"usa luva\" por dedução" in PROMPT_OLHO
+
+
+def test_prompt_do_olho_pede_pessoa_por_achado_proprio():
+    """Achado em produção em 16/09: duas pessoas descritas no MESMO achado
+
+    quase produziram um segundo falso positivo — o sinal `"sem bota"` casou
+    cobertura 1,00 porque `bota` veio do primeiro homem e `sem` do segundo,
+    dentro do mesmo fragmento. Cada pessoa vira achado próprio para não
+    misturar o `sem` de uma com a peça da outra no roteamento.
+    """
+    from auditoria.pipeline import PROMPT_OLHO
+
+    assert "achado PRÓPRIO" in PROMPT_OLHO
+
+
 def test_texto_da_norma_nao_carrega_numero_de_pagina(base):
     """O extrator colava o número da página no fim do item, e ele saía no laudo."""
     import re

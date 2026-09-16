@@ -27,27 +27,28 @@ verdade é sempre com o usuário, em produção, com fotos e laudos que ele mand
 
 ---
 
-## COMECE POR AQUI — estado em 16/09/2026, o conserto de EPI rodou e achou defeito PIOR
+## COMECE POR AQUI — estado em 16/09/2026, conserto → medição → defeito pior → trava nova
 
 **`main` em `b444beb`** (PR #57, merge do conserto do prompt de EPI — código e testes,
 `CLAUDE.md`). 244 testes passam nele. Confirmado por `git fetch origin main` nesta
-sessão, não inferido.
+sessão, não inferido. **Esta sessão já tem uma segunda rodada em cima disso, ainda sem
+PR mergeado**: 248 testes na branch local (244 + 4 novos).
 
-**O conserto do prompt de EPI (achado em 15/09, implementado e mergeado nesta sessão)
-foi medido em produção nas mesmas três fotos do lote de 15/09, e o resultado é pior do
-que "não funcionou": a cadeia técnica FECHOU — `epi_nao_utilizado` disparou pela
-primeira vez na história deste projeto — mas o Olho passou a ALUCINAR sobre o corpo da
-pessoa, de três formas diferentes, uma em cada foto.** Ver a seção de validação logo
-abaixo, que é a mais importante deste arquivo hoje: ela muda o diagnóstico do "Em
-aberto" que a sessão anterior tinha escrito. Gabarito contra o nome do arquivo: **0 de
-3** com lastro correto — pior que o 1 de 5 de 15/09, porque lá o Olho pelo menos não
-inventava dado sobre o corpo do trabalhador.
+**O conserto do prompt de EPI (PR #57) foi medido em produção nas mesmas três fotos do
+lote de 15/09, e o resultado foi pior do que "não funcionou": a cadeia técnica FECHOU —
+`epi_nao_utilizado` disparou pela primeira vez na história deste projeto — mas o Olho
+passou a ALUCINAR sobre o corpo da pessoa, de três formas diferentes, uma em cada foto**
+(gabarito 0 de 3, pior que o 1 de 5 de 15/09— lá o Olho ao menos não inventava dado).
+Ver a seção de validação logo abaixo. **A trava contra essa alucinação foi escrita na
+sequência, nesta mesma sessão** — quatro regras no parágrafo de pessoa do
+`PROMPT_OLHO`, uma por variante medida, com quatro testes novos travando o texto. Ainda
+não tem lote de produção medindo se ela resistiu; ver "Em aberto".
 
 **Isso esgota a tabela de "lotes de 5 seguintes"** — Elétrica, Içamento e cancela,
-Pessoa na cena, Escada e Marcação rodaram todos, e agora o conserto de EPI também já
-tem uma medição em produção. Não há lote de 5 pré-desenhado na fila; o próximo passo é
-decidir entre reforçar a regra da moldura para o parágrafo de pessoa (proposta na seção
-de validação e em "Em aberto"), os outros itens de "Em aberto", ou desenhar um lote novo.
+Pessoa na cena, Escada e Marcação rodaram todos, e o conserto de EPI já teve uma volta
+completa de medição e reação. Não há lote de 5 pré-desenhado na fila; o próximo passo é
+rodar as mesmas três fotos de novo para medir a trava nova, ou decidir entre os outros
+itens de "Em aberto", ou desenhar um lote novo.
 
 **O que mudou de método nestas três sessões, e vale mais que os lotes:**
 
@@ -176,14 +177,22 @@ consertou de verdade, e a foto 3 prova: quando o Olho escreve a negação certa,
 `epi_nao_utilizado` dispara e o Analista usa) — **é confiabilidade do próprio dado**,
 uma classe de erro nova e mais cara que a omissão original, porque uma NC pode nascer
 de uma frase que se contradiz dentro dela mesma.
-Candidato a conserto, não aplicado nesta sessão — proposto para decisão do usuário:
-tornar a regra explícita e mecânica no prompt, no molde da cláusula (e) do Diretor —
-"se você não descreveu a peça daquela parte do corpo porque ela não aparece, não afirme
-o estado dela na mesma frase; e antes de escrever 'sem <peça>', confirme que a parte do
-corpo em questão está listada como visível". É mudança de prompt de agente sobre um
-parágrafo que **acabou de ser medido e reprovado** — vale nova rodada de lote antes de
-declarar fechado, e a régua de aceite muda: não basta o vocabulário aparecer, tem que
-resistir à foto real, achado por achado.
+**CONSERTADO na mesma sessão, à espera de novo lote.** Quatro regras novas no parágrafo
+de pessoa do `PROMPT_OLHO`, uma por variante medida: (1) se a mão segura, apoia ou
+manuseia algo, ela APARECE — proíbe a contradição da foto 2 ("segura com a mão direita"
++ "mãos... não aparecem"); (2) limitar o que aparece da pessoa ("apenas tronco, braços e
+pernas") proíbe afirmar o estado de qualquer parte fora dessa lista na mesma frase —
+mata a contradição da foto 3 ("cabeça descoberta" sobre quem não teve a cabeça
+descrita); (3) proíbe escrever "usa capacete/boné/luva" por dedução de contexto (é
+canteiro de obras, a pessoa trabalha) — a causa direta do boné inventado na foto 1; e
+(4) havendo mais de uma pessoa, cada uma vira achado PRÓPRIO, para não deixar o `sem`
+de uma colar com a peça da outra (o defeito secundário do `"sem bota"` medido na foto 3).
+**Quatro testes novos travam o texto do prompt**, sem rede — 248 testes passam
+(244 + 4). Verificado no navegador em Modo Demonstração, sem regressão.
+É mudança de prompt de agente sobre um parágrafo que **acabou de ser medido e
+reprovado** — vale nova rodada de lote antes de declarar fechado, e a régua de aceite
+muda: não basta o vocabulário aparecer, tem que resistir à foto real, achado por
+achado. Perguntar ao usuário antes de rodar, dado que consome cota do dia.
 
 ---
 
@@ -2902,7 +2911,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 244 testes
+$VENV -m pytest tests/ -q          # 248 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -3058,7 +3067,7 @@ próprio comando composto (exit 144).
   plano de ação. Um laudo dirigido em parte por quem inspecionou não tem o mesmo valor de
   evidência que um em que o app chegou sozinho ao item, e quem lê o documento precisa
   saber de qual dos dois se trata.
-- **244 testes**
+- **248 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
@@ -3327,31 +3336,30 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
 ## Em aberto
 
 - **`PROMPT_OLHO` não pedia atributo de EPI — achado em 15/09, CONSERTADO em 16/09
-  (PR #57), MEDIDO em produção no mesmo dia, e o resultado é um defeito NOVO, pior que o
-  original.** Ver a seção de validação "o lote de EPI (conserto do prompt)", que é onde
-  a análise completa mora. Resumo: a causa raiz (o prompt não pedia o atributo e
-  `pessoas.descricao` era descartada no parse) estava certa e o conserto a fechou de
-  verdade — `epi_nao_utilizado` disparou pela primeira vez em produção, na foto 3, e o
-  Analista o usou. Mas nas três fotos o Olho, ao tentar cumprir a instrução nova,
-  **alucinou sobre o corpo da pessoa**, uma variante em cada uma: inventou um boné e
-  luvas que não existem (foto 1, a cabeça está nitidamente descoberta); negou que uma
-  mão claramente visível aparecesse no recorte, na mesma frase em que dizia que ela
-  segurava a ferramenta (foto 2); e afirmou que uma cabeça estava descoberta na mesma
-  frase em que dizia que só tronco, braços e pernas apareciam no recorte (foto 3) —
-  contradição interna que produziu uma NC real sobre uma pessoa cuja cabeça ninguém pode
-  verificar. **Gabarito: 0 de 3**, pior que o 1 de 5 de 15/09.
-  **O que fica confirmado**: a mudança no parse e no roteamento (o achado PRÓPRIO de
-  `pessoas.descricao`, os quatro testes) está correta e não precisa mexer de novo — a
-  prova é a foto 3, onde o mecanismo funcionou exatamente como desenhado assim que o
-  fato trouxe a negação certa. **O que fica em aberto**: o parágrafo do prompt que pede
-  o atributo precisa de uma trava explícita contra as três variantes medidas, no molde
-  da cláusula (e) do Diretor — não afirmar o estado de uma parte do corpo na mesma frase
-  em que se diz que ela não aparece, e não inventar presença de EPI sem lastro. Proposto
-  em detalhe na seção de validação; **não aplicado nesta sessão**, porque muda o mesmo
-  parágrafo que acabou de ser medido e a régua de aceite da próxima rodada precisa ser
-  mais dura (resistir à foto real, achado por achado, não só produzir vocabulário).
-  Perguntar ao usuário antes de aplicar e antes de rodar o próximo lote, dado que
-  consome cota do dia.
+  (PR #57), MEDIDO em produção no mesmo dia (defeito NOVO achado: o Olho alucinava sobre
+  o corpo da pessoa), e a trava contra essa alucinação CONSERTADA na sequência, à espera
+  de novo lote.** Ver a seção de validação "o lote de EPI (conserto do prompt)", que é
+  onde a análise completa mora. Resumo da cadeia: a causa raiz (o prompt não pedia o
+  atributo e `pessoas.descricao` era descartada no parse) estava certa e o PR #57 a
+  fechou de verdade — `epi_nao_utilizado` disparou pela primeira vez em produção, na
+  foto 3, e o Analista o usou. Mas nas três fotos o Olho, ao tentar cumprir a instrução
+  nova, **alucinou sobre o corpo da pessoa**, uma variante em cada uma: inventou um boné
+  e luvas que não existem (foto 1); negou que uma mão claramente visível aparecesse no
+  recorte, na mesma frase em que dizia que ela segurava a ferramenta (foto 2); e afirmou
+  que uma cabeça estava descoberta na mesma frase em que dizia que só tronco, braços e
+  pernas apareciam no recorte (foto 3). Gabarito daquela medição: **0 de 3**.
+  **O conserto aplicado**, quatro regras no mesmo parágrafo, uma por variante: mão que
+  segura/apoia/manuseia sempre "aparece", proibindo a contradição da foto 2; limitar o
+  que aparece da pessoa proíbe afirmar o estado de qualquer parte fora da lista, matando
+  a contradição da foto 3; proibição explícita de deduzir "usa capacete/boné/luva" pelo
+  contexto, contra a invenção da foto 1; e pessoa múltipla vira achado próprio, contra o
+  `"sem bota"` que quase colidiu na foto 3. **Quatro testes travam o texto do prompt**,
+  248 testes passam (244 + 4), navegador verificado sem regressão.
+  **É mudança de prompt de agente sobre um parágrafo que já foi medido e reprovado uma
+  vez — vale nova rodada de lote antes de declarar fechado**, e a régua de aceite muda:
+  não basta o vocabulário de EPI aparecer (isso já foi medido), tem que resistir à foto
+  real, achado por achado, sem contradição interna nem invenção. Perguntar ao usuário
+  antes de rodar esse lote, dado que consome cota do dia.
 - **"O modelo ainda é o melhor?" não se responde desta sessão — remedido em 12/09.** O
   usuário perguntou, e a verificação honesta é esta: `groq.com`, `api.groq.com` e
   `console.groq.com` devolvem falha de conexão (código 000, não 403), então **não há como

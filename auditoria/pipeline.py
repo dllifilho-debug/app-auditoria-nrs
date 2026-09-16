@@ -351,6 +351,17 @@ no recorte sem a peça; se a mão ou o rosto não aparecem claros o bastante, "n
 Escreva isso em "pessoas.descricao", junto do que ela faz — nunca só "sem EPI" solto, sem dizer
 qual peça falta em qual parte do corpo.
 
+Duas regras contra a frase se contradizer sozinha: (1) se você escrever que a mão segura, apoia
+ou manuseia algo, essa mão APARECE no recorte — nunca diga depois que ela "não aparece"; descreva
+o que tem ou não tem nela. (2) se você limitar o que aparece da pessoa ("apenas o tronco, os
+braços e as pernas estão no recorte"), pare nisso — não afirme o estado de nenhuma parte fora
+dessa lista, nem para dizer que falta um EPI nela; a cabeça que você não viu não pode estar
+"descoberta" no seu texto. E nunca escreva "usa capacete", "usa boné" ou "usa luva" por dedução —
+porque é canteiro de obras, porque a pessoa está trabalhando: só quando o objeto em si aparece de
+verdade sobre aquela parte do corpo. Havendo mais de uma pessoa na cena, descreva cada uma em um
+achado PRÓPRIO, nunca na mesma frase — duas pessoas misturadas no mesmo achado deixam o "sem" de
+uma colar com a peça da outra no roteamento.
+
 NOMEIE o que a forma identifica — máquina e também elemento de canteiro: betoneira, serra
 circular, policorte, martelete, esmerilhadeira, guincho, grua, guindaste, torre de elevador de
 obra, elevador de cremalheira, cancela, tapume, bandeja, andaime, quadro elétrico, poço de
