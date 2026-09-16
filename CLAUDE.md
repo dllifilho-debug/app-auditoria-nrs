@@ -27,51 +27,29 @@ verdade é sempre com o usuário, em produção, com fotos e laudos que ele mand
 
 ---
 
-## COMECE POR AQUI — estado em 16/09/2026, a tabela de lotes de 5 está ESGOTADA
+## COMECE POR AQUI — estado em 16/09/2026, o conserto de EPI rodou e achou defeito PIOR
 
-**`main` em `a76dc8d`** (PR #56, merge da validação do lote de MARCAÇÃO — nenhum código
-mudou, só `CLAUDE.md`; confirmado por `git fetch origin main` nesta sessão, não inferido).
-240 testes passam nele. **A frase anterior daqui dizia `1849518`/PR #55** — desatualizada
-no próprio commit que a escreveu, porque aquela sessão rodou o lote de marcação e abriu
-o PR #56 depois de anotar o hash do início dela; é a armadilha do número que envelhece
-em silêncio, pela via mais simples: o cabeçalho não foi atualizado ao final da sessão que
-o escreveu.
+**`main` em `b444beb`** (PR #57, merge do conserto do prompt de EPI — código e testes,
+`CLAUDE.md`). 244 testes passam nele. Confirmado por `git fetch origin main` nesta
+sessão, não inferido.
 
-**Esta sessão (nova, começada depois do merge do #56) implementou o conserto do prompt de
-EPI numa branch nova (`claude/practical-rubin-4c46zb`), ainda sem PR aberto contra o
-`main`** — ver o parágrafo abaixo e o item em "Em aberto". 244 testes passam nela
-(240 + 4 novos).
-
-**O lote de MARCAÇÃO (o desenho D) rodou nesta sessão — n=2 agora para a mesma
-fronteira medida em 09/09, e ela se confirma de novo, quase palavra por palavra.** Foto
-única, `PROTEÇÃO POÇO DE ELEVADOR SOMENTE COM UM PONTO DE FIXAÇÃO`, com
-`abertura_piso_desprotegida` e `vao_caixa_elevador_sem_fechamento` marcados. A marcação
-funcionou no que promete — os dois itens entraram em D1-D3 curados, sem passar pelo
-roteamento (que sozinho não trazia **nada** de pertinente: reproduzido sem rede, zero
-riscos roteiam e o dossiê vira NR-06/NR-17 de ergonomia) —, e o Analista usou o `NR-18
-18.9.2`. **Mas pendurado na CORROSÃO da grade, não no ponto de fixação** que dá nome ao
-arquivo — porque o Olho, de novo, não escreveu uma palavra sobre quantos pontos de
-fixação a grade tem. Ver a seção de validação logo abaixo. **A foto real foi aberta
-nesta sessão**, e mesmo na resolução ORIGINAL (não a que o Olho recebe) não dá pra
-contar os pontos de fixação com confiança — o que desloca a hipótese registrada na fila
-("é resolução") para algo mais amplo: a foto pode não enquadrar o que decidiria isso,
-em resolução nenhuma.
+**O conserto do prompt de EPI (achado em 15/09, implementado e mergeado nesta sessão)
+foi medido em produção nas mesmas três fotos do lote de 15/09, e o resultado é pior do
+que "não funcionou": a cadeia técnica FECHOU — `epi_nao_utilizado` disparou pela
+primeira vez na história deste projeto — mas o Olho passou a ALUCINAR sobre o corpo da
+pessoa, de três formas diferentes, uma em cada foto.** Ver a seção de validação logo
+abaixo, que é a mais importante deste arquivo hoje: ela muda o diagnóstico do "Em
+aberto" que a sessão anterior tinha escrito. Gabarito contra o nome do arquivo: **0 de
+3** com lastro correto — pior que o 1 de 5 de 15/09, porque lá o Olho pelo menos não
+inventava dado sobre o corpo do trabalhador.
 
 **Isso esgota a tabela de "lotes de 5 seguintes"** — Elétrica, Içamento e cancela,
-Pessoa na cena, Escada e Marcação rodaram todos.
+Pessoa na cena, Escada e Marcação rodaram todos, e agora o conserto de EPI também já
+tem uma medição em produção. Não há lote de 5 pré-desenhado na fila; o próximo passo é
+decidir entre reforçar a regra da moldura para o parágrafo de pessoa (proposta na seção
+de validação e em "Em aberto"), os outros itens de "Em aberto", ou desenhar um lote novo.
 
-**O achado mais importante do lote anterior — `PROMPT_OLHO` não pedia atributo de EPI e
-`pessoas.descricao` era descartado no parse — foi CONSERTADO nesta sessão (16/09), código
-e testes, ainda sem lote de produção.** O detalhe do conserto está em "Em aberto", no
-mesmo item que registrava o achado. Faltam duas coisas antes de considerar isso fechado:
-(1) abrir PR e mergear — o app publicado continua rodando o `PROMPT_OLHO` antigo até lá;
-(2) rodar um lote nas mesmas três fotos de EPI ausente do lote de 15/09 (ou fotos novas)
-para medir se o Olho de fato passa a escrever o atributo, e se o risco simétrico (inventar
-"sem luva"/"sem capacete" fora do que a foto mostra) aparece. Não há mais lote de 5
-pré-desenhado na fila depois deste; o próximo passo, depois de mergear e medir este
-conserto, é decidir entre os outros itens de "Em aberto" ou desenhar um lote novo.
-
-**O que mudou de método nestas duas sessões, e vale mais que os lotes:**
+**O que mudou de método nestas três sessões, e vale mais que os lotes:**
 
 - **A regra 3 caiu para o acervo histórico.** O engenheiro declarou em 13/09 que não tem
   a memória destas fotos — o que ele vê é a imagem, igual a mim. A régua (a)-(d) que a
@@ -81,6 +59,131 @@ conserto, é decidir entre os outros itens de "Em aberto" ou desenhar um lote no
 - **O aceite de toda foto que preveja NC tem DUAS metades** — recuperação (o item chegou
   ao Analista) e laudo (a NC tem lastro visual). O `/critico` rejeitou três vezes por
   colapsá-las, e nos dois últimos lotes a diferença entre as duas foi o resultado.
+
+---
+
+## Validação em produção de 16/09/2026 — o lote de EPI (conserto do prompt), 3 fotos
+
+Obra "teste". **3 laudos, 3 NCs, 0 não auditadas, 1 ciclo em todos.** Hash não lido na
+barra lateral nesta sessão — inferido pelo comportamento do Olho: as três listas de
+fatos trazem vocabulário de EPI da pessoa (boné, luvas, capacete, cabeça descoberta,
+bota) que `PROMPT_OLHO` só passou a pedir no PR #57. Mesmas três fotos do lote de
+PESSOA NA CENA de 15/09 — `TRABALHADOR SEM EPI.jpg`, `TRABALHADOR SEM PROTEÇÃO.jpg`,
+`TRABALHADOR SE EPI.jpg` —, sem marcação e sem contexto extra. Os três dossiês foram
+reproduzidos sem rede a partir dos fatos reais (`rotear_riscos` + `montar_dossie`) e as
+três fotos foram abertas no acervo (`auditoria-nrs-fixtures`) antes de concluir causa.
+
+| # | Foto | O que o Olho escreveu sobre a pessoa | NC entregue |
+|---|---|---|---|
+| 1 | `TRABALHADOR SEM EPI` | "Usa **boné preto** na cabeça e **luvas** nas mãos" | `NR-08 8.3.2.2` alta (aberturas na parede) |
+| 2 | `TRABALHADOR SEM PROTEÇÃO` | "mãos, cabeça, olhos, ouvidos e pés **não aparecem no recorte**" | **0 NC** |
+| 3 | `TRABALHADOR SE EPI` | 1º homem: boné azul, bota — correto. 2º homem: "**apenas o tronco, braços e pernas** estão no recorte, **sem capacete, cabeça descoberta**" | `NR-08 8.3.2.2` crítica (abertura vertical) + `NR-06 6.5.1` alta (**cabeça do 2º homem**) |
+
+**Gabarito contra o nome do arquivo: 0 de 3.** Pior que o 1 de 5 de 15/09 pelo critério
+de sempre — nenhuma das três fecha com o achado do nome e lastro real —, e por um
+motivo que aquele lote não tinha: aqui não é mais omissão, é **invenção**.
+
+### 1. A cadeia técnica fechou — `epi_nao_utilizado` disparou pela primeira vez na história do projeto
+
+Reproduzido sem rede sobre os três fatos reais: a foto 3 roteia `epi_nao_utilizado`
+(cobertura 1,00 no sinal `"sem capacete"`) e põe `NR-06 6.5.1`/`6.6.1` em **D1/D2
+curados** — e o Analista os usou, com `6.5.1`. É a primeira vez, desde 03/09, que esse
+risco (25 de 126, nunca medido em produção) sai de um laudo real. O conserto do PR #57
+— o parágrafo novo no prompt e `pessoas.descricao` deixando de ser descartada — fez
+exatamente o que prometia: o vocabulário de EPI chega ao roteamento.
+**Nas fotos 1 e 2 o risco não dispara, e está certo não disparar dado o fato**: o fato
+1 afirma que a pessoa USA boné e luvas (presença, não ausência) e o fato 2 diz que a
+mão "não aparece no recorte" — nenhum dos dois tem a palavra `sem` que o sinal precisa.
+**O defeito não está mais no parse nem no roteamento — está no que o Olho escreveu.**
+
+### 2. Foto 1: o Olho INVENTOU um boné e uma luva que não existem — geometria pura, e ele errou
+
+Aberta a foto real: o trabalhador está agachado aplicando massa na parede, de costas.
+**A cabeça dele está nitidamente DESCOBERTA** — cabelo curto à mostra, nenhum boné,
+nenhum capacete, nada. É exatamente o achado que o nome do arquivo pede, e é geometria
+pura pela régua (a)-(d): presença ou ausência de objeto sobre a cabeça se decide com
+confiança, sem ambiguidade de material, nome nem estado. **O Olho escreveu "usa boné
+preto na cabeça e luvas nas mãos"** — o oposto do que a foto mostra. Não é omissão (a
+causa raiz de 15/09): é **invenção de presença de EPI onde a foto mostra ausência**, e
+o resultado é o pior possível — a NC certa (`NR-06`, capacete) nunca teve chance de
+sequer ser candidata, porque o fato afirmou o contrário do que está na imagem.
+**É o "risco simétrico" que o item em aberto do PR #57 previa vigiar ("inventar 'sem
+luva' numa mão que a foto não mostra"), mas na direção oposta e mais grave**: não é
+inventar ausência, é inventar PRESENÇA — o que faz uma condição insegura real virar
+"conforme" no laudo do cliente. A mão que segura a espátula também não mostra luva
+nenhuma com confiança na escala da foto, mas essa parte fica ABERTA pela regra (b)
+(pele nua e luva clara podem se confundir); a cabeça não — ali não há dúvida.
+
+### 3. Foto 2: o Olho negou a visibilidade de uma mão que está claramente visível
+
+Aberta a foto real: o trabalhador segura a serra circular amarela com a **mão direita
+nua, sem luva, perfeitamente visível** segurando o cabo — é a leitura que a leitura
+cega do pré-registro de 16/09 já previa ("mão segurando a serra sem luva visível").
+**O Olho escreveu "mãos, cabeça, olhos, ouvidos e pés não aparecem no recorte"** — na
+MESMA frase em que diz "segurando uma ferramenta elétrica amarela **com a mão
+direita**". A contradição está dentro do próprio fato: se a mão segura algo visível na
+foto, ela apareceu; dizer que não apareceu é negar o que a frase anterior, dele mesmo,
+acabou de afirmar. Resultado: **0 NC**, na foto que a leitura cega considerava o caso
+mais fácil e mais claro do lote inteiro.
+
+### 4. Foto 3: o Olho afirmou o estado de uma cabeça que ele mesmo disse estar fora do recorte
+
+Este é o caso mais grave, porque produziu uma NC real no documento. Aberta a foto: o
+segundo trabalhador aparece só pelo braço e mão erguidos no canto superior direito — a
+cabeça dele **não está no recorte**, cortada pela borda da foto. **O próprio fato do
+Olho registra isso**: "apenas o tronco, braços e pernas estão no recorte" — e na
+sequência, na mesma frase, afirma "sem capacete, cabeça descoberta". É uma contradição
+interna explícita, não uma inferência duvidosa: o Olho documentou que não vê a cabeça e
+declarou o estado dela mesmo assim. **É o efeito colateral que este arquivo já vigiava
+desde antes do PR #57** ("o Olho começar a inventar ausência de peça que está fora do
+enquadramento… até aqui não tinha aparecido") — agora apareceu, e ele produziu uma NC
+(`NR-06 6.5.1`, alta) sobre uma pessoa cuja cabeça ninguém, nem o próprio Olho, pode
+confirmar que está ou não coberta.
+**E o achado real mais óbvio da foto foi omitido.** O primeiro trabalhador (o que o
+Olho descreveu corretamente — boné azul, camisa "FORTLEV", bota de cano alto, todos
+confirmados na foto) segura a mesma serra circular com a mesma mão nua e sem luva da
+foto 2 — visível na imagem exatamente como na foto 2 — e o Olho não escreveu uma
+palavra sobre a mão dele. A NC que saiu é sobre a pessoa ERRADA, pendurada num atributo
+que a foto não permite verificar, enquanto o achado com lastro real (mão sem luva do
+trabalhador principal) ficou de fora dos fatos.
+
+**E há um segundo defeito técnico, medido, que não mudou o resultado por sorte.** O
+Olho descreveu os DOIS trabalhadores dentro do MESMO achado (um único item da lista de
+fatos, com os dois homens), o que quebra a premissa de "cada achado é uma condição
+verificável" — aqui é uma condição composta. Medido: o sinal `"sem bota"` do próprio
+`epi_nao_utilizado` também casa a **cobertura 1,00** neste fato, porque `bota` vem do
+PRIMEIRO homem (que a foto confirma vestir bota) e `sem` vem da frase do SEGUNDO — o
+mesmo mecanismo do `"sem"` completando um sinal alheio, de novo, mas desta vez os dois
+radicais vêm do mesmo fragmento por causa do formato composto, não por vazamento do
+ambiente. Não mudou o dossiê aqui porque os dois sinais apontam para o MESMO risco
+(`epi_nao_utilizado`, já roteado por `"sem capacete"`), mas noutra combinação — um
+homem com luva, o outro sem — o mesmo formato composto casaria um sinal de EPI sobre a
+peça errada da pessoa errada. Vale de olho no próximo lote se o Olho volta a agrupar
+duas pessoas no mesmo achado.
+
+### 5. O que isso muda no método: a regra da moldura precisa cobrir o corpo da pessoa
+
+A regra da moldura já existe para objeto ("a constatação só afirma que algo NÃO existe
+se aquilo apareceria no recorte") e para o parecer/consequência (cláusula d, contra a
+hipótese). **Ela nunca foi escrita para o corpo da pessoa**, e o parágrafo novo do
+PR #57 tentou cobrir isso com uma frase só ("se a mão ou o rosto não aparecerem claros
+o bastante, 'não dá para ver'") — medido agora: **essa frase não impediu nenhuma das
+três variantes do defeito**. O Olho não é inconsistente ao acaso: nas três fotos ele
+tentou cumprir a instrução nova (descrever cabeça/mãos) e falhou de três jeitos
+diferentes — inventando presença, negando visibilidade real, e contradizendo a si
+mesmo dentro da mesma frase. **Isso não é mais causa raiz de omissão** (que o PR #57
+consertou de verdade, e a foto 3 prova: quando o Olho escreve a negação certa,
+`epi_nao_utilizado` dispara e o Analista usa) — **é confiabilidade do próprio dado**,
+uma classe de erro nova e mais cara que a omissão original, porque uma NC pode nascer
+de uma frase que se contradiz dentro dela mesma.
+Candidato a conserto, não aplicado nesta sessão — proposto para decisão do usuário:
+tornar a regra explícita e mecânica no prompt, no molde da cláusula (e) do Diretor —
+"se você não descreveu a peça daquela parte do corpo porque ela não aparece, não afirme
+o estado dela na mesma frase; e antes de escrever 'sem <peça>', confirme que a parte do
+corpo em questão está listada como visível". É mudança de prompt de agente sobre um
+parágrafo que **acabou de ser medido e reprovado** — vale nova rodada de lote antes de
+declarar fechado, e a régua de aceite muda: não basta o vocabulário aparecer, tem que
+resistir à foto real, achado por achado.
 
 ---
 
@@ -3223,40 +3326,32 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
 
 ## Em aberto
 
-- **`PROMPT_OLHO` não pedia atributo de EPI, e o campo que poderia carregá-lo era
-  descartado no parse — achado em 15/09, CONSERTADO em 16/09, à espera de lote.** Era a
-  causa raiz de o portão `exige_pessoa` (25 riscos, `epi_nao_utilizado` entre eles) nunca
-  ter disparado em produção desde 03/09 (repetido nas validações de 11/09, 12/09 e
-  14/09) — o lote de 15/09 foi o primeiro desenhado de propósito para isso e mediu a
-  causa: `PROMPT_OLHO` (`auditoria/pipeline.py:314-383`, antes do conserto — hoje
-  314-389, seis linhas a mais) tinha parágrafos de atributo
-  para barreira, tela, máquina, painel, andaime e cabo, e nenhuma palavra sobre
-  capacete, luva, óculos ou protetor auricular; e `pessoas.descricao` — o único campo do
-  schema que fala da pessoa além de contá-la — era lido em `pipeline.py` e nunca
-  repassado à `Visao` (só `presentes` e `quantidade` sobreviviam). Nas três fotos do lote
-  de 15/09 desenhadas para EPI ausente, a ausência estava visível na foto real e o Olho
-  não escreveu uma palavra sobre ela, nas três.
-  **O conserto aplicado**, os dois lados: um parágrafo novo no `PROMPT_OLHO` pedindo o
-  que a pessoa usa na cabeça, mãos, olhos, ouvidos e pés (mesma forma canônica dos
-  parágrafos existentes — "sem capacete, cabeça descoberta" só quando a parte do corpo
-  aparece vazia no recorte, senão "não dá para ver"), e `pessoas.descricao` deixou de ser
-  descartada: quando não vazia, vira um achado PRÓPRIO em `Visao.achados` — fragmento
-  isolado, não concatenado a outro achado, para respeitar a regra de que cada achado é
-  seu pedaço isolado no roteamento (a mesma que motivou a âncora de dois radicais em
-  01/09). Optei pela via "mais simples" que este item já cogitava, em vez de um campo
-  novo em `Visao`, porque ela reaproveita o roteamento tal como está: o achado extra
-  passa pelas mesmas âncoras e fragmentação de sempre, sem caminho novo a validar.
-  **Quatro testes travam isso, sem rede**: o prompt contém o vocabulário de EPI; o parse
-  guarda `descricao` como achado próprio; a contraparte — sem `descricao`, nenhum achado
-  extra — para não passar por acaso; e a cadeia fechada ponta a ponta, um achado sintético
-  de "sem capacete" roteando `epi_nao_utilizado` de fato. 244 testes passam (240 + 4).
-  Verificado no navegador em Modo Demonstração: pipeline roda inteiro sem regressão (o
-  dublê já tinha `descricao: ""`, então o comportamento dele não muda).
-  **É mudança de prompt de agente — vale lote de produção antes de considerar fechada**,
-  pela própria regra deste arquivo: mexe em toda foto com gente, e só um lote diz se o
-  Olho obedece e se o risco simétrico aparece (inventar "sem luva" numa mão que a foto
-  não mostra, ou "sem capacete" num rosto fora do recorte). Perguntar ao usuário antes de
-  rodar esse lote, dado que consome cota do dia.
+- **`PROMPT_OLHO` não pedia atributo de EPI — achado em 15/09, CONSERTADO em 16/09
+  (PR #57), MEDIDO em produção no mesmo dia, e o resultado é um defeito NOVO, pior que o
+  original.** Ver a seção de validação "o lote de EPI (conserto do prompt)", que é onde
+  a análise completa mora. Resumo: a causa raiz (o prompt não pedia o atributo e
+  `pessoas.descricao` era descartada no parse) estava certa e o conserto a fechou de
+  verdade — `epi_nao_utilizado` disparou pela primeira vez em produção, na foto 3, e o
+  Analista o usou. Mas nas três fotos o Olho, ao tentar cumprir a instrução nova,
+  **alucinou sobre o corpo da pessoa**, uma variante em cada uma: inventou um boné e
+  luvas que não existem (foto 1, a cabeça está nitidamente descoberta); negou que uma
+  mão claramente visível aparecesse no recorte, na mesma frase em que dizia que ela
+  segurava a ferramenta (foto 2); e afirmou que uma cabeça estava descoberta na mesma
+  frase em que dizia que só tronco, braços e pernas apareciam no recorte (foto 3) —
+  contradição interna que produziu uma NC real sobre uma pessoa cuja cabeça ninguém pode
+  verificar. **Gabarito: 0 de 3**, pior que o 1 de 5 de 15/09.
+  **O que fica confirmado**: a mudança no parse e no roteamento (o achado PRÓPRIO de
+  `pessoas.descricao`, os quatro testes) está correta e não precisa mexer de novo — a
+  prova é a foto 3, onde o mecanismo funcionou exatamente como desenhado assim que o
+  fato trouxe a negação certa. **O que fica em aberto**: o parágrafo do prompt que pede
+  o atributo precisa de uma trava explícita contra as três variantes medidas, no molde
+  da cláusula (e) do Diretor — não afirmar o estado de uma parte do corpo na mesma frase
+  em que se diz que ela não aparece, e não inventar presença de EPI sem lastro. Proposto
+  em detalhe na seção de validação; **não aplicado nesta sessão**, porque muda o mesmo
+  parágrafo que acabou de ser medido e a régua de aceite da próxima rodada precisa ser
+  mais dura (resistir à foto real, achado por achado, não só produzir vocabulário).
+  Perguntar ao usuário antes de aplicar e antes de rodar o próximo lote, dado que
+  consome cota do dia.
 - **"O modelo ainda é o melhor?" não se responde desta sessão — remedido em 12/09.** O
   usuário perguntou, e a verificação honesta é esta: `groq.com`, `api.groq.com` e
   `console.groq.com` devolvem falha de conexão (código 000, não 403), então **não há como
