@@ -27,45 +27,46 @@ verdade é sempre com o usuário, em produção, com fotos e laudos que ele mand
 
 ---
 
-## COMECE POR AQUI — estado em 16/09/2026, segunda trava → medida de novo (1 de 3) → defeito novo achado → terceira trava aplicada
+## COMECE POR AQUI — estado em 16/09/2026, quarta rodada medida (0 de 3) — regras que seguravam REGRIDIRAM sem terem sido tocadas
 
-**`main` em `a72b33d`** (PR #58, merge das quatro regras contra a alucinação de EPI —
-código e testes, `CLAUDE.md`). 248 testes passam nele. Confirmado por `git fetch origin
-main` nesta sessão, não inferido. **Esta sessão já tem uma terceira rodada em cima
-disso, ainda sem PR mergeado**: 250 testes na branch local (248 + 2 novos).
+**`main` em `c95bba3`** (PR #59, merge da validação da terceira rodada + duas travas
+novas — boné vs cabelo, vão inexistente). 250 testes passam nele. Confirmado por
+`git fetch origin main` nesta sessão, não inferido.
 
-**As quatro regras do PR #58 foram medidas nas MESMAS três fotos, e seguraram pela
-metade: gabarito subiu de 0 para 1 de 3, mas a alucinação do boné — o caso que motivou a
-regra 3 — reapareceu na MESMA foto, quase palavra por palavra.** Ver a seção de
-validação logo abaixo. As regras 1 e 2 (mão que segura aparece; não afirmar estado fora
-do que foi listado) seguraram contra as duas contradições que existiam para prevenir,
-mas com efeito colateral novo: o Olho passou a **omitir** o estado da luva em vez de
-afirmá-lo, mesmo em mão claramente nua e visível — troca invenção por lacuna, e a NC de
-EPI **com lastro pleno** só saiu na foto 3 (a foto 1 teve uma NC de luva, mas sobre a
-mesma mão cuja proteção a régua (b) deixa aberta). **E apareceu um defeito fora do escopo das
-quatro regras, mais caro que qualquer uma delas**: a foto 1 produziu `NR-18 18.9.2`
-**crítica** sobre um vão de piso que não existe — uma régua de madeira de nivelamento
-deitada sobre piso plano e contínuo, lida como abertura. É a quinta ocorrência da classe
-VÃO INEXISTENTE do histórico, e a primeira vez que ela desloca justamente a NC de EPI
-que a foto pedia.
+**A quarta rodada, nas MESMAS três fotos, saiu PIOR que a terceira: gabarito caiu de 1
+para 0 de 3.** O achado mais importante não é sobre as travas novas — é que **as regras
+1 e 4, cujo texto não foi tocado entre a terceira e a quarta rodada, regrediram**: a
+regra 1 (mão que segura aparece) voltou a produzir a MESMA contradição interna que ela
+existe para impedir ("segurando... com a mão direita" + "...as mãos não aparecem no
+recorte", foto 2), e a foto 1 reproduziu a frase da invenção do boné **palavra por
+palavra idêntica à da SEGUNDA rodada** (antes do PR #58), pior que a terceira rodada
+(que já tinha corrigido a luva). Hash confirmado pelo usuário contra `c95bba3` antes de
+rodar — não é versão errada. Ver a seção de validação logo abaixo.
 
-**Duas travas novas foram escritas nesta mesma sessão, ainda sem lote medindo**: (1) o
-parágrafo do boné ganhou um critério checável — só escrever "boné"/"capacete" havendo
-borda, aba ou viseira distinta do couro cabeludo, senão "cabeça descoberta, cabelo
-escuro" ou "não dá para determinar com confiança"; (2) o parágrafo da barreira ganhou
-uma exigência de profundidade real (sombra, borda com espessura, visão através) antes de
-afirmar abertura/vão/buraco — marcação, régua ou objeto sobre piso plano não é abertura.
-**Dois testes novos travam o texto**, 250 testes passam (248 + 2). Verificado no
-navegador em Modo Demonstração, sem regressão. Perguntar ao usuário antes de rodar de
-novo, dado que consome cota do dia.
+**A única coisa que seguiu funcionando foi a trava do vão inexistente**: a foto 1 não
+inventou mais abertura no piso (o pallet/régua de nivelamento não é mais lido como vão),
+e a abertura na parede que ela relatou desta vez é REAL — confirmada na ampliação
+(buraco com profundidade visível, bordas irregulares). É a primeira medição da trava
+nova, e ela segurou no caso que a motivou.
 
-**Isso esgota a tabela de "lotes de 5 seguintes"** — Elétrica, Içamento e cancela,
-Pessoa na cena, Escada e Marcação rodaram todos, e o conserto de EPI já teve duas voltas
-completas de medição e reação. Não há lote de 5 pré-desenhado na fila; o próximo passo é
-rodar as mesmas três fotos pela quarta vez para medir as duas travas novas, ou decidir
-entre os outros itens de "Em aberto", ou desenhar um lote novo.
+**O que isso muda de leitura**: não dá mais para tratar "a regra X segurou" como fato
+estável só porque ela segurou numa rodada. Regra 1 e regra 4 seguraram na terceira
+rodada e falharam na quarta, com o MESMO texto — é variação de execução sobre o mesmo
+prompt, não regressão de código. Isso contradiz, num domínio estreito (o parágrafo de
+pessoa, achado esparso), o que a medição de 10/09 tinha estabelecido para fotos de
+canteiro ricas em achados ("o Olho não varia"). Uma hipótese não medida: o parágrafo de
+pessoa cresceu de 4 regras para 4 regras + 2 reforços na mesma sessão, e o texto mais
+longo pode estar diluindo a atenção às regras que não mudaram — mas isso é hipótese, não
+medição.
 
-**O que mudou de método nestas três sessões, e vale mais que os lotes:**
+**Quatro rodadas nas mesmas três fotos até agora, todas custando cota do dia**: 15/09
+(sem vocabulário de EPI, antes do PR #57), 16/09 pós-PR #57 (0 de 3, invenção), 16/09
+pós-PR #58 (1 de 3, primeira NC de EPI real do acervo), 16/09 pós-PR #59 (0 de 3, regras
+que seguravam regrediram). Não há lote de 5 pré-desenhado na fila. Antes de escrever mais
+uma trava de prompt cega, vale decidir com o usuário se o caminho é mais uma rodada de
+prompt, ou parar de iterar nisso e registrar o limite.
+
+**O que mudou de método nestas quatro sessões, e vale mais que os lotes:**
 
 - **A regra 3 caiu para o acervo histórico.** O engenheiro declarou em 13/09 que não tem
   a memória destas fotos — o que ele vê é a imagem, igual a mim. A régua (a)-(d) que a
@@ -75,6 +76,82 @@ entre os outros itens de "Em aberto", ou desenhar um lote novo.
 - **O aceite de toda foto que preveja NC tem DUAS metades** — recuperação (o item chegou
   ao Analista) e laudo (a NC tem lastro visual). O `/critico` rejeitou três vezes por
   colapsá-las, e nos dois últimos lotes a diferença entre as duas foi o resultado.
+
+---
+
+## Validação em produção de 16/09/2026 — quarta rodada (0 de 3): regras que seguravam regrediram, só a trava do vão segurou
+
+Obra "teste 8". **3 laudos, 4 NCs (1 + 1 + 2), 0 não auditadas, 1 ciclo em todos.**
+Mesmas três fotos das três rodadas anteriores, sem marcação. Hash confirmado pelo
+usuário contra `c95bba3` (PR #59) antes de rodar. As três fotos foram reabertas no
+acervo e ampliadas de novo antes de concluir causa.
+
+| # | Foto | O que o Olho escreveu sobre a pessoa | Confronto com a foto real | NC entregue |
+|---|---|---|---|---|
+| 1 | `TRABALHADOR SEM EPI` | "Usa **boné preto** na cabeça e **luvas** nas mãos" — frase IDÊNTICA à da 2ª rodada | Cabeça descoberta, confirmado de novo | `NR-08 8.3.2.2` alta — abertura na parede, **desta vez real** (ver seção 3) |
+| 2 | `TRABALHADOR SEM PROTEÇÃO` | "segurando... com a mão direita... **as mãos não aparecem no recorte**" — a MESMA contradição da 2ª rodada, que a 3ª tinha corrigido | Mão nua, sem luva, visível (já confirmado nas rodadas anteriores) | `NR-17 17.6.3` média — bancada desgastada, **nada a ver com EPI** |
+| 3 | `TRABALHADOR SE EPI` | Nenhuma negação de EPI desta vez — só roupa ("camisa azul, calça jeans, bota de trabalho"; "mãos livres" do 2º homem, que é AUSÊNCIA DE OBJETO NA MÃO, não luva) | — | `NR-08 8.3.2.2` crítica (abertura vertical, real) + `NR-18 18.10.2.4` média (cabo, real) |
+
+**Gabarito contra o nome do arquivo: 0 de 3** — pior que a rodada anterior (1 de 3), e
+empatado com a pior medição do acervo (a 2ª rodada, logo após o PR #57).
+
+### 1. Foto 1: a mesma invenção, com o mesmo texto — a trava reforçada não mudou nada aqui
+
+"Usa boné preto na cabeça e luvas nas mãos." é, caractere por caractere, a frase que a
+2ª rodada escreveu (antes de qualquer trava contra isso existir). A 3ª rodada, já com a
+regra 3 original, tinha ao menos corrigido a luva ("não usa luvas"); esta rodada, com o
+critério checável novo (borda/aba/viseira), inventou os dois de novo. A trava nova pede
+uma descrição de contorno para justificar "boné" — o Olho não descreveu contorno nenhum,
+só afirmou a peça, exatamente como antes de a trava existir. **Não é evidência de que a
+trava piorou o problema; é evidência de que ela não teve efeito nesta execução.**
+
+### 2. Foto 2: a contradição que a regra 1 existe para proibir, de volta com o texto igual
+
+A regra 1 não foi tocada entre a 3ª e a 4ª rodada. Na 3ª: "segurando... com a mão
+direita; cabeça, rosto e pés não aparecem no recorte" — mão corretamente excluída da
+lista do que não aparece. Nesta: "segurando... com a mão direita... a cabeça, os pés e
+**as mãos** não aparecem no recorte" — a mão está DE VOLTA na lista, na mesma frase em
+que a descrição diz que ela seguraria a ferramenta. É a contradição original,
+reproduzida com o prompt inalterado nesse trecho. **Consequência prática**: zero achado
+sobre a mão, e o Analista foi atrás do único risco que sobrou no dossiê — o desgaste da
+bancada, `NR-17 17.6.3` — uma NC de ergonomia sobre o móvel, não sobre a pessoa.
+
+### 3. Foto 1: a trava do vão inexistente segurou, e o achado novo é real
+
+O piso não foi mais descrito como tendo abertura — o pallet e a régua de nivelamento,
+que na rodada anterior viraram "vão", desta vez saíram como "Palet de madeira... apoiado
+diretamente sobre o piso de concreto, sem carga sobre ele", sem nenhuma palavra de
+abertura. No lugar, o Olho relatou uma abertura na PAREDE: "bordas irregulares e
+interior escuro, indicando um vão para a estrutura interna". Reaberta a foto e ampliado
+o canto superior esquerdo: **existe mesmo um buraco retangular na parede, com
+profundidade visível (interior escuro) e bordas irregulares** — geometria real, não
+fabricação. É a primeira medição da trava nova, e no único caso em que ela foi
+exercida, segurou: nem inventou vão onde não há, nem deixou de registrar um vão que há.
+
+### 4. Foto 3: perdeu o único acerto real do acervo, sem trocar por outro erro
+
+Na 3ª rodada esta foto tinha, pela primeira vez em quatro rodadas do acervo, uma NC de
+EPI real e com lastro (`NR-06 6.5.1`, sem óculos/luvas/protetor do 1º homem). Nesta
+rodada, o fato sobre a pessoa não menciona nenhuma ausência de EPI — só descreve roupa e
+diz que o 2º homem tem "as mãos livres" (não seguram nada, o que é sobre presença de
+objeto na mão, não sobre luva). As duas NCs que saíram (abertura na parede + cabo no
+piso) têm lastro real — confirmado nas rodadas anteriores — mas nenhuma é sobre EPI. A
+regra 4 (achado próprio por pessoa) também não foi seguida de novo: os dois homens
+continuam no mesmo achado, sem dano visível desta vez porque nenhum "sem X" apareceu
+para colidir.
+
+### 5. O que isso muda no método
+
+**A trava do vão inexistente (n=1) segurou no único caso em que foi testada.** As
+regras 1 e 4, que não foram tocadas nesta sessão, regrediram sem mudança de texto — o
+que descarta "o texto está errado" como explicação única e aponta para variação de
+execução do próprio modelo sobre o mesmo prompt, possivelmente agravada pelo parágrafo
+de pessoa ter ficado mais longo (a trava do boné cresceu no meio dele). **Isso muda o
+que vale a pena tentar a seguir**: mais uma trava textual no mesmo parágrafo, sem medir
+por que regras que já seguravam pararam de segurar, arrisca a mesma coisa — regra nova
+resolve um caso e uma regra antiga, intocada, falha na mesma rodada. Perguntar ao
+usuário antes de decidir o próximo passo, e antes de rodar de novo, dado que já são
+quatro rodadas consumindo cota do dia na mesma pergunta.
 
 ---
 
