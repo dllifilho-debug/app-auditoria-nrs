@@ -27,11 +27,51 @@ verdade é sempre com o usuário, em produção, com fotos e laudos que ele mand
 
 ---
 
-## COMECE POR AQUI — estado em 16/09/2026, quarta rodada medida (0 de 3) — regras que seguravam REGRIDIRAM sem terem sido tocadas
+## COMECE POR AQUI — decisão em 16/09/2026: PAROU de iterar no parágrafo de pessoa/EPI
 
-**`main` em `c95bba3`** (PR #59, merge da validação da terceira rodada + duas travas
-novas — boné vs cabelo, vão inexistente). 250 testes passam nele. Confirmado por
-`git fetch origin main` nesta sessão, não inferido.
+**Decisão do usuário, depois da quarta rodada (0 de 3, abaixo): parar de escrever mais
+trava de prompt no parágrafo de pessoa do `PROMPT_OLHO`, e registrar o limite em vez de
+persegui-lo.** `main` em `612824d` (PR #60, merge desta validação). 250 testes passam.
+
+**Por quê.** Quatro rodadas seguidas nas MESMAS três fotos — 15/09 (sem vocabulário de
+EPI), 16/09 pós-PR #57 (0/3), pós-PR #58 (1/3), pós-PR #59 (0/3) —, todas custando cota do
+dia, sem lote de 5 novo desenhado na fila. A quarta não só não melhorou: **a regra 1 (mão
+que segura aparece), que tinha segurado na rodada anterior, e a regra 4 (achado próprio
+por pessoa), que não tinha sido nem confirmada nem contrariada antes, falharam agora —
+as duas com o MESMO texto** desde o PR #58 — o que é variação de execução do modelo sobre
+o prompt fixo, não regressão de código, e mais uma trava textual não tem como endereçar
+isso sozinha. Escrever uma quinta trava cega, sem medir por que a regra 1 parou de
+segurar, arrisca repetir o padrão já visto: regra nova resolve o caso que a motivou (foi
+o que a trava do vão fez), regra antiga intocada falha na mesma rodada.
+
+**O que isso significa na prática, a partir de agora:**
+- **Nenhuma rodada nova agendada para o parágrafo de pessoa/EPI.** O `PROMPT_OLHO` fica
+  como está no PR #59/#60: dentro do parágrafo de pessoa, o pedido do atributo (PR #57),
+  as quatro regras contra as três alucinações (PR #58) e o reforço da regra do
+  boné/capacete com critério checável (PR #59); fora dele, a trava do vão inexistente
+  (também PR #59, no parágrafo de barreira/abertura). Sem trava adicional daqui em diante.
+- **O limite fica registrado, não escondido.** Neste domínio estreito — parágrafo de
+  pessoa, achado esparso —, o Olho variou rodada a rodada com o prompt fixo: a regra 1
+  segurou na 3ª rodada e falhou na 4ª com o texto idêntico; a regra 4, sem confirmação nem
+  contradição na 3ª, falhou na 4ª. Isso contradiz, aqui, o que a medição de 10/09
+  estabeleceu para canteiro rico em achados ("o Olho não varia") — não generalize aquele
+  achado para este parágrafo. Não medido: se a causa é o parágrafo ter ficado longo
+  (4 regras + 1 reforço) ou limite do modelo em achado esparso.
+- **O único ganho que sobrevive das quatro rodadas é a trava do vão inexistente** (n=1,
+  segurou no único caso em que foi exercida). Fica, sem nova medição agendada — só o
+  próximo lote de qualquer natureza que passe por uma foto com vão real ou fabricado dirá
+  se ela generaliza.
+- **Não há métrica de "quando retomar"** — isso ficaria sujeito à mesma armadilha do
+  número que envelhece em silêncio se eu inventasse um gatilho agora. Retomar é decisão do
+  usuário, não deste arquivo.
+- **Próxima frente, quando o usuário quiser seguir**: qualquer item de "Em aberto" que não
+  dependa de nova rodada nesta pergunta específica — por exemplo "área de corte sem
+  barreira de acesso" (item inalcançável, não depende do Olho), a hipótese do bigrama para
+  `sem`/particípio, ou remedir se o modelo ainda é o melhor disponível.
+
+O histórico completo da quarta rodada — o que regrediu, foto a foto, com a tabela e a
+leitura da imagem real — está na seção de validação logo abaixo; este bloco só registra a
+decisão de parar.
 
 **A quarta rodada, nas MESMAS três fotos, saiu PIOR que a terceira: gabarito caiu de 1
 para 0 de 3.** O achado mais importante não é sobre as travas novas — é que **as regras
@@ -59,12 +99,10 @@ pessoa cresceu de 4 regras para 4 regras + 2 reforços na mesma sessão, e o tex
 longo pode estar diluindo a atenção às regras que não mudaram — mas isso é hipótese, não
 medição.
 
-**Quatro rodadas nas mesmas três fotos até agora, todas custando cota do dia**: 15/09
-(sem vocabulário de EPI, antes do PR #57), 16/09 pós-PR #57 (0 de 3, invenção), 16/09
-pós-PR #58 (1 de 3, primeira NC de EPI real do acervo), 16/09 pós-PR #59 (0 de 3, regras
-que seguravam regrediram). Não há lote de 5 pré-desenhado na fila. Antes de escrever mais
-uma trava de prompt cega, vale decidir com o usuário se o caminho é mais uma rodada de
-prompt, ou parar de iterar nisso e registrar o limite.
+**Quatro rodadas nas mesmas três fotos, todas custando cota do dia**: 15/09 (sem
+vocabulário de EPI, antes do PR #57), 16/09 pós-PR #57 (0 de 3, invenção), 16/09 pós-PR
+#58 (1 de 3, primeira NC de EPI real do acervo), 16/09 pós-PR #59 (0 de 3, regras que
+seguravam regrediram). **Decisão registrada no bloco acima: parar de iterar aqui.**
 
 **O que mudou de método nestas quatro sessões, e vale mais que os lotes:**
 
@@ -3519,31 +3557,33 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
 
 ## Em aberto
 
-- **`PROMPT_OLHO` não pedia atributo de EPI — achado em 15/09, CONSERTADO em 16/09
-  (PR #57), MEDIDO em produção no mesmo dia (defeito NOVO achado: o Olho alucinava sobre
-  o corpo da pessoa), e a trava contra essa alucinação CONSERTADA na sequência, à espera
-  de novo lote.** Ver a seção de validação "o lote de EPI (conserto do prompt)", que é
-  onde a análise completa mora. Resumo da cadeia: a causa raiz (o prompt não pedia o
-  atributo e `pessoas.descricao` era descartada no parse) estava certa e o PR #57 a
-  fechou de verdade — `epi_nao_utilizado` disparou pela primeira vez em produção, na
-  foto 3, e o Analista o usou. Mas nas três fotos o Olho, ao tentar cumprir a instrução
-  nova, **alucinou sobre o corpo da pessoa**, uma variante em cada uma: inventou um boné
-  e luvas que não existem (foto 1); negou que uma mão claramente visível aparecesse no
-  recorte, na mesma frase em que dizia que ela segurava a ferramenta (foto 2); e afirmou
-  que uma cabeça estava descoberta na mesma frase em que dizia que só tronco, braços e
-  pernas apareciam no recorte (foto 3). Gabarito daquela medição: **0 de 3**.
-  **O conserto aplicado**, quatro regras no mesmo parágrafo, uma por variante: mão que
-  segura/apoia/manuseia sempre "aparece", proibindo a contradição da foto 2; limitar o
-  que aparece da pessoa proíbe afirmar o estado de qualquer parte fora da lista, matando
-  a contradição da foto 3; proibição explícita de deduzir "usa capacete/boné/luva" pelo
-  contexto, contra a invenção da foto 1; e pessoa múltipla vira achado próprio, contra o
-  `"sem bota"` que quase colidiu na foto 3. **Quatro testes travam o texto do prompt**,
-  248 testes passam (244 + 4), navegador verificado sem regressão.
-  **É mudança de prompt de agente sobre um parágrafo que já foi medido e reprovado uma
-  vez — vale nova rodada de lote antes de declarar fechado**, e a régua de aceite muda:
-  não basta o vocabulário de EPI aparecer (isso já foi medido), tem que resistir à foto
-  real, achado por achado, sem contradição interna nem invenção. Perguntar ao usuário
-  antes de rodar esse lote, dado que consome cota do dia.
+- **`PROMPT_OLHO` não pedia atributo de EPI — achado em 15/09, a causa raiz CONSERTADA
+  em 16/09 (PR #57), e o conserto ITERADO por mais duas rodadas de prompt (PR #58, #59)
+  até o usuário decidir, depois da quarta medição, PARAR de iterar. Ver "COMECE POR AQUI"
+  no topo deste arquivo para a decisão, e "o lote de EPI" / as três validações seguintes
+  para a análise completa de cada rodada.** Resumo da cadeia, do início ao fim e com a
+  atribuição de PR conferida contra o código (`git diff` de cada merge em
+  `auditoria/pipeline.py`, não só o texto): o **PR #57** mudou só a causa raiz — pediu o
+  atributo de EPI no schema e parou de descartar `pessoas.descricao` no parse — e mediu,
+  na rodada seguinte, 0 de 3: `epi_nao_utilizado` disparou pela primeira vez em produção,
+  mas o Olho alucinou sobre o corpo da pessoa de três jeitos. Reagindo a essa medição, o
+  **PR #58** escreveu as quatro regras que hoje formam o parágrafo (mão que
+  segura/apoia/manuseia sempre "aparece"; limitar o que aparece da pessoa proíbe afirmar
+  o estado do que ficou fora; proibição de deduzir "usa capacete/boné/luva" por contexto;
+  pessoa múltipla vira achado próprio) — 244→248 testes — e mediu, na rodada seguinte,
+  1 de 3: das quatro, duas (mão, o que fica fora do recorte) seguraram, a do boné falhou
+  no caso exato que a motivou, a quarta não foi exercida. O **PR #59** reforçou a regra do
+  boné com um critério checável (borda/aba/viseira distinta do couro cabeludo, dentro do
+  MESMO parágrafo de pessoa) e acrescentou, fora do parágrafo de pessoa, a trava do vão
+  inexistente (exige profundidade real) — 248→250 testes — e mediu, na rodada seguinte,
+  0 de 3 de novo: **a regra 1 (mão) e a regra 4 (achado próprio por pessoa), com o MESMO
+  texto da rodada anterior, regrediram** — a foto 2 reproduziu a contradição que a regra
+  1 existe para impedir, e os dois homens da foto 3 voltaram ao mesmo achado; só a trava
+  do vão (fora do parágrafo de pessoa) segurou. **Decisão final, registrada no PR #60: não há quinta
+  trava.** O parágrafo de pessoa fica como está — pedido do atributo (#57), as quatro
+  regras (#58) e o reforço do boné (#59) — e a trava do vão (#59) fica; nenhum ajuste
+  novo até o usuário pedir. 250 testes passam, cobrindo o texto do prompt — não a
+  estabilidade de execução do modelo, que nenhum teste unitário alcança.
 - **"O modelo ainda é o melhor?" não se responde desta sessão — remedido em 12/09.** O
   usuário perguntou, e a verificação honesta é esta: `groq.com`, `api.groq.com` e
   `console.groq.com` devolvem falha de conexão (código 000, não 403), então **não há como
