@@ -3669,24 +3669,28 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   **Medi X, afirmo Y**: o que se mediu é o dossiê sobre fatos SINTÉTICOS escritos aqui, não
   sobre os fatos do Olho, que ainda não existem. O que o lote vai entregar é **hipótese** até os
   laudos chegarem — o que está medido é que, dado o fato, o item de frente não é alcançável.
-- **Os anexos III e XII da NR-12 não são ramos setoriais, e por isso `setor_pertinente` não
-  os filtra — uma foto de serra de bancada recebe item de CESTA AÉREA.** Medido em 11/09:
-  com `serra de bancada` no fato, o dossiê da foto 1 vai de 14 para 19 entradas e ganha
-  `12.4.8`, `Anexo III 7`, `Anexo XII 2.1` (cestas aéreas), `Anexo XII 3.2.2` e
-  `Anexo XII 3.6.1`. **É a NR-12 voltando a ser a lixeira do dossiê pela porta que o #35
-  não fechou**: a tabela `SETORES` mapeia os sete ramos (motosserras, panificação, açougue,
-  prensas, injetoras, calçados, agrícola) e esses dois anexos não são ramo, são famílias de
-  equipamento — cestas aéreas e plataformas. **O conserto é o mesmo do portão setorial da
-  NR-18**: exigir o equipamento na cena.
-  **São DOIS portões em série, e confundi-los manda a próxima sessão mexer no que não
-  decide.** `ha_maquina_na_cena` destranca a NR-12 para a busca textual; `nrs_candidatas`
-  decide antes se a NR-12 sequer disputa vaga. A foto da placa deste mesmo lote tem o
-  primeiro **ABERTO** e mesmo assim zero item de NR-12, porque o segundo não a elegeu (ver a
-  seção 2) — logo não é o portão de máquina fechado que esconde o ruído dos anexos; é
-  precisar dos dois abertos ao mesmo tempo, que nas cinco fotos nunca aconteceu. O ruído
-  aparece quando a cena nomeia a máquina E o vocabulário do fato faz a NR-12 pontuar, que é
-  o caso das fotos 1 e 2 com o nome trocado — e é o que a fase separada de VISÃO produziria
-  em toda foto de máquina de uma vez.
+- ~~Os anexos III e XII da NR-12 não são ramos setoriais, e por isso `setor_pertinente` não
+  os filtra~~ — **CONSERTADO em 16-17/09 (PR #62, `076e4cb` de 16/09 + `c471f5d` de 17/09),
+  sem lote de produção.** Medido em 11/09: com `serra de bancada` no fato, o dossiê da foto
+  1 ia de 14 para 19 entradas e ganhava `12.4.8`, `Anexo III 7`, `Anexo XII 2.1` (cestas
+  aéreas), `Anexo XII 3.2.2` e `Anexo XII 3.6.1` — a NR-12 voltando a ser a lixeira do
+  dossiê pela porta que o #35 não fechou. Dois `Setor` novos em `SETORES["NR-12"]`, no
+  mesmo molde dos sete ramos (Anexo III: meios de acesso a máquinas — `rampa de acesso`,
+  `passarela de acesso`, `plataforma de acesso`, mais `escada de degraus` e
+  `gaiola de protecao`; nunca `escada`/`rampa`/`plataforma` soltos, que são o vocabulário
+  mais genérico de todo canteiro; Anexo XII: cesta aérea/cesto acoplado/cesto
+  suspenso/cesta de transferência, o equipamento que iça PESSOA). **São DOIS portões em
+  série** (`ha_maquina_na_cena` destranca a NR-12 para a busca textual; `nrs_candidatas`,
+  via `CATALOGO_NR`, decide antes se ela sequer disputa vaga) — e foi exatamente aí que a
+  primeira versão do conserto errou: o `/critico` rejeitou por medir só o primeiro portão
+  (`setor_pertinente` isolado) e não o dossiê inteiro, onde uma cena de cesta aérea pura
+  não roteava NR-12 nenhuma porque `CATALOGO_NR["NR-12"]` não tinha essas palavras. As
+  mesmas frases entraram em `palavras_chave` no segundo commit, e o teste positivo passou a
+  rodar `_dossie_da_cena`. **Medi X, afirmo Y**: o que está medido são as duas funções de
+  teste novas (uma reproduzindo o vazamento de 11/09 em duas cenas, outra confirmando o
+  dossiê real nas duas cenas positivas) e o `/critico` aprovando o range final — 252 testes
+  passam (250 + 2). Não há lote de produção validando isso ainda, e não precisa: é código
+  determinístico, sem prompt de agente envolvido.
 - **O `NR-18 18.9.2` enquadrou uma abertura VERTICAL pela terceira vez, e desta não precisa
   de imagem para ver.** No laudo 2 de 11/09 a constatação diz *"abertura vertical na
   estrutura de concreto, sem porta ou fechamento, revelando o interior de outro cômodo"* e
