@@ -298,6 +298,33 @@ def test_fusao_de_abertura_de_piso_continua_preferindo_18_9_2(base):
     assert fundidas[0].item.item == "18.9.2"
 
 
+def test_fusao_nao_promove_8322_por_vertical_solto_fora_da_abertura(base):
+    """O `/critico` rejeitou a primeira versão: `\\bvertical\\b` solto casava
+    com QUALQUER menção a algo vertical na constatação, não só com a própria
+    abertura — uma abertura de PISO de verdade, cuja constatação apenas cita
+    uma escada vertical ao lado, derrubava o 18.9.2 por engano. O
+    discriminante exige "abertura vertical"/"vão vertical" ADJACENTES, a
+    mesma exigência de `abertura_parede_desprotegida` em
+    riscos/construcao.py."""
+    from auditoria.pipeline import NaoConformidade, _fundir_equivalentes
+
+    def nc(nr, item, constatacao):
+        return NaoConformidade(base.obter(nr, item), constatacao,
+                               "Queda.", "alta", "Fechar.", 1, "")
+
+    constatacao = (
+        "Abertura retangular no piso da laje, próxima a uma escada vertical "
+        "tipo marinheiro fixada na parede, sem fechamento provisório."
+    )
+    fundidas = _fundir_equivalentes(
+        [nc("NR-18", "18.9.2", constatacao), nc("NR-08", "8.3.2.2", constatacao)]
+    )
+    assert fundidas[0].item.item == "18.9.2", (
+        "abertura de piso real não pode perder o item por causa de uma "
+        "escada vertical mencionada ao lado"
+    )
+
+
 def test_fusao_nao_tenta_discriminar_parede_sem_a_palavra_vertical(base):
     """Limite declarado, não escondido: `_regula_a_abertura` só reconhece
     "vertical", o mesmo vocabulário já medido em `abertura_parede_desprotegida`

@@ -20,7 +20,7 @@ from typing import Callable, Sequence
 
 from . import dossie as mod_dossie
 from .catalogo_nr import CATALOGO_NR
-from .kb import BaseNormativa, Item
+from .kb import BaseNormativa, Item, normalizar
 from .kb import radicais as _radicais   # usado também por riscos._validar
 from .modelos import Conversador, ErroDeAuditoria, RespostaIlegivel
 from .riscos import (
@@ -1363,12 +1363,15 @@ def _mesma_constatacao(a: str, b: str) -> bool:
 # de erro 1 — item verdadeiro, situação errada —, e apareceu três vezes em
 # produção com o mesmo defeito (laudo 1 de 09/09, passada B de 10/09, laudo 2
 # do lote de máquina em 11/09), sempre com o 8.3.2.2 disponível ao lado.
-# "vertical" é o discriminante já estabelecido para isso — é o mesmo
-# vocabulário de `abertura_parede_desprotegida` em riscos/construcao.py, e a
-# mesma razão: não há sinal seguro para bare "parede" (é um dos dois
-# substantivos da cena e não nega nada), então não se tenta pegar mais que o
-# que já está medido.
-_RE_ABERTURA_VERTICAL = re.compile(r"\bvertical\b", re.IGNORECASE)
+#
+# "abertura vertical"/"vão vertical" ADJACENTES é o discriminante — o mesmo
+# vocabulário e a mesma exigência de adjacência de `abertura_parede_desprotegida`
+# em riscos/construcao.py. `\bvertical\b` solto foi a primeira versão disto, e
+# o `/critico` pegou: uma abertura de PISO de verdade cuja constatação só
+# mencione algo vertical ao lado ("próxima a uma escada vertical") já
+# derrubava o 18.9.2 por engano. Bare "parede" continua fora, pela razão de
+# sempre: é um dos dois substantivos da cena e não nega nada.
+_RE_ABERTURA_VERTICAL = re.compile(r"\b(?:abertura|vao)\w{0,3}\s+vertical\b")
 
 
 def _regula_a_abertura(nc: "NaoConformidade") -> bool:
@@ -1376,12 +1379,13 @@ def _regula_a_abertura(nc: "NaoConformidade") -> bool:
 
     Só o 18.9.2 tem escopo estreito o bastante para divergir do que a
     constatação relata — os demais itens deste projeto nunca entram neste
-    grupo. Quando a constatação da própria NC de 18.9.2 diz "vertical", o
-    item citado é de piso e a abertura não é: ele não regula aquilo.
+    grupo. Quando a PRÓPRIA constatação da NC de 18.9.2 chama a abertura de
+    "abertura vertical" ou "vão vertical", o item citado é de piso e a
+    abertura não é: ele não regula aquilo.
     """
     if f"{nc.item.nr} {nc.item.item}" != "NR-18 18.9.2":
         return True
-    return not _RE_ABERTURA_VERTICAL.search(nc.constatacao)
+    return not _RE_ABERTURA_VERTICAL.search(normalizar(nc.constatacao))
 
 
 def _fundir_equivalentes(ncs: list[NaoConformidade]) -> list[NaoConformidade]:
