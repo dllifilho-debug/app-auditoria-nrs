@@ -1061,9 +1061,33 @@ def test_anexo_iii_e_xii_da_nr12_exigem_o_equipamento_na_cena(base):
 
 def test_anexo_iii_e_xii_da_nr12_passam_quando_o_equipamento_esta_na_cena(base):
     """A contraparte que impede o portão de virar veto permanente aos dois
-    anexos: uma cesta aérea de verdade continua citando o Anexo XII, e um
-    meio de acesso de máquina descrito como tal continua citando o Anexo
-    III."""
+    anexos — e ela precisa passar pelo DOSSIÊ inteiro, não só por
+    `setor_pertinente` isolado. O `/critico` rejeitou a primeira versão deste
+    teste porque ela media só o portão: rodada a cena real pelo pipeline
+    completo, uma foto de cesta aérea pura não routeava NR-12 nenhuma —
+    `CATALOGO_NR["NR-12"]` não tinha nenhuma das palavras que o `Setor` novo
+    usa, então a NR nunca entrava em `nrs_candidatas` e o portão, correto em
+    si, nunca chegava a ser exercido. É a mesma armadilha "medir um
+    intermediário e relatar o desfecho" que este projeto já pagou várias
+    vezes. Consertado acrescentando as mesmas frases a `palavras_chave`."""
+    dossie_cesta = _dossie_da_cena(
+        base, "canteiro de obra",
+        ["Cesta aérea isolada, com dois trabalhadores realizando poda de "
+         "árvore próxima à rede elétrica."],
+    )
+    assert any(e.item.anexo == "XII" for e in dossie_cesta.entradas
+               if e.item.nr == "NR-12"), _nr12(dossie_cesta)
+
+    dossie_acesso = _dossie_da_cena(
+        base, "canteiro de obra",
+        ["Prensa industrial com plataforma de acesso metálica ao painel de "
+         "comando, sem guarda-corpo lateral."],
+    )
+    assert any(e.item.anexo == "III" for e in dossie_acesso.entradas
+               if e.item.nr == "NR-12"), _nr12(dossie_acesso)
+
+    # E o portão isolado continua fazendo o que se espera dele nos dois
+    # sentidos, para quem só olhar `setor_pertinente` de novo no futuro.
     from auditoria.dossie import setor_pertinente
 
     cesta = base.obter("NR-12", "Anexo XII 2.1")

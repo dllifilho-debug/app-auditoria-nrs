@@ -469,6 +469,35 @@ CATALOGO_NR: dict[str, dict] = {
             "manual de instruções",
             "apreciacao de risco",
             "apreciação de risco",
+            # Anexo XII (içamento de PESSOAS) e Anexo III (meios de acesso a
+            # máquinas), acrescentados em 16/09 junto com o `Setor` em
+            # `dossie.py`. Sem eles aqui, NR-12 nunca entra em `nrs_candidatas`
+            # — o roteamento por `Setor`/`setor_pertinente` só filtra o que já
+            # chegou a competir, ele não credencia a NR sozinho. Medido: uma
+            # cena que só descreve "cesta aérea" não tem nenhuma palavra da
+            # lista acima (nem "máquina", nem "prensa", nem "serra"), então
+            # sem estas entradas o Anexo XII do `Setor` fica correto e
+            # inatingível ao mesmo tempo. Singular e plural entram separados
+            # pela mesma razão do `Setor`: o plural muda a primeira palavra, e
+            # a tolerância de sufixo da busca só cobre a última.
+            "cesta aerea",
+            "cestas aereas",
+            "cesto acoplado",
+            "cestos acoplados",
+            "cesto suspenso",
+            "cestos suspensos",
+            "cesta de transferencia",
+            "cestas de transferencia",
+            "escada de degraus",
+            "escadas de degraus",
+            "rampa de acesso",
+            "rampas de acesso",
+            "passarela de acesso",
+            "passarelas de acesso",
+            "plataforma de acesso",
+            "plataformas de acesso",
+            "gaiola de protecao",
+            "gaiolas de protecao",
         ],
     },
     "NR-13": {
