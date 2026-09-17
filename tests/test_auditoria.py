@@ -1005,17 +1005,103 @@ def test_anexo_setorial_entra_quando_a_cena_e_daquele_ramo(base):
 
 
 def test_anexo_geral_de_maquina_e_de_altura_continuam_passando(base):
-    """A contraparte registrada no CLAUDE.md: NR-12 Anexo XII (equipamentos de
-    guindar — cesta aérea, grua, elevador de carga) e NR-35 Anexo III (escadas)
-    são o pão de cada dia de um canteiro e não podem ser confundidos com anexo
-    setorial."""
+    """NR-12 Anexo I (distâncias de segurança) e Anexo II (capacitação do
+    operador) valem para QUALQUER máquina e não têm `Setor` — travá-los seria
+    a classe de erro 1 ao contrário, item certo barrado. NR-35 Anexo III
+    (escadas) é outra NORMA, nunca passou por este portão e não deve começar
+    a passar por engano só por compartilhar o algarismo "III"."""
     cena = "canteiro de obra, laje, escada de mão apoiada, entulho no piso"
-    for nr, num in (("NR-12", "Anexo XII 2.1"), ("NR-12", "Anexo III 1"),
-                    ("NR-12", "Anexo I 1"), ("NR-35", "Anexo III 5.2.2.5"),
+    for nr, num in (("NR-12", "Anexo I 1"), ("NR-35", "Anexo III 5.2.2.5"),
                     ("NR-12", "12.5.1"), ("NR-12", "12.2.4")):
         item = base.obter(nr, num)
         assert item is not None, f"{nr} {num}"
         assert dossie.setor_pertinente(item, cena), f"{nr} {num} barrado"
+
+
+def test_anexo_iii_e_xii_da_nr12_exigem_o_equipamento_na_cena(base):
+    """Medido em produção no lote de máquina de 11/09: uma foto de SERRA DE
+    BANCADA, sem cesta aérea nem meio de acesso de máquina na cena, recebeu
+    `Anexo III 7`, `Anexo XII 2.1`, `Anexo XII 3.2.2` e `Anexo XII 3.6.1` no
+    dossiê — vagas gastas em equipamento (cesta aérea, plataforma condutiva)
+    que a foto não tinha. Sem `Setor` próprio, `setor_do_item` devolvia None
+    para os dois anexos e eles entravam pela busca textual como se fossem
+    item genérico, quando na verdade nomeiam equipamento como qualquer outro
+    anexo setorial.
+
+    Reproduzido aqui sem rede, com achados que citam vocabulário genérico de
+    proteção contra queda — o mesmo tipo de frase que o `PROMPT_OLHO` sempre
+    pediu ("as peças que vê e as que não vê") — e que, ANTES deste `Setor`,
+    tinham cobertura de BM25 suficiente para entrar no dossiê mesmo sem
+    nomear cesta, cesto, escada ou plataforma de acesso nenhuma.
+    """
+    dossie_serra = _dossie_da_cena(
+        base, "central de corte de madeira do canteiro",
+        ["Serra circular de bancada com o disco exposto, sem coifa "
+         "protetora sobre a lâmina, sem sistema de proteção contra quedas "
+         "visível."],
+    )
+    refs = {f"{e.item.nr} {e.item.item}" for e in dossie_serra.entradas}
+    intrusos = {r for r in refs if r.startswith("NR-12 Anexo III")
+                or r.startswith("NR-12 Anexo XII")}
+    assert not intrusos, f"serra de bancada sem cesta nem meio de acesso: {intrusos}"
+
+    # Mesma família de defeito, achado em `SERRALHERIA` no lote de 11/09
+    # (naquele laudo, `Anexo III 6.1` — rampa com mais de 20° — e
+    # `Anexo XII 3.2.2` numa foto de policorte sem rampa nem cesta nenhuma).
+    dossie_policorte = _dossie_da_cena(
+        base, "canteiro de obra, central de corte",
+        ["Policorte manual cortando bloco cerâmico, apoiado em rampa "
+         "improvisada de tábuas, sem corrimão de proteção."],
+    )
+    refs = {f"{e.item.nr} {e.item.item}" for e in dossie_policorte.entradas}
+    intrusos = {r for r in refs if r.startswith("NR-12 Anexo III")
+                or r.startswith("NR-12 Anexo XII")}
+    assert not intrusos, f"policorte sem cesta nem meio de acesso: {intrusos}"
+
+
+def test_anexo_iii_e_xii_da_nr12_passam_quando_o_equipamento_esta_na_cena(base):
+    """A contraparte que impede o portão de virar veto permanente aos dois
+    anexos — e ela precisa passar pelo DOSSIÊ inteiro, não só por
+    `setor_pertinente` isolado. O `/critico` rejeitou a primeira versão deste
+    teste porque ela media só o portão: rodada a cena real pelo pipeline
+    completo, uma foto de cesta aérea pura não routeava NR-12 nenhuma —
+    `CATALOGO_NR["NR-12"]` não tinha nenhuma das palavras que o `Setor` novo
+    usa, então a NR nunca entrava em `nrs_candidatas` e o portão, correto em
+    si, nunca chegava a ser exercido. É a mesma armadilha "medir um
+    intermediário e relatar o desfecho" que este projeto já pagou várias
+    vezes. Consertado acrescentando as mesmas frases a `palavras_chave`."""
+    dossie_cesta = _dossie_da_cena(
+        base, "canteiro de obra",
+        ["Cesta aérea isolada, com dois trabalhadores realizando poda de "
+         "árvore próxima à rede elétrica."],
+    )
+    assert any(e.item.anexo == "XII" for e in dossie_cesta.entradas
+               if e.item.nr == "NR-12"), _nr12(dossie_cesta)
+
+    dossie_acesso = _dossie_da_cena(
+        base, "canteiro de obra",
+        ["Prensa industrial com plataforma de acesso metálica ao painel de "
+         "comando, sem guarda-corpo lateral."],
+    )
+    assert any(e.item.anexo == "III" for e in dossie_acesso.entradas
+               if e.item.nr == "NR-12"), _nr12(dossie_acesso)
+
+    # E o portão isolado continua fazendo o que se espera dele nos dois
+    # sentidos, para quem só olhar `setor_pertinente` de novo no futuro.
+    from auditoria.dossie import setor_pertinente
+
+    cesta = base.obter("NR-12", "Anexo XII 2.1")
+    assert not setor_pertinente(cesta, "betoneira em operação junto à laje")
+    assert setor_pertinente(
+        cesta, "cesta aérea isolada, com dois trabalhadores realizando poda"
+    )
+
+    acesso = base.obter("NR-12", "Anexo III 7")
+    assert not setor_pertinente(acesso, "serra circular de bancada com disco exposto")
+    assert setor_pertinente(
+        acesso,
+        "prensa industrial com plataforma de acesso metálica ao painel de comando",
+    )
 
 
 def test_item_setorial_deixado_fora_do_anexo_pela_extracao_tambem_e_barrado(base):
