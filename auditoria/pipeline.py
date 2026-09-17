@@ -1355,6 +1355,35 @@ def _mesma_constatacao(a: str, b: str) -> bool:
     return " ".join(a.split()).casefold() == " ".join(b.split()).casefold()
 
 
+# A NR-18 18.9.2 é só piso — "As aberturas no piso devem…" — e a NR-08 8.3.2.2
+# cobre piso E parede — "As aberturas nos pisos e nas paredes devem…". A
+# ordem em `ITENS_EQUIVALENTES` prefere o 18.9.2 por ser mais específico, e
+# isso é certo enquanto a abertura for de piso, que é o caso medido na
+# maioria do acervo. Mas citar 18.9.2 para uma abertura VERTICAL é a classe
+# de erro 1 — item verdadeiro, situação errada —, e apareceu três vezes em
+# produção com o mesmo defeito (laudo 1 de 09/09, passada B de 10/09, laudo 2
+# do lote de máquina em 11/09), sempre com o 8.3.2.2 disponível ao lado.
+# "vertical" é o discriminante já estabelecido para isso — é o mesmo
+# vocabulário de `abertura_parede_desprotegida` em riscos/construcao.py, e a
+# mesma razão: não há sinal seguro para bare "parede" (é um dos dois
+# substantivos da cena e não nega nada), então não se tenta pegar mais que o
+# que já está medido.
+_RE_ABERTURA_VERTICAL = re.compile(r"\bvertical\b", re.IGNORECASE)
+
+
+def _regula_a_abertura(nc: "NaoConformidade") -> bool:
+    """O item desta NC de fato cobre a abertura que a constatação descreve?
+
+    Só o 18.9.2 tem escopo estreito o bastante para divergir do que a
+    constatação relata — os demais itens deste projeto nunca entram neste
+    grupo. Quando a constatação da própria NC de 18.9.2 diz "vertical", o
+    item citado é de piso e a abertura não é: ele não regula aquilo.
+    """
+    if f"{nc.item.nr} {nc.item.item}" != "NR-18 18.9.2":
+        return True
+    return not _RE_ABERTURA_VERTICAL.search(nc.constatacao)
+
+
 def _fundir_equivalentes(ncs: list[NaoConformidade]) -> list[NaoConformidade]:
     """Uma abertura, uma não conformidade — com a outra norma citada ao lado.
 
@@ -1365,12 +1394,14 @@ def _fundir_equivalentes(ncs: list[NaoConformidade]) -> list[NaoConformidade]:
 
     Um auditor escreve uma, pela norma mais específica, e menciona a outra.
     A que encabeça é a primeira do grupo que o Analista tiver enquadrado — a
-    ordem em `ITENS_EQUIVALENTES` é a precedência —, e as demais viram citação
-    complementar. Nada se perde: o texto oficial das duas continua no laudo.
+    ordem em `ITENS_EQUIVALENTES` é a precedência, EXCETO quando o item que
+    viria primeiro não regula a abertura que a própria constatação descreve
+    (ver `_regula_a_abertura`) — e as demais viram citação complementar. Nada
+    se perde: o texto oficial das duas continua no laudo.
 
     Só funde o que o MESMO laudo enquadrou no mesmo grupo. Duas aberturas
     diferentes na mesma foto viram duas não conformidades como antes, porque o
-    Analista as enquadra no mesmo item e a fusão não olha para constatação.
+    Analista as enquadra no mesmo item.
     """
     fundidas: list[NaoConformidade] = []
     lider_do_grupo: dict[tuple[str, ...], NaoConformidade] = {}
@@ -1383,10 +1414,18 @@ def _fundir_equivalentes(ncs: list[NaoConformidade]) -> list[NaoConformidade]:
             lider_do_grupo[grupo] = nc
             fundidas.append(nc)
             continue
-        # Quem encabeça é quem vem antes no grupo; o outro vira complemento.
-        atual = grupo.index(f"{lider.item.nr} {lider.item.item}")
-        novo = grupo.index(f"{nc.item.nr} {nc.item.item}")
-        if novo < atual:
+        # Quem regula de fato a abertura descrita vence sempre; entre dois que
+        # regulam (ou dois que não regulam, caso degenerado), decide a ordem
+        # do grupo, que é a norma mais específica.
+        lider_regula = _regula_a_abertura(lider)
+        novo_regula = _regula_a_abertura(nc)
+        if lider_regula and novo_regula:
+            atual = grupo.index(f"{lider.item.nr} {lider.item.item}")
+            novo = grupo.index(f"{nc.item.nr} {nc.item.item}")
+            promove = novo < atual
+        else:
+            promove = novo_regula and not lider_regula
+        if promove:
             nc.complementos = [lider.item, *lider.complementos]
             fundidas[fundidas.index(lider)] = nc
             lider_do_grupo[grupo] = nc

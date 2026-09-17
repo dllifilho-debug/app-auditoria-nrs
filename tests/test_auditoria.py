@@ -249,6 +249,79 @@ def test_norma_complementar_e_citada_e_declara_a_edicao(base):
     assert "NR-08: edição" in md, "a edição da norma complementar não foi declarada"
 
 
+def test_fusao_prefere_8322_quando_a_constatacao_e_de_abertura_vertical(base):
+    """A classe de erro 1 medida três vezes em produção (laudo 1 de 09/09,
+    passada B de 10/09, laudo 2 do lote de máquina em 11/09): a fusão sempre
+    dava a liderança ao 18.9.2 por ordem fixa em `ITENS_EQUIVALENTES`, mesmo
+    quando a constatação — a que o Diretor já aparou — descreve uma abertura
+    VERTICAL, que o texto do 18.9.2 ("As aberturas no piso…") não regula.
+
+    A frase usada aqui é a do laudo 2 de 11/09, citada no CLAUDE.md: "abertura
+    vertical na estrutura de concreto, sem porta ou fechamento, revelando o
+    interior de outro cômodo".
+    """
+    from auditoria.pipeline import NaoConformidade, _fundir_equivalentes
+
+    vertical = (
+        "Abertura vertical na estrutura de concreto, sem porta ou "
+        "fechamento, revelando o interior de outro cômodo."
+    )
+
+    def nc(nr, item, constatacao=vertical):
+        return NaoConformidade(base.obter(nr, item), constatacao,
+                               "Queda.", "alta", "Fechar.", 1, "")
+
+    fundidas = _fundir_equivalentes([nc("NR-18", "18.9.2"), nc("NR-08", "8.3.2.2")])
+    assert len(fundidas) == 1
+    assert fundidas[0].item.item == "8.3.2.2", (
+        "18.9.2 (só piso) não pode encabeçar uma abertura vertical"
+    )
+    assert [c.item for c in fundidas[0].complementos] == ["18.9.2"]
+
+    # A precedência não depende da ordem em que o Analista enquadrou.
+    invertido = _fundir_equivalentes([nc("NR-08", "8.3.2.2"), nc("NR-18", "18.9.2")])
+    assert invertido[0].item.item == "8.3.2.2"
+    assert [c.item for c in invertido[0].complementos] == ["18.9.2"]
+
+
+def test_fusao_de_abertura_de_piso_continua_preferindo_18_9_2(base):
+    """A contraparte: sem "vertical" na constatação, nada muda — o 18.9.2
+    continua encabeçando por ser a norma mais específica, exatamente como
+    antes desta mudança."""
+    from auditoria.pipeline import NaoConformidade, _fundir_equivalentes
+
+    def nc(nr, item):
+        return NaoConformidade(base.obter(nr, item), "Abertura no piso sem proteção.",
+                               "Queda.", "critica", "Fechar.", 1, "")
+
+    fundidas = _fundir_equivalentes([nc("NR-08", "8.3.2.2"), nc("NR-18", "18.9.2")])
+    assert fundidas[0].item.item == "18.9.2"
+
+
+def test_fusao_nao_tenta_discriminar_parede_sem_a_palavra_vertical(base):
+    """Limite declarado, não escondido: `_regula_a_abertura` só reconhece
+    "vertical", o mesmo vocabulário já medido em `abertura_parede_desprotegida`
+    (riscos/construcao.py). "parede" sozinha não é sinal seguro — é um dos
+    dois substantivos da cena e não nega nada, a mesma razão pela qual o
+    roteamento de risco também não a usa. Uma constatação que descreve parede
+    sem dizer "vertical" continua com o 18.9.2 na frente, mesmo sendo
+    tecnicamente uma situação que ele não cobre — este teste marca o limite,
+    não o aprova."""
+    from auditoria.pipeline import NaoConformidade, _fundir_equivalentes
+
+    def nc(nr, item):
+        return NaoConformidade(
+            base.obter(nr, item),
+            "Abertura na parede de alvenaria, sem fechamento visível.",
+            "Queda.", "alta", "Fechar.", 1, "",
+        )
+
+    fundidas = _fundir_equivalentes([nc("NR-08", "8.3.2.2"), nc("NR-18", "18.9.2")])
+    assert fundidas[0].item.item == "18.9.2", (
+        "limite conhecido: sem a palavra 'vertical' a fusão não discrimina parede"
+    )
+
+
 def test_abertura_em_parede_nao_vira_abertura_de_piso():
     """A NR-08 8.3.2.2 cobre "aberturas nos pisos E NAS PAREDES"; a NR-18 18.9.2,
     só piso. Num laudo real a abertura vertical foi enquadrada nas duas, o
