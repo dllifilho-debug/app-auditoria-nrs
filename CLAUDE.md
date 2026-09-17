@@ -3691,21 +3691,34 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   dossiê real nas duas cenas positivas) e o `/critico` aprovando o range final — 252 testes
   passam (250 + 2). Não há lote de produção validando isso ainda, e não precisa: é código
   determinístico, sem prompt de agente envolvido.
-- **O `NR-18 18.9.2` enquadrou uma abertura VERTICAL pela terceira vez, e desta não precisa
-  de imagem para ver.** No laudo 2 de 11/09 a constatação diz *"abertura vertical na
-  estrutura de concreto, sem porta ou fechamento, revelando o interior de outro cômodo"* e
-  cita o `18.9.2`, que é item de **abertura no PISO**; o `NR-08 8.3.2.2`, que cobre piso E
-  parede, entrou como citação complementar, quando é ele o item de frente. **E o aparo do
-  Diretor descreve a norma errado**: diz que "a norma exige fechamento provisório para
-  aberturas em paredes", e o texto do `18.9.2` fala de pisos. É a classe de erro 1 com a
-  fusão do `ITENS_EQUIVALENTES` invertendo a ordem — as ocorrências anteriores são o laudo 1
-  de 09/09 e a passada B de 10/09, as duas de poço de elevador. **Três casos em três lotes, e
-  todos com o `8.3.2.2` disponível**: o que cabe medir é se a fusão deve escolher o item pela
-  ORIENTAÇÃO da abertura descrita no fato, em vez de pelo primeiro que o Analista enquadrar.
-  **O outro lado ganhou um caso em 12/09**: na foto 4 do lote de elétrica o Diretor VETOU o mesmo
-  `18.9.2` num vão de parede fechado com tela, com a razão certa, e o engenheiro confirmou que a
-  tela é fechamento e está fixada. A conta fica em **três laudos em que ele passou e dois vetos**
-  — e ali o `8.3.2.2` NÃO estava disponível, porque a NR-08 não é candidata naquela foto.
+- ~~O `NR-18 18.9.2` enquadrou uma abertura VERTICAL pela terceira vez~~ — **CONSERTADO em
+  17/09 (PR #63, `c840964`+`2a2f09e`), sem lote de produção.** No laudo 2 de 11/09 a
+  constatação dizia *"abertura vertical na estrutura de concreto, sem porta ou
+  fechamento, revelando o interior de outro cômodo"* e citava o `18.9.2`, que é item de
+  **abertura no PISO**; o `NR-08 8.3.2.2`, que cobre piso E parede, entrava só como
+  citação complementar, quando era ele o item de frente. Três casos em três lotes com o
+  mesmo defeito (laudo 1 de 09/09, passada B de 10/09, laudo 2 do lote de máquina em
+  11/09), sempre com o `8.3.2.2` disponível ao lado — era a fusão de `ITENS_EQUIVALENTES`
+  invertendo a ordem por precedência FIXA, sem olhar a constatação.
+  `_regula_a_abertura()` agora checa a constatação (já aparada pelo Diretor, no ponto em
+  que a fusão roda) por "abertura vertical"/"vão vertical" **adjacentes** — não
+  `vertical` solto, que foi a primeira versão e que o `/critico` rejeitou por derrubar
+  o `18.9.2` numa abertura de PISO real cuja constatação só citasse algo vertical ao
+  lado (ex.: "escada vertical" próxima). É o mesmo discriminante já usado em
+  `abertura_parede_desprotegida` (`riscos/construcao.py`). No caso comum (abertura de
+  piso, sem menção a vertical), a ordem de `ITENS_EQUIVALENTES` continua decidindo, sem
+  mudança de comportamento.
+  **O outro lado, medido em 12/09, continua de pé e não muda com este conserto**: na
+  foto 4 do lote de elétrica o Diretor VETOU o mesmo `18.9.2` num vão de parede fechado
+  com tela, com a razão certa, e o engenheiro confirmou que a tela é fechamento e está
+  fixada — ali o `8.3.2.2` não estava disponível (a NR-08 não era candidata naquela
+  foto), então não havia fusão a corrigir; quem resolveu foi o veto do Diretor, um
+  mecanismo diferente.
+  **Medi X, afirmo Y**: o que está medido são quatro testes (o caso real de 11/09, a
+  contraparte de piso inalterada, o limite declarado de "parede" sem "vertical", e o
+  caso adversarial que o `/critico` achou) e o `/critico` aprovando o range final — 256
+  testes passam (252 + 4). Não há lote de produção validando isso ainda, e não precisa:
+  é código de fusão de citação, sem prompt de agente envolvido.
 
 - **O `sem` satisfaz um sinal negando OUTRA coisa no mesmo fato — e isso derruba uma
   família inteira de riscos.** Achado no lote de 05/09 e **medido**: o fato *"Guarda-corpo
