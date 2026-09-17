@@ -394,14 +394,32 @@ RISCOS: dict[str, dict] = {
             "tancagem, paiol, fonte radioativa — sem cerca, faixa, corrente ou placa que "
             "delimite o perímetro e impeça a circulação de quem não trabalha ali."
         ),
+        # Quatro dos sete sinais originais não tinham radical exclusivo deste
+        # domínio: "sem faixa isolando a area", "sem placa de area de risco",
+        # "perimetro sem isolamento" e "sem corrente delimitando" casavam com
+        # QUALQUER área sem isolamento — vergalhão amontoado, andaime, canteiro
+        # em obras — porque `area`/`faixa`/`placa`/`perimetro`/`corrente`/
+        # `isolamento` não são vocabulário de inflamável, explosivo ou
+        # radiação. Medido: um achado sintético de vergalhões espalhados "sem
+        # faixa ou barreira delimitando o perímetro" acionava este risco e
+        # punha NR-16 16.8 em D1, na frente do item que de fato cobre a cena
+        # (NR-18 18.7.3.2, de `area_carpintaria_armacao_irregular`, que caía
+        # para D5). Dois dos quatro ("sem faixa isolando a area", "sem placa
+        # de area de risco") tinham 4 radicais e caíam na armadilha da
+        # cobertura parcial; os outros dois batiam 100% mesmo sem nenhuma
+        # palavra do domínio. Reescritos para sempre incluir o objeto
+        # (tanque/tancagem/radioativa) como radical obrigatório, em sinais de
+        # 3 radicais — onde 2 de 3 falha o corte de 0,7 e o domínio não pode
+        # ser o que falta. De quebra, "radioativa sem isolamento" cobre a
+        # classe que a descrição já prometia e nenhum sinal alcançava.
         "sinais": [
             "area de abastecimento aberta",
             "tanque sem cerca",
-            "sem faixa isolando a area",
-            "qualquer um passa perto do tanque",
-            "sem placa de area de risco",
-            "perimetro sem isolamento",
-            "sem corrente delimitando",
+            "tanque sem faixa",
+            "tanque sem placa",
+            "tancagem sem isolamento",
+            "radioativa sem isolamento",
+            "livre acesso ao tanque",
         ],
         "itens": ["NR-16 16.8", "NR-26 26.3.1"],
         "gravidade_base": "alta",
