@@ -408,15 +408,53 @@ RISCOS: dict[str, dict] = {
         # de area de risco") tinham 4 radicais e caíam na armadilha da
         # cobertura parcial; os outros dois batiam 100% mesmo sem nenhuma
         # palavra do domínio. Reescritos para sempre incluir o objeto
-        # (tanque/tancagem/radioativa) como radical obrigatório, em sinais de
-        # 3 radicais — onde 2 de 3 falha o corte de 0,7 e o domínio não pode
-        # ser o que falta. De quebra, "radioativa sem isolamento" cobre a
-        # classe que a descrição já prometia e nenhum sinal alcançava.
+        # (tanque/tancagem/radioativa) como radical obrigatório.
+        #
+        # A primeira reescrita usou "tanque sem placa" e "tanque sem faixa" —
+        # e o `/critico` rejeitou: `placa` e `faixa` são substantivos comuns
+        # em MUITOS contextos de segurança do trabalho sem relação nenhuma com
+        # isolamento de área (placa de identificação de equipamento, faixa
+        # reflexiva de colete). Como a cobertura é por achado inteiro, não por
+        # proximidade de frase, um único achado como "Tanque de gás
+        # industrial, isolado com cerca completa e faixa de segurança, sem
+        # placa de identificação do fabricante visível" batia cobertura 1,00
+        # em "tanque sem placa" descrevendo um tanque CORRETAMENTE isolado —
+        # a mesma armadilha "sem nunca é o negador" desta tabela, reintroduzida
+        # pelo próprio conserto. Trocados por `delimitacao`/`isolamento`, que
+        # são vocabulário quase exclusivo de área/perímetro neste domínio —
+        # não elimina o risco de colisão por completo (nenhum sinal curto
+        # elimina; ver "Regra global para a cobertura parcial — tentada e
+        # descartada"), mas reduz a um vocabulário bem mais raro de aparecer
+        # descrevendo outra coisa. Medido contra o caso adversarial do
+        # `/critico`: os cinco sinais reescritos não disparam mais nele.
+        #
+        # RESSALVA CONHECIDA, não resolvida aqui: o sinal `"tanque sem cerca"`
+        # — o único dos sete que nunca foi tocado, nem nesta rodada nem na
+        # anterior — sofre da MESMA colisão por um caminho diferente. Medido:
+        # o achado *"Tanque de gás industrial, isolado com cerca completa ao
+        # redor, sem manutenção recente na pintura da estrutura"* bate
+        # cobertura 1,00 em `"tanque sem cerca"` porque `tanqu`+`sem`+`cerc`
+        # aparecem todos no mesmo achado — `cerca` afirmada (presente) e
+        # `sem` negando outra coisa (manutenção), não a cerca. É a âncora por
+        # ACHADO INTEIRO, não por proximidade de frase: nenhum sinal curto
+        # neste projeto garante que o `sem` negue especificamente a palavra
+        # ao lado dele, e por isso a tabela de armadilhas já registra que não
+        # há regra simples para isso. Não foi consertado porque (a) é o único
+        # sinal deste risco que já existia antes de qualquer um dos dois
+        # PRs desta sessão — não é regressão nova; (b) é o vocabulário mais
+        # provável de o Olho escrever de verdade (`PROMPT_OLHO` manda "sem
+        # <peça> visível"), então trocá-lo por palavra afirmativa
+        # ("desprotegido") reduziria a cobertura real por menos falso
+        # positivo hipotético — troca que nenhum lote mediu; (c) resolver de
+        # vez exige a hipótese do bigrama (exigir adjacência entre o negador
+        # e o substantivo negado), que é mudança estrutural no roteamento
+        # inteiro, não deste risco. Fica registrado aqui, com a medição, para
+        # quem for atacar o bigrama ter um caso de teste pronto.
         "sinais": [
             "area de abastecimento aberta",
             "tanque sem cerca",
-            "tanque sem faixa",
-            "tanque sem placa",
+            "tanque sem isolamento",
+            "tanque sem delimitacao",
             "tancagem sem isolamento",
             "radioativa sem isolamento",
             "livre acesso ao tanque",

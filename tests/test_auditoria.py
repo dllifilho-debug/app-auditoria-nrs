@@ -5227,3 +5227,27 @@ def test_tanque_sem_isolamento_continua_acionando_o_risco(base):
     dossie_final, _ = montar_dossie(base, visao, "", HOJE)
     refs = [e.item.id for e in dossie_final.entradas]
     assert "NR-16 16.8" in refs
+
+
+def test_sinais_reescritos_nao_colidem_com_tanque_isolado_mas_incompleto(base):
+    """O `/critico` rejeitou a primeira reescrita: "tanque sem placa" e
+    "tanque sem faixa" ainda batiam cobertura 1,00 num achado que descreve um
+    tanque CORRETAMENTE isolado, só porque `sem` negava outra coisa na mesma
+    frase (placa de identificação do fabricante, não da área de risco) — a
+    mesma armadilha "sem nunca é o negador" reintroduzida pelo próprio
+    conserto. `placa`/`faixa` foram trocados por `isolamento`/`delimitacao`,
+    vocabulário bem mais raro de aparecer fora de contexto.
+
+    Este teste é o caso adversarial exato do `/critico`, sem a palavra
+    `cerca` (que é o único sinal deste risco que continua vulnerável à mesma
+    classe — ver a ressalva no código, não consertada nesta rodada)."""
+    visao = Visao(
+        ambiente="Canteiro de obras, área de armazenamento externa",
+        achados=[
+            Achado("Tanque de gás industrial, isolado com faixa de segurança "
+                   "amarela ao redor, sem placa de identificação do "
+                   "fabricante visível na lateral"),
+        ],
+    )
+    riscos = [r.id for r in rotear_riscos(visao)]
+    assert "area_de_risco_nao_delimitada" not in riscos, riscos
