@@ -20,7 +20,7 @@ from typing import Callable, Sequence
 
 from . import dossie as mod_dossie
 from .catalogo_nr import CATALOGO_NR
-from .kb import BaseNormativa, Item
+from .kb import BaseNormativa, Item, normalizar
 from .kb import radicais as _radicais   # usado também por riscos._validar
 from .modelos import Conversador, ErroDeAuditoria, RespostaIlegivel
 from .riscos import (
@@ -1355,6 +1355,39 @@ def _mesma_constatacao(a: str, b: str) -> bool:
     return " ".join(a.split()).casefold() == " ".join(b.split()).casefold()
 
 
+# A NR-18 18.9.2 é só piso — "As aberturas no piso devem…" — e a NR-08 8.3.2.2
+# cobre piso E parede — "As aberturas nos pisos e nas paredes devem…". A
+# ordem em `ITENS_EQUIVALENTES` prefere o 18.9.2 por ser mais específico, e
+# isso é certo enquanto a abertura for de piso, que é o caso medido na
+# maioria do acervo. Mas citar 18.9.2 para uma abertura VERTICAL é a classe
+# de erro 1 — item verdadeiro, situação errada —, e apareceu três vezes em
+# produção com o mesmo defeito (laudo 1 de 09/09, passada B de 10/09, laudo 2
+# do lote de máquina em 11/09), sempre com o 8.3.2.2 disponível ao lado.
+#
+# "abertura vertical"/"vão vertical" ADJACENTES é o discriminante — o mesmo
+# vocabulário e a mesma exigência de adjacência de `abertura_parede_desprotegida`
+# em riscos/construcao.py. `\bvertical\b` solto foi a primeira versão disto, e
+# o `/critico` pegou: uma abertura de PISO de verdade cuja constatação só
+# mencione algo vertical ao lado ("próxima a uma escada vertical") já
+# derrubava o 18.9.2 por engano. Bare "parede" continua fora, pela razão de
+# sempre: é um dos dois substantivos da cena e não nega nada.
+_RE_ABERTURA_VERTICAL = re.compile(r"\b(?:abertura|vao)\w{0,3}\s+vertical\b")
+
+
+def _regula_a_abertura(nc: "NaoConformidade") -> bool:
+    """O item desta NC de fato cobre a abertura que a constatação descreve?
+
+    Só o 18.9.2 tem escopo estreito o bastante para divergir do que a
+    constatação relata — os demais itens deste projeto nunca entram neste
+    grupo. Quando a PRÓPRIA constatação da NC de 18.9.2 chama a abertura de
+    "abertura vertical" ou "vão vertical", o item citado é de piso e a
+    abertura não é: ele não regula aquilo.
+    """
+    if f"{nc.item.nr} {nc.item.item}" != "NR-18 18.9.2":
+        return True
+    return not _RE_ABERTURA_VERTICAL.search(normalizar(nc.constatacao))
+
+
 def _fundir_equivalentes(ncs: list[NaoConformidade]) -> list[NaoConformidade]:
     """Uma abertura, uma não conformidade — com a outra norma citada ao lado.
 
@@ -1365,12 +1398,14 @@ def _fundir_equivalentes(ncs: list[NaoConformidade]) -> list[NaoConformidade]:
 
     Um auditor escreve uma, pela norma mais específica, e menciona a outra.
     A que encabeça é a primeira do grupo que o Analista tiver enquadrado — a
-    ordem em `ITENS_EQUIVALENTES` é a precedência —, e as demais viram citação
-    complementar. Nada se perde: o texto oficial das duas continua no laudo.
+    ordem em `ITENS_EQUIVALENTES` é a precedência, EXCETO quando o item que
+    viria primeiro não regula a abertura que a própria constatação descreve
+    (ver `_regula_a_abertura`) — e as demais viram citação complementar. Nada
+    se perde: o texto oficial das duas continua no laudo.
 
     Só funde o que o MESMO laudo enquadrou no mesmo grupo. Duas aberturas
     diferentes na mesma foto viram duas não conformidades como antes, porque o
-    Analista as enquadra no mesmo item e a fusão não olha para constatação.
+    Analista as enquadra no mesmo item.
     """
     fundidas: list[NaoConformidade] = []
     lider_do_grupo: dict[tuple[str, ...], NaoConformidade] = {}
@@ -1383,10 +1418,18 @@ def _fundir_equivalentes(ncs: list[NaoConformidade]) -> list[NaoConformidade]:
             lider_do_grupo[grupo] = nc
             fundidas.append(nc)
             continue
-        # Quem encabeça é quem vem antes no grupo; o outro vira complemento.
-        atual = grupo.index(f"{lider.item.nr} {lider.item.item}")
-        novo = grupo.index(f"{nc.item.nr} {nc.item.item}")
-        if novo < atual:
+        # Quem regula de fato a abertura descrita vence sempre; entre dois que
+        # regulam (ou dois que não regulam, caso degenerado), decide a ordem
+        # do grupo, que é a norma mais específica.
+        lider_regula = _regula_a_abertura(lider)
+        novo_regula = _regula_a_abertura(nc)
+        if lider_regula and novo_regula:
+            atual = grupo.index(f"{lider.item.nr} {lider.item.item}")
+            novo = grupo.index(f"{nc.item.nr} {nc.item.item}")
+            promove = novo < atual
+        else:
+            promove = novo_regula and not lider_regula
+        if promove:
             nc.complementos = [lider.item, *lider.complementos]
             fundidas[fundidas.index(lider)] = nc
             lider_do_grupo[grupo] = nc
