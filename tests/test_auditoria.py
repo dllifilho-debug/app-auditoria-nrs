@@ -5168,3 +5168,86 @@ def test_repescagem_vazia_nao_conta_como_reparada(base):
     texto = relatorio.markdown(laudo, base, "foto.jpg")
     assert "Conferência repescada" not in texto
     assert "Supervisão incompleta" in texto
+
+
+def test_area_sem_isolamento_generica_nao_aciona_risco_de_inflamavel(base):
+    """Foto real do acervo, nunca rodada em lote: `AUSENSIA DE ISOLAMENTO.jpg`
+    mostra vergalhões espalhados no chão, sem isolamento — e nenhum tanque,
+    combustível ou fonte radioativa na cena.
+
+    `area_de_risco_nao_delimitada` tinha quatro sinais sem radical exclusivo
+    de inflamável/explosivo/radiação ("sem faixa isolando a area", "sem placa
+    de area de risco", "perimetro sem isolamento", "sem corrente
+    delimitando") — casavam com QUALQUER área sem isolamento. Medido antes do
+    conserto: este fato sintético acionava o risco e punha `NR-16 16.8` em
+    D1, na frente do item que de fato cobre a cena (`NR-18 18.7.3.2`, de
+    `area_carpintaria_armacao_irregular`, que caía para D5).
+    """
+    visao = Visao(
+        ambiente=("Pavimento térreo em construção, piso de concreto, "
+                   "vergalhões espalhados sem isolamento visível da área "
+                   "de movimentação"),
+        pessoas_presentes=True, quantidade_pessoas=3,
+        achados=[
+            Achado("Vergalhões de aço de diversos comprimentos espalhados e "
+                   "amontoados sobre o piso de concreto, ocupando o centro "
+                   "da área de circulação, sem faixa ou barreira delimitando "
+                   "o perímetro"),
+            Achado("Bancada de madeira simples encostada ao pilar, com "
+                   "ferramentas de dobra de ferro apoiadas sobre o tampo"),
+            Achado("Três trabalhadores de capacete reunidos próximo à "
+                   "bancada, ao fundo da área"),
+        ],
+    )
+    riscos = [r.id for r in rotear_riscos(visao)]
+    assert "area_de_risco_nao_delimitada" not in riscos, riscos
+    assert "area_carpintaria_armacao_irregular" in riscos
+
+    dossie_final, origem = montar_dossie(base, visao, "", HOJE)
+    refs = [e.item.id for e in dossie_final.entradas]
+    assert "NR-16 16.8" not in refs, refs
+    assert "NR-18 18.7.3.2" in refs
+
+
+def test_tanque_sem_isolamento_continua_acionando_o_risco(base):
+    """A contraparte: o caso positivo que o risco existe para pegar não pode
+    morrer junto com o falso positivo."""
+    visao = Visao(
+        ambiente="Canteiro de obras, área externa de armazenamento",
+        achados=[
+            Achado("Tanque metálico de combustível diesel apoiado sobre o "
+                   "piso, sem cerca nem faixa de isolamento ao redor"),
+            Achado("Trabalhadores circulando livremente próximo ao tanque, "
+                   "sem qualquer barreira de acesso"),
+        ],
+    )
+    riscos = [r.id for r in rotear_riscos(visao)]
+    assert "area_de_risco_nao_delimitada" in riscos, riscos
+
+    dossie_final, _ = montar_dossie(base, visao, "", HOJE)
+    refs = [e.item.id for e in dossie_final.entradas]
+    assert "NR-16 16.8" in refs
+
+
+def test_sinais_reescritos_nao_colidem_com_tanque_isolado_mas_incompleto(base):
+    """O `/critico` rejeitou a primeira reescrita: "tanque sem placa" e
+    "tanque sem faixa" ainda batiam cobertura 1,00 num achado que descreve um
+    tanque CORRETAMENTE isolado, só porque `sem` negava outra coisa na mesma
+    frase (placa de identificação do fabricante, não da área de risco) — a
+    mesma armadilha "sem nunca é o negador" reintroduzida pelo próprio
+    conserto. `placa`/`faixa` foram trocados por `isolamento`/`delimitacao`,
+    vocabulário bem mais raro de aparecer fora de contexto.
+
+    Este teste é o caso adversarial exato do `/critico`, sem a palavra
+    `cerca` (que é o único sinal deste risco que continua vulnerável à mesma
+    classe — ver a ressalva no código, não consertada nesta rodada)."""
+    visao = Visao(
+        ambiente="Canteiro de obras, área de armazenamento externa",
+        achados=[
+            Achado("Tanque de gás industrial, isolado com faixa de segurança "
+                   "amarela ao redor, sem placa de identificação do "
+                   "fabricante visível na lateral"),
+        ],
+    )
+    riscos = [r.id for r in rotear_riscos(visao)]
+    assert "area_de_risco_nao_delimitada" not in riscos, riscos
