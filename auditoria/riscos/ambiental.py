@@ -428,28 +428,20 @@ RISCOS: dict[str, dict] = {
         # descrevendo outra coisa. Medido contra o caso adversarial do
         # `/critico`: os cinco sinais reescritos não disparam mais nele.
         #
-        # RESSALVA CONHECIDA, não resolvida aqui: o sinal `"tanque sem cerca"`
-        # — o único dos sete que nunca foi tocado, nem nesta rodada nem na
-        # anterior — sofre da MESMA colisão por um caminho diferente. Medido:
-        # o achado *"Tanque de gás industrial, isolado com cerca completa ao
-        # redor, sem manutenção recente na pintura da estrutura"* bate
-        # cobertura 1,00 em `"tanque sem cerca"` porque `tanqu`+`sem`+`cerc`
-        # aparecem todos no mesmo achado — `cerca` afirmada (presente) e
-        # `sem` negando outra coisa (manutenção), não a cerca. É a âncora por
-        # ACHADO INTEIRO, não por proximidade de frase: nenhum sinal curto
-        # neste projeto garante que o `sem` negue especificamente a palavra
-        # ao lado dele, e por isso a tabela de armadilhas já registra que não
-        # há regra simples para isso. Não foi consertado porque (a) é o único
-        # sinal deste risco que já existia antes de qualquer um dos dois
-        # PRs desta sessão — não é regressão nova; (b) é o vocabulário mais
-        # provável de o Olho escrever de verdade (`PROMPT_OLHO` manda "sem
-        # <peça> visível"), então trocá-lo por palavra afirmativa
-        # ("desprotegido") reduziria a cobertura real por menos falso
-        # positivo hipotético — troca que nenhum lote mediu; (c) resolver de
-        # vez exige a hipótese do bigrama (exigir adjacência entre o negador
-        # e o substantivo negado), que é mudança estrutural no roteamento
-        # inteiro, não deste risco. Fica registrado aqui, com a medição, para
-        # quem for atacar o bigrama ter um caso de teste pronto.
+        # RESSALVA RESOLVIDA em 18/09 pela hipótese do bigrama, não por troca
+        # de vocabulário: `"tanque sem cerca"` sofria a MESMA colisão dos
+        # quatro acima — `"Tanque de gás industrial, isolado com cerca
+        # completa ao redor, sem manutenção recente na pintura da estrutura"`
+        # batia cobertura 1,00 porque `tanqu`+`sem`+`cerc` apareciam todos no
+        # mesmo achado, com `cerca` afirmada e `sem` negando outra coisa
+        # (manutenção). O que faltava não era trocar a palavra — era o
+        # roteador saber que "sem" só nega o radical que vem logo depois dele
+        # no SINAL, e que esse radical só conta como negado se um "sem" de
+        # verdade estiver perto dele NO TEXTO (`_radicais_negados` e
+        # `_proximidade_da_negacao`, em `pipeline.py`). Medido: o achado acima não
+        # roteia mais, e o caso positivo genuíno (tanque com cerca REALMENTE
+        # ausente) continua roteando — ver
+        # `test_tanque_sem_cerca_nao_colide_mais_com_a_ressalva_conhecida`.
         "sinais": [
             "area de abastecimento aberta",
             "tanque sem cerca",

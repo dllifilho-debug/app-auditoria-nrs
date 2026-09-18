@@ -1230,7 +1230,15 @@ def test_item_generico_entra_no_dossie_sem_rotulo_de_risco(base):
     guarda-corpo. Dois modelos de texto diferentes erraram igual, o que mostra
     que é o mapa e não o modelo: `NR-18 18.9.1` ("proteção coletiva onde houver
     risco de queda") é reivindicado por mais de um risco, então o rótulo que
-    sobra depende de qual deles roteou primeiro."""
+    sobra depende de qual deles roteou primeiro.
+
+    O quarto achado descreve um andaime SEM guarda-corpo de verdade — antes da
+    hipótese do bigrama (CLAUDE.md, "Em aberto"), "andaime sem guarda corpo"
+    também casava um achado que afirmava guarda-corpo PRESENTE (cobertura
+    parcial contava andaime+guarda+corpo, e "sem" nunca precisava estar perto
+    de nenhum dos dois); hoje esse casamento correto por acidente não existe
+    mais, e o teste precisa de uma negação genuína para exercer o mesmo item
+    compartilhado."""
     visao = Visao(
         ambiente="Laje de construção civil em fase de estruturação",
         achados=[Achado(t) for t in (
@@ -1240,8 +1248,8 @@ def test_item_generico_entra_no_dossie_sem_rotulo_de_risco(base):
             "da laje em vez de permanecer esticado na borda.",
             "Abertura retangular no piso da laje, com bordas de concreto aparente, "
             "sem cobertura ou fechamento visível.",
-            "Estrutura metálica de andaime suspensa, com guarda-corpo de tubos e "
-            "pneus pretos presos na lateral externa.",
+            "Estrutura metálica de andaime suspensa, sem guarda-corpo nem rodapé "
+            "visível na lateral externa, com pneus pretos amarrados como contrapeso.",
         )],
     )
     dossie, origem = montar_dossie(base, visao, "", HOJE)
@@ -5251,3 +5259,98 @@ def test_sinais_reescritos_nao_colidem_com_tanque_isolado_mas_incompleto(base):
     )
     riscos = [r.id for r in rotear_riscos(visao)]
     assert "area_de_risco_nao_delimitada" not in riscos, riscos
+
+
+# ---------------------------------------------------------------------------
+# A hipótese do bigrama: "sem" só nega o radical que vem logo depois dele no
+# sinal, e ele tem de estar perto de um "sem" DE VERDADE no texto — não em
+# qualquer lugar do mesmo achado. Ataca de uma vez a armadilha do negador
+# (`"sem carenagem"` casando "carenagem íntegra... sem folgas") e a da
+# relação invertida (`"abertura no piso"` casando "piso... da abertura").
+# ---------------------------------------------------------------------------
+
+def test_tanque_sem_cerca_nao_colide_mais_com_a_ressalva_conhecida(base):
+    """A ressalva que o próprio código deixava registrada para quem atacasse o
+    bigrama: `"tanque sem cerca"` batia cobertura 1,00 porque `tanqu`+`sem`+
+    `cerc` apareciam todos no mesmo achado — `cerca` afirmada (presente) e
+    `sem` negando outra coisa (manutenção), não a cerca. A direção resolve
+    sozinha, sem precisar de janela apertada: "cerca" nunca aparece DEPOIS de
+    nenhum "sem" deste achado, só antes.
+    """
+    visao = Visao(
+        ambiente="Canteiro de obras, área de armazenamento externa",
+        achados=[
+            Achado("Tanque de gás industrial, isolado com cerca completa ao "
+                   "redor, sem manutenção recente na pintura da estrutura"),
+        ],
+    )
+    riscos = [r.id for r in rotear_riscos(visao)]
+    assert "area_de_risco_nao_delimitada" not in riscos, riscos
+
+    # A contraparte: a mesma cerca, desta vez genuinamente ausente — "sem"
+    # negando "cerca" de verdade, adjacente no texto.
+    visao_positiva = Visao(
+        ambiente="Canteiro de obras, área de armazenamento externa",
+        achados=[
+            Achado("Tanque metálico de combustível diesel apoiado sobre o "
+                   "piso, sem cerca nem faixa de isolamento ao redor"),
+        ],
+    )
+    assert "area_de_risco_nao_delimitada" in [
+        r.id for r in rotear_riscos(visao_positiva)
+    ]
+
+
+def test_sem_nega_so_o_vizinho_no_sinal_nao_qualquer_negacao_do_achado():
+    """A armadilha original, registrada desde 04/09: `"sem carenagem"` tinha
+    dois radicais — `sem` e `carenagem` — e nenhum dos dois discrimina nada
+    sozinho. "Carenagem do motor íntegra e fixada, sem folgas visíveis" tem os
+    dois radicais no mesmo achado, mas o `sem` ali nega "folgas", não
+    "carenagem". Reproduzido aqui contra o mecanismo isolado — o sinal real
+    (`"maquina sem carenagem"`, 3 radicais) já tem essa proteção reforçada
+    pelo próprio encurtamento manual histórico.
+    """
+    from auditoria.pipeline import _radicais_negados, _proximidade_da_negacao
+    from auditoria.kb import radicais_posicionados
+
+    negados = _radicais_negados("sem carenagem")
+    assert negados == ("carenagem",)
+
+    positivo = radicais_posicionados(
+        "Correia solta sem carenagem visível na lateral do motor"
+    )
+    negativo = radicais_posicionados(
+        "Carenagem do motor íntegra e fixada, sem folgas visíveis"
+    )
+    assert _proximidade_da_negacao("carenagem", positivo)
+    assert not _proximidade_da_negacao("carenagem", negativo)
+
+
+def test_abertura_no_piso_nao_casa_com_a_relacao_invertida():
+    """Medido em produção em 10/09: o fato "Piso de concreto com aspecto
+    áspero e irregular, visível na parte inferior da abertura ao fundo"
+    descreve o PÉ de um vão vertical, não um buraco no piso — mas os dois
+    radicais de `"abertura no piso"` estavam os dois ali, a nove palavras de
+    distância, e a cobertura de bag-of-words não via diferença entre isso e
+    "Abertura retangular no piso, sem tampa". Foi por aqui que `NR-18 18.9.2`
+    chegou a D1 três vezes em quatro execuções, numa foto sem buraco no chão.
+    """
+    invertida = Visao(
+        ambiente="Estrutura de concreto em construção",
+        achados=[Achado(
+            "Piso de concreto com aspecto áspero e irregular, visível na "
+            "parte inferior da abertura ao fundo"
+        )],
+    )
+    assert "abertura_piso_desprotegida" not in [
+        r.id for r in rotear_riscos(invertida)
+    ]
+
+    # As contrapartes genuínas continuam firmes — os dois radicais adjacentes,
+    # a relação certa entre eles.
+    for fato in (
+        "placa de madeira apoiada solta sobre abertura no piso, sem travamento",
+        "Abertura retangular no piso, sem tampa nem guarda-corpo.",
+    ):
+        visao = Visao(ambiente="canteiro de obra", achados=[Achado(fato)])
+        assert "abertura_piso_desprotegida" in [r.id for r in rotear_riscos(visao)], fato
