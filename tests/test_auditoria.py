@@ -5354,3 +5354,63 @@ def test_abertura_no_piso_nao_casa_com_a_relacao_invertida():
     ):
         visao = Visao(ambiente="canteiro de obra", achados=[Achado(fato)])
         assert "abertura_piso_desprotegida" in [r.id for r in rotear_riscos(visao)], fato
+
+
+def test_todo_sinal_casa_com_a_propria_frase_literal():
+    """O caso canônico: um achado que contém o sinal PALAVRA POR PALAVRA tem
+    de rotear o risco que aquele sinal pertence, sempre — é o caso mais fácil
+    que existe, e é a rede de segurança contra a Regra A (`_radicais_negados`
+    + `_proximidade_da_negacao`) ou a Regra B (`_bigrama_proximo`) travarem em
+    massa algum sinal que ninguém tocou nesta rodada. Roda os 883 sinais da
+    taxonomia inteira — qualquer sinal novo cadastrado depois passa por aqui
+    também, sem precisar de teste dedicado.
+    """
+    quebrados = []
+    for risco in catalogo_riscos().values():
+        for sinal in risco.sinais:
+            achado = f"Foi observado: {sinal}, exatamente como descrito."
+            visao = Visao(ambiente="", achados=[Achado(achado)])
+            ids = [r.id for r in rotear_riscos(visao)]
+            if risco.id not in ids:
+                quebrados.append((risco.id, sinal))
+    assert not quebrados, quebrados
+
+
+def test_varredura_sintetica_com_enchimento_nao_quebra_sinal_de_sem_ou_bigrama():
+    """A medição que calibrou `JANELA_PROXIMIDADE` (`pipeline.py`) e o desenho
+    "a cabeça ancora o grupo" de `_radicais_negados` — commitada como teste,
+    não só como número em prosa no CLAUDE.md, porque um sinal novo cadastrado
+    depois desta rodada (ou uma mudança na janela) precisa voltar a passar por
+    aqui, automaticamente, sem depender de alguém lembrar de rodar um script
+    de scratchpad que não está no repositório.
+
+    Para todo sinal que a Regra A (tem `"sem"`) ou a Regra B (exatamente dois
+    radicais, sem `"sem"`) alcança, gera um achado reescrevendo o sinal com um
+    enchimento de três palavras entre CADA palavra dele — o pior caso
+    plausível de um Olho verboso separando o negador (ou os dois lados do
+    bigrama) do resto da frase — e exige que o risco ainda rotule. É a mesma
+    varredura que, contra a primeira versão do mecanismo (só o vizinho
+    imediato de `"sem"` era negado), achou 3 sinais quebrados com janela 6 e
+    0 com janela 7; e que, contra a segunda versão (todo o composto negado,
+    cada radical dele checado individualmente), achou 78 quebrados — o gap
+    que levou ao desenho final, "só a cabeça do composto precisa estar perto
+    do sem".
+    """
+    from auditoria.kb import radicais
+    from auditoria.pipeline import _radicais_negados
+
+    enchimento = " visivelmente presente na "
+    quebrados = []
+    for risco in catalogo_riscos().values():
+        for sinal in risco.sinais:
+            termos = radicais(sinal)
+            eh_bigrama_puro = len(termos) == 2 and "sem" not in termos
+            tem_negador = bool(_radicais_negados(sinal))
+            if not (eh_bigrama_puro or tem_negador):
+                continue
+            achado = enchimento.join(sinal.split())
+            visao = Visao(ambiente="", achados=[Achado(achado)])
+            ids = [r.id for r in rotear_riscos(visao)]
+            if risco.id not in ids:
+                quebrados.append((risco.id, sinal, achado))
+    assert not quebrados, quebrados

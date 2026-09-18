@@ -123,7 +123,7 @@ seguravam regrediram). **Decisão registrada no bloco acima: parar de iterar aqu
 
 `main` em `86bb35d` (merge do PR #65) antes desta sessão. **Código determinístico de roteamento,
 sem prompt de agente envolvido — mesmo raciocínio dos PR #62/#63: não precisa de lote de
-produção, precisa de teste e de `/critico`.** 262 testes passam (259 + 3).
+produção, precisa de teste e de `/critico`.** 264 testes passam (259 + 5).
 
 **O que estava quebrado.** `rotear_riscos` (`pipeline.py`) sempre tratou cada achado como
 um SACO de radicais sem posição — é o que a tabela de armadilhas chama de "`sem` é
@@ -197,6 +197,16 @@ acidente.
 NEGADOR está no TEXTO, não no SINAL (o sinal é afirmativo, `"poço aberto"`, e o texto nega
 com `"sem trechos abertos"`) — continua fora do alcance. É outro mecanismo, e o CLAUDE.md
 já registrava isso como fora do escopo desta hipótese antes de ela existir em código.
+
+**O `/critico` REJEITOU a primeira versão**, e o gap era real: a varredura sintética contra
+os 883 sinais que calibrou `JANELA_PROXIMIDADE` e o desenho "a cabeça ancora o grupo"
+existia só como número em prosa neste arquivo — nada no repositório a reproduzia, e um
+sinal novo cadastrado depois desta rodada (ou uma mudança na janela) podia voltar a quebrar
+em massa sem que nada avisasse. **Consertado**: as duas varreduras viraram teste —
+`test_todo_sinal_casa_com_a_propria_frase_literal` (o caso canônico, os 883 sinais) e
+`test_varredura_sintetica_com_enchimento_nao_quebra_sinal_de_sem_ou_bigrama` (o enchimento
+adversarial que motivou o valor 7). 264 testes passam (259 + 5). O `/critico` não foi
+rodado de novo sobre a versão corrigida nesta sessão — quem for mexer aqui de novo, rode.
 
 **Verificado no navegador em Modo Demonstração**: pipeline inteiro (Olho → dossiê →
 aferição → supervisão) roda sem erro, 3 não conformidades, sem regressão visível.
@@ -3219,7 +3229,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 262 testes
+$VENV -m pytest tests/ -q          # 264 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -3384,7 +3394,7 @@ próprio comando composto (exit 144).
   um `"sem"` de verdade estiver perto DELE no texto (`_proximidade_da_negacao`,
   `pipeline.py`), e sinal de exatamente dois radicais sem negador exige os dois próximos
   (`_bigrama_proximo`). Ver "Conserto de roteamento de 18/09/2026" para a medição.
-- **262 testes**
+- **264 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
