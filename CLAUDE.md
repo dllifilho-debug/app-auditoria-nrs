@@ -205,8 +205,8 @@ sinal novo cadastrado depois desta rodada (ou uma mudança na janela) podia volt
 em massa sem que nada avisasse. **Consertado**: as duas varreduras viraram teste —
 `test_todo_sinal_casa_com_a_propria_frase_literal` (o caso canônico, os 883 sinais) e
 `test_varredura_sintetica_com_enchimento_nao_quebra_sinal_de_sem_ou_bigrama` (o enchimento
-adversarial que motivou o valor 7). 264 testes passam (259 + 5). O `/critico` não foi
-rodado de novo sobre a versão corrigida nesta sessão — quem for mexer aqui de novo, rode.
+adversarial que motivou o valor 7). 264 testes passam (259 + 5). **O `/critico` rodou de
+novo sobre o range com os dois commits e APROVOU.**
 
 **Verificado no navegador em Modo Demonstração**: pipeline inteiro (Olho → dossiê →
 aferição → supervisão) roda sem erro, 3 não conformidades, sem regressão visível.
