@@ -22,6 +22,7 @@ from . import dossie as mod_dossie
 from .catalogo_nr import CATALOGO_NR
 from .kb import BaseNormativa, Item, normalizar
 from .kb import radicais as _radicais   # usado também por riscos._validar
+from .kb import radicais_posicionados as _radicais_posicionados
 from .modelos import Conversador, ErroDeAuditoria, RespostaIlegivel
 from .riscos import (
     Risco,
@@ -471,6 +472,94 @@ def agente_olho(cliente: Conversador, imagem_b64: str, modelo: str, contexto: st
 # Etapa 2 — Roteamento e dossiê (100% determinístico)
 # ---------------------------------------------------------------------------
 
+# Palavra que o `PROMPT_OLHO` manda usar para reportar ausência ("sem <peça>
+# visível") e que, por contar como radical sem discriminar nada, casava com
+# QUALQUER negação do achado — não necessariamente a da peça que o sinal
+# nomeia. Ver `_radicais_negados`.
+NEGADOR = "sem"
+
+# Palavras de tolerância entre dois radicais que precisam estar PERTO um do
+# outro para contar como o mesmo par — o negador e o que ele nega, ou os dois
+# lados de um sinal-bigrama sem negador. Calibrada em duas pontas: para baixo,
+# pelo caso medido em produção que a hipótese do bigrama existe para barrar —
+# a relação invertida "Piso ... visível na parte inferior da abertura" (9
+# palavras entre os dois radicais, tem de FICAR de fora); para cima, por uma
+# varredura sintética contra os 883 sinais da taxonomia, reescrevendo cada um
+# com 3 palavras de enchimento entre CADA palavra (o pior caso plausível de um
+# Olho verboso) — com janela 6 ainda sobravam 3 sinais quebrados por uma
+# palavra de distância, com 7 nenhum. 7 fica abaixo dos 9 que precisam
+# continuar de fora, com uma palavra de margem.
+JANELA_PROXIMIDADE = 7
+
+
+def _radicais_negados(sinal: str) -> tuple[str, ...]:
+    """Radicais do sinal que `NEGADOR` nega, NA ORDEM — tudo que vem depois da
+    primeira ocorrência dele no sinal.
+
+    "tanque sem cerca" nega "cerca", não "tanque": em português "sem X" nega
+    X, não o resto da frase. Mas X pode ser um substantivo COMPOSTO — "sem
+    guarda-corpo" tokeniza em dois radicais (`guard`, `corp`), "sem placa de
+    identificação" em dois (`plac`, `identificaca`). A ordem importa porque só
+    a CABEÇA — o primeiro radical negado — precisa estar perto de um `NEGADOR`
+    de verdade no texto (ver `_proximidade_da_negacao`); negar só ela e deixar
+    o resto do composto valendo bag-of-words perdia o caso real ("guarda-corpo
+    instalado... sem folgas" ainda somava `corp`, sobrando de `periferi`/
+    `laje`/`sem` cobertura suficiente mesmo com `guard` descartado). Exigir
+    proximidade de TODOS, cada um a partir do mesmo `sem`, quebrava sinal
+    genuíno sempre que o Olho intercala uma palavra a mais no meio do próprio
+    substantivo composto ("placa de identificação do fabricante"). A cabeça
+    ancora o grupo inteiro; medido contra `periferia_laje_sem_guarda_corpo`
+    (`riscos/construcao.py`) e numa varredura sintética dos 883 sinais.
+    """
+    seq = _radicais_posicionados(sinal)
+    negados: list[str] = []
+    negando = False
+    for r in seq:
+        if r == NEGADOR:
+            negando = True
+            continue
+        if negando:
+            negados.append(r)
+    return tuple(negados)
+
+
+def _proximidade_da_negacao(alvo: str, posicionado: list[str]) -> bool:
+    """Existe um `NEGADOR` de verdade, no MESMO texto, com `alvo` logo depois?
+
+    Direcional de propósito — só para a frente, nunca para trás. É a direção,
+    não o tamanho da janela, que separa "sem cerca" (cerca depois do sem) de
+    "isolado com cerca ... sem manutenção" (cerca ANTES do sem, que nega outra
+    coisa): as duas distâncias medem quase o mesmo, só a ordem as diferencia.
+    Medido contra o caso adversarial que o `/critico` achou em
+    `area_de_risco_nao_delimitada` (`riscos/ambiental.py`) — a razão de esta
+    função existir em vez de continuar como bag-of-words.
+    """
+    posicoes_negador = [i for i, r in enumerate(posicionado) if r == NEGADOR]
+    if not posicoes_negador:
+        return False
+    return any(
+        r == alvo and any(0 < i - j <= JANELA_PROXIMIDADE for j in posicoes_negador)
+        for i, r in enumerate(posicionado)
+    )
+
+
+def _bigrama_proximo(t1: str, t2: str, posicionado: list[str]) -> bool:
+    """Os dois radicais de um sinal-bigrama puro aparecem perto no texto?
+
+    Sem direção — "abertura no piso" e "piso com a abertura" são a mesma
+    ideia, e o que discrimina não é a ordem, é a distância: o par genuíno fica
+    a 1-2 palavras, a relação invertida medida em produção fica a 9. Só entra
+    em jogo para sinal de EXATAMENTE dois radicais, sem negador: sinal mais
+    longo já tem cobertura parcial tolerando paráfrase solta de propósito (ver
+    `test_escada_com_apoio_instavel_roteia_sem_depender_do_fraseado`), e exigir
+    proximidade ali arriscaria quebrar isso sem necessidade — nenhum dos dois
+    casos medidos que motivam esta função é de sinal longo.
+    """
+    p1 = [i for i, r in enumerate(posicionado) if r == t1]
+    p2 = [i for i, r in enumerate(posicionado) if r == t2]
+    return any(abs(i - j) <= JANELA_PROXIMIDADE for i in p1 for j in p2)
+
+
 def rotear_riscos(visao: Visao, contexto: str = "") -> list[Risco]:
     """Casa os fatos observados com a taxonomia curada de riscos.
 
@@ -504,16 +593,34 @@ def rotear_riscos(visao: Visao, contexto: str = "") -> list[Risco]:
     Sinal de um radical só é isento: são sete, todos nomes inequívocos
     ("caldeira", "gambiarra", "glp"), e é deles que se espera exatamente isso —
     que o ambiente nomeie o equipamento que o achado não repete.
+
+    Presença não basta: radical negado por "sem" só conta se `NEGADOR`
+    aparecer perto DELE especificamente (não de qualquer outra palavra do
+    achado), e radical de sinal-bigrama puro só conta se os dois estiverem
+    perto um do outro. Sem essa checagem, "Carenagem íntegra, sem folgas"
+    casava "sem carenagem" (o `sem` negava "folgas", não "carenagem"), e
+    "Piso ... visível ... da abertura" casava "abertura no piso" (os dois
+    radicais existem, mas não descrevem o mesmo vão) — ver `_proximidade_da_negacao`
+    e `_bigrama_proximo`.
     """
     extra = _radicais(" | ".join(t for t in (visao.ambiente, contexto) if t))
-    # Cada fragmento guarda as duas metades separadas: o que o próprio achado
-    # traz e o que a cena inteira acrescenta. A cobertura soma as duas; a
-    # âncora exigida abaixo olha só a primeira.
-    fragmentos = [(f, f | extra) for f in (_radicais(t) for t in visao.textos()) if f]
+    extra_pos = _radicais_posicionados(
+        " | ".join(t for t in (visao.ambiente, contexto) if t)
+    )
+    # Cada fragmento guarda o que o próprio achado traz (com posição, para a
+    # checagem de proximidade) e a soma com o que a cena inteira acrescenta. A
+    # cobertura usa a soma; a âncora e a proximidade olham só o próprio achado.
+    fragmentos = [
+        (f, f | extra, pos)
+        for f, pos in (
+            (_radicais(t), _radicais_posicionados(t)) for t in visao.textos()
+        )
+        if f
+    ]
     if not fragmentos and extra:
         # Sem nenhum achado, a cena é tudo o que há — e aí ela é a própria
         # âncora, senão uma foto descrita só no ambiente não routearia nada.
-        fragmentos = [(extra, extra)]
+        fragmentos = [(extra, extra, extra_pos)]
 
     encontrados: list[tuple[float, Risco]] = []
 
@@ -523,14 +630,33 @@ def rotear_riscos(visao: Visao, contexto: str = "") -> list[Risco]:
             termos = _radicais(sinal)
             if not termos:
                 continue
-            cobertura = max(
-                (
-                    len(termos & completo) / len(termos)
-                    for proprio, completo in fragmentos
-                    if len(termos) < 2 or len(termos & proprio) >= 2
-                ),
-                default=0.0,
-            )
+            negados_seq = tuple(n for n in _radicais_negados(sinal) if n in termos)
+            cabeca_negada = negados_seq[0] if negados_seq else None
+            bigrama_puro = len(termos) == 2 and NEGADOR not in termos
+
+            cobertura = 0.0
+            for proprio, completo, proprio_pos in fragmentos:
+                if len(termos) >= 2 and len(termos & proprio) < 2:
+                    continue
+                presentes = termos & completo
+                # A cabeça do que "sem" nega ancora o grupo inteiro: se ela não
+                # está perto de um "sem" de verdade, nenhum radical do mesmo
+                # substantivo negado conta — nem os que vêm depois dela no
+                # sinal, que valeriam bag-of-words de outro jeito.
+                if (
+                    cabeca_negada in presentes
+                    and not (
+                        _proximidade_da_negacao(cabeca_negada, proprio_pos)
+                        or _proximidade_da_negacao(cabeca_negada, extra_pos)
+                    )
+                ):
+                    presentes = presentes - set(negados_seq)
+                if bigrama_puro and presentes == termos:
+                    t1, t2 = tuple(termos)
+                    if not _bigrama_proximo(t1, t2, proprio_pos):
+                        presentes = presentes - {t2}
+                cobertura = max(cobertura, len(presentes) / len(termos))
+
             # Sinal de uma palavra precisa bater inteiro; sinal composto aceita
             # que uma peça falte, desde que o essencial esteja lá.
             if cobertura == 1.0:

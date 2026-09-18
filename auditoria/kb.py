@@ -78,6 +78,20 @@ def radicais(texto: str) -> set[str]:
     return {radical(p) for p in RE_PALAVRA.findall(normalizar(texto)) if len(p) > 2}
 
 
+def radicais_posicionados(texto: str) -> list[str]:
+    """Como `radicais`, mas na ORDEM em que aparecem, com repetição.
+
+    `radicais` devolve um set porque o roteamento histórico só perguntava "esse
+    radical está em algum lugar do texto?" — e é exatamente essa pergunta sem
+    posição que deixa "sem" casar com o negador errado ("Carenagem íntegra,
+    SEM folgas" tem "carenagem" e "sem", nenhuma relação entre eles) e deixa
+    "abertura no piso" casar com "Piso ... visível ... da abertura", onde os
+    dois radicais existem mas um não é o vão do outro. Ver `_radicais_negados`
+    e `_bigrama_proximo` em `pipeline.py`.
+    """
+    return [radical(p) for p in RE_PALAVRA.findall(normalizar(texto)) if len(p) > 2]
+
+
 def tokenizar(texto: str) -> list[str]:
     """Unigramas + bigramas.
 

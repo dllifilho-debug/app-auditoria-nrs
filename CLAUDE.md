@@ -66,8 +66,10 @@ o que a trava do vão fez), regra antiga intocada falha na mesma rodada.
   usuário, não deste arquivo.
 - **Próxima frente, quando o usuário quiser seguir**: qualquer item de "Em aberto" que não
   dependa de nova rodada nesta pergunta específica — por exemplo "área de corte sem
-  barreira de acesso" (item inalcançável, não depende do Olho), a hipótese do bigrama para
-  `sem`/particípio, ou remedir se o modelo ainda é o melhor disponível.
+  barreira de acesso" (item inalcançável, não depende do Olho), ou remedir se o modelo
+  ainda é o melhor disponível. **A hipótese do bigrama foi atacada em 18/09** — ver a
+  seção logo abaixo — e cobre a família do `sem` e a da relação invertida; o particípio da
+  negação ("sem trechos abertos") continua fora do que ela resolve, registrado lá.
 
 O histórico completo da quarta rodada — o que regrediu, foto a foto, com a tabela e a
 leitura da imagem real — está na seção de validação logo abaixo; este bloco só registra a
@@ -114,6 +116,100 @@ seguravam regrediram). **Decisão registrada no bloco acima: parar de iterar aqu
 - **O aceite de toda foto que preveja NC tem DUAS metades** — recuperação (o item chegou
   ao Analista) e laudo (a NC tem lastro visual). O `/critico` rejeitou três vezes por
   colapsá-las, e nos dois últimos lotes a diferença entre as duas foi o resultado.
+
+---
+
+## Conserto de roteamento de 18/09/2026 — a hipótese do bigrama, atacada
+
+`main` em `86bb35d` (merge do PR #65) antes desta sessão. **Código determinístico de roteamento,
+sem prompt de agente envolvido — mesmo raciocínio dos PR #62/#63: não precisa de lote de
+produção, precisa de teste e de `/critico`.** 264 testes passam (259 + 5).
+
+**O que estava quebrado.** `rotear_riscos` (`pipeline.py`) sempre tratou cada achado como
+um SACO de radicais sem posição — é o que a tabela de armadilhas chama de "`sem` é
+radical-cola" e "a âncora não protege contra a relação invertida". Duas famílias de falso
+positivo vinham daí, as duas medidas em produção mais de uma vez: um sinal como `"sem
+carenagem"` casava com "Carenagem íntegra... **sem** folgas" (o `sem` do texto nega
+"folgas", não "carenagem" — mas o roteador só perguntava "os dois radicais estão em algum
+lugar do achado?"); e um sinal como `"abertura no piso"` casava com "**Piso** de concreto
+visível na parte inferior da **abertura**" (a foto mostra o PÉ de um vão vertical, não um
+buraco no chão — mas de novo, os dois radicais existiam em algum lugar do mesmo achado).
+Foi por essa porta que `NR-18 18.9.2` chegou a D1 três vezes em quatro execuções sobre
+fotos sem buraco no chão (10/09), e que a ressalva `"tanque sem cerca"` ficou registrada
+no código como "resolver de vez exige a hipótese do bigrama" desde 17/09.
+
+**O conserto.** `kb.radicais_posicionados()` é a versão do velho `radicais()` que preserva
+ORDEM em vez de devolver um set — só isso já não existia. Em `pipeline.py`, três peças
+novas:
+- **`_radicais_negados(sinal)`** — os radicais que `"sem"` nega DENTRO do sinal: tudo que
+  vem depois da primeira ocorrência dele, na ordem em que aparece. `"tanque sem cerca"`
+  nega `cerca`, não `tanque` — em português `"sem X"` nega X, nunca o resto da frase.
+- **`_proximidade_da_negacao(alvo, texto)`** — existe um `"sem"` DE VERDADE, no MESMO
+  texto, com `alvo` a até `JANELA_PROXIMIDADE` (7) palavras NA FRENTE dele? Direcional de
+  propósito: é a direção, não o tamanho da janela, que separa `"sem cerca"` (cerca depois
+  do sem, 1 palavra) de `"isolado com cerca... sem manutenção"` (cerca ANTES do sem, que
+  nega outra coisa, a 3 palavras) — as duas distâncias são parecidas, só a ordem as
+  diferencia. Só a CABEÇA do que foi negado precisa passar nesse teste — o resto do
+  substantivo composto (`"guarda-corpo"` tokeniza em `guard`+`corp`; `"placa de
+  identificação"` em `plac`+`identificaca`) anda junto sem checagem própria.
+- **`_bigrama_proximo(t1, t2, texto)`** — para sinal de EXATAMENTE dois radicais sem
+  negador (166 dos 883): os dois precisam estar a até `JANELA_PROXIMIDADE` palavras um do
+  outro, sem direção. Não se aplica a sinal mais longo, que já tolera paráfrase solta de
+  propósito (ver `test_escada_com_apoio_instavel_roteia_sem_depender_do_fraseado`).
+
+**Três rodadas de calibração, não uma — e a ordem importa para quem for mexer aqui de
+novo.** A primeira versão negava só o radical IMEDIATAMENTE seguinte a `"sem"` no sinal.
+Contra ela, uma varredura sintética dos 883 sinais (reescrevendo cada um com um enchimento
+de 3 palavras entre CADA palavra — o pior caso plausível de um Olho verboso) achou 3
+quebrados com `JANELA_PROXIMIDADE=6` (por 1 palavra de distância) e 0 com 7 — foi essa
+medição que fixou o valor 7, calibrado para baixo pelo caso real que a hipótese existe
+para barrar (`"Piso... visível... da abertura"`, 9 palavras de distância, tem que ficar de
+fora). Só depois, testando os quatro sinais problemáticos de `periferia_laje_sem_guarda_corpo`
+já registrados na tabela de armadilhas, apareceu o defeito do "vizinho imediato": um achado
+que afirma "guarda-corpo... sem folgas" ainda disparava, porque só `guard` era descartado e
+`corp` (segundo radical do composto, gerado pelo hífen) continuava contando livre. Negar
+TODOS os radicais depois do `"sem"` (não só o imediato), cada um com sua própria checagem
+de proximidade a partir do mesmo `"sem"`, consertou os quatro casos — mas reabriu a
+varredura sintética: 78 sinais quebrados, porque a distância entre `"sem"` e o ÚLTIMO
+radical de um composto de 2-3 palavras cresce com o enchimento entre cada uma delas.
+Ancorar só pela CABEÇA (o resto do composto anda junto sem checagem própria) resolveu as
+duas coisas ao mesmo tempo: os quatro sinais de `periferia_laje_sem_guarda_corpo` continuam
+bloqueados, e a varredura sintética volta a zero quebrados.
+
+**Medido, não hipótese**, contra os três casos documentados:
+- `test_tanque_sem_cerca_nao_colide_mais_com_a_ressalva_conhecida` — a ressalva do
+  `area_de_risco_nao_delimitada` (`ambiental.py`) fechada; a contraparte positiva (cerca
+  genuinamente ausente) continua roteando.
+- `test_abertura_no_piso_nao_casa_com_a_relacao_invertida` — o achado real de 10/09 não
+  rotea mais `abertura_piso_desprotegida`; as duas contrapartes positivas continuam.
+- `test_sem_nega_so_o_vizinho_no_sinal_nao_qualquer_negacao_do_achado` — o mecanismo em
+  isolado, contra o par positivo/negativo original de `"sem carenagem"` (04/09).
+
+Além dos três: `test_item_generico_entra_no_dossie_sem_rotulo_de_risco` (a suíte antiga)
+usava, sem perceber, um achado que afirmava guarda-corpo PRESENTE para exercer
+`andaime_sem_guarda_corpo` — exatamente o bug que o próprio docstring do teste denuncia
+("o fato registrado dizia que o andaime TINHA guarda-corpo"). Corrigido para um achado que
+nega o guarda-corpo de verdade; é a prova de que o conserto ataca a causa, não só os casos
+que motivaram a rodada — um teste ESCRITO CONTRA o bug, sem saber, deixou de passar por
+acidente.
+
+**O que ficou de fora, documentado, não escondido**: `"sem trechos abertos"` — onde o
+NEGADOR está no TEXTO, não no SINAL (o sinal é afirmativo, `"poço aberto"`, e o texto nega
+com `"sem trechos abertos"`) — continua fora do alcance. É outro mecanismo, e o CLAUDE.md
+já registrava isso como fora do escopo desta hipótese antes de ela existir em código.
+
+**O `/critico` REJEITOU a primeira versão**, e o gap era real: a varredura sintética contra
+os 883 sinais que calibrou `JANELA_PROXIMIDADE` e o desenho "a cabeça ancora o grupo"
+existia só como número em prosa neste arquivo — nada no repositório a reproduzia, e um
+sinal novo cadastrado depois desta rodada (ou uma mudança na janela) podia voltar a quebrar
+em massa sem que nada avisasse. **Consertado**: as duas varreduras viraram teste —
+`test_todo_sinal_casa_com_a_propria_frase_literal` (o caso canônico, os 883 sinais) e
+`test_varredura_sintetica_com_enchimento_nao_quebra_sinal_de_sem_ou_bigrama` (o enchimento
+adversarial que motivou o valor 7). 264 testes passam (259 + 5). **O `/critico` rodou de
+novo sobre o range com os dois commits e APROVOU.**
+
+**Verificado no navegador em Modo Demonstração**: pipeline inteiro (Olho → dossiê →
+aferição → supervisão) roda sem erro, 3 não conformidades, sem regressão visível.
 
 ---
 
@@ -3133,7 +3229,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 250 testes
+$VENV -m pytest tests/ -q          # 264 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -3230,7 +3326,7 @@ próprio comando composto (exit 144).
 | Classificar o ramo de um item pelo texto antes do anexo | Os anexos setoriais se citam entre si ("as disposições deste Anexo não se aplicam às máquinas dispostas no Anexo X"), e item do Anexo X **fala de prensa**. Pelo texto, ele passava como se fosse do Anexo VIII — que uma foto de estamparia legitimamente destranca. O anexo decide primeiro; o texto só para o que a extração deixou fora dele (`12.1`, "máquinas de montar base de calçados", ficou no corpo principal). |
 | Portão que só ABRE, com sinal que aparece em negação | `ha_maquina_na_cena` destrancaria a NR-12 com "**nenhuma máquina** visível na cena" se aceitasse a palavra "máquina" — exatamente a foto que se quer barrar. Por isso a lista é de substantivos concretos ("betoneira", "grua"), e inclui as máquinas dos ramos setoriais: sem elas o portão fecharia numa foto de padaria, trocando erro de enquadramento por buraco de cobertura. |
 | Rótulo do risco curado como nome da não conformidade | O rótulo descreve o risco que trouxe o item ao dossiê, não a situação que o Analista enquadrou. Para item **genérico** — `NR-18 18.9.1` ("proteção coletiva onde houver risco de queda"), `NR-06 6.5.1` (EPI, oito riscos) — qual risco o trouxe é acidente do roteamento. Um laudo real saiu intitulado "Andaime sem guarda-corpo e rodapé" para uma constatação sobre a tela frouxa na borda da laje, enquanto o fato dizia que o andaime TINHA guarda-corpo; dois modelos de texto diferentes erraram igual. Hoje `itens_compartilhados()` marca os 24 itens (de 232) que mais de um risco reivindica, e para eles o rótulo cai — o relatório identifica a linha pela constatação. Só o rótulo: o portão de pessoa e a gravidade base continuam vindo do risco. |
-| **`sem` é radical-cola: conta, mas não discrimina** | Ele tem 3 letras, então passa o filtro de `_radicais` e vira um radical como outro qualquer. Só que não distingue nada: um sinal de dois radicais em que um é `sem` vale por um. Custou dois defeitos no mesmo dia. `"sem carenagem"` casou com "Carenagem do motor íntegra e fixada, **sem** folgas visíveis" — carenagem em ordem, o oposto do risco. E `"vao no piso sem tampa"` casou numa foto de betoneira porque `sem` e `tampa` vieram de "Abertura circular do tambor **sem tampa**". Ao escrever ou revisar sinal, conte os radicais **discriminantes**, não os radicais. **E `sem` nunca é o negador**: em 04/09, consertando os sinais de elevador, `"elevador de obra sem cancela"` foi encurtado para `"sem cancela"` — dois radicais, um deles cola, e o fato *"Cancela metálica vermelha, fechada e travada, SEM sinalização de advertência"* deu cobertura 1,0. O agravante é sistemático: o `PROMPT_OLHO` **manda** escrever "sem &lt;peça&gt; visível" quando o lugar dela aparece vazio, então quase todo fato do Olho carrega um `sem` solto. O que nega numa foto é a **abertura** — `aberta`, `ausente`, `faltando`, `quebrada` —, e é nela que o sinal deve ancorar. **Terceira aparição em 17/09**, e desta vez o `/conserto` que a reintroduziu foi pego pelo `/critico` antes do merge: `"tanque sem placa"` (a reescrita de `area_de_risco_nao_delimitada`) batia num tanque CORRETAMENTE isolado — cerca e faixa instaladas — só porque `sem` negava a placa de identificação do fabricante, não a área de risco. E `"tanque sem cerca"`, o único sinal do mesmo risco nunca tocado, sofre da mesma colisão por outro caminho (`cerca` afirmada, `sem` negando manutenção) — ficou registrado como ressalva conhecida, não consertado. |
+| **`sem` é radical-cola: conta, mas não discrimina** | Ele tem 3 letras, então passa o filtro de `_radicais` e vira um radical como outro qualquer. Só que não distingue nada: um sinal de dois radicais em que um é `sem` vale por um. Custou dois defeitos no mesmo dia. `"sem carenagem"` casou com "Carenagem do motor íntegra e fixada, **sem** folgas visíveis" — carenagem em ordem, o oposto do risco. E `"vao no piso sem tampa"` casou numa foto de betoneira porque `sem` e `tampa` vieram de "Abertura circular do tambor **sem tampa**". Ao escrever ou revisar sinal, conte os radicais **discriminantes**, não os radicais. **E `sem` nunca é o negador**: em 04/09, consertando os sinais de elevador, `"elevador de obra sem cancela"` foi encurtado para `"sem cancela"` — dois radicais, um deles cola, e o fato *"Cancela metálica vermelha, fechada e travada, SEM sinalização de advertência"* deu cobertura 1,0. O agravante é sistemático: o `PROMPT_OLHO` **manda** escrever "sem &lt;peça&gt; visível" quando o lugar dela aparece vazio, então quase todo fato do Olho carrega um `sem` solto. O que nega numa foto é a **abertura** — `aberta`, `ausente`, `faltando`, `quebrada` —, e é nela que o sinal deve ancorar. **Terceira aparição em 17/09**, e desta vez o `/conserto` que a reintroduziu foi pego pelo `/critico` antes do merge: `"tanque sem placa"` (a reescrita de `area_de_risco_nao_delimitada`) batia num tanque CORRETAMENTE isolado — cerca e faixa instaladas — só porque `sem` negava a placa de identificação do fabricante, não a área de risco. E `"tanque sem cerca"`, o único sinal do mesmo risco nunca tocado, sofre da mesma colisão por outro caminho (`cerca` afirmada, `sem` negando manutenção) — ficou registrado como ressalva conhecida. **ATACADA em 18/09** pela hipótese do bigrama: `"sem"` só nega o radical que vem logo depois DELE no sinal (`_radicais_negados`), e esse radical só conta se um `"sem"` de verdade estiver perto dele NO TEXTO, contando só pra frente (`_proximidade_da_negacao`) — a direção sozinha já separa "sem cerca" (cerca depois do sem) de "isolado com cerca... sem manutenção" (cerca antes do sem). Continua fora do alcance o caso em que o NEGADOR está no TEXTO e não no sinal — `"sem trechos abertos"`, na entrada abaixo, onde o sinal é afirmativo (`"poço aberto"`) e é o achado que nega. |
 | **Quatro radicais é onde a cobertura parcial abre** | O corte é 0,7. Com três radicais, faltar um dá 0,67 e **não passa** — todo radical é obrigatório. Com quatro, faltar um dá 0,75 e **passa**, e o que falta costuma ser justo o discriminante. `"abertura vertical sem fechamento"` casava uma abertura de PISO "sem cobertura ou fechamento visível", faltando só `vertical`. Sinal de até três radicais é seguro por construção; de quatro para cima, escreva sabendo que um pode faltar. **259 dos 883 sinais têm 4+ radicais** e correm esse risco (era 262 antes do conserto de 17/09 em `area_de_risco_nao_delimitada`, que tirou três — o `/conferir` pegou "tirou dois" na primeira redação: foram cinco sinais reescritos, não quatro, e um quinto, `"qualquer um passa perto do tanque"`, tinha radical de domínio mas foi trocado por precaução contra esta mesma armadilha). |
 | **Sinal de radicais 100% discriminantes, mas nenhum exclusivo do próprio domínio** | Diferente da armadilha acima: aqui a cobertura bate 1,00 (todo radical do sinal casou), e ainda assim o sinal não prova nada, porque nenhum dos radicais é vocabulário exclusivo do risco. `"perimetro sem isolamento"` (3 radicais: `sem` cola, `perimetr`, `isolament`) casava 100% num achado de VERGALHÃO espalhado sem isolamento — nada a ver com inflamável, explosivo ou radiação, que é o domínio de `area_de_risco_nao_delimitada`. Não é a armadilha dos 4+ radicais (aqui não falta nada) nem a do `sem` sozinho (aqui `sem` é só um dos três) — é o sinal inteiro ter sido escrito com vocabulário genérico de "área sem proteção", que serve para qualquer risco de isolamento, não só o deste. Medido em 17/09: pôs `NR-16 16.8` em D1 de um dossiê de vergalhão, na frente do item certo. Ao escrever sinal de risco NARROW (que só deveria disparar num subdomínio: inflamável, elétrico, altura…), confira se pelo menos um radical NÃO discriminante-por-acaso é exclusivo daquele subdomínio — `tanque`, `paiol`, `radioativa`, não `área`, `perímetro`, `isolamento`, `placa`. |
 | Regra global para a cobertura parcial — **tentada e descartada** | A saída óbvia (excluir palavras-cola do conjunto que pode ancorar) **quebra 25 sinais legítimos**: `"sem capacete"`, `"sem luva"`, `"sem bota"`, `"sem placa"`, `"sem manometro"` — onde a cola e o discriminante são tudo o que existe. Também não adianta exigir que o radical faltante seja cola (deixa "escada COM sapata" casar "escada sem sapata") nem que seja não-cola (devolve o caso da betoneira). **Não há regra simples**: é encurtar sinal a sinal, com medição. Não gaste a sessão reinventando isto. |
@@ -3267,7 +3363,7 @@ próprio comando composto (exit 144).
 | **Expansor do Streamlit fecha a cada rerun, e cada marcação é um rerun** | O painel de marcação nasceu sem `expanded`, e no navegador se viu o que teste nenhum veria: marcar a primeira foto fechava o painel, de modo que marcar a segunda de um lote de 100 exigiria reabrir e rolar, cem vezes. `expanded=com_marcacao > 0` resolve — a primeira marcação abre o painel para valer. Vale para todo expansor que contenha widget: o estado dele não sobrevive ao rerun que o próprio widget dispara. |
 | **Rede que só registra quando FALHA é rede que não se pode medir** | `_reconferir_exigencias` deixa linha na trilha quando o enquadramento cai ("Supervisão incompleta") e **nenhuma** quando o reparo dá certo — o enquadramento simplesmente sobrevive. No lote de 10/09 isso deu 30 laudos sem uma linha de omissão e nenhum jeito de dizer se o Diretor não omitiu ou se a repescagem salvou, que são conclusões opostas sobre o mesmo mecanismo. É a irmã da armadilha "o sumário não distingue enquadramento ausente de enquadramento vetado", um nível abaixo: lá o documento não separava duas causas de ausência, aqui ele não registra o sucesso. **Ao construir uma rede de segurança, pergunte o que o documento diz quando ela FUNCIONA** — se a resposta é "nada", o próximo lote não a mede. Consertado com `conferencia_reparada`; há três testes travando. |
 | **A lista que não passa pela limpeza é a que ninguém lembra que existe** | `laudo.conformidades` recebia as strings do Analista cruas — sem `_limpar_citacoes`, ao lado de `laudo.sem_enquadramento` que já chamava. Em 10/09 saiu impresso "atendendo aos requisitos … descritos no item **D6**", com o rótulo interno do dossiê no documento do cliente. O sintoma é cosmético; o buraco não: sem a limpeza, uma citação normativa digitada pelo modelo chegaria ao laudo **sem passar pela base**, que é a garantia central deste projeto. É a terceira aparição da armadilha "corte aplicado a um campo só", e o padrão é sempre o mesmo — a lista esquecida é a que quase nunca sai (conformidades apareceram em **2 de 30 laudos**), então ela não aparece em lote nenhum até aparecer. **Ao pôr uma limpeza num campo, liste TODOS os campos de texto livre que chegam ao documento e confira um a um** — inclusive os que costumam vir vazios. |
-| **A âncora não protege contra a RELAÇÃO invertida entre os dois radicais** | A âncora de 01/09 exige dois radicais do PRÓPRIO achado, e isso fechou a porta do ambiente carregando o sinal sozinho. Não fecha esta: em 10/09, `"abertura no piso"` deu cobertura 1,00 e âncora 2 no fato *"**Piso** de concreto com aspecto áspero e irregular, visível na parte inferior da **abertura** ao fundo"* — os dois radicais no mesmo achado, e a relação entre eles **invertida**: o fato descreve o piso visto pelo PÉ de um vão vertical, não uma abertura no piso. Foi por aqui que `NR-18 18.9.2` chegou a D1 numa foto sem buraco no chão, três vezes em quatro execuções, e só um Diretor de quatro vetou. É a terceira armadilha da família, ao lado do `sem` e do ambiente, e a que menos se vê: o sinal está curto, os dois radicais são discriminantes, e ainda assim ele casa o oposto. A preposição que carregaria a relação (`no`) tem duas letras e some no filtro. **A hipótese do bigrama — exigir adjacência entre os dois radicais — cobre esta e a do `sem`**, e continua não medida. Ao revisar sinal de duas palavras, leia-o como frase e pergunte se a ordem inversa também casa. |
+| **A âncora não protege contra a RELAÇÃO invertida entre os dois radicais** | A âncora de 01/09 exige dois radicais do PRÓPRIO achado, e isso fechou a porta do ambiente carregando o sinal sozinho. Não fecha esta: em 10/09, `"abertura no piso"` deu cobertura 1,00 e âncora 2 no fato *"**Piso** de concreto com aspecto áspero e irregular, visível na parte inferior da **abertura** ao fundo"* — os dois radicais no mesmo achado, e a relação entre eles **invertida**: o fato descreve o piso visto pelo PÉ de um vão vertical, não uma abertura no piso. Foi por aqui que `NR-18 18.9.2` chegou a D1 numa foto sem buraco no chão, três vezes em quatro execuções, e só um Diretor de quatro vetou. É a terceira armadilha da família, ao lado do `sem` e do ambiente, e a que menos se vê: o sinal está curto, os dois radicais são discriminantes, e ainda assim ele casa o oposto. A preposição que carregaria a relação (`no`) tem duas letras e some no filtro. **ATACADA em 18/09**: `_bigrama_proximo` (`pipeline.py`) exige os dois radicais a até `JANELA_PROXIMIDADE` (7) palavras um do outro para sinal de exatamente dois radicais sem negador — o caso acima (distância 9) não roteia mais, medido em `test_abertura_no_piso_nao_casa_com_a_relacao_invertida`. Ao revisar sinal de duas palavras, leia-o como frase e pergunte se a ordem inversa também casa. |
 | **`abertura` e `aberta` são radicais DIFERENTES, e três sinais dependem disso** | `radical("abertura")` devolve `abertur` e `radical("aberto"/"aberta"/"abertas")` devolve `abert`; nada aproxima o substantivo do particípio. Medido em 14/09, e decidiu três das cinco fotos do lote: `torre do elevador aberta` ficou em **0,67 nos sete fragmentos** da foto de cancela instalada, faltando sempre `abert`, porque o Olho escreveu `abertura` sete vezes e `aberto` nenhuma — o falso positivo latente que o pré-registro mediu **não se realizou por uma letra**, e acrescentado `aberto` ao ambiente REAL daquela foto ele dispara. A mesma régua matou a colisão prevista de `quadro`: o Olho escreveu `malha quadrada`, e `quadrad` não é `quadr`. **Ao escrever ou medir sinal, rode `_radicais` na palavra que o Olho de fato usa**, não na que você escreveria — e note que isso corta nos dois sentidos: um sinal que ancora no particípio não pega o substantivo, e vice-versa. |
 | `git fetch origin main <branch-que-não-existe-mais>` falha inteiro, silenciosamente | Fetch de múltiplos refs é atômico: se um ref já foi deletado no remoto (branch mergeada), o comando inteiro falha e **nenhum ref é atualizado** — inclusive o `main`, que existia e seria atualizado sozinho. `origin/main` local fica congelado na versão de antes, e comparações feitas contra ele mentem. Já causou uma sessão inteira concluir errado que "a reescrita nunca foi mergeada". Se o histórico parecer suspeito, rode `git fetch origin main` sozinho antes de confiar em qualquer diff. |
 | **Medir um INTERMEDIÁRIO e relatar o DESFECHO** | Não é falta de medição — nas três vezes de 11-12/09 havia medição, e ela era de outra coisa. Afirmei *"nome ausente fecha o portão, logo a NC se perde"* tendo medido só o booleano de `ha_maquina_na_cena`; rodado `montar_dossie` sobre os fatos reais, abrir o portão traz **cesta aérea** na foto 1 e **rampa com mais de 20º** na foto 2, onde ainda **expulsa** o `NR-18 18.10.2.6`, e nenhuma das duas recebe um item da família `12.5.x`. Afirmei que o `NR-12 12.5.13` era o item que cobriria a barreira da serralheria tendo medido só que a palavra existe na base, por `grep`; ele passa por `comprovavel_em_foto`, por `prescritivo` e por `setor_pertinente`, e **nunca ranqueia**. Afirmei que a máquina da foto 1 era serra de FITA tendo medido pixels numa foto reduzida; o engenheiro respondeu que é serra de BANCADA. **Portão é intermediário do dossiê, `grep` é intermediário da recuperação, foto é intermediário da obra.** O teste é escrito no molde da cláusula (d) do Diretor — um procedimento que se executa na frente do texto: **antes de escrever afirmação causal, escreva literalmente "medi X, afirmo Y"** — se X e Y forem coisas diferentes, ou mede Y, ou rebaixa a frase a hipótese, com a palavra *hipótese* dentro. E ele aponta para dois lugares diferentes: afirmação sobre **o que o app entrega** termina no dossiê ou no laudo, nunca num portão, num sinal ou num `grep` (`montar_dossie` é determinístico, roda sem rede e custa dois minutos); afirmação sobre **o mundo** — material, nome, existência de um objeto — só tem duas fontes, o engenheiro e a foto, e **foto é pergunta, nunca veredito** (é a regra 3 do desenho da auditoria, e agora tem número: a leitura de imagem feita na sessão errou 2 das 7 respostas, e uma delas INVENTOU um achado). É a **forma geral** de três casos particulares que este arquivo já registrava um a um: *"medir o roteamento não vê o item que a busca textual traz"* (nesta tabela), *"a alcançabilidade NÃO era o conserto — medido"* (validação de 08/09) e *"defeito de saída de código se confere rodando o código, não lendo o produto dele"* (o item do aparo, em Em aberto). Como a (d), ele tem UM passo de julgamento — decidir se X e Y são a mesma coisa —, e a diferença é que esse passo fica escrito, onde o `/critico` e o `/conferir` o alcançam. **Nenhuma das três foi pega antes do commit, e nenhuma delas pelo `/critico`**: duas caíram quando os cinco HTML chegaram e `montar_dossie` rodou sobre os fatos reais, a terceira na resposta do engenheiro. O `/critico` rejeitou oito vezes ao longo do registro deste lote e, destas, pegou só o ECO que sobrou no título da seção 1 depois de a medição já existir — porque ele lê o artefato e acredita nele, e medição de intermediário parece medição. |
@@ -3290,7 +3386,15 @@ próprio comando composto (exit 144).
   plano de ação. Um laudo dirigido em parte por quem inspecionou não tem o mesmo valor de
   evidência que um em que o app chegou sozinho ao item, e quem lê o documento precisa
   saber de qual dos dois se trata.
-- **250 testes**
+- **O roteamento exige proximidade, não só presença, para negação e para sinal-bigrama.**
+  `rotear_riscos` sabia só perguntar "os radicais do sinal estão em algum lugar do
+  achado?" — o que deixava `"sem carenagem"` casar "carenagem íntegra... sem folgas" e
+  `"abertura no piso"` casar "piso... da abertura" (a mesma armadilha em duas roupas
+  diferentes: um radical presente no lugar errado da frase). Hoje `"sem X"` só nega X se
+  um `"sem"` de verdade estiver perto DELE no texto (`_proximidade_da_negacao`,
+  `pipeline.py`), e sinal de exatamente dois radicais sem negador exige os dois próximos
+  (`_bigrama_proximo`). Ver "Conserto de roteamento de 18/09/2026" para a medição.
+- **264 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
@@ -3671,16 +3775,16 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   vocabulário mais amarrado ao próprio conceito do risco, não genérico de EPI/sinalização.
   Medido de novo: os cinco sinais reescritos não disparam mais no caso adversarial. **259
   testes passam** (258 + 1, o caso adversarial exato do `/critico`).
-  **Ficou uma ressalva conhecida, não consertada**: `"tanque sem cerca"` — o único dos sete
-  sinais originais que nunca foi tocado, nem nesta rodada nem na anterior — sofre da MESMA
-  colisão por outro caminho: *"Tanque de gás industrial, isolado com cerca completa ao
-  redor, sem manutenção recente na pintura da estrutura"* bate cobertura 1,00 porque
-  `tanqu`+`sem`+`cerc` aparecem todos no mesmo achado, com `cerca` afirmada e `sem` negando
-  outra coisa. Não é regressão desta sessão (o sinal é anterior aos dois PRs), e não foi
-  consertado porque é o vocabulário mais provável de o Olho escrever de verdade
-  (`PROMPT_OLHO` manda "sem &lt;peça&gt; visível") e resolver de vez exige a hipótese do
-  bigrama — mudança estrutural no roteamento inteiro, não deste risco. Documentado no
-  código, com a medição, para quem for atacar o bigrama.
+  **A ressalva `"tanque sem cerca"` foi RESOLVIDA em 18/09**, junto da hipótese do bigrama —
+  ver a seção dedicada logo abaixo de "COMECE POR AQUI". Ficou registrada aqui como estava
+  escrita até então porque é o caso de teste que a motivou
+  (`test_tanque_sem_cerca_nao_colide_mais_com_a_ressalva_conhecida`): *"Tanque de gás
+  industrial, isolado com cerca completa ao redor, sem manutenção recente na pintura da
+  estrutura"* batia cobertura 1,00 porque `tanqu`+`sem`+`cerc` apareciam todos no mesmo
+  achado, com `cerca` afirmada e `sem` negando outra coisa. Não era regressão daquela sessão
+  (o sinal é anterior aos dois PRs) — era o caso que sobrava sem o roteador saber que "sem"
+  só nega o radical que vem logo depois dele no SINAL, e perto de um "sem" de verdade no
+  TEXTO.
 - **"Cabo no piso" não tem item alcançável — previsto em 12/09 e CONFIRMADO no lote do mesmo
   dia.** O `NR-10 10.2.8.2` e o `10.2.8.2.1` chegaram em D1 e D2 curados em três das quatro
   fotos e o Analista **não usou nenhum**, porque o item trata de partes vivas e o cabo está
@@ -3797,13 +3901,15 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   o caso mais óbvio de todos ("borda da laje sem guarda-corpo"), porque
   `"borda de laje aberta"` fica em 0,67 ali.
   Não é caso isolado: é consequência direta de o `PROMPT_OLHO` mandar escrever "sem
-  &lt;peça&gt; visível" e de o `sem` contar como radical. **Não cabe numa troca de sinal**
-  — são quatro sinais de três riscos, e o CLAUDE.md já registra que a regra global
-  (excluir cola da ancoragem) foi tentada e quebra 25 sinais legítimos. O que a medição
-  de hoje acrescenta é uma hipótese que **não** foi tentada: tratar `"sem X"` como
-  bigrama, exigindo adjacência entre o `sem` e o substantivo que ele nega — `kb.py` já
-  indexa bigramas no BM25. Isso separaria "sem rodapé" de "rodapé … sem folgas". É
-  mudança estrutural no roteamento e só um lote valida.
+  &lt;peça&gt; visível" e de o `sem` contar como radical. **RESOLVIDO em 18/09 pela
+  hipótese do bigrama** (ver "Conserto de roteamento de 18/09/2026", logo abaixo de
+  "COMECE POR AQUI") — não coube numa troca de sinal, era mesmo mudança estrutural no
+  roteamento: `_radicais_negados` + `_proximidade_da_negacao`, em `pipeline.py`, fazem
+  "sem" só contar como tendo negado o que vem depois DELE no sinal, e só se um "sem" de
+  verdade estiver perto NO TEXTO. Medido contra os quatro sinais citados acima MAIS o
+  quinto (a versão sem precisar do `sem`, via `_bigrama_proximo`): nenhum dos três riscos
+  (`periferia_laje_sem_guarda_corpo`, `andaime_sem_guarda_corpo`, `rampa_passarela_irregular`)
+  dispara mais contra o achado do guarda-corpo instalado.
 
   **Segunda instância, medida em 07/09 ao escrever a contraparte do conserto da grua — e
   ela cai justamente nos riscos de elevador que o #27 consertou.** O fato *"Grade
@@ -3815,10 +3921,14 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   `abert` vem de "sem trechos **abertos**": não é o `sem` completando o sinal, é o
   **particípio da negação** virando o radical afirmativo que o sinal pede. É a mesma
   família e um mecanismo a mais — o conserto do #27 ancorou os sinais na abertura em vez
-  de no `sem`, e a abertura também pode aparecer negada. **A hipótese do bigrama não
-  cobre este caso**: aqui não há `sem X` adjacente a cobrir, há `sem trechos abertos`,
-  em que o negador está a duas palavras do que ele nega. Quem for atacar o item acima
-  precisa decidir se trata os dois mecanismos ou só um. E o custo é imediato: são os
+  de no `sem`, e a abertura também pode aparecer negada. **A hipótese do bigrama IMPLEMENTADA
+  em 18/09 não cobre este caso** — e não por falta de janela: o mecanismo (`_radicais_negados`)
+  só entra em jogo quando `"sem"` está no PRÓPRIO SINAL; aqui o sinal é afirmativo
+  (`"poco de elevador aberto"`) e é o TEXTO do achado que nega com `"sem trechos abertos"` —
+  não há negador nenhum para ancorar no sinal. Resolver isso exigiria o mecanismo inverso:
+  quando o radical de um sinal afirmativo aparece no texto, checar se ELE está perto de um
+  "sem" que o negue, mesmo sem o sinal pedir. Não implementado — é mudança de escopo maior
+  (afeta todo sinal afirmativo, não só os que já têm "sem"), e o custo é imediato: são os
   cinco "com proteção" do lote de 12 que correm esse risco.
 - **O Olho chama grua de "torre de elevador" — PROMPT MUDADO em 07/09, à espera de
   lote.** Medido em 05/09: 2 das 3 fotos do mesmo equipamento saíram como "Torre de
@@ -4101,6 +4211,8 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   do `sem` nem a do ambiente: é uma terceira, e a hipótese do **bigrama** já registrada
   para o `sem` cobriria as duas (exigir adjacência entre `abertur` e `piso`). É mudança
   estrutural no roteamento e **só um lote valida** — não se faz reagindo a uma foto.
+  **Implementada em 18/09** (`_bigrama_proximo`, ver "Conserto de roteamento de
+  18/09/2026"): este achado exato não routeia mais `abertura_piso_desprotegida`.
   **A conta do Diretor fica em 1 de 4.** O `18.9.2` saiu nos dois laudos de 09/09 e na
   passada B de 10/09; só na passada A ele foi vetado, com a razão exata ("o item regula
   especificamente aberturas no piso"). O texto que veta já está no prompt e ele o executa
