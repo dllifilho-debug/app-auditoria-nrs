@@ -7,6 +7,7 @@ cobrança de EPI sem gente na foto, enquadramento fora de tema.
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import re
 import sys
@@ -17,7 +18,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from auditoria import dossie, kb_build, relatorio
+from auditoria import dossie, kb_build, progresso, relatorio
 from auditoria.catalogo_nr import CATALOGO_NR, NRS_REVOGADAS, NRS_VIGENTES
 from auditoria.demo import ClienteDemonstracao, _texto_do_prompt
 from auditoria.kb import carregar_base, extrair_citacoes, tokenizar
@@ -1459,6 +1460,55 @@ def test_consolidado_lista_plano_de_acao(base, laudo_demo):
     texto = relatorio.consolidado([("foto_1.jpg", laudo_demo)], base, HOJE)
     assert "Plano de ação priorizado" in texto
     assert "NR-18" in texto
+
+
+# ---------------------------------------------------------------------------
+# Progresso do lote — sobrevive a redeploy/F5 (st.session_state não sobrevive)
+# ---------------------------------------------------------------------------
+
+def test_progresso_round_trip_preserva_o_laudo_e_a_miniatura(laudo_demo):
+    original = [("foto_1.jpg", laudo_demo, b"bytes-fake-de-uma-miniatura-jpeg")]
+    bruto = progresso.serializar(original)
+    recuperado = progresso.carregar(bruto)
+
+    assert len(recuperado) == 1
+    nome, laudo, miniatura = recuperado[0]
+    assert nome == "foto_1.jpg"
+    assert miniatura == b"bytes-fake-de-uma-miniatura-jpeg"
+    assert dataclasses.asdict(laudo) == dataclasses.asdict(laudo_demo)
+    assert laudo.data_referencia == laudo_demo.data_referencia == HOJE
+
+
+def test_progresso_serializado_e_json_com_o_envelope_esperado(laudo_demo):
+    bruto = progresso.serializar([("foto_1.jpg", laudo_demo, b"x")])
+    dados = json.loads(bruto)
+    assert dados["versao"] == progresso.VERSAO_FORMATO
+    assert dados["resultados"][0]["nome"] == "foto_1.jpg"
+
+
+def test_progresso_recusa_arquivo_que_nao_e_json():
+    with pytest.raises(progresso.ProgressoInvalido):
+        progresso.carregar("isto não é json nenhum")
+
+
+def test_progresso_recusa_json_fora_do_formato_esperado():
+    with pytest.raises(progresso.ProgressoInvalido):
+        progresso.carregar(json.dumps({"outra_coisa": []}))
+
+
+def test_progresso_recusa_registro_sem_os_campos_esperados():
+    with pytest.raises(progresso.ProgressoInvalido):
+        progresso.carregar(json.dumps({"versao": 1, "resultados": [{"nome": "foto.jpg"}]}))
+
+
+def test_progresso_ignora_campo_desconhecido_de_versao_futura(laudo_demo):
+    """Um export de uma versão mais nova do app pode trazer campo a mais no
+    `Laudo` — `_campos_de` filtra em vez de estourar `TypeError`, para que um
+    JSON salvo hoje continue carregável depois de o schema crescer."""
+    dados = json.loads(progresso.serializar([("foto_1.jpg", laudo_demo, b"x")]))
+    dados["resultados"][0]["laudo"]["campo_que_ainda_nao_existe"] = "valor futuro"
+    recuperado = progresso.carregar(json.dumps(dados))
+    assert recuperado[0][0] == "foto_1.jpg"
 
 
 # ---------------------------------------------------------------------------

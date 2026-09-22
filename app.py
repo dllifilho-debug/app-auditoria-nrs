@@ -18,7 +18,7 @@ from pathlib import Path
 import streamlit as st
 from PIL import Image, ImageOps
 
-from auditoria import lote, modelos, relatorio
+from auditoria import lote, modelos, progresso, relatorio
 from auditoria.catalogo_nr import CATALOGO_NR, NRS_VIGENTES
 from auditoria.consumo import ORCAMENTO_GRATUITO, Consumo
 from auditoria.demo import ClienteDemonstracao
@@ -448,6 +448,42 @@ if "falhas" not in st.session_state:
 if "erros_da_api" not in st.session_state:
     st.session_state.erros_da_api = []
 
+# Recuperação de um lote perdido por redeploy ou F5. `st.session_state` não
+# sobrevive a nenhum dos dois, e um lote grande leva horas — o JSON baixado
+# pelo botão "Baixar progresso" (na seção de resultados) é o que atravessa.
+# Fica ANTES da sincronização abaixo de propósito: com o seletor de fotos
+# ainda vazio nesse momento, `lote.sincronizar` não descarta nada ("lote
+# vazio nunca descarta nada"), então o progresso restaurado sobrevive até o
+# usuário reenviar as fotos do lote.
+with st.expander("Recuperar progresso de um lote perdido (redeploy ou F5)"):
+    st.caption(
+        "Se este app foi redeployado ou a aba recarregou no meio de um lote, o "
+        "que já tinha sido auditado sumiu da tela — mas continua nos laudos "
+        "baixados e no arquivo de **Baixar progresso** salvo antes disso, se "
+        "houver um. Suba-o aqui para continuar sem refazer nem gastar cota de "
+        "novo. Os laudos restaurados se combinam com o que já estiver na tela; "
+        "nada é substituído."
+    )
+    arquivo_progresso = st.file_uploader(
+        "Arquivo de progresso (.json)", type=["json"], key="upload_progresso",
+    )
+    if arquivo_progresso is not None and st.button("Restaurar este progresso"):
+        try:
+            recuperados = progresso.carregar(arquivo_progresso.getvalue())
+        except progresso.ProgressoInvalido as erro:
+            st.error(f"Não deu para ler este arquivo: {erro}")
+        else:
+            existentes = {nome for nome, _, _ in st.session_state.resultados}
+            novos = [r for r in recuperados if r[0] not in existentes]
+            st.session_state.resultados = st.session_state.resultados + novos
+            duplicados = len(recuperados) - len(novos)
+            st.success(
+                f"{len(novos)} laudo(s) restaurado(s)."
+                + (f" {duplicados} já estava(m) nesta sessão e foi(ram) ignorado(s)."
+                   if duplicados else "")
+            )
+            st.rerun()
+
 # Foto retirada do seletor sai também dos resultados: manter o laudo de uma
 # imagem que já não está no lote faria o sumário e o plano de ação contarem
 # conteúdo que o inspetor removeu de propósito.
@@ -799,7 +835,18 @@ if resultados:
             f"Nesse ritmo, 100 fotos levam ~{_duracao(media * 100)}."
         )
 
-    if st.button("Limpar todos os resultados", help="Recomeça o lote do zero."):
+    p1, p2 = st.columns(2)
+    p1.download_button(
+        "Baixar progresso",
+        progresso.serializar(resultados),
+        file_name=f"progresso_{data_inspecao:%Y%m%d}_{len(resultados)}fotos.json",
+        mime="application/json", use_container_width=True,
+        help="Salva os laudos já emitidos nesta sessão. Baixe antes de mergear um "
+             "PR ou fechar a aba com um lote em andamento — um redeploy apaga o "
+             "que não foi baixado. Restaura em \"Recuperar progresso\", acima.",
+    )
+    if p2.button("Limpar todos os resultados", use_container_width=True,
+                  help="Recomeça o lote do zero."):
         st.session_state.resultados = []
         st.session_state.falhas = []
         st.rerun()
