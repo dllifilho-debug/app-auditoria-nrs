@@ -560,8 +560,11 @@ def _bigrama_proximo(t1: str, t2: str, posicionado: list[str]) -> bool:
     return any(abs(i - j) <= JANELA_PROXIMIDADE for i in p1 for j in p2)
 
 
-def _bigrama_negado(t1: str, t2: str, posicionado: list[str]) -> bool:
-    """Um "sem" de verdade, no MESMO texto, nega t1 ou t2?
+_RE_CLAUSULA = re.compile(r"[,;.]")
+
+
+def _bigrama_negado(t1: str, t2: str, achado_texto: str) -> bool:
+    """Um "sem" de verdade, na MESMA cláusula do achado, nega t1 ou t2?
 
     A outra metade da família do negador, que `_radicais_negados` não cobre:
     ali o negador está no SINAL ("tanque sem cerca") e o texto só precisa
@@ -569,10 +572,25 @@ def _bigrama_negado(t1: str, t2: str, posicionado: list[str]) -> bool:
     aberto", sem "sem" nele — e é o TEXTO que pode negar sozinho: "shaft
     fechado com tampa, sem trechos abertos" nega `abert` ali mesmo, mas
     nenhum negador existe no sinal para `_radicais_negados` desconfiar dele.
-    Reusa `_proximidade_da_negacao` na direção oposta: o alvo agora é o
-    radical do SINAL, não o que ele mesmo nega.
+
+    Por CLÁUSULA, não por janela de palavras — o `/critico` mediu que
+    nenhuma janela resolve: "sem trechos abertos" (o caso real) e "Sem
+    sapata, shaft aberto" (achado de DUAS pessoas/objetos, o mesmo formato
+    composto que já colou o `sem` de uma peça na outra antes — ver a
+    armadilha do `"sem bota"` no CLAUDE.md) ficam à MESMA distância em
+    radicais; nenhum corte separa as duas. O que separa é a vírgula: no caso
+    real, `sem` e o radical negado estão na mesma cláusula; no adversarial,
+    cada um está na sua. Dentro de cada cláusula a proximidade continua
+    valendo (`_proximidade_da_negacao`, com a janela de sempre) — clausular
+    só limita ONDE procurar, não como.
     """
-    return _proximidade_da_negacao(t1, posicionado) or _proximidade_da_negacao(t2, posicionado)
+    for clausula in _RE_CLAUSULA.split(achado_texto):
+        pos = _radicais_posicionados(clausula)
+        if NEGADOR not in pos:
+            continue
+        if _proximidade_da_negacao(t1, pos) or _proximidade_da_negacao(t2, pos):
+            return True
+    return False
 
 
 def rotear_riscos(visao: Visao, contexto: str = "") -> list[Risco]:
@@ -626,19 +644,21 @@ def rotear_riscos(visao: Visao, contexto: str = "") -> list[Risco]:
         " | ".join(t for t in (visao.ambiente, contexto) if t)
     )
     # Cada fragmento guarda o que o próprio achado traz (com posição, para a
-    # checagem de proximidade) e a soma com o que a cena inteira acrescenta. A
-    # cobertura usa a soma; a âncora e a proximidade olham só o próprio achado.
+    # checagem de proximidade, e o texto bruto, para `_bigrama_negado` dividir
+    # em cláusulas) e a soma com o que a cena inteira acrescenta. A cobertura
+    # usa a soma; a âncora e a proximidade olham só o próprio achado.
     fragmentos = [
-        (f, f | extra, pos)
-        for f, pos in (
-            (_radicais(t), _radicais_posicionados(t)) for t in visao.textos()
+        (f, f | extra, pos, t)
+        for t, f, pos in (
+            (t, _radicais(t), _radicais_posicionados(t)) for t in visao.textos()
         )
         if f
     ]
     if not fragmentos and extra:
         # Sem nenhum achado, a cena é tudo o que há — e aí ela é a própria
         # âncora, senão uma foto descrita só no ambiente não routearia nada.
-        fragmentos = [(extra, extra, extra_pos)]
+        texto_cena = " | ".join(t for t in (visao.ambiente, contexto) if t)
+        fragmentos = [(extra, extra, extra_pos, texto_cena)]
 
     encontrados: list[tuple[float, Risco]] = []
 
@@ -653,7 +673,7 @@ def rotear_riscos(visao: Visao, contexto: str = "") -> list[Risco]:
             bigrama_puro = len(termos) == 2 and NEGADOR not in termos
 
             cobertura = 0.0
-            for proprio, completo, proprio_pos in fragmentos:
+            for proprio, completo, proprio_pos, texto_achado in fragmentos:
                 if len(termos) >= 2 and len(termos & proprio) < 2:
                     continue
                 presentes = termos & completo
@@ -672,7 +692,7 @@ def rotear_riscos(visao: Visao, contexto: str = "") -> list[Risco]:
                 if bigrama_puro and presentes == termos:
                     t1, t2 = tuple(termos)
                     if not _bigrama_proximo(t1, t2, proprio_pos) or _bigrama_negado(
-                        t1, t2, proprio_pos
+                        t1, t2, texto_achado
                     ):
                         presentes = presentes - {t2}
                 cobertura = max(cobertura, len(presentes) / len(termos))
