@@ -3785,6 +3785,67 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   (o sinal é anterior aos dois PRs) — era o caso que sobrava sem o roteador saber que "sem"
   só nega o radical que vem logo depois dele no SINAL, e perto de um "sem" de verdade no
   TEXTO.
+  **FECHADO em 22/09/2026 — busca exaustiva nas 24 NRs carregadas, sem código novo.** A
+  reinvestigação de 17/09 tinha buscado só em NR-12/NR-18/NR-26. Repeti com **14
+  consultas** de vocabulário novo pela mesma `base.buscar_pontuado` — 5 delas **sem
+  filtro nenhum de `nrs`**, contra as 24 NRs inteiras ("área de corte isolada de
+  terceiros", "acesso de terceiros à área onde se realiza corte", "proteção contra
+  projeção de partículas na área de circulação", "delimitação da área de trabalho com
+  risco de projeção", "cerca ou barreira impedindo aproximação de pessoas estranhas ao
+  serviço"); as outras 9 repetiram o universo de 17/09 (7 em NR-12/18/26) e checaram
+  NR-01 à parte (2, atrás de hierarquia de controle). Testei cada candidato novo contra
+  o TEXTO LITERAL do item, não só contra o score do BM25:
+  - `NR-18 18.7.2.2`/`18.7.2.30` — cobertura mais alta que qualquer coisa achada em 17/09
+    ("A área de fogo deve ser protegida para evitar a projeção de partículas..."), mas a
+    seção é **"Escavação, fundação e desmonte de rochas"** (`titulo_da_secao`) — "área de
+    fogo" é termo de desmonte com explosivo, não de bancada de corte. O `18.7.2.2` já é o
+    item citado por `escavacao_sem_isolamento_sinalizacao`, risco existente com escopo
+    certo; o `18.7.2.30` não é citado por nenhum risco da taxonomia — não porque falte,
+    é porque também não tem para onde ir.
+  - `NR-18 18.16.18` ("tapume... impedir o acesso de pessoas estranhas aos serviços") —
+    seção **"Disposições gerais"**, perímetro do CANTEIRO inteiro contra gente de fora da
+    obra, não a bancada de corte dentro dele.
+  - `NR-18 18.10.1.29(a)`/`NR-12 12.8.6.2`/`18.13.1(e)` — perímetro de carga suspensa,
+    passarela sobre transportador contínuo e sinalização de "área de movimentação de
+    materiais", nesta ordem: nenhum é sobre corte.
+  - `NR-12 12.2.1`/`12.2.1.2`/`12.2.2`/`12.2.3` — os quatro itens que
+    `area_circulacao_maquinas_obstruida` já cita (risco existente; o candidato de 17/09
+    era só o `12.2.1`, revisitado agora com o grupo inteiro). A base não guarda título de
+    seção para eles (`titulo_da_secao` devolve vazio; ao contrário da NR-18, a NR-12
+    extraída não tem item curto fazendo cabeçalho ali), mas o TEXTO é consistente:
+    demarcar e desobstruir via de circulação, distância mínima entre máquinas para
+    manutenção/limpeza, espaço para o corpo se mover — não impedir alguém de se
+    aproximar de quem está cortando. Esse risco já está registrado como ruído no
+    PRÉ-REGISTRO sintético do lote de escada (15/09): disparou sobre um fato inventado
+    aqui, sem máquina nenhuma na cena, pelo sinal `"passagem estreita entre maquinas"` a
+    0,75. Não há confirmação de que isso se repetiu num laudo real.
+  - `NR-01` inteira (hierarquia de controle, EPC antes de EPI) — nenhum item fala de
+    barreira física; é o nível de política, não de execução.
+  Não achei candidato que não caísse num desses grupos: todo item novo devolvido pelas
+  14 consultas, ao ser lido, ou já pertencia a um risco existente com escopo diferente do
+  de "corte", ou repetia o mesmo mismatch já descartado em 17/09.
+  **Decisão mantida: não forçar.** A garantia central do projeto — "o modelo escolhe, o
+  código cita" — pressupõe uma citação que resista à leitura do texto oficial; nenhuma
+  das candidatas resiste. Isto não é um roteamento que falha por sinal mal escrito (a
+  classe de bug que este arquivo em geral resolve) — é a base normativa carregada (24
+  NRs, focadas em construção) genuinamente não ter um item de "isolar a bancada de corte
+  contra terceiros" fora dos contextos vizinhos (vergalhão, desmonte de rocha, carga
+  suspensa, perímetro do canteiro). Só existiria um jeito de fechar por código: uma
+  edição de NR nova em `normas/` que traga esse item — não uma mudança em `riscos/`.
+  **O caminho que sobra para este achado não é uma NR nova, é o que já existe**:
+  `PROMPT_ANALISTA` já instrui, na regra 2, "se um fato PREOCUPA mas nenhum item do
+  dossiê o cobre, escreva-o em `sem_enquadramento`" — vira ponto de atenção sem citação,
+  em vez de sumir ou forçar item errado. Isso é comportamento de MODELO (o Analista
+  escolher escrever ali), não algo que `/conferir` ou teste unitário possa travar, e só
+  um lote confirma se ele obedece — sem acesso à Groq nesta sessão, não dá para medir.
+  **O que É separável, e continua em aberto, é outro item já registrado**: "Nada pede
+  que todo achado de risco seja endereçado" (mais abaixo nesta lista) — hoje nada no
+  pipeline garante que um achado do Olho vire NC, `sem_enquadramento` OU conformidade;
+  ele pode simplesmente não ser mencionado por nenhum dos três. Esse mecanismo, sim, é
+  código determinístico (checar que todo achado tem destino, sem depender do prompt
+  escolher bem) e poderia consertar o sintoma sem depender de item de norma nenhum — mas
+  é tarefa distinta desta, com escopo maior (toda foto, não só corte), e não foi pedida
+  aqui.
 - **"Cabo no piso" não tem item alcançável — previsto em 12/09 e CONFIRMADO no lote do mesmo
   dia.** O `NR-10 10.2.8.2` e o `10.2.8.2.1` chegaram em D1 e D2 curados em três das quatro
   fotos e o Analista **não usou nenhum**, porque o item trata de partes vivas e o cabo está
