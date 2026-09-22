@@ -5448,14 +5448,27 @@ def test_shaft_fechado_nao_casa_com_shaft_aberto_quando_o_texto_nega():
         r.id for r in rotear_riscos(dois_assuntos)
     ]
 
+    # Segunda rodada do `/critico`: dentro da MESMA cláusula (nenhuma vírgula
+    # separa), "shaft" aparece como mero coadjuvante de um "sem" que nega
+    # "sapata", não "shaft". A cláusula sozinha não bastava — precisa também
+    # da janela estreita dentro dela (`JANELA_NEGACAO_BIGRAMA`).
+    coadjuvante = Visao(
+        ambiente="Casa de máquinas do elevador",
+        achados=[Achado(
+            "Sem sapata visível na base do shaft, mas aberto na parte superior"
+        )],
+    )
+    assert "abertura_piso_desprotegida" in [
+        r.id for r in rotear_riscos(coadjuvante)
+    ]
+
 
 def test_bigrama_negado_isolado_reproduz_o_par_shaft():
     """O mecanismo em isolado, no molde de
     `test_sem_nega_so_o_vizinho_no_sinal_nao_qualquer_negacao_do_achado` —
-    contra o par positivo/negativo do teste acima, e contra o caso
-    adversarial que o `/critico` achou (dois objetos na mesma frase, cada
-    "sem" na sua cláusula, à MESMA distância em radicais do caso real — só a
-    vírgula separa os dois)."""
+    contra os casos adversariais que o `/critico` achou em duas rodadas: dois
+    objetos separados por vírgula (cada `sem` na sua cláusula) e um
+    coadjuvante dentro da MESMA cláusula (a cláusula sozinha não bastava)."""
     from auditoria.pipeline import _bigrama_negado
 
     assert _bigrama_negado(
@@ -5466,6 +5479,10 @@ def test_bigrama_negado_isolado_reproduz_o_par_shaft():
     )
     assert not _bigrama_negado(
         "shaft", "abert", "Sem sapata, shaft aberto na estrutura"
+    )
+    assert not _bigrama_negado(
+        "shaft", "abert",
+        "Sem sapata visível na base do shaft, mas aberto na parte superior",
     )
 
 

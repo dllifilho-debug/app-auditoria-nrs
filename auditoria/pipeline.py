@@ -523,7 +523,9 @@ def _radicais_negados(sinal: str) -> tuple[str, ...]:
     return tuple(negados)
 
 
-def _proximidade_da_negacao(alvo: str, posicionado: list[str]) -> bool:
+def _proximidade_da_negacao(
+    alvo: str, posicionado: list[str], janela: int = JANELA_PROXIMIDADE
+) -> bool:
     """Existe um `NEGADOR` de verdade, no MESMO texto, com `alvo` logo depois?
 
     Direcional de propósito — só para a frente, nunca para trás. É a direção,
@@ -533,12 +535,16 @@ def _proximidade_da_negacao(alvo: str, posicionado: list[str]) -> bool:
     Medido contra o caso adversarial que o `/critico` achou em
     `area_de_risco_nao_delimitada` (`riscos/ambiental.py`) — a razão de esta
     função existir em vez de continuar como bag-of-words.
+
+    `janela` é parametrizável porque o valor seguro não é o mesmo para todo
+    chamador — ver `JANELA_NEGACAO_BIGRAMA`, que usa um valor bem mais
+    estreito que o padrão.
     """
     posicoes_negador = [i for i, r in enumerate(posicionado) if r == NEGADOR]
     if not posicoes_negador:
         return False
     return any(
-        r == alvo and any(0 < i - j <= JANELA_PROXIMIDADE for j in posicoes_negador)
+        r == alvo and any(0 < i - j <= janela for j in posicoes_negador)
         for i, r in enumerate(posicionado)
     )
 
@@ -562,6 +568,26 @@ def _bigrama_proximo(t1: str, t2: str, posicionado: list[str]) -> bool:
 
 _RE_CLAUSULA = re.compile(r"[,;.]")
 
+# Janela dedicada a `_bigrama_negado`, bem mais estreita que a padrão (7).
+# Cláusula sozinha não basta: dentro da MESMA cláusula, um substantivo do par
+# ainda pode aparecer como mero COADJUVANTE de um "sem" que nega outra coisa
+# — "Sem sapata visível na base do shaft" nega "sapata", não "shaft", mas os
+# dois estão na mesma cláusula (nenhuma vírgula os separa) a 4 radicais de
+# distância. O `/critico` mediu esse caso contra a primeira versão (janela 7
+# dentro da cláusula) e ele suprimia "shaft aberto" indevidamente. Com 2, o
+# caso real ("sem trechos abertos", distância 2) continua pego e este
+# coadjuvante (distância 4) fica de fora.
+# O que 2 NÃO resolve, e é limite genuíno de proximidade, não falta de ajuste
+# fino: "Sem sapata do shaft" tem a MESMA forma e a MESMA distância (2) que
+# "sem trechos abertos" — nenhuma janela, de qualquer tamanho, separa "sem X
+# Y" onde Y é o alvo de "sem X Y" onde Y só está ali perto por acaso. Essa
+# ambiguidade exigiria saber que "shaft" está subordinado a "sapata" por uma
+# preposição ("da base DO shaft") — e a preposição é exatamente a palavra
+# curta que o filtro de radicais (`len(p) > 2`) já descarta antes de chegar
+# aqui. Aceito e não escondido: o preço de fechar o caso real é deixar essa
+# construção rara e sintaticamente equivalente sem solução por proximidade.
+JANELA_NEGACAO_BIGRAMA = 2
+
 
 def _bigrama_negado(t1: str, t2: str, achado_texto: str) -> bool:
     """Um "sem" de verdade, na MESMA cláusula do achado, nega t1 ou t2?
@@ -573,22 +599,23 @@ def _bigrama_negado(t1: str, t2: str, achado_texto: str) -> bool:
     fechado com tampa, sem trechos abertos" nega `abert` ali mesmo, mas
     nenhum negador existe no sinal para `_radicais_negados` desconfiar dele.
 
-    Por CLÁUSULA, não por janela de palavras — o `/critico` mediu que
-    nenhuma janela resolve: "sem trechos abertos" (o caso real) e "Sem
-    sapata, shaft aberto" (achado de DUAS pessoas/objetos, o mesmo formato
-    composto que já colou o `sem` de uma peça na outra antes — ver a
-    armadilha do `"sem bota"` no CLAUDE.md) ficam à MESMA distância em
-    radicais; nenhum corte separa as duas. O que separa é a vírgula: no caso
-    real, `sem` e o radical negado estão na mesma cláusula; no adversarial,
-    cada um está na sua. Dentro de cada cláusula a proximidade continua
-    valendo (`_proximidade_da_negacao`, com a janela de sempre) — clausular
-    só limita ONDE procurar, não como.
+    Duas defesas, não uma. CLÁUSULA, porque nenhuma janela de palavras separa
+    "sem trechos abertos" (caso real) de "Sem sapata, shaft aberto" (achado
+    de dois objetos — a mesma classe da armadilha do `"sem bota"` no
+    CLAUDE.md): as duas ficam à MESMA distância em radicais, e só a vírgula
+    as diferencia — cada `sem` fica na sua cláusula, na versão adversarial.
+    JANELA ESTREITA por cima, porque cláusula sozinha não fecha: um
+    substantivo do par pode ser só COADJUVANTE dentro da MESMA cláusula de um
+    "sem" que nega outra coisa (ver `JANELA_NEGACAO_BIGRAMA`, com o limite
+    que resta documentado ali).
     """
     for clausula in _RE_CLAUSULA.split(achado_texto):
         pos = _radicais_posicionados(clausula)
         if NEGADOR not in pos:
             continue
-        if _proximidade_da_negacao(t1, pos) or _proximidade_da_negacao(t2, pos):
+        if _proximidade_da_negacao(
+            t1, pos, JANELA_NEGACAO_BIGRAMA
+        ) or _proximidade_da_negacao(t2, pos, JANELA_NEGACAO_BIGRAMA):
             return True
     return False
 
