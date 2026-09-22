@@ -5406,6 +5406,47 @@ def test_abertura_no_piso_nao_casa_com_a_relacao_invertida():
         assert "abertura_piso_desprotegida" in [r.id for r in rotear_riscos(visao)], fato
 
 
+def test_shaft_fechado_nao_casa_com_shaft_aberto_quando_o_texto_nega():
+    """A outra metade da família do negador, registrada em aberto desde
+    18/09: `"shaft aberto"` é um sinal-bigrama puro e AFIRMATIVO — sem "sem"
+    nele —, então `_radicais_negados` nunca desconfia (o negador que ele
+    procura está no SINAL, não existe aqui). Mas o TEXTO pode negar sozinho:
+    "shaft fechado com tampa, sem trechos abertos" nega `abert` ali mesmo, e
+    antes de `_bigrama_negado` o roteador só via os dois radicais presentes e
+    próximos — bastava isso para casar, mesmo com o achado afirmando o
+    oposto do que o sinal descreve.
+    """
+    fechado = Visao(
+        ambiente="Casa de máquinas do elevador",
+        achados=[Achado("Shaft fechado com tampa, sem trechos abertos")],
+    )
+    assert "abertura_piso_desprotegida" not in [
+        r.id for r in rotear_riscos(fechado)
+    ]
+
+    # A contraparte: o mesmo achado, agora com o shaft genuinamente aberto —
+    # o "sem" continua no texto, mas nega outra peça ("proteção"), não o
+    # "aberto" que o sinal exige.
+    aberto = Visao(
+        ambiente="Casa de máquinas do elevador",
+        achados=[Achado("Shaft aberto na estrutura, sem proteção nas bordas")],
+    )
+    assert "abertura_piso_desprotegida" in [r.id for r in rotear_riscos(aberto)]
+
+
+def test_bigrama_negado_isolado_reproduz_o_par_shaft():
+    """O mecanismo em isolado, no molde de
+    `test_sem_nega_so_o_vizinho_no_sinal_nao_qualquer_negacao_do_achado` —
+    contra o par positivo/negativo do teste acima."""
+    from auditoria.pipeline import _bigrama_negado
+    from auditoria.kb import radicais_posicionados
+
+    negado = radicais_posicionados("Shaft fechado com tampa, sem trechos abertos")
+    positivo = radicais_posicionados("Shaft aberto na estrutura, sem proteção nas bordas")
+    assert _bigrama_negado("shaft", "abert", negado)
+    assert not _bigrama_negado("shaft", "abert", positivo)
+
+
 def test_todo_sinal_casa_com_a_propria_frase_literal():
     """O caso canônico: um achado que contém o sinal PALAVRA POR PALAVRA tem
     de rotear o risco que aquele sinal pertence, sempre — é o caso mais fácil

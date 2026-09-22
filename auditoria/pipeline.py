@@ -560,6 +560,21 @@ def _bigrama_proximo(t1: str, t2: str, posicionado: list[str]) -> bool:
     return any(abs(i - j) <= JANELA_PROXIMIDADE for i in p1 for j in p2)
 
 
+def _bigrama_negado(t1: str, t2: str, posicionado: list[str]) -> bool:
+    """Um "sem" de verdade, no MESMO texto, nega t1 ou t2?
+
+    A outra metade da família do negador, que `_radicais_negados` não cobre:
+    ali o negador está no SINAL ("tanque sem cerca") e o texto só precisa
+    confirmá-lo perto da palavra negada. Aqui o sinal é afirmativo — "shaft
+    aberto", sem "sem" nele — e é o TEXTO que pode negar sozinho: "shaft
+    fechado com tampa, sem trechos abertos" nega `abert` ali mesmo, mas
+    nenhum negador existe no sinal para `_radicais_negados` desconfiar dele.
+    Reusa `_proximidade_da_negacao` na direção oposta: o alvo agora é o
+    radical do SINAL, não o que ele mesmo nega.
+    """
+    return _proximidade_da_negacao(t1, posicionado) or _proximidade_da_negacao(t2, posicionado)
+
+
 def rotear_riscos(visao: Visao, contexto: str = "") -> list[Risco]:
     """Casa os fatos observados com a taxonomia curada de riscos.
 
@@ -597,11 +612,14 @@ def rotear_riscos(visao: Visao, contexto: str = "") -> list[Risco]:
     Presença não basta: radical negado por "sem" só conta se `NEGADOR`
     aparecer perto DELE especificamente (não de qualquer outra palavra do
     achado), e radical de sinal-bigrama puro só conta se os dois estiverem
-    perto um do outro. Sem essa checagem, "Carenagem íntegra, sem folgas"
-    casava "sem carenagem" (o `sem` negava "folgas", não "carenagem"), e
-    "Piso ... visível ... da abertura" casava "abertura no piso" (os dois
-    radicais existem, mas não descrevem o mesmo vão) — ver `_proximidade_da_negacao`
-    e `_bigrama_proximo`.
+    perto um do outro E nenhum dos dois estiver negado no texto. Sem essa
+    checagem, "Carenagem íntegra, sem folgas" casava "sem carenagem" (o `sem`
+    negava "folgas", não "carenagem"), "Piso ... visível ... da abertura"
+    casava "abertura no piso" (os dois radicais existem, mas não descrevem o
+    mesmo vão), e "Shaft fechado com tampa, sem trechos abertos" casava
+    "shaft aberto" (o negador está no TEXTO, não no sinal — `_radicais_negados`
+    só desconfia de um "sem" que o próprio sinal escreve) — ver
+    `_proximidade_da_negacao`, `_bigrama_proximo` e `_bigrama_negado`.
     """
     extra = _radicais(" | ".join(t for t in (visao.ambiente, contexto) if t))
     extra_pos = _radicais_posicionados(
@@ -653,7 +671,9 @@ def rotear_riscos(visao: Visao, contexto: str = "") -> list[Risco]:
                     presentes = presentes - set(negados_seq)
                 if bigrama_puro and presentes == termos:
                     t1, t2 = tuple(termos)
-                    if not _bigrama_proximo(t1, t2, proprio_pos):
+                    if not _bigrama_proximo(t1, t2, proprio_pos) or _bigrama_negado(
+                        t1, t2, proprio_pos
+                    ):
                         presentes = presentes - {t2}
                 cobertura = max(cobertura, len(presentes) / len(termos))
 
