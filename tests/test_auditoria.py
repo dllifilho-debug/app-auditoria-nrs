@@ -5406,6 +5406,86 @@ def test_abertura_no_piso_nao_casa_com_a_relacao_invertida():
         assert "abertura_piso_desprotegida" in [r.id for r in rotear_riscos(visao)], fato
 
 
+def test_shaft_fechado_nao_casa_com_shaft_aberto_quando_o_texto_nega():
+    """A outra metade da família do negador, registrada em aberto desde
+    18/09: `"shaft aberto"` é um sinal-bigrama puro e AFIRMATIVO — sem "sem"
+    nele —, então `_radicais_negados` nunca desconfia (o negador que ele
+    procura está no SINAL, não existe aqui). Mas o TEXTO pode negar sozinho:
+    "shaft fechado com tampa, sem trechos abertos" nega `abert` ali mesmo, e
+    antes de `_bigrama_negado` o roteador só via os dois radicais presentes e
+    próximos — bastava isso para casar, mesmo com o achado afirmando o
+    oposto do que o sinal descreve.
+    """
+    fechado = Visao(
+        ambiente="Casa de máquinas do elevador",
+        achados=[Achado("Shaft fechado com tampa, sem trechos abertos")],
+    )
+    assert "abertura_piso_desprotegida" not in [
+        r.id for r in rotear_riscos(fechado)
+    ]
+
+    # A contraparte: o mesmo achado, agora com o shaft genuinamente aberto —
+    # o "sem" continua no texto, mas nega outra peça ("proteção"), não o
+    # "aberto" que o sinal exige.
+    aberto = Visao(
+        ambiente="Casa de máquinas do elevador",
+        achados=[Achado("Shaft aberto na estrutura, sem proteção nas bordas")],
+    )
+    assert "abertura_piso_desprotegida" in [r.id for r in rotear_riscos(aberto)]
+
+    # Achado real de DOIS assuntos na mesma frase — a classe que já colou o
+    # "sem" de uma pessoa na peça de outra ("sem bota", 16/09) — desta vez
+    # com o shaft genuinamente aberto e um "sem" alheio (sapata de uma
+    # escada) só duas palavras antes dele. Uma janela de proximidade sozinha
+    # não separaria isto do caso negado acima: as duas frases têm a MESMA
+    # distância entre "sem" e o radical mais próximo do par. Só a cláusula
+    # (a vírgula) distingue.
+    dois_assuntos = Visao(
+        ambiente="Canteiro de obra",
+        achados=[Achado("Sem sapata, shaft aberto na estrutura")],
+    )
+    assert "abertura_piso_desprotegida" in [
+        r.id for r in rotear_riscos(dois_assuntos)
+    ]
+
+    # Segunda rodada do `/critico`: dentro da MESMA cláusula (nenhuma vírgula
+    # separa), "shaft" aparece como mero coadjuvante de um "sem" que nega
+    # "sapata", não "shaft". A cláusula sozinha não bastava — precisa também
+    # da janela estreita dentro dela (`JANELA_NEGACAO_BIGRAMA`).
+    coadjuvante = Visao(
+        ambiente="Casa de máquinas do elevador",
+        achados=[Achado(
+            "Sem sapata visível na base do shaft, mas aberto na parte superior"
+        )],
+    )
+    assert "abertura_piso_desprotegida" in [
+        r.id for r in rotear_riscos(coadjuvante)
+    ]
+
+
+def test_bigrama_negado_isolado_reproduz_o_par_shaft():
+    """O mecanismo em isolado, no molde de
+    `test_sem_nega_so_o_vizinho_no_sinal_nao_qualquer_negacao_do_achado` —
+    contra os casos adversariais que o `/critico` achou em duas rodadas: dois
+    objetos separados por vírgula (cada `sem` na sua cláusula) e um
+    coadjuvante dentro da MESMA cláusula (a cláusula sozinha não bastava)."""
+    from auditoria.pipeline import _bigrama_negado
+
+    assert _bigrama_negado(
+        "shaft", "abert", "Shaft fechado com tampa, sem trechos abertos"
+    )
+    assert not _bigrama_negado(
+        "shaft", "abert", "Shaft aberto na estrutura, sem proteção nas bordas"
+    )
+    assert not _bigrama_negado(
+        "shaft", "abert", "Sem sapata, shaft aberto na estrutura"
+    )
+    assert not _bigrama_negado(
+        "shaft", "abert",
+        "Sem sapata visível na base do shaft, mas aberto na parte superior",
+    )
+
+
 def test_todo_sinal_casa_com_a_propria_frase_literal():
     """O caso canônico: um achado que contém o sinal PALAVRA POR PALAVRA tem
     de rotear o risco que aquele sinal pertence, sempre — é o caso mais fácil

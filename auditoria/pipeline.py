@@ -523,7 +523,9 @@ def _radicais_negados(sinal: str) -> tuple[str, ...]:
     return tuple(negados)
 
 
-def _proximidade_da_negacao(alvo: str, posicionado: list[str]) -> bool:
+def _proximidade_da_negacao(
+    alvo: str, posicionado: list[str], janela: int = JANELA_PROXIMIDADE
+) -> bool:
     """Existe um `NEGADOR` de verdade, no MESMO texto, com `alvo` logo depois?
 
     Direcional de propósito — só para a frente, nunca para trás. É a direção,
@@ -533,12 +535,16 @@ def _proximidade_da_negacao(alvo: str, posicionado: list[str]) -> bool:
     Medido contra o caso adversarial que o `/critico` achou em
     `area_de_risco_nao_delimitada` (`riscos/ambiental.py`) — a razão de esta
     função existir em vez de continuar como bag-of-words.
+
+    `janela` é parametrizável porque o valor seguro não é o mesmo para todo
+    chamador — ver `JANELA_NEGACAO_BIGRAMA`, que usa um valor bem mais
+    estreito que o padrão.
     """
     posicoes_negador = [i for i, r in enumerate(posicionado) if r == NEGADOR]
     if not posicoes_negador:
         return False
     return any(
-        r == alvo and any(0 < i - j <= JANELA_PROXIMIDADE for j in posicoes_negador)
+        r == alvo and any(0 < i - j <= janela for j in posicoes_negador)
         for i, r in enumerate(posicionado)
     )
 
@@ -558,6 +564,60 @@ def _bigrama_proximo(t1: str, t2: str, posicionado: list[str]) -> bool:
     p1 = [i for i, r in enumerate(posicionado) if r == t1]
     p2 = [i for i, r in enumerate(posicionado) if r == t2]
     return any(abs(i - j) <= JANELA_PROXIMIDADE for i in p1 for j in p2)
+
+
+_RE_CLAUSULA = re.compile(r"[,;.]")
+
+# Janela dedicada a `_bigrama_negado`, bem mais estreita que a padrão (7).
+# Cláusula sozinha não basta: dentro da MESMA cláusula, um substantivo do par
+# ainda pode aparecer como mero COADJUVANTE de um "sem" que nega outra coisa
+# — "Sem sapata visível na base do shaft" nega "sapata", não "shaft", mas os
+# dois estão na mesma cláusula (nenhuma vírgula os separa) a 4 radicais de
+# distância. O `/critico` mediu esse caso contra a primeira versão (janela 7
+# dentro da cláusula) e ele suprimia "shaft aberto" indevidamente. Com 2, o
+# caso real ("sem trechos abertos", distância 2) continua pego e este
+# coadjuvante (distância 4) fica de fora.
+# O que 2 NÃO resolve, e é limite genuíno de proximidade, não falta de ajuste
+# fino: "Sem sapata do shaft" tem a MESMA forma e a MESMA distância (2) que
+# "sem trechos abertos" — nenhuma janela, de qualquer tamanho, separa "sem X
+# Y" onde Y é o alvo de "sem X Y" onde Y só está ali perto por acaso. Essa
+# ambiguidade exigiria saber que "shaft" está subordinado a "sapata" por uma
+# preposição ("da base DO shaft") — e a preposição é exatamente a palavra
+# curta que o filtro de radicais (`len(p) > 2`) já descarta antes de chegar
+# aqui. Aceito e não escondido: o preço de fechar o caso real é deixar essa
+# construção rara e sintaticamente equivalente sem solução por proximidade.
+JANELA_NEGACAO_BIGRAMA = 2
+
+
+def _bigrama_negado(t1: str, t2: str, achado_texto: str) -> bool:
+    """Um "sem" de verdade, na MESMA cláusula do achado, nega t1 ou t2?
+
+    A outra metade da família do negador, que `_radicais_negados` não cobre:
+    ali o negador está no SINAL ("tanque sem cerca") e o texto só precisa
+    confirmá-lo perto da palavra negada. Aqui o sinal é afirmativo — "shaft
+    aberto", sem "sem" nele — e é o TEXTO que pode negar sozinho: "shaft
+    fechado com tampa, sem trechos abertos" nega `abert` ali mesmo, mas
+    nenhum negador existe no sinal para `_radicais_negados` desconfiar dele.
+
+    Duas defesas, não uma. CLÁUSULA, porque nenhuma janela de palavras separa
+    "sem trechos abertos" (caso real) de "Sem sapata, shaft aberto" (achado
+    de dois objetos — a mesma classe da armadilha do `"sem bota"` no
+    CLAUDE.md): as duas ficam à MESMA distância em radicais, e só a vírgula
+    as diferencia — cada `sem` fica na sua cláusula, na versão adversarial.
+    JANELA ESTREITA por cima, porque cláusula sozinha não fecha: um
+    substantivo do par pode ser só COADJUVANTE dentro da MESMA cláusula de um
+    "sem" que nega outra coisa (ver `JANELA_NEGACAO_BIGRAMA`, com o limite
+    que resta documentado ali).
+    """
+    for clausula in _RE_CLAUSULA.split(achado_texto):
+        pos = _radicais_posicionados(clausula)
+        if NEGADOR not in pos:
+            continue
+        if _proximidade_da_negacao(
+            t1, pos, JANELA_NEGACAO_BIGRAMA
+        ) or _proximidade_da_negacao(t2, pos, JANELA_NEGACAO_BIGRAMA):
+            return True
+    return False
 
 
 def rotear_riscos(visao: Visao, contexto: str = "") -> list[Risco]:
@@ -597,30 +657,35 @@ def rotear_riscos(visao: Visao, contexto: str = "") -> list[Risco]:
     Presença não basta: radical negado por "sem" só conta se `NEGADOR`
     aparecer perto DELE especificamente (não de qualquer outra palavra do
     achado), e radical de sinal-bigrama puro só conta se os dois estiverem
-    perto um do outro. Sem essa checagem, "Carenagem íntegra, sem folgas"
-    casava "sem carenagem" (o `sem` negava "folgas", não "carenagem"), e
-    "Piso ... visível ... da abertura" casava "abertura no piso" (os dois
-    radicais existem, mas não descrevem o mesmo vão) — ver `_proximidade_da_negacao`
-    e `_bigrama_proximo`.
+    perto um do outro E nenhum dos dois estiver negado no texto. Sem essa
+    checagem, "Carenagem íntegra, sem folgas" casava "sem carenagem" (o `sem`
+    negava "folgas", não "carenagem"), "Piso ... visível ... da abertura"
+    casava "abertura no piso" (os dois radicais existem, mas não descrevem o
+    mesmo vão), e "Shaft fechado com tampa, sem trechos abertos" casava
+    "shaft aberto" (o negador está no TEXTO, não no sinal — `_radicais_negados`
+    só desconfia de um "sem" que o próprio sinal escreve) — ver
+    `_proximidade_da_negacao`, `_bigrama_proximo` e `_bigrama_negado`.
     """
     extra = _radicais(" | ".join(t for t in (visao.ambiente, contexto) if t))
     extra_pos = _radicais_posicionados(
         " | ".join(t for t in (visao.ambiente, contexto) if t)
     )
     # Cada fragmento guarda o que o próprio achado traz (com posição, para a
-    # checagem de proximidade) e a soma com o que a cena inteira acrescenta. A
-    # cobertura usa a soma; a âncora e a proximidade olham só o próprio achado.
+    # checagem de proximidade, e o texto bruto, para `_bigrama_negado` dividir
+    # em cláusulas) e a soma com o que a cena inteira acrescenta. A cobertura
+    # usa a soma; a âncora e a proximidade olham só o próprio achado.
     fragmentos = [
-        (f, f | extra, pos)
-        for f, pos in (
-            (_radicais(t), _radicais_posicionados(t)) for t in visao.textos()
+        (f, f | extra, pos, t)
+        for t, f, pos in (
+            (t, _radicais(t), _radicais_posicionados(t)) for t in visao.textos()
         )
         if f
     ]
     if not fragmentos and extra:
         # Sem nenhum achado, a cena é tudo o que há — e aí ela é a própria
         # âncora, senão uma foto descrita só no ambiente não routearia nada.
-        fragmentos = [(extra, extra, extra_pos)]
+        texto_cena = " | ".join(t for t in (visao.ambiente, contexto) if t)
+        fragmentos = [(extra, extra, extra_pos, texto_cena)]
 
     encontrados: list[tuple[float, Risco]] = []
 
@@ -635,7 +700,7 @@ def rotear_riscos(visao: Visao, contexto: str = "") -> list[Risco]:
             bigrama_puro = len(termos) == 2 and NEGADOR not in termos
 
             cobertura = 0.0
-            for proprio, completo, proprio_pos in fragmentos:
+            for proprio, completo, proprio_pos, texto_achado in fragmentos:
                 if len(termos) >= 2 and len(termos & proprio) < 2:
                     continue
                 presentes = termos & completo
@@ -653,7 +718,9 @@ def rotear_riscos(visao: Visao, contexto: str = "") -> list[Risco]:
                     presentes = presentes - set(negados_seq)
                 if bigrama_puro and presentes == termos:
                     t1, t2 = tuple(termos)
-                    if not _bigrama_proximo(t1, t2, proprio_pos):
+                    if not _bigrama_proximo(t1, t2, proprio_pos) or _bigrama_negado(
+                        t1, t2, texto_achado
+                    ):
                         presentes = presentes - {t2}
                 cobertura = max(cobertura, len(presentes) / len(termos))
 
