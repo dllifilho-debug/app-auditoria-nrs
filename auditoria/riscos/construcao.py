@@ -77,7 +77,7 @@ RISCOS: dict[str, dict] = {
             # três contrapartes a contém. É estreito de propósito — depende de
             # o Olho medir a altura, que é o que o prompt dele manda fazer.
             "tela na altura do joelho",
-            "guarda corpo de madeira frouxo",
+            "guarda corpo frouxo",
             "sem rodape na borda",
             "fita zebrada no lugar de guarda-corpo",
             "sacada sem grade",
@@ -106,7 +106,7 @@ RISCOS: dict[str, dict] = {
             # nada — a mesma lição dos sinais da NR-12.
             "vao no piso",
             "tampa solta sobre o buraco",
-            "placa apoiada sobre abertura",
+            "placa sobre abertura",
             "caixa de passagem aberta",
             "shaft aberto",
             "chapa cobrindo buraco",

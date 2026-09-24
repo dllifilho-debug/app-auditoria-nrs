@@ -351,6 +351,13 @@ Máquina, painel elétrico, andaime, escada, cinta, cabo ou gancho: diga o estad
 (corroído, amassado, queimado, esfiapado, fios rompidos) e as peças que vê e as que não vê
 (trava do gancho, guarda-corpo e rodapé do andaime, tampa do painel, proteção de partes móveis).
 Só escreva "sem <peça> visível" quando o lugar dela aparece vazio na foto; senão, "não dá para ver".
+Andaime na cena: a PERIFERIA da plataforma de trabalho é sempre um achado PRÓPRIO, mesmo quando
+o achado principal da foto é outro. Para cada borda livre (a que não encosta na parede) que
+aparece no recorte, diga o que há nela — guarda-corpo, travessão superior, travessão
+intermediário, rodapé —, quais dessas peças aparecem e quais não, de que material e como estão
+presas. Faça o mesmo com a base dos montantes: sapata ou base de apoio, e sobre o que está
+assentada. Borda que não aparece no recorte: escreva "não dá para ver a borda <lado>" — nunca a
+deixe sem menção, porque o silêncio sobre a periferia não diz ao laudo se ela está protegida.
 Pessoa presente executando atividade: diga também o que ela usa na cabeça, nas mãos, nos olhos,
 nos ouvidos e nos pés (capacete, luva, óculos de proteção, protetor auricular, bota de segurança).
 Mesma forma canônica: "sem capacete, cabeça descoberta" só quando aquela parte do corpo aparece
