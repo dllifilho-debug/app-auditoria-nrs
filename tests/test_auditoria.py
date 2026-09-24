@@ -5594,3 +5594,74 @@ def test_sinal_andaime_sem_travessao_dispara_sozinho(base, monkeypatch):
                    "travessão superior nem intermediário no perímetro")
     assert not dispara("Andaime com travessão superior instalado, sem "
                        "oxidação visível")
+
+
+def test_prompt_olho_pede_a_periferia_do_andaime_como_achado_proprio():
+    """Laudo real de 24/09: o inspetor marcou `andaime_sem_guarda_corpo`, os
+    itens chegaram a D1-D5, e o laudo não disse nada sobre a periferia — o
+    Olho não a descreveu, e sem fato o Analista não tem o que enquadrar nem o
+    que mandar para ponto de atenção. O prompt passa a pedir a periferia como
+    achado próprio, peça a peça, e a base dos montantes; borda fora do recorte
+    vira "não dá para ver", nunca silêncio.
+    """
+    from auditoria.pipeline import PROMPT_OLHO
+
+    assert "PERIFERIA da plataforma de trabalho é sempre um achado PRÓPRIO" in PROMPT_OLHO
+    for peca in ("travessão superior", "travessão", "intermediário", "rodapé", "sapata ou base de apoio"):
+        assert peca in PROMPT_OLHO, peca
+    assert 'não dá para ver a borda <lado>' in PROMPT_OLHO
+    # "placa de apoio" colidiria com o sinal `"sem placa"` de sinalização.
+    assert "placa de apoio" not in PROMPT_OLHO
+
+
+def test_redacoes_da_periferia_do_andaime_roteiam_so_o_que_devem(base):
+    """As frases que o parágrafo novo do prompt pede, medidas no roteamento.
+    Três sinais antigos de 4 radicais disparavam nas redações CONFORMES (a
+    cobertura parcial abria a 0,75 sem o discriminante) e foram encurtados:
+    `"guarda corpo de madeira frouxo"` casava guarda-corpo íntegro com rodapé
+    de madeira; `"placa apoiada sobre abertura"` casava sapata sobre placa de
+    madeira. Ressalva declarada: `"passarela sem guarda corpo"` continua de 4
+    radicais e aciona `rampa_passarela_irregular` junto do andaime SEM
+    guarda-corpo — ruído ao lado de um positivo, nunca numa cena conforme —,
+    porque encurtá-lo perdia "passarela ... sem guarda-corpo" de verdade.
+    """
+    ambiente = "Pavimento em obra com piso de concreto, andaime tubular montado junto à parede"
+
+    def riscos(texto: str) -> set[str]:
+        return {r.id for r in rotear_riscos(Visao(ambiente=ambiente, achados=[Achado(texto)]))}
+
+    assert "andaime_sem_guarda_corpo" in riscos(
+        "Borda livre direita da plataforma do andaime sem guarda-corpo visível, "
+        "sem travessão nem rodapé")
+    assert riscos(
+        "Borda livre frontal da plataforma do andaime com guarda-corpo metálico de "
+        "travessão superior e intermediário e rodapé de madeira, preso por braçadeiras"
+    ) == set()
+    assert riscos(
+        "Bordas livres da plataforma do andaime com guarda-corpo metálico de travessão "
+        "superior, travessão intermediário e rodapé de madeira, íntegros") == set()
+    assert riscos(
+        "Borda esquerda da plataforma do andaime fora do recorte; não dá para ver se "
+        "há guarda-corpo") == set()
+    assert riscos(
+        "Base dos montantes do andaime apoiada direto no piso, sem sapata nem base de "
+        "apoio visível") == {"andaime_base_instavel"}
+    assert riscos(
+        "Montantes do andaime apoiados em sapatas metálicas sobre placas de madeira, "
+        "sem desnível visível") == set()
+
+
+def test_sinais_encurtados_continuam_pegando_o_caso_verdadeiro(base):
+    """Contraparte dos dois sinais encurtados: o caso que cada um existe para
+    pegar continua roteando."""
+    ambiente = "Pavimento em obra com piso de concreto"
+
+    def riscos(texto: str) -> set[str]:
+        return {r.id for r in rotear_riscos(Visao(ambiente=ambiente, achados=[Achado(texto)]))}
+
+    assert "periferia_laje_sem_guarda_corpo" in riscos(
+        "Guarda-corpo de madeira frouxo na borda da laje, balançando")
+    assert "abertura_piso_desprotegida" in riscos(
+        "Placa de madeira apoiada sobre abertura quadrada no piso, sem fixação visível")
+    assert "abertura_piso_desprotegida" not in riscos(
+        "Placa metálica clara apoiada sobre a bancada")
