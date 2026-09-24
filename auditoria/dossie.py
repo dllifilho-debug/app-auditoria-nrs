@@ -574,6 +574,30 @@ def _menciona(alvo: str, termos) -> bool:
     )
 
 
+# Itens cujo PRÓPRIO texto restringe o tipo de equipamento, e os termos que a
+# cena precisa conter para o item caber. `NR-18 18.12.15.2` começa com "Quando
+# da utilização de andaimes multidirecionais"; sem esta trava ele era oferecido
+# para qualquer andaime sem guarda-corpo. Medido no lote de 24/09: dois laudos
+# saíram com ele em andaime tubular de quadros, sem fato nenhum dizendo
+# "multidirecional", com o item que cobre esse andaime (`18.9.4.2`) em D2 nos
+# dois dossiês. Vale para os dois caminhos — o risco curado (em
+# `pipeline.montar_dossie`) e a busca textual (em `montar`, abaixo) —, porque
+# trancar só o curado devolvia o item em D10 pela busca textual, medido.
+#
+# O termo é o radical sem a desinência: `_menciona` tolera até três letras de
+# sufixo, e é isso que faz "multidirecion" casar "multidirecional" e
+# "multidirecionais" — "multidirecional" não casaria o plural.
+ITENS_RESTRITOS_A_TIPO: dict[str, tuple[str, ...]] = {
+    "NR-18 18.12.15.2": ("multidirecion",),
+}
+
+
+def tipo_pertinente(item: Item, texto: str) -> bool:
+    """O item não restringe o tipo de equipamento, ou a cena nomeia esse tipo?"""
+    termos = ITENS_RESTRITOS_A_TIPO.get(item.id)
+    return not termos or _menciona(normalizar(texto), termos)
+
+
 def ha_maquina_na_cena(texto: str) -> bool:
     """A cena nomeia alguma máquina, ou equipamento de guindar e transportar?"""
     return _menciona(normalizar(texto), MAQUINAS_NA_CENA)
@@ -718,6 +742,7 @@ def montar(
             comprovavel_em_foto(item)
             and prescritivo(item, base)
             and setor_pertinente(item, texto_da_cena)
+            and tipo_pertinente(item, texto_da_cena)
         )
 
     def registrar(item: Item, score: float, origem: str) -> None:
