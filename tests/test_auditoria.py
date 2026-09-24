@@ -1259,8 +1259,11 @@ def test_item_generico_entra_no_dossie_sem_rotulo_de_risco(base):
         for e in dossie.entradas if e.rotulo in origem
     }
     assert por_item.get("NR-18 18.9.1") == "", por_item
-    # O item específico de andaime continua nomeando a NC: só o genérico perde.
-    assert por_item.get("NR-18 18.12.15.2"), por_item
+    # Item exclusivo de um risco continua nomeando a NC: só o genérico perde.
+    # (Até 24/09 esta linha exigia `18.12.15.2` aqui — item de andaime
+    # MULTIDIRECIONAL numa cena de andaime suspenso; ver
+    # `test_item_de_andaime_multidirecional_so_entra_com_o_tipo_nomeado`.)
+    assert "NR-18 18.12.15.2" not in por_item, por_item
     assert por_item.get("NR-18 18.9.2"), por_item
 
 
@@ -5665,3 +5668,46 @@ def test_sinais_encurtados_continuam_pegando_o_caso_verdadeiro(base):
         "Placa de madeira apoiada sobre abertura quadrada no piso, sem fixação visível")
     assert "abertura_piso_desprotegida" not in riscos(
         "Placa metálica clara apoiada sobre a bancada")
+
+
+# Fatos reais do laudo 5 do lote de 24/09 — andaime tubular de quadros com
+# escoras em X, sem guarda-corpo na borda frontal (confirmado na foto).
+_ANDAIME_DE_QUADROS = Visao(
+    ambiente="Fachada externa de uma edificação em construção, com estrutura de "
+             "concreto aparente e céu azul ao fundo.",
+    achados=[Achado(t) for t in (
+        "Estrutura de andaime metálico de cor escura montada na lateral da "
+        "edificação, apresentando montantes verticais, travessas horizontais e "
+        "escoras diagonais em 'X' que conectam os níveis.",
+        "Borda frontal livre da plataforma do andaime (lado direito da imagem) "
+        "sem a presença de guarda-corpo, travessão superior ou rodapé visível.",
+    )],
+)
+
+
+def _itens_do_dossie(base, visao, contexto=""):
+    dossie, _ = montar_dossie(base, visao, contexto, HOJE)
+    return [e.item.id for e in dossie.entradas]
+
+
+def test_item_de_andaime_multidirecional_so_entra_com_o_tipo_nomeado(base):
+    """`NR-18 18.12.15.2` vale só "quando da utilização de andaimes
+    multidirecionais". No lote de 24/09 ele saiu em dois laudos de andaime de
+    quadros, sem fato nenhum nomeando o tipo, com o `18.9.4.2` em D2. Trancar
+    só o risco curado não bastava: a busca textual o devolvia em D10."""
+    itens = _itens_do_dossie(base, _ANDAIME_DE_QUADROS)
+    assert "NR-18 18.12.15.2" not in itens, itens
+    # O item que cobre travessão a 1,20 m e rodapé para qualquer andaime fica.
+    assert "NR-18 18.9.4.2" in itens, itens
+
+
+@pytest.mark.parametrize("nome", ["andaime multidirecional", "andaimes multidirecionais"])
+def test_item_de_andaime_multidirecional_entra_quando_o_tipo_esta_na_cena(base, nome):
+    """A contraparte: nomeado o tipo — singular ou plural, no fato ou no
+    contexto —, o item volta, curado, pelo risco de andaime."""
+    visao = dataclasses.replace(_ANDAIME_DE_QUADROS, achados=[
+        Achado(f"Estrutura de {nome} montada na fachada, com rosetas nos nós."),
+        *_ANDAIME_DE_QUADROS.achados[1:],
+    ])
+    assert "NR-18 18.12.15.2" in _itens_do_dossie(base, visao)
+    assert "NR-18 18.12.15.2" in _itens_do_dossie(base, _ANDAIME_DE_QUADROS, contexto=nome)

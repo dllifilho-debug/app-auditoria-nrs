@@ -796,6 +796,8 @@ def montar_dossie(
                 item = base.obter(nr, num)
                 if item is None or not item.vigente_em(quando):
                     continue
+                if not mod_dossie.tipo_pertinente(item, cena):
+                    continue
                 if item.id not in vistos:
                     vistos.add(item.id)
                     curados.append((item, risco))

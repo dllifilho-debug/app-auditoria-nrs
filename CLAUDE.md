@@ -150,8 +150,8 @@ continuam roteando. `test_andaime_sem_guarda_corpo_nao_dispara_so_por_andaime_e_
 falha no sinal antigo. **274 testes passam** (272 + 2 — o segundo isola o sinal novo, pedido pelo `/critico`, porque o positivo do primeiro também casa `"andaime sem rodape"`; a contagem "264" deste arquivo estava
 defasada desde os PRs #66-#68; o #69 não acrescentou teste). Contagem de sinais inalterada — troca, não acréscimo.
 
-**3. Prompt do Olho reforçado a pedido do usuário (mesmo dia, PR seguinte ao #70) — À ESPERA DE
-LOTE.** Um parágrafo novo no `PROMPT_OLHO`, logo depois da regra "sem <peça> visível": com andaime
+**3. Prompt do Olho reforçado a pedido do usuário (mesmo dia, PR seguinte ao #70) — MEDIDO no
+lote seguinte, ver a seção logo abaixo.** Um parágrafo novo no `PROMPT_OLHO`, logo depois da regra "sem <peça> visível": com andaime
 na cena, a periferia da plataforma é sempre um achado PRÓPRIO, mesmo quando o achado principal é
 outro; para cada borda livre que aparece no recorte, o que há nela (guarda-corpo, travessão
 superior, travessão intermediário, rodapé), o que falta, material e fixação; a base dos montantes
@@ -175,6 +175,68 @@ Demonstração: 3 NCs, sem erro. **O que o lote tem de responder**, lido na LIST
 foto de andaime, o Olho escreve um achado próprio da periferia; (b) não inventa "sem guarda-corpo"
 numa borda que não aparece — o risco simétrico, o mesmo que o parágrafo de pessoa/EPI mostrou em
 16/09; (c) o parágrafo novo não dilui regras vizinhas (hipótese de 16/09 sobre parágrafo longo).
+
+---
+
+## Lote de andaime de 24/09/2026 — o reforço da periferia medido, e o `18.12.15.2` trancado
+
+`main` em `4a8d54a` (PR #71) no lote. **6 laudos, 8 NCs, 0 não auditadas, 1 ciclo em todos.** Hash
+não lido na barra lateral. As seis fotos foram subidas ao acervo pelo usuário depois dos laudos
+(`a629dcd4…`, `3c34d1a1…`, `83b1bd33…`, `5af17330…`, `WhatsApp Image 2026-05-07 at 08.44.49`,
+`WhatsApp Image 2026-05-05 at 14.41.18` — laudos 1 a 6, nesta ordem), abertas e ampliadas antes de
+concluir causa; os seis dossiês foram reproduzidos sem rede a partir dos fatos. Leitura da imagem
+pela régua (a)-(d) do acervo: "decide" é geometria ou presença; o resto fica ABERTO.
+
+| # | O que a foto mostra da periferia/base | O que o Olho escreveu | NC entregue |
+|---|---|---|---|
+| 1 | plataforma no teto, vista de baixo; pés no entulho; placa **"ANDAIME NÃO LIBERADO"** | nada da periferia; a placa sem o texto | `18.12.13` alta — base ABERTA (pés no entulho) |
+| 2 | plataforma vista de baixo; o gradil "à altura do peito" está **no nível do chão**, abaixo dela | guarda-corpo atribuído à plataforma (POSIÇÃO); "sem sapatas visíveis" | `18.12.13` crítica + `18.12.5` alta (frestas vistas de baixo: ABERTO) |
+| 3 | andaime montado **em primeiro plano**, plataforma a ~2 m, borda frontal sem travessão nem rodapé (decide) | **omitiu**; pôs um andaime do fundo nas conformidades, "aparentando uso adequado" | `18.12.5` alta sobre quadros DESMONTADOS empilhados — classe 1, e o aparo escreveu "não se aplica" e não vetou |
+| 4 | plataforma sob a tela laranja, fora de vista; vão retangular **na parede**, cocho de argamassa no piso | nada da periferia; "abertura retangular **no piso** … profundidade visível" | `18.9.2` **crítica — FALSO POSITIVO, VÃO INEXISTENTE** |
+| 5 | face frontal só com escoras em X, sem travessão nem rodapé (decide); plataformas de chapa metálica | **certo** — "borda frontal livre … sem guarda-corpo, travessão superior ou rodapé"; mas "plataformas revestidas com tela plástica" (MATERIAL: a tela é um rolo no canto) | `18.12.15.2` crítica — conteúdo certo, **item errado** |
+| 6 | frente sem rodapé (decide); estrutura tubular acima do estrado na lateral direita (função ABERTA); **dois montantes sobre placa de base metálica** (decide); um trabalhador ao fundo | "bordas laterais e frontais sem guarda-corpo…"; "**sem sapatas ou bases de apoio visíveis**"; "nenhum" trabalhador | `18.12.15.2` crítica (item errado) + `18.12.13` alta **FALSO POSITIVO** |
+
+**(a) Achado próprio da periferia: 3 de 6** (2, 5, 6), com o vocabulário exato do parágrafo novo;
+**pleno só na 5**. Nenhum laudo escreveu "não dá para ver a borda <lado>" — as fotos 1 e 4, com a
+plataforma fora de vista, ficaram em silêncio, que é o que a regra existia para impedir. A foto 3 é
+a omissão mais cara: borda desprotegida visível e o andaime nas conformidades.
+**(b) Ausência inventada: 1 caso, e na BASE** — a foto 6 afirma "sem sapatas" sobre placas de base
+que aparecem nítidas, e disso nasceu uma NC. É o risco simétrico que o item (b) mandava vigiar, na
+metade do parágrafo novo que pede a base. Nas bordas, os "sem" das fotos 5 e 6 recaem sobre bordas
+que aparecem no recorte.
+**(c) Regras vizinhas**: o parágrafo de pessoa segurou (fotos 2 e 3); a trava do vão segurou NO
+TEXTO e errou o PLANO (foto 4: o vão real é de parede, e ela não pergunta em que plano está a
+profundidade) — **sexta ocorrência da classe VÃO INEXISTENTE**, variante nova: um vão real
+realocado de plano. Contagem de gente falhou na 6. Diluição por parágrafo longo: compatível com a
+omissão da foto 3, não separável com n=6.
+
+**Das 8 NCs, as duas com lastro de conteúdo são as de guarda-corpo das fotos 5 e 6 — e as duas
+citavam o item errado.** Três são falso positivo confirmado (4, base da 6, e o `18.12.5` da 3 como
+classe 1); as outras três dependem de peça que a foto não decide.
+
+**Decisão sobre o parágrafo de andaime do `PROMPT_OLHO`: congelado, na linha de 16/09.** O lote
+mostrou os dois lados que o parágrafo de pessoa mostrou — omissão onde a peça aparece e ausência
+inventada onde ela existe — e uma trava a mais, cega, arrisca o mesmo padrão (regra nova resolve um
+caso, vizinha falha). Sem rodada nova agendada; retomar é decisão do usuário.
+
+**Conserto de código, sem lote: `NR-18 18.12.15.2` só entra com o tipo nomeado.** O item começa com
+"Quando da utilização de andaimes **multidirecionais**", e estava em `andaime_sem_guarda_corpo` para
+qualquer andaime: saiu nas fotos 5 e 6, andaime tubular de quadros (quadros-escada, escora em X, sem
+roseta nos nós — o NOME fica formalmente ABERTO, mas nenhum fato o sustenta), com o `18.9.4.2` —
+que cobra travessão a 1,20 m e rodapé para qualquer andaime — em D2 nos dois dossiês.
+`dossie.ITENS_RESTRITOS_A_TIPO` + `tipo_pertinente()` trancam o item nos **dois** caminhos: o risco
+curado (`pipeline.montar_dossie`) e a busca textual (`util` em `dossie.montar`). **Trancar só o
+curado não bastava, medido: a busca textual o devolvia em D10** — a armadilha "medir o roteamento
+não vê o item que a busca textual traz", pelo lado do conserto. Reproduzido nos fatos reais: o item
+sai dos dois dossiês e o `18.9.4.2` fica em D2. O termo é `multidirecion` porque `_menciona` tolera
+três letras de sufixo e "multidirecional" não casaria o plural. O teste antigo
+`test_item_generico_entra_no_dossie_sem_rotulo_de_risco` exigia o `18.12.15.2` numa cena de andaime
+**suspenso** — o mesmo defeito escrito como expectativa; corrigido. **280 testes passam** (277 + 3);
+os dois que medem o bloqueio falham no código antigo.
+
+**Em aberto, sem conserto**: o aparo que escreve a razão do veto e não veta (foto 3, a mesma classe
+da foto 4 de 14/09); `NR-15 Anexo 6` voltando por "umidade" (foto 3); a trava do vão não conferir o
+PLANO da abertura (foto 4).
 
 ---
 
@@ -3288,7 +3350,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 277 testes
+$VENV -m pytest tests/ -q          # 280 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -3453,7 +3515,7 @@ próprio comando composto (exit 144).
   um `"sem"` de verdade estiver perto DELE no texto (`_proximidade_da_negacao`,
   `pipeline.py`), e sinal de exatamente dois radicais sem negador exige os dois próximos
   (`_bigrama_proximo`). Ver "Conserto de roteamento de 18/09/2026" para a medição.
-- **277 testes**
+- **280 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
