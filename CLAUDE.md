@@ -149,7 +149,7 @@ por `"andaime sem travessao"` (3 radicais, a peça que a descrição do risco no
 agora protegido pela proximidade de 18/09): as três contrapartes calam, os dois positivos medidos
 continuam roteando. `test_andaime_sem_guarda_corpo_nao_dispara_so_por_andaime_e_piso` trava, e
 falha no sinal antigo. **273 testes passam** (272 + 1; a contagem "264" deste arquivo estava
-defasada desde os PRs #66-#69). Contagem de sinais inalterada — troca, não acréscimo.
+defasada desde os PRs #66-#68; o #69 não acrescentou teste). Contagem de sinais inalterada — troca, não acréscimo.
 
 ---
 
