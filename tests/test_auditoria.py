@@ -5544,3 +5544,31 @@ def test_varredura_sintetica_com_enchimento_nao_quebra_sinal_de_sem_ou_bigrama()
             if risco.id not in ids:
                 quebrados.append((risco.id, sinal, achado))
     assert not quebrados, quebrados
+
+
+def test_andaime_sem_guarda_corpo_nao_dispara_so_por_andaime_e_piso(base):
+    """O sinal antigo `"andaime so com o piso"` reduzia a `andaim`+`com`+`piso`
+    (`so` e `o` somem no filtro de duas letras) — e `com` é cola. Na prática
+    bastava o achado dizer "andaime ... com ..." e o ambiente dizer "piso de
+    concreto", que é quase toda foto de canteiro, para um risco de gravidade
+    CRÍTICA disparar a 1,00, inclusive com o guarda-corpo descrito presente.
+    Medido em 24/09 ao reproduzir um laudo real de andaime. O sinal virou
+    `"andaime sem travessao"`, que nega a peça que a descrição do risco nomeia.
+    """
+    ambiente = "Pavimento em obra com piso de concreto e paredes de alvenaria"
+    contrapartes = [
+        "Andaime tubular metálico montado com guarda-corpo, travessão "
+        "intermediário e rodapé em todo o perímetro",
+        "Andaime tubular metálico com plataforma de madeira apoiada sobre os "
+        "montantes",
+        "Andaime com travessão superior instalado, sem oxidação visível",
+    ]
+    for texto in contrapartes:
+        visao = Visao(ambiente=ambiente, achados=[Achado(texto)])
+        riscos = [r.id for r in rotear_riscos(visao)]
+        assert "andaime_sem_guarda_corpo" not in riscos, (texto, riscos)
+
+    positivo = Visao(ambiente=ambiente, achados=[Achado(
+        "Andaime tubular com plataforma de trabalho sem travessão nem rodapé "
+        "no perímetro")])
+    assert "andaime_sem_guarda_corpo" in [r.id for r in rotear_riscos(positivo)]
