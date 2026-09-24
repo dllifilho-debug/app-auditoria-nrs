@@ -148,7 +148,7 @@ este laudo (a marcação já punha os itens lá), mas inflava o risco em foto se
 por `"andaime sem travessao"` (3 radicais, a peça que a descrição do risco nomeia, e o `sem`
 agora protegido pela proximidade de 18/09): as três contrapartes calam, os dois positivos medidos
 continuam roteando. `test_andaime_sem_guarda_corpo_nao_dispara_so_por_andaime_e_piso` trava, e
-falha no sinal antigo. **273 testes passam** (272 + 1; a contagem "264" deste arquivo estava
+falha no sinal antigo. **274 testes passam** (272 + 2 — o segundo isola o sinal novo, pedido pelo `/critico`, porque o positivo do primeiro também casa `"andaime sem rodape"`; a contagem "264" deste arquivo estava
 defasada desde os PRs #66-#68; o #69 não acrescentou teste). Contagem de sinais inalterada — troca, não acréscimo.
 
 ---
@@ -3263,7 +3263,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 273 testes
+$VENV -m pytest tests/ -q          # 274 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -3428,7 +3428,7 @@ próprio comando composto (exit 144).
   um `"sem"` de verdade estiver perto DELE no texto (`_proximidade_da_negacao`,
   `pipeline.py`), e sinal de exatamente dois radicais sem negador exige os dois próximos
   (`_bigrama_proximo`). Ver "Conserto de roteamento de 18/09/2026" para a medição.
-- **273 testes**
+- **274 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos

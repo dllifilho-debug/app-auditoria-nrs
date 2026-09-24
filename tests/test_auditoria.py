@@ -5572,3 +5572,25 @@ def test_andaime_sem_guarda_corpo_nao_dispara_so_por_andaime_e_piso(base):
         "Andaime tubular com plataforma de trabalho sem travessão nem rodapé "
         "no perímetro")])
     assert "andaime_sem_guarda_corpo" in [r.id for r in rotear_riscos(positivo)]
+
+
+def test_sinal_andaime_sem_travessao_dispara_sozinho(base, monkeypatch):
+    """O positivo acima também casa `"andaime sem rodape"`, então sozinho ele
+    não prova que o sinal novo dispara — foi o gap que o `/critico` apontou.
+    Aqui o risco fica só com `"andaime sem travessao"`, e ele precisa casar a
+    ausência do travessão e calar com o travessão presente.
+    """
+    riscos = catalogo_riscos()
+    monkeypatch.setitem(riscos, "andaime_sem_guarda_corpo", dataclasses.replace(
+        riscos["andaime_sem_guarda_corpo"], sinais=("andaime sem travessao",)))
+    ambiente = "Pavimento em obra com piso de concreto e paredes de alvenaria"
+
+    def dispara(texto: str) -> bool:
+        visao = Visao(ambiente=ambiente, achados=[Achado(texto)])
+        return "andaime_sem_guarda_corpo" in [r.id for r in rotear_riscos(visao)]
+
+    assert dispara("Plataforma do andaime sem travessão nas laterais")
+    assert dispara("Andaime tubular metálico com plataforma de madeira, sem "
+                   "travessão superior nem intermediário no perímetro")
+    assert not dispara("Andaime com travessão superior instalado, sem "
+                       "oxidação visível")
