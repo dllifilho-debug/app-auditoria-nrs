@@ -342,7 +342,7 @@ RISCOS: dict[str, dict] = {
             "plataforma do andaime aberta",
             "andaime sem rodape",
             "falta a barra de protecao do andaime",
-            "andaime so com o piso",
+            "andaime sem travessao",
             "pedreiro no andaime sem protecao lateral",
         ],
         "itens": ["NR-18 18.9.1", "NR-18 18.9.4.2", "NR-18 18.12.15.2"],

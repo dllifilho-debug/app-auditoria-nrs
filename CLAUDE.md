@@ -119,6 +119,40 @@ seguravam regrediram). **Decisão registrada no bloco acima: parar de iterar aqu
 
 ---
 
+## Laudo de andaime de 24/09/2026 — a periferia que ninguém endereçou, e um sinal frágil consertado
+
+`main` em `b18800a` (merge do PR #69). Um laudo real de andaime, com `andaime_sem_guarda_corpo`
+e o risco de base instável **marcados pelo inspetor**, voltou com a falta de guarda-corpo/rodapé
+da periferia **sem endereçamento nenhum** — nem NC, nem ponto de atenção. Dossiê reproduzido sem
+rede com os fatos exatos do laudo.
+
+**1. A marcação funcionou; o Olho não viu.** Os itens dos dois riscos marcados (`NR-18 18.9.1`,
+`18.9.4.2`, `18.12.15.2`, `18.12.13`, `18.12.3`) entraram em D1–D5. Mas nenhum fato do Olho fala
+da periferia da plataforma nem da base do andaime, e o Analista só enquadra o que um fato
+sustenta. É a fronteira de 09/09 (**a marcação dirige o dossiê, não o Olho**) no seu pior caso:
+não foi "item certo pendurado no achado errado", foi **silêncio** — o Analista também não
+escreveu nada em `sem_enquadramento`, e a seção de pontos de atenção sumiu do laudo. **Não
+consertado**: reforçar o `PROMPT_OLHO` para descrever a periferia em todo achado de andaime é
+mudança de prompt de agente e só lote valida — decisão do usuário, pela cota. É também mais um
+caso do item em aberto *"Nada pede que todo achado de risco seja endereçado"*, pelo lado do risco
+MARCADO: o inspetor apontou o risco e o laudo não diz nada sobre ele, nem que não pôde verificar.
+
+**2. Sinal frágil achado na medição, CONSERTADO.** `andaime_sem_guarda_corpo` também roteava
+sozinho, sem precisar da marcação, pelo sinal `"andaime so com o piso"`: `so` e `o` somem no
+filtro de duas letras e sobra `andaim`+`com`+`piso` — `com` é cola, e `piso` vem do ambiente de
+quase toda foto de canteiro. Medido com ambiente "piso de concreto": disparava um risco
+**crítico** em três contrapartes — andaime com guarda-corpo, travessão e rodapé descritos
+PRESENTES; andaime neutro; e travessão instalado "sem oxidação". É a armadilha *"sinal cujas
+palavras somem no filtro de radicais"* outra vez, agora completada pela do ambiente. Não mudou
+este laudo (a marcação já punha os itens lá), mas inflava o risco em foto sem marcação. Trocado
+por `"andaime sem travessao"` (3 radicais, a peça que a descrição do risco nomeia, e o `sem`
+agora protegido pela proximidade de 18/09): as três contrapartes calam, os dois positivos medidos
+continuam roteando. `test_andaime_sem_guarda_corpo_nao_dispara_so_por_andaime_e_piso` trava, e
+falha no sinal antigo. **274 testes passam** (272 + 2 — o segundo isola o sinal novo, pedido pelo `/critico`, porque o positivo do primeiro também casa `"andaime sem rodape"`; a contagem "264" deste arquivo estava
+defasada desde os PRs #66-#68; o #69 não acrescentou teste). Contagem de sinais inalterada — troca, não acréscimo.
+
+---
+
 ## Conserto de roteamento de 18/09/2026 — a hipótese do bigrama, atacada
 
 `main` em `86bb35d` (merge do PR #65) antes desta sessão. **Código determinístico de roteamento,
@@ -3229,7 +3263,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 264 testes
+$VENV -m pytest tests/ -q          # 274 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -3332,7 +3366,7 @@ próprio comando composto (exit 144).
 | Regra global para a cobertura parcial — **tentada e descartada** | A saída óbvia (excluir palavras-cola do conjunto que pode ancorar) **quebra 25 sinais legítimos**: `"sem capacete"`, `"sem luva"`, `"sem bota"`, `"sem placa"`, `"sem manometro"` — onde a cola e o discriminante são tudo o que existe. Também não adianta exigir que o radical faltante seja cola (deixa "escada COM sapata" casar "escada sem sapata") nem que seja não-cola (devolve o caso da betoneira). **Não há regra simples**: é encurtar sinal a sinal, com medição. Não gaste a sessão reinventando isto. |
 | Verificação mecânica no caminho errado | O aparo do Diretor ganhou verificação de lastro no #13; no lote seguinte, o mesmo enquadramento falso voltou por **aprovado**, sem aparo, e passou inteiro. Ao fechar uma porta num agente, pergunte por quais outras a mesma coisa entra — decisão de modelo muda de caminho de uma rodada para outra. Hoje a exigência é cobrada de todo enquadramento que sobrevive. |
 | **Plural de radical curto não reduzia** | `radical()` só singularizava palavra com mais de 4 letras, então `"fios"` ficava `"fios"` e `"fio"` ficava `"fio"` — dois radicais para a mesma palavra. O sinal `"fio desencapado"` foi cadastrado justamente porque o Olho escreve **"fios desencapados"**, e o par nunca casou: um quadro de tomadas aberto routeava **zero** riscos. Corrigido; a regra do `s` simples agora vale de 4 letras para cima, mas `PLURAIS` continua em 5 — aplicá-la a 4 transformaria `"mais"` em `"mal"`. |
-| **Sinal cujas palavras somem no filtro de radicais** | `"t em cima de t"` tem cinco palavras e quatro têm duas letras: `radicais()` descarta todas e sobra `cima` sozinho, com cobertura 1.0 em "pregos expostos voltados **para cima**". Uma foto de madeira de fôrma routeava gambiarra. É a armadilha do `sem` levada ao extremo — o sinal inteiro vira cola. Hoje o validador da taxonomia quebra no import se um sinal não tiver radical discriminante (`PALAVRAS_COLA` em `riscos/__init__.py`). |
+| **Sinal cujas palavras somem no filtro de radicais** | `"t em cima de t"` tem cinco palavras e quatro têm duas letras: `radicais()` descarta todas e sobra `cima` sozinho, com cobertura 1.0 em "pregos expostos voltados **para cima**". Uma foto de madeira de fôrma routeava gambiarra. É a armadilha do `sem` levada ao extremo — o sinal inteiro vira cola. Hoje o validador da taxonomia quebra no import se um sinal não tiver radical discriminante (`PALAVRAS_COLA` em `riscos/__init__.py`). **O validador não pega o caso de sobrar UM discriminante mais cola**: `"andaime so com o piso"` virava `andaim`+`com`+`piso`, e com `piso` vindo do ambiente disparava `andaime_sem_guarda_corpo` (crítico) com o guarda-corpo descrito presente — consertado em 24/09. |
 | **Citação removida do meio da frase deixa verbo sem objeto** | `_limpar_citacoes` tira a citação e a limpeza de órfãs arruma preposição encostada na pontuação ("conforme."). No MEIO do trecho ela não alcança: "violando a NR-10 e a NR-26" virou **"violando a e."** num parecer impresso. Nenhuma regra de pontuação conserta — o que sobra não é pontuação órfã, é um verbo sem objeto. Hoje o texto é fatiado por vírgula/ponto-e-vírgula/fim de sentença e o fragmento que só apresentava a citação sai inteiro. **A citação é MARCADA antes de fatiar**, nunca removida: ela atravessa vírgula ("NR-35, item 5.2.2.5") e fatiar antes a partiria em duas, deixando o número do item para trás — pior que não limpar, porque o renderizador o relê como citação legítima. |
 | **Corte de verbosidade aplicado a um campo só** | O `retirado` do aparo ganhou `_em_poucas_palavras` no #13, quando o `motivo` do veto ainda era sempre escrito pelo código. Quando o veto passou a carregar o texto do Diretor, os 493 caracteres de argumentação voltaram por ali — dentro do ponto de atenção que vai ao cliente. É a irmã da armadilha "verificação mecânica no caminho errado": ao pôr uma trava num campo, liste os outros campos por onde o mesmo texto sai. |
 | **Dois radicais é tudo-ou-nada, e o radical pode colidir** | A irmã invertida da armadilha dos quatro. A âncora exige dois radicais do PRÓPRIO achado, então num sinal de dois radicais nenhum pode vir da cena: ou o achado traz os dois, ou a cobertura é 0,00, não 0,50. Isso corta nos dois sentidos. Perde: `"cinta rasgada"` e `"gancho aberto"` deram **0,00** na foto de uma cinta de içamento rasgada de verdade. E dispara: com dois radicais só, uma colisão de radical basta para acionar o risco inteiro — `radical("cinta") == radical("cinto") == "cint"` fez `"cinto solto"` casar *"tecido da CINTA … material SOLTO"* com cobertura 1,0, e o acessório de içamento saiu no laudo enquadrado como EPI (`NR-06 6.9.3`). Não adianta acrescentar o discriminante: `"cinto de seguranca solto"` também casaria, porque `seguranc` pode vir do ambiente e a âncora já está satisfeita pelos outros dois. **Sinal de dois radicais só é seguro se nenhum dos dois for ambíguo por radical** — corrigido em #20 trocando por `"cinturao solto"` (reduz a `cintura`, não colide). Ao escrever sinal curto, rode o radical das duas palavras e procure por vizinho de outro gênero. |
@@ -3394,7 +3428,7 @@ próprio comando composto (exit 144).
   um `"sem"` de verdade estiver perto DELE no texto (`_proximidade_da_negacao`,
   `pipeline.py`), e sinal de exatamente dois radicais sem negador exige os dois próximos
   (`_bigrama_proximo`). Ver "Conserto de roteamento de 18/09/2026" para a medição.
-- **264 testes**
+- **274 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
