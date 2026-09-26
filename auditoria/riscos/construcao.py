@@ -457,12 +457,22 @@ RISCOS: dict[str, dict] = {
         # radical a menos; como NEGADOR ele é inútil.
         #
         # O que nega, numa foto, é a abertura — e é o que o Olho de fato
-        # descreve. Os sinais passam a ancorar em `aberta`, `ausente`,
-        # `faltando` e `quebrada`, todos discriminantes, nenhum de quatro
+        # descreve. Os sinais passam a ancorar em `ausente`, `faltando`,
+        # `quebrada` e na torre/base `aberta`, todos discriminantes, nenhum de quatro
         # radicais. O caso "entrada da torre SEM CANCELA instalada" deixa de
         # casar pela letra, e é uma perda aceita: sem cancela, o acesso está
         # aberto, e "torre do elevador aberta" o pega. Falso negativo custa
         # cobertura; falso positivo é a classe de erro 1 e vai ao cliente.
+        #
+        # `"cancela aberta"` SAIU em 26/09, e não volta: o 18.11.13 cobra que a
+        # cancela seja INSTALADA, e aberta ela está instalada. O sinal provava o
+        # oposto do item — foi ele que deu NC crítica à foto `8 PAV. CANCELA
+        # CREMALHEIRA SEM SINALIZAÇÃO`, cancela aberta no embarque com a
+        # plataforma no nível. O perigo de cancela aberta é a cabine fora do
+        # nível (18.11.13.1, NR-11 11.1.2), e a redação que diz isso ("vão da
+        # torre exposto") continua roteando por `torre do elevador aberta` e
+        # pelos riscos de vão. Medido e travado em
+        # `test_cancela_aberta_no_embarque_nao_poe_o_18_11_13_no_dossie`.
         #
         # E TODO sinal que fala de torre ou base exige `elevador`, porque no
         # canteiro há outra torre: a da GRUA. "base da torre aberta" e "vao da

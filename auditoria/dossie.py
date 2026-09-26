@@ -507,10 +507,11 @@ SETORES: dict[str, tuple[Setor, ...]] = {
         # elevadores de obra também exige o nome na cena para entrar.
         #
         # ATENÇÃO: isto fecha só o caminho TEXTUAL. Item curado não passa por
-        # `setor_pertinente`, e `torre_elevador_sem_cancela` tem quatro sinais
-        # — "cancela aberta|ausente|faltando|quebrada" — que não exigem
-        # `elevador`. Uma torre sem nome com uma cancela aberta na cena entrega
-        # `18.11.13`/`18.11.14` por cima deste portão. Medido; ver "Em aberto".
+        # `setor_pertinente`, e `torre_elevador_sem_cancela` tem três sinais
+        # — "cancela ausente|faltando|quebrada" — que não exigem `elevador`.
+        # Uma torre sem nome com uma cancela ausente na cena entrega
+        # `18.11.13`/`18.11.14` por cima deste portão. ("cancela aberta" era o
+        # quarto, e saiu em 26/09: cancela aberta está instalada.)
         #
         # Por SEÇÃO, como o andaime: `18.11` é elevadores de obra inteiro. Por
         # texto, "elevador" prendia o `18.9.3` — "os vãos de acesso às caixas

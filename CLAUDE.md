@@ -4716,7 +4716,10 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
     o Olho o preenche em todo achado, e não há um único uso no projeto. É instrumento
     pronto e desligado: achado de baixa confiança poderia entrar como ponto de atenção em
     vez de base de enquadramento, sem custar chamada nenhuma.
-- **A `cancela` entrega os itens de elevador sem passar por portão nenhum.** Achado pelo
+- **A `cancela` entrega os itens de elevador sem passar por portão nenhum** — **em parte FECHADO em
+  26/09**: `"cancela aberta"` saiu (ver a seção "Cancela aberta no embarque"); os três sinais de
+  cancela que sobram (`ausente|faltando|quebrada`) seguem sem exigir `elevador`, e o resto deste item
+  continua valendo para eles. Achado pelo
   `/critico` no #35, e **medido**: os filtros do `dossie.py` valem só para a recuperação
   textual — item de risco CURADO entra por `montar_dossie` e não passa por
   `setor_pertinente`. E quatro dos sete sinais de `torre_elevador_sem_cancela` são
