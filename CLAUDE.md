@@ -156,7 +156,7 @@ modelo. **O que o lote tem de responder**, lido na linha "Contraprova visual" da
 fotos de erro conhecido — `8 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO`, a foto 4 (`5af17330…`, vão de
 parede lido como piso) e a 6 (`WhatsApp Image 2026-05-05 at 14.41.18`, "sem sapatas") do lote de andaime, a contraparte `6 PAV. TRABALHADORES
 SEM DOCUMENTAÇÃO` —, se sai `contradiz`; (b) nas NCs reais — a âncora `13 PAV. PEÇO ELEVADOR SEM
-PROTEÇÃO` e as duas `13 PAV.` de 26/09 —, se sai `confirma` e a NC fica (o risco simétrico:
+PROTEÇÃO` e o controle `13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO E SINALIZAÇÃO` de 26/09 —, se sai `confirma` e a NC fica (o risco simétrico:
 contraprova severa derrubando NC real); (c) quantas saem `nao_decide`.
 
 ---
