@@ -3373,6 +3373,23 @@ def test_aparo_com_sobra_no_item_ou_sem_o_campo_continua_aparo(base, valor):
     assert not any(MOTIVO_SOBRA_FORA_DO_ITEM in v for v in laudo.vetos)
 
 
+@pytest.mark.parametrize("valor,esperado", [
+    ("sim", "a supervisão declarou que o que sobrou segue coberto pelo item"),
+    ("Sim", "a supervisão declarou que o que sobrou segue coberto pelo item"),
+    (None, "a supervisão não declarou se o que sobrou segue coberto pelo item"),
+    ("talvez", "a supervisão não declarou se o que sobrou segue coberto pelo item"),
+])
+def test_aparo_mantido_registra_na_trilha_o_que_a_supervisao_declarou(base, valor, esperado):
+    """No lote de 26/09 "sim" e campo ausente davam o mesmo laudo, e não havia
+    como saber se o Diretor preenchia `sobra_descumpre`. A linha do aparo
+    separa as duas respostas."""
+    laudo, _ = _rodar(base, "NR-35 Anexo III 5.2.2.5", lambda: _veredito_de_aparo(valor))
+    assert len(laudo.aparos) == 1
+    assert esperado in laudo.aparos[0]
+    md = relatorio.markdown(laudo, base, numero=1)
+    assert esperado in md
+
+
 def test_aparo_com_sobra_fora_do_item_nao_vai_a_repescagem(base):
     """Sem trecho copiado E com a sobra declarada fora do item, o motivo é a
     refutação do supervisor, não omissão — e não se gasta a chamada da

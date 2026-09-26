@@ -275,6 +275,44 @@ NR-35, o `18.9.2` da âncora) virando veto. Mexe em todo laudo com aparo.
 
 ---
 
+## Lote de validação do `sobra_descumpre` de 26/09/2026 — o conserto NÃO foi exercido, e um falso positivo novo
+
+`main` em `330fe49` (PR #74), **hash não lido na barra lateral**. Obra "teste", **5 laudos, 4 NCs**,
+0 não auditadas, 1 ciclo em todos, `qwen3.8-27b` no campo de visão (lido no print; o de texto não
+aparece nele). Fotos, na ordem dos laudos: `8 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO`,
+`18 PAV. PROTEÇÃO POÇO DE ELEVADOR`, `13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO` (controle),
+`13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO E SINALIZAÇÃO` (controle extra, acrescentado pelo usuário) e
+`83b1bd33-6acc-4b22-9322-4e32cd165c5d.jpg` (a foto 3 do lote de andaime de 24/09). Nomes conferidos
+na pasta `fotos/` do acervo.
+
+| # | Foto | Resultado | Leitura |
+|---|---|---|---|
+| 1 | `8 PAV. CANCELA…` | `NR-18 18.11.13` crítica, aparada e mantida | o caso "não tetos" de 14/09 **não se repetiu**; saiu outra NC, falso positivo (abaixo) |
+| 2 | `18 PAV. PROTEÇÃO POÇO…` | `NR-08 8.3.2.2` crítica, aparada e mantida; `18.9.3` vetado | o caso de 09/09 **não se repetiu**: o corte foi de lastro ("suposição de vão de elevador") e o item cobre parede. A NC segue falsa pelo erro de MATERIAL do Olho de 10/09 ("painel marrom" é tela metálica) |
+| 3 | `13 PAV.` (controle) | `18.9.2` crítica mantida | ✓ |
+| 4 | `13 PAV. … E SINALIZAÇÃO` | `18.9.2` crítica mantida | ✓ |
+| 5 | `83b1bd33…` | **0 NC**, `18.12.5` vetado | resultado certo, mas pelo **veto direto** do Diretor ("regula a superfície de trabalho de um andaime montado"), não pelo campo |
+
+**As três perguntas da seção do `sobra_descumpre`**: (a) se o Diretor preenche o campo — **não
+mensurável**: o campo não aparecia no laudo, e nos aparos mantidos "sim" e ausente davam o mesmo
+documento. É a armadilha "rede que só registra quando falha", cometida no próprio conserto.
+**Consertado em seguida, sem lote**: todo aparo mantido diz na trilha "a supervisão declarou que o
+que sobrou segue coberto pelo item" ou "a supervisão não declarou…" (4 testes, falham no código
+antigo). (b) se ele responde "nao" nos casos que motivaram o campo — **não exercido**: nenhum dos
+três se repetiu na forma original. (c) "nao" demais — **não**: os dois controles mantiveram o `18.9.2`.
+
+**Achado novo, e o mais caro do lote: `torre_elevador_sem_cancela` disparou pela primeira vez em
+produção — como falso positivo.** O Olho escreveu *"Cancela metálica de malha quadrada, pintada de
+vermelho, aberta … com um dispositivo de fechamento azul"*, e saiu `NR-18 18.11.13` crítica, prazo de
+1 dia: "a cancela … está aberta, não impedindo a exposição de partes do corpo". O critério
+pré-registrado em 13/09 (P4) diz que qualquer NC de queda nesta foto é falso positivo: o item cobra
+que a barreira seja INSTALADA, e ela está — aberta, com intertravamento, plataforma no nível. É a porta
+registrada em "Em aberto" (*"A `cancela` entrega os itens de elevador sem passar por portão nenhum"*):
+o sinal `"cancela aberta"` não separa cancela ausente de cancela aberta no embarque. **Medi X, afirmo
+Y**: o que está medido é o laudo; o dossiê desta foto não foi reproduzido sem rede nesta sessão.
+
+---
+
 ## Conserto de roteamento de 18/09/2026 — a hipótese do bigrama, atacada
 
 `main` em `86bb35d` (merge do PR #65) antes desta sessão. **Código determinístico de roteamento,
@@ -3385,7 +3423,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 290 testes
+$VENV -m pytest tests/ -q          # 294 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -3550,7 +3588,7 @@ próprio comando composto (exit 144).
   um `"sem"` de verdade estiver perto DELE no texto (`_proximidade_da_negacao`,
   `pipeline.py`), e sinal de exatamente dois radicais sem negador exige os dois próximos
   (`_bigrama_proximo`). Ver "Conserto de roteamento de 18/09/2026" para a medição.
-- **290 testes**
+- **294 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
