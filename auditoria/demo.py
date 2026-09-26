@@ -108,6 +108,7 @@ APARO_DEMO = [{
     # do texto oficial o trecho descumprido. Sem isso o pipeline converte o aparo
     # em veto, que é o comportamento correto para um aparo sem lastro.
     "exigencia": "devem ser empilhadas após retirados ou rebatidos os pregos",
+    "sobra_descumpre": "sim",
 }]
 
 PARECER_DEMO = (

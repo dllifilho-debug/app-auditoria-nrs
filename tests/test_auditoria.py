@@ -23,6 +23,7 @@ from auditoria.catalogo_nr import CATALOGO_NR, NRS_REVOGADAS, NRS_VIGENTES
 from auditoria.demo import ClienteDemonstracao, _texto_do_prompt
 from auditoria.kb import carregar_base, extrair_citacoes, tokenizar
 from auditoria.pipeline import (
+    MOTIVO_CONFERENCIA_OMITIDA, MOTIVO_SOBRA_FORA_DO_ITEM,
     Achado, Configuracao, Visao, aferir, executar, montar_dossie, rotear_riscos,
 )
 from auditoria.riscos import (
@@ -3321,6 +3322,85 @@ def test_aparo_sem_exigencia_no_texto_oficial_vira_veto(base):
     observacao = " ".join(laudo.sem_enquadramento).lower()
     assert "entulho" in observacao
     assert "recusado na supervisão" in observacao
+
+
+APARADA_NO_ENTULHO = "A escada portátil está apoiada sobre entulho, com a base fora do nível."
+
+
+def _veredito_de_aparo(sobra_descumpre=None, exigencia="deve ser apoiada em piso estável"):
+    aparo = {
+        "ref": "V1", "constatacao": APARADA_NO_ENTULHO,
+        "acao_corretiva": "Reposicionar a escada sobre piso estável e nivelado.",
+        "gravidade": "alta",
+        "retirado": "ausência de sapata antiderrapante, não observável no fato",
+    }
+    if sobra_descumpre is not None:
+        aparo["sobra_descumpre"] = sobra_descumpre
+    return {
+        "conferencia": [{"ref": "V1", "fato": FATO, "exigencia": exigencia,
+                         "decisao": "aparado"}],
+        "aparados": [aparo],
+        "vetados": [], "ajustes": [], "pontos_descartados": [],
+        "conformidades_descartadas": [], "parecer": "p",
+    }
+
+
+def test_aparo_com_sobra_fora_do_item_vira_veto_mesmo_com_exigencia_ancorada(base):
+    """O caso de 14/09 (vão no TETO mantido num item de "pisos e paredes") e de
+    24/09 ("não se aplica" escrito no próprio aparo): o Diretor diz, ao aparar,
+    que o que sobrou não é situação do item, e mantém o enquadramento. A
+    exigência que ele copia EXISTE no texto oficial, então `_exigencia_ancorada`
+    não pega — é o campo `sobra_descumpre` que decide."""
+    laudo, _ = _rodar(base, "NR-35 Anexo III 5.2.2.5", lambda: _veredito_de_aparo("nao"))
+    assert not laudo.nao_conformidades, "o aparo declarado fora do item sobreviveu"
+    assert not laudo.aparos, "a trilha anunciou um aparo que virou veto"
+    assert any(MOTIVO_SOBRA_FORA_DO_ITEM in v for v in laudo.vetos)
+    # Classe de erro 5: o achado segue ao engenheiro — e é o RESTRITO ao fato,
+    # porque o corte de lastro foi aceito; só o item foi recusado.
+    junto = " ".join(laudo.sem_enquadramento)
+    assert APARADA_NO_ENTULHO.rstrip(".") in junto
+    assert "sapata" not in junto.lower(), "a cláusula sem lastro voltou pelo ponto de atenção"
+    assert "recusado na supervisão" in junto
+
+
+@pytest.mark.parametrize("valor", ["sim", "Sim", None, "", "talvez"])
+def test_aparo_com_sobra_no_item_ou_sem_o_campo_continua_aparo(base, valor):
+    """A contraparte: "sim" mantém o aparo, e o campo ausente ou ilegível também
+    — tratá-lo como veto abriria uma porta nova de omissão do supervisor."""
+    laudo, _ = _rodar(base, "NR-35 Anexo III 5.2.2.5", lambda: _veredito_de_aparo(valor))
+    assert len(laudo.nao_conformidades) == 1, "vetou um aparo legítimo"
+    assert laudo.nao_conformidades[0].constatacao == APARADA_NO_ENTULHO
+    assert not any(MOTIVO_SOBRA_FORA_DO_ITEM in v for v in laudo.vetos)
+
+
+def test_aparo_com_sobra_fora_do_item_nao_vai_a_repescagem(base):
+    """Sem trecho copiado E com a sobra declarada fora do item, o motivo é a
+    refutação do supervisor, não omissão — e não se gasta a chamada da
+    repescagem com quem ele já refutou."""
+    prompts: list[str] = []
+
+    class _Contador(_Duble):
+        def conversar(self, modelo, mensagens, **kw):
+            prompts.append(_texto_do_prompt(mensagens))
+            return super().conversar(modelo, mensagens, **kw)
+
+    duble = _Contador("NR-35 Anexo III 5.2.2.5", CONSTATACAO,
+                      lambda: _veredito_de_aparo("nao", exigencia=""))
+    laudo = executar(duble, base, "img", "",
+                     Configuracao(modelo_visao="d", modelo_texto="d", data_referencia=HOJE))
+    assert not any("Na revisão anterior você decidiu" in p for p in prompts), (
+        "a repescagem foi chamada para um enquadramento refutado"
+    )
+    assert any(MOTIVO_SOBRA_FORA_DO_ITEM in v for v in laudo.vetos)
+    assert not any(MOTIVO_CONFERENCIA_OMITIDA in v for v in laudo.vetos)
+
+
+def test_prompt_do_diretor_pergunta_se_a_sobra_descumpre_o_item(base):
+    _, duble = _rodar(base, "NR-35 Anexo III 5.2.2.5", lambda: _veredito_de_aparo("sim"))
+    p = duble.prompt_diretor
+    assert '"sobra_descumpre": "sim|nao"' in p
+    # os casos reais que motivaram o campo, com a frase que o Diretor escreveu
+    assert "não tetos" in p and "não se aplica" in p
 
 
 def test_aparo_com_exigencia_recopiada_sem_acento_continua_valendo(base):

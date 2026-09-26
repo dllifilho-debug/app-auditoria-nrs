@@ -235,8 +235,43 @@ três letras de sufixo e "multidirecional" não casaria o plural. O teste antigo
 os dois que medem o bloqueio falham no código antigo.
 
 **Em aberto, sem conserto**: o aparo que escreve a razão do veto e não veta (foto 3, a mesma classe
-da foto 4 de 14/09); `NR-15 Anexo 6` voltando por "umidade" (foto 3 — consertado em 26/09, ver "Em aberto"); a trava do vão não conferir o
+da foto 4 de 14/09 — consertado em 26/09 por prompt + schema, à espera de lote; ver a seção logo abaixo); `NR-15 Anexo 6` voltando por "umidade" (foto 3 — consertado em 26/09, ver "Em aberto"); a trava do vão não conferir o
 PLANO da abertura (foto 4).
+
+---
+
+## O aparo que escreve a razão do veto e não veta — campo `sobra_descumpre` (26/09/2026, À ESPERA DE LOTE)
+
+Classe de erro 1 pelo caminho do aparo, vista em três laudos: o Diretor escreveu, no próprio aparo,
+por que o item não cobria o que sobrou — *"a norma regula aberturas em pisos e paredes, não
+tetos, mas a…"* (foto 4, 14/09), *"a norma regula especificamente aberturas no piso"* (laudo 1,
+09/09), *"não se aplica"* (foto 3, 24/09) — e manteve o enquadramento. `_exigencia_ancorada` não
+pega: o trecho copiado existe no item; o que falha é ele não ter relação com a constatação aparada.
+
+**Trava só no código, medida e RECUSADA.** Uma regex sobre o `retirado` ("não se aplica", "a
+norma/o item regula|trata|cobre", "não regula|trata|cobre|abrange"), contra os textos de aparo
+transcritos neste arquivo: 3 dos 4 casos que deviam vetar disparam (o B01 de 10/09 cala — a razão
+ali fala do FATO); 0 de 11 textos legítimos transcritos (9 retirados de aparo reais, 1 frase de
+parecer, 1 exemplo do próprio `PROMPT_DIRETOR`); **2 de 2 aparos legítimos sintéticos disparam**
+("a exigência de 1,20 m, que não se aplica à tela; permanece a ausência de rodapé"). O que separa
+é se a negação fala do trecho cortado ou do que SOBROU — semântica, a armadilha do sinal escrito
+por extenso. E o corpus é fraco: os casos reais só existem aqui como fragmento truncado.
+
+**Conserto**: todo aparo responde `"sobra_descumpre": "sim|nao"` no schema do `PROMPT_DIRETOR`,
+com os três casos reais no texto. `"nao"` vira veto mecânico (`MOTIVO_SOBRA_FORA_DO_ITEM`),
+**antes** da repescagem (refutação não é silêncio). O ponto de atenção leva a constatação APARADA,
+não a original: o corte de lastro foi aceito, só o item foi recusado. **Campo ausente ou ilegível
+mantém o aparo** — tratá-lo como veto abriria uma porta nova de omissão, a mesma que o #34 separou
+no `exigencia`; o custo é o campo não proteger quando o modelo o omite. A pergunta é sobre o RESTO
+e não sobre o motivo do corte ("fato|item", a primeira proposta): cortar uma cláusula que o item
+não trata, com o resto ainda descumprindo, é aparo legítimo, e um campo sobre o motivo o vetaria.
+Oito testes (os três que medem o conserto falham no código antigo). **290 testes passam.**
+Verificado no navegador em Modo Demonstração: 3 NCs, sem erro.
+
+**O que o lote tem de responder**, lido na TRILHA (vetos com o motivo novo) e nos aparos: (a) o
+Diretor preenche o campo; (b) numa foto como a 4 de 14/09 ou a 3 de 24/09 ele responde "nao" e o
+enquadramento cai; (c) o risco simétrico — "nao" demais, aparos legítimos (a escada no entulho em
+NR-35, o `18.9.2` da âncora) virando veto. Mexe em todo laudo com aparo.
 
 ---
 
@@ -3350,7 +3385,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 282 testes
+$VENV -m pytest tests/ -q          # 290 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -3515,7 +3550,7 @@ próprio comando composto (exit 144).
   um `"sem"` de verdade estiver perto DELE no texto (`_proximidade_da_negacao`,
   `pipeline.py`), e sinal de exatamente dois radicais sem negador exige os dois próximos
   (`_bigrama_proximo`). Ver "Conserto de roteamento de 18/09/2026" para a medição.
-- **282 testes**
+- **290 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
