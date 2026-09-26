@@ -1819,14 +1819,22 @@ def _aplicar_contraprova(laudo: Laudo, respostas: dict[str, tuple[str, str]]) ->
     laudo.contraprova = linhas
     if not refutadas:
         return
-    if sobreviventes:
-        laudo.parecer_diretor = (
-            f"{laudo.parecer_diretor} A contraprova visual retirou {refutadas} "
-            "enquadramento(s) que a imagem não sustenta; eles seguem nos pontos "
-            "de atenção para verificação no local."
-        ).strip()
-    else:
+    if not sobreviventes:
         laudo.parecer_diretor = _parecer_coerente("", [], laudo.vetos)
+        return
+    # O parecer do Diretor foi escrito ANTES da contraprova, e costuma eleger
+    # como risco predominante justamente a NC mais grave — que é a que mais
+    # interessa refutar (vão inexistente sai crítica). Acrescentar uma frase
+    # deixaria o laudo afirmando o risco que ele mesmo retirou (classe 4).
+    # Então o parecer é refeito pelo código, só com o que sobrou.
+    principal = min(sobreviventes, key=lambda x: x.prioridade)
+    laudo.parecer_diretor = (
+        f"Permanece(m) {len(sobreviventes)} não conformidade(s) confirmada(s) "
+        f"na revisão; a de maior gravidade ({principal.gravidade}) é: "
+        f"{principal.constatacao.rstrip('.')}. A contraprova visual retirou "
+        f"{refutadas} enquadramento(s) que a imagem não sustenta; eles seguem "
+        "nos pontos de atenção para verificação no local."
+    )
 
 
 # ---------------------------------------------------------------------------

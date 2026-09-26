@@ -5928,3 +5928,24 @@ def test_prompt_da_contraprova_pede_descricao_antes_do_veredito():
     assert p.index('"visto"') < p.index('"veredito"')
     assert "piso, parede, teto" in p and "profundidade" in p
     assert "Diretor Técnico" not in p and "perito em documentação fotográfica" not in p
+
+
+def test_contraprova_com_sobrevivente_refaz_o_parecer_sem_o_risco_retirado(base):
+    """O parecer do Diretor é escrito antes da contraprova e elege o risco
+    predominante; se a imagem refuta justamente esse, acrescentar uma frase
+    deixaria o laudo afirmando o que retirou (classe de erro 4)."""
+    from auditoria.pipeline import NaoConformidade, _aplicar_contraprova, Laudo, Visao
+    item = base.obter("NR-18", "18.9.2")
+    outro = base.obter("NR-18", "18.16.16")
+    falsa = NaoConformidade(item, "Abertura no piso sem fechamento.", "queda",
+                            "critica", "fechar", 1)
+    real = NaoConformidade(outro, "Entulho acumulado na circulação.", "tropeço",
+                           "media", "remover", 30)
+    laudo = Laudo(visao=Visao(), nao_conformidades=[falsa, real],
+                  parecer_diretor="O risco predominante é a abertura no piso sem fechamento.")
+    _aplicar_contraprova(laudo, {"A1": ("contradiz", "Junta de dilatação, sem vão."),
+                                 "A2": ("confirma", "")})
+    assert laudo.nao_conformidades == [real]
+    assert "abertura no piso" not in laudo.parecer_diretor.lower()
+    assert "Entulho acumulado" in laudo.parecer_diretor
+    assert any("Abertura no piso" in p for p in laudo.sem_enquadramento)
