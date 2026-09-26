@@ -1278,8 +1278,9 @@ APARADO — o trecho sustenta PARTE da constatação e o resto é suposição. N
   quando o que sobrou é outra coisa — e aí o enquadramento cai como veto, mesmo que você
   o tenha aparado. Casos reais, os três impressos no laudo do cliente: um vão no TETO
   mantido num item que regula "aberturas em pisos e paredes"; um painel vertical mantido
-  num item de abertura no PISO; quadros de andaime desmontados mantidos num item de
-  andaime montado. Nos três você escreveu em "retirado" que o item não cobria aquilo —
+  num item de abertura no PISO; quadros de andaime desmontados mantidos num item sobre a
+  superfície de trabalho do andaime. Nos três você mesmo escreveu, ao aparar, que o item
+  não cobria aquilo —
   "não tetos", "regula especificamente aberturas no piso", "não se aplica" — e manteve
   o enquadramento. Se você escreveria isso, a resposta é "nao".
 VETADO — nenhum trecho sustenta a constatação; OU a versão aparada já não descumpre o
@@ -1869,8 +1870,8 @@ def _executar(
         sobra_fora: dict[str, str] = {}
 
         # Aparo cujo resto o próprio Diretor declara fora do item vira veto.
-        # Nasceu de três laudos em que ele escreveu a razão do veto no
-        # `retirado` — "não tetos" (14/09), "regula especificamente aberturas no
+        # Nasceu de três laudos em que ele escreveu, no próprio aparo, a razão
+        # do veto — "não tetos" (14/09), "regula especificamente aberturas no
         # piso" (09/09), "não se aplica" (24/09) — e manteve o enquadramento. A
         # razão já estava no texto; faltava a decisão sair dela. Ler o
         # `retirado` por regex foi medido e recusado: "não se aplica" tanto

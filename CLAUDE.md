@@ -242,7 +242,7 @@ PLANO da abertura (foto 4).
 
 ## O aparo que escreve a razão do veto e não veta — campo `sobra_descumpre` (26/09/2026, À ESPERA DE LOTE)
 
-Classe de erro 1 pelo caminho do aparo, vista em três laudos: o Diretor escreveu no `retirado`
+Classe de erro 1 pelo caminho do aparo, vista em três laudos: o Diretor escreveu, no próprio aparo,
 por que o item não cobria o que sobrou — *"a norma regula aberturas em pisos e paredes, não
 tetos, mas a…"* (foto 4, 14/09), *"a norma regula especificamente aberturas no piso"* (laudo 1,
 09/09), *"não se aplica"* (foto 3, 24/09) — e manteve o enquadramento. `_exigencia_ancorada` não
@@ -251,7 +251,8 @@ pega: o trecho copiado existe no item; o que falha é ele não ter relação com
 **Trava só no código, medida e RECUSADA.** Uma regex sobre o `retirado` ("não se aplica", "a
 norma/o item regula|trata|cobre", "não regula|trata|cobre|abrange"), contra os textos de aparo
 transcritos neste arquivo: 3 dos 4 casos que deviam vetar disparam (o B01 de 10/09 cala — a razão
-ali fala do FATO); 0 de 11 aparos legítimos reais; **2 de 2 aparos legítimos sintéticos disparam**
+ali fala do FATO); 0 de 11 textos legítimos transcritos (9 retirados de aparo reais, 1 frase de
+parecer, 1 exemplo do próprio `PROMPT_DIRETOR`); **2 de 2 aparos legítimos sintéticos disparam**
 ("a exigência de 1,20 m, que não se aplica à tela; permanece a ausência de rodapé"). O que separa
 é se a negação fala do trecho cortado ou do que SOBROU — semântica, a armadilha do sinal escrito
 por extenso. E o corpus é fraco: os casos reais só existem aqui como fragmento truncado.
