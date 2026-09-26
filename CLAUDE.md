@@ -163,6 +163,39 @@ contraprova severa derrubando NC real); (c) quantas saem `nao_decide`.
 
 ---
 
+## Cancela aberta no embarque de 26/09/2026 — o sinal que provava o contrário do item (CONSERTADO, sem lote)
+
+`NR-18 18.11.13` cobra que a cancela seja **instalada** ("deve ser instalada barreira (cancela)
+que tenha, no mínimo, 1,8 m"); cancela ABERTA está instalada. O sinal `"cancela aberta"` de
+`torre_elevador_sem_cancela` era prova do oposto do que o item exige — e foi ele que levou a foto
+`8 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO` a `18.11.13` crítica em 26/09. O perigo real de
+cancela aberta é abri-la **sem a cabine no nível**, que é o `18.11.13.1` (intertravamento) e o
+`NR-11 11.1.2` — e a foto quase nunca decide o intertravamento.
+
+**Conserto**: o sinal saiu. Reproduzido sem rede com o fato do laudo reconstruído (a frase
+transcrita neste arquivo, completada pela descrição da P4 de 13/09 — **não** é o fato literal,
+que não está no repositório): antes, `18.11.13`/`18.11.14` em D1/D2; depois, nenhum item de
+elevador. As três redações de perigo real — cancela ausente, quebrada, e aberta "sem cabine no
+nível … vão da torre exposto" — continuam pondo `18.11.13` no dossiê (a última também
+`NR-11 11.1.2`), pelos outros sinais. **Cobertura perdida, declarada**: "cancela aberta" sem o
+Olho dizer que o vão está exposto deixa de rotear. Sinal que exija a cabine fora do nível não foi
+escrito: `"cancela aberta sem cabine"` tem 4 radicais e passa a 0,75 sem `cabin`, e
+`"cancela sem cabine"` casaria cancela FECHADA sem cabine, que é o estado correto.
+
+**Ruído na mesma foto, também consertado**: `tapume_galeria_ausente` disparava por
+`"obra aberta para a rua"` — 4 radicais, um de cola (`para`), casando a 0,75 sem `rua`, que é o
+único que diz que o risco é do passeio. Virou `"obra aberta rua"` (3 radicais, todos
+obrigatórios): o positivo "frente da obra aberta para a rua, sem tapume" continua; a cancela e
+"tapume contínuo … com a rua ao fundo" calam.
+
+Sinais: 883 → **882**; de 4+ radicais: 257 → **256**. Cinco casos de teste novos (três funções, uma
+parametrizada em três): os dois que medem os consertos falham no código antigo; os três
+positivos passam nos dois. O teste antigo `test_o_elevador_de_verdade_continua_chegando_ao_item_certo` usava
+"cancela … aberta" como defeito da cena — o mesmo erro escrito como expectativa; trocado por
+cancela ausente. **307 testes passam.**
+
+---
+
 ## Laudo de andaime de 24/09/2026 — a periferia que ninguém endereçou, e um sinal frágil consertado
 
 `main` em `b18800a` (merge do PR #69). Um laudo real de andaime, com `andaime_sem_guarda_corpo`
@@ -354,6 +387,7 @@ que a barreira seja INSTALADA, e ela está — aberta, com intertravamento, plat
 registrada em "Em aberto" (*"A `cancela` entrega os itens de elevador sem passar por portão nenhum"*):
 o sinal `"cancela aberta"` não separa cancela ausente de cancela aberta no embarque. **Medi X, afirmo
 Y**: o que está medido é o laudo; o dossiê desta foto não foi reproduzido sem rede nesta sessão.
+**CONSERTADO em 26/09, sem lote — ver a seção "Cancela aberta no embarque", mais acima.**
 
 ---
 
@@ -3467,7 +3501,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 302 testes
+$VENV -m pytest tests/ -q          # 307 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -3565,7 +3599,7 @@ próprio comando composto (exit 144).
 | Portão que só ABRE, com sinal que aparece em negação | `ha_maquina_na_cena` destrancaria a NR-12 com "**nenhuma máquina** visível na cena" se aceitasse a palavra "máquina" — exatamente a foto que se quer barrar. Por isso a lista é de substantivos concretos ("betoneira", "grua"), e inclui as máquinas dos ramos setoriais: sem elas o portão fecharia numa foto de padaria, trocando erro de enquadramento por buraco de cobertura. |
 | Rótulo do risco curado como nome da não conformidade | O rótulo descreve o risco que trouxe o item ao dossiê, não a situação que o Analista enquadrou. Para item **genérico** — `NR-18 18.9.1` ("proteção coletiva onde houver risco de queda"), `NR-06 6.5.1` (EPI, oito riscos) — qual risco o trouxe é acidente do roteamento. Um laudo real saiu intitulado "Andaime sem guarda-corpo e rodapé" para uma constatação sobre a tela frouxa na borda da laje, enquanto o fato dizia que o andaime TINHA guarda-corpo; dois modelos de texto diferentes erraram igual. Hoje `itens_compartilhados()` marca os 24 itens (de 232) que mais de um risco reivindica, e para eles o rótulo cai — o relatório identifica a linha pela constatação. Só o rótulo: o portão de pessoa e a gravidade base continuam vindo do risco. |
 | **`sem` é radical-cola: conta, mas não discrimina** | Ele tem 3 letras, então passa o filtro de `_radicais` e vira um radical como outro qualquer. Só que não distingue nada: um sinal de dois radicais em que um é `sem` vale por um. Custou dois defeitos no mesmo dia. `"sem carenagem"` casou com "Carenagem do motor íntegra e fixada, **sem** folgas visíveis" — carenagem em ordem, o oposto do risco. E `"vao no piso sem tampa"` casou numa foto de betoneira porque `sem` e `tampa` vieram de "Abertura circular do tambor **sem tampa**". Ao escrever ou revisar sinal, conte os radicais **discriminantes**, não os radicais. **E `sem` nunca é o negador**: em 04/09, consertando os sinais de elevador, `"elevador de obra sem cancela"` foi encurtado para `"sem cancela"` — dois radicais, um deles cola, e o fato *"Cancela metálica vermelha, fechada e travada, SEM sinalização de advertência"* deu cobertura 1,0. O agravante é sistemático: o `PROMPT_OLHO` **manda** escrever "sem &lt;peça&gt; visível" quando o lugar dela aparece vazio, então quase todo fato do Olho carrega um `sem` solto. O que nega numa foto é a **abertura** — `aberta`, `ausente`, `faltando`, `quebrada` —, e é nela que o sinal deve ancorar. **Terceira aparição em 17/09**, e desta vez o `/conserto` que a reintroduziu foi pego pelo `/critico` antes do merge: `"tanque sem placa"` (a reescrita de `area_de_risco_nao_delimitada`) batia num tanque CORRETAMENTE isolado — cerca e faixa instaladas — só porque `sem` negava a placa de identificação do fabricante, não a área de risco. E `"tanque sem cerca"`, o único sinal do mesmo risco nunca tocado, sofre da mesma colisão por outro caminho (`cerca` afirmada, `sem` negando manutenção) — ficou registrado como ressalva conhecida. **ATACADA em 18/09** pela hipótese do bigrama: `"sem"` só nega o radical que vem logo depois DELE no sinal (`_radicais_negados`), e esse radical só conta se um `"sem"` de verdade estiver perto dele NO TEXTO, contando só pra frente (`_proximidade_da_negacao`) — a direção sozinha já separa "sem cerca" (cerca depois do sem) de "isolado com cerca... sem manutenção" (cerca antes do sem). Continua fora do alcance o caso em que o NEGADOR está no TEXTO e não no sinal — `"sem trechos abertos"`, na entrada abaixo, onde o sinal é afirmativo (`"poço aberto"`) e é o achado que nega. |
-| **Quatro radicais é onde a cobertura parcial abre** | O corte é 0,7. Com três radicais, faltar um dá 0,67 e **não passa** — todo radical é obrigatório. Com quatro, faltar um dá 0,75 e **passa**, e o que falta costuma ser justo o discriminante. `"abertura vertical sem fechamento"` casava uma abertura de PISO "sem cobertura ou fechamento visível", faltando só `vertical`. Sinal de até três radicais é seguro por construção; de quatro para cima, escreva sabendo que um pode faltar. **257 dos 883 sinais têm 4+ radicais** e correm esse risco (259 até 24/09, quando o reforço do prompt de andaime encurtou dois; era 262 antes do conserto de 17/09 em `area_de_risco_nao_delimitada`, que tirou três — o `/conferir` pegou "tirou dois" na primeira redação: foram cinco sinais reescritos, não quatro, e um quinto, `"qualquer um passa perto do tanque"`, tinha radical de domínio mas foi trocado por precaução contra esta mesma armadilha). |
+| **Quatro radicais é onde a cobertura parcial abre** | O corte é 0,7. Com três radicais, faltar um dá 0,67 e **não passa** — todo radical é obrigatório. Com quatro, faltar um dá 0,75 e **passa**, e o que falta costuma ser justo o discriminante. `"abertura vertical sem fechamento"` casava uma abertura de PISO "sem cobertura ou fechamento visível", faltando só `vertical`. Sinal de até três radicais é seguro por construção; de quatro para cima, escreva sabendo que um pode faltar. **256 dos 882 sinais têm 4+ radicais** e correm esse risco (257 de 883 até 26/09, quando `"cancela aberta"` saiu e `"obra aberta para a rua"` virou `"obra aberta rua"`; 259 até 24/09, quando o reforço do prompt de andaime encurtou dois; era 262 antes do conserto de 17/09 em `area_de_risco_nao_delimitada`, que tirou três — o `/conferir` pegou "tirou dois" na primeira redação: foram cinco sinais reescritos, não quatro, e um quinto, `"qualquer um passa perto do tanque"`, tinha radical de domínio mas foi trocado por precaução contra esta mesma armadilha). |
 | **Sinal de radicais 100% discriminantes, mas nenhum exclusivo do próprio domínio** | Diferente da armadilha acima: aqui a cobertura bate 1,00 (todo radical do sinal casou), e ainda assim o sinal não prova nada, porque nenhum dos radicais é vocabulário exclusivo do risco. `"perimetro sem isolamento"` (3 radicais: `sem` cola, `perimetr`, `isolament`) casava 100% num achado de VERGALHÃO espalhado sem isolamento — nada a ver com inflamável, explosivo ou radiação, que é o domínio de `area_de_risco_nao_delimitada`. Não é a armadilha dos 4+ radicais (aqui não falta nada) nem a do `sem` sozinho (aqui `sem` é só um dos três) — é o sinal inteiro ter sido escrito com vocabulário genérico de "área sem proteção", que serve para qualquer risco de isolamento, não só o deste. Medido em 17/09: pôs `NR-16 16.8` em D1 de um dossiê de vergalhão, na frente do item certo. Ao escrever sinal de risco NARROW (que só deveria disparar num subdomínio: inflamável, elétrico, altura…), confira se pelo menos um radical NÃO discriminante-por-acaso é exclusivo daquele subdomínio — `tanque`, `paiol`, `radioativa`, não `área`, `perímetro`, `isolamento`, `placa`. |
 | Regra global para a cobertura parcial — **tentada e descartada** | A saída óbvia (excluir palavras-cola do conjunto que pode ancorar) **quebra 25 sinais legítimos**: `"sem capacete"`, `"sem luva"`, `"sem bota"`, `"sem placa"`, `"sem manometro"` — onde a cola e o discriminante são tudo o que existe. Também não adianta exigir que o radical faltante seja cola (deixa "escada COM sapata" casar "escada sem sapata") nem que seja não-cola (devolve o caso da betoneira). **Não há regra simples**: é encurtar sinal a sinal, com medição. Não gaste a sessão reinventando isto. |
 | Verificação mecânica no caminho errado | O aparo do Diretor ganhou verificação de lastro no #13; no lote seguinte, o mesmo enquadramento falso voltou por **aprovado**, sem aparo, e passou inteiro. Ao fechar uma porta num agente, pergunte por quais outras a mesma coisa entra — decisão de modelo muda de caminho de uma rodada para outra. Hoje a exigência é cobrada de todo enquadramento que sobrevive. |
@@ -3632,7 +3666,7 @@ próprio comando composto (exit 144).
   um `"sem"` de verdade estiver perto DELE no texto (`_proximidade_da_negacao`,
   `pipeline.py`), e sinal de exatamente dois radicais sem negador exige os dois próximos
   (`_bigrama_proximo`). Ver "Conserto de roteamento de 18/09/2026" para a medição.
-- **302 testes**
+- **307 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
@@ -4682,7 +4716,10 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
     o Olho o preenche em todo achado, e não há um único uso no projeto. É instrumento
     pronto e desligado: achado de baixa confiança poderia entrar como ponto de atenção em
     vez de base de enquadramento, sem custar chamada nenhuma.
-- **A `cancela` entrega os itens de elevador sem passar por portão nenhum.** Achado pelo
+- **A `cancela` entrega os itens de elevador sem passar por portão nenhum** — **em parte FECHADO em
+  26/09**: `"cancela aberta"` saiu (ver a seção "Cancela aberta no embarque"); os três sinais de
+  cancela que sobram (`ausente|faltando|quebrada`) seguem sem exigir `elevador`, e o resto deste item
+  continua valendo para eles. Achado pelo
   `/critico` no #35, e **medido**: os filtros do `dossie.py` valem só para a recuperação
   textual — item de risco CURADO entra por `montar_dossie` e não passa por
   `setor_pertinente`. E quatro dos sete sinais de `torre_elevador_sem_cancela` são
