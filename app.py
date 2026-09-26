@@ -237,13 +237,14 @@ with st.sidebar:
         options=["Rápido", "Padrão", "Máximo"],
         value="Padrão",
         help="Rápido: sem revisão técnica (2 chamadas por foto). "
-             "Padrão: com revisão técnica (3). "
-             "Máximo: revisão técnica com reenquadramento em caso de veto (até 5).",
+             "Padrão: revisão técnica e contraprova visual das não conformidades "
+             "(3 chamadas, ou 4 quando há não conformidade). "
+             "Máximo: idem, com reenquadramento em caso de veto (até 6).",
     )
     perfis = {
-        "Rápido":  dict(usar_diretor=False, max_ciclos=1, teto_dossie=16),
-        "Padrão":  dict(usar_diretor=True,  max_ciclos=1, teto_dossie=22),
-        "Máximo":  dict(usar_diretor=True,  max_ciclos=3, teto_dossie=28),
+        "Rápido":  dict(usar_diretor=False, usar_contraprova=False, max_ciclos=1, teto_dossie=16),
+        "Padrão":  dict(usar_diretor=True,  usar_contraprova=True,  max_ciclos=1, teto_dossie=22),
+        "Máximo":  dict(usar_diretor=True,  usar_contraprova=True,  max_ciclos=3, teto_dossie=28),
     }
 
     lado_imagem = st.select_slider(
@@ -428,8 +429,11 @@ if arquivos:
     if len(arquivos) > 6:
         st.caption(f"…e mais {len(arquivos) - 6} imagem(ns).")
 
-# Custo medido por foto em cada perfil, para avisar antes de o lote começar.
-CUSTO_POR_FOTO = {"Rápido": 5_000, "Padrão": 7_100, "Máximo": 7_300}
+# Custo por foto em cada perfil, para avisar antes de o lote começar. Os
+# valores de 7.100/7.300 foram medidos; os +2.500 da contraprova visual são
+# ESTIMATIVA (imagem ~1.600 + prompt e resposta curtos), à espera do primeiro
+# lote, e contam como se toda foto tivesse não conformidade — o teto, não a média.
+CUSTO_POR_FOTO = {"Rápido": 5_000, "Padrão": 9_600, "Máximo": 9_800}
 
 if "resultados" not in st.session_state:
     st.session_state.resultados = []

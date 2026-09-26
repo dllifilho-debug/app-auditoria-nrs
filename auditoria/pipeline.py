@@ -131,6 +131,10 @@ class Laudo:
     # os dois. Guardamos o rótulo, e não o id, para a trilha sair legível sem
     # depender do catálogo na hora de imprimir.
     riscos_marcados: list[str] = field(default_factory=list)
+    # Resultado da contraprova visual, uma linha por não conformidade conferida
+    # contra a imagem (confirmada, contradita, inconclusiva ou sem resposta). Vai
+    # à trilha nos quatro casos: rede que só registra quando falha não se mede.
+    contraprova: list[str] = field(default_factory=list)
 
     @property
     def aprovado(self) -> bool:
@@ -1689,6 +1693,143 @@ def _parecer_coerente(parecer: str, sobreviventes: list, vetos: list) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Contraprova visual
+# ---------------------------------------------------------------------------
+
+# O Diretor confere a constatação contra o TEXTO do Olho, nunca contra a foto.
+# Quando o texto do Olho é falso, a conferência passa limpa — e é daí que saíram
+# os erros mais caros do histórico: vão no piso que era junta de dilatação,
+# régua de nivelamento, mesa sobre piso contínuo ou abertura de PAREDE (seis
+# ocorrências da classe VÃO INEXISTENTE); "sem sapatas" sobre placas de base
+# visíveis (24/09); cancela instalada e só aberta no embarque enquadrada como
+# ausente (26/09).
+#
+# A contraprova volta à imagem só para o que vai virar não conformidade, com a
+# constatação apresentada como AFIRMAÇÃO A REFUTAR, e pede a descrição do lugar
+# ANTES do veredito — para o modelo olhar de novo em vez de ratificar a frase.
+# Não recebe o item de norma: julga a condição física, não o enquadramento.
+#
+# Hipótese NÃO medida: é o mesmo modelo de visão, sobre a mesma imagem. Se ele
+# repetir a leitura errada quando perguntado de frente, a rede não pega nada —
+# só um lote com as fotos dos erros acima diz. Custo: uma chamada de visão a
+# mais por foto COM não conformidade (a imagem, ~1.600 tokens, mais o texto).
+PROMPT_CONTRAPROVA = """Você é um segundo perito, chamado para conferir um relatório de inspeção contra a própria foto.
+O relatório faz as afirmações abaixo sobre esta imagem. NÃO confie nelas: quem as escreveu já
+errou antes, e errou sempre do mesmo jeito — descrevendo com convicção o que a foto não mostra.
+
+{afirmacoes}
+
+Para CADA [A<n>], nesta ordem:
+1. Em "visto", descreva o que a foto mostra NO LUGAR a que a afirmação se refere: que objeto
+   está lá, em que plano (piso, parede, teto), se há profundidade real (sombra no interior,
+   borda com espessura, vê-se outro ambiente através), e se as peças que a afirmação dá como
+   ausentes ou presentes aparecem ou não. Descreva antes de julgar.
+2. Só então decida em "veredito":
+   - "confirma": o que você descreveu mostra a condição afirmada.
+   - "contradiz": a foto mostra algo incompatível com ela — o objeto não existe, está em outro
+     plano, a peça dada como ausente aparece, a barreira dada como ausente está instalada.
+   - "nao_decide": a parte que decide está fora do recorte ou não se distingue nesta imagem.
+
+Erros reais que o relatório já cometeu, todos impressos como não conformidade:
+- "abertura no piso" onde havia junta de dilatação, régua de nivelamento, mesa sobre piso
+  contínuo, ou um vão que ficava na PAREDE;
+- "sem sapatas" sobre montantes de andaime assentados em placa de base visível;
+- cancela instalada, só aberta no embarque com a plataforma no nível, dada como ausente;
+- "usa boné" numa cabeça descoberta; "a mão não aparece" com a mão segurando a ferramenta.
+
+Não seja severo por reflexo: condição que a foto mostra de fato se confirma, mesmo simples.
+Responda SOMENTE com este JSON:
+{{"conferencia": [{{"ref": "A<n>", "visto": "<o que a foto mostra ali, em uma ou duas frases>", "veredito": "confirma|contradiz|nao_decide"}}]}}"""
+
+VEREDITOS_CONTRAPROVA = ("confirma", "contradiz", "nao_decide")
+
+
+def agente_contraprova(
+    cliente: Conversador,
+    imagem_b64: str,
+    modelo: str,
+    ncs: Sequence[NaoConformidade],
+) -> dict[str, tuple[str, str]]:
+    """Confere cada constatação contra a imagem. Devolve {A<n>: (veredito, visto)}.
+
+    Resposta ilegível devolve vazio e o laudo segue como estava, com a trilha
+    dizendo que a contraprova não veio. Erro de cota, rede ou chave sobe, como
+    em todo agente: a foto entra em "não auditadas", que é a verdade sobre ela.
+    """
+    if not ncs:
+        return {}
+    afirmacoes = "\n".join(f"[A{n}] {nc.constatacao}" for n, nc in enumerate(ncs, start=1))
+    conteudo: list[dict] = [
+        {"type": "text", "text": PROMPT_CONTRAPROVA.format(afirmacoes=afirmacoes)},
+        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{imagem_b64}"}},
+    ]
+    try:
+        dados = _conversar_sem_cortar(cliente, modelo, conteudo, 900, 0.0, "Contraprova")[0]
+    except RespostaIlegivel:
+        return {}
+    saida: dict[str, tuple[str, str]] = {}
+    for c in dados.get("conferencia", []) or []:
+        ref = str(c.get("ref", "")).strip().upper()
+        veredito = normalizar(str(c.get("veredito", ""))).strip().replace(" ", "_")
+        if ref and veredito in VEREDITOS_CONTRAPROVA:
+            saida[ref] = (veredito, str(c.get("visto", "")).strip())
+    return saida
+
+
+def _aplicar_contraprova(laudo: Laudo, respostas: dict[str, tuple[str, str]]) -> None:
+    """Retira a não conformidade que a imagem contradiz e registra todas as outras.
+
+    Só "contradiz" derruba. "nao_decide" mantém o enquadramento e fica na trilha:
+    derrubar por inconclusão trocaria o falso positivo pelo achado que evapora
+    (classe de erro 5), e o lote de 16/09 mostrou o modelo de visão preferindo
+    não afirmar quando pressionado. Com a linha na trilha, o próximo lote diz
+    quantas inconclusivas eram NC real antes de endurecer a regra.
+    """
+    sobreviventes: list[NaoConformidade] = []
+    linhas: list[str] = []
+    refutadas = 0
+    for n, nc in enumerate(laudo.nao_conformidades, start=1):
+        rotulo = f"{nc.item.nr} {nc.item.item}"
+        veredito, visto = respostas.get(f"A{n}", ("", ""))
+        visto = _em_poucas_palavras(_limpar_citacoes(visto))
+        detalhe = f" — {visto}" if visto else ""
+        if veredito == "contradiz":
+            refutadas += 1
+            motivo = "a contraprova visual da foto contradisse a constatação" + (
+                f" ({visto.rstrip('.')})" if visto else ""
+            )
+            laudo.vetos.append(f"{rotulo}: {motivo}")
+            laudo.sem_enquadramento.append(
+                f"{nc.constatacao} (enquadramento proposto em {rotulo} foi retirado: "
+                f"{motivo}; verificar no local)"
+            )
+            linhas.append(f"{rotulo}: contradita pela imagem — enquadramento retirado{detalhe}")
+            continue
+        sobreviventes.append(nc)
+        if veredito == "confirma":
+            linhas.append(f"{rotulo}: confirmada na imagem")
+        elif veredito == "nao_decide":
+            linhas.append(
+                f"{rotulo}: a imagem não permitiu decidir; enquadramento mantido, "
+                f"verificar no local{detalhe}"
+            )
+        else:
+            linhas.append(f"{rotulo}: contraprova sem resposta; enquadramento mantido")
+    laudo.nao_conformidades = sobreviventes
+    laudo.contraprova = linhas
+    if not refutadas:
+        return
+    if sobreviventes:
+        laudo.parecer_diretor = (
+            f"{laudo.parecer_diretor} A contraprova visual retirou {refutadas} "
+            "enquadramento(s) que a imagem não sustenta; eles seguem nos pontos "
+            "de atenção para verificação no local."
+        ).strip()
+    else:
+        laudo.parecer_diretor = _parecer_coerente("", [], laudo.vetos)
+
+
+# ---------------------------------------------------------------------------
 # O laço
 # ---------------------------------------------------------------------------
 
@@ -1698,6 +1839,7 @@ class Configuracao:
     modelo_texto: str
     max_ciclos: int = 2
     usar_diretor: bool = True
+    usar_contraprova: bool = True
     teto_dossie: int = 22
     data_referencia: date = field(default_factory=date.today)
 
@@ -2078,5 +2220,14 @@ def _executar(
 
         avisar(f"{len(motivos)} veto(s). Devolvendo para novo ciclo de enquadramento…")
         correcoes = "\n".join(f"- {m}" for m in motivos)
+
+    if config.usar_contraprova and laudo.nao_conformidades:
+        avisar("Contraprova visual das não conformidades contra a imagem…")
+        _aplicar_contraprova(
+            laudo,
+            agente_contraprova(
+                cliente, imagem_b64, config.modelo_visao, laudo.nao_conformidades
+            ),
+        )
 
     return laudo

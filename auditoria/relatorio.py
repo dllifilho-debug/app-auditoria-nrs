@@ -270,6 +270,10 @@ def markdown(
             p.append(f"  - {r}")
     for a in laudo.aparos:
         p.append(f"  - Aparada — {a}")
+    if laudo.contraprova:
+        p.append("- Contraprova visual (cada não conformidade conferida de novo contra a imagem):")
+        for c in laudo.contraprova:
+            p.append(f"  - {c}")
     if laudo.afericoes:
         p.append("- Descartes da aferição automática:")
         for a in laudo.afericoes:
