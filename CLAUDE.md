@@ -148,8 +148,9 @@ lugar, em que plano, se há profundidade, se a peça dada como ausente aparece) 
 - Perfil Padrão e Máximo ligam; Rápido desliga (`Configuracao.usar_contraprova`).
 
 **Custo**: uma chamada de visão a mais por foto COM NC. Estimado (não medido) em ~2.500 tokens;
-`CUSTO_POR_FOTO` do Padrão foi de 7.100 para 9.600 como teto. No limite de 200.000/dia isso tira
-~5 fotos/dia (de ~25 para ~20) se toda foto tiver NC.
+`CUSTO_POR_FOTO` do Padrão foi de 7.100 para 9.600 como teto. **Medido no lote de revalidação de
+26/09: 11.850 por foto** (47.402 tokens em 4 fotos, n=4), e o `CUSTO_POR_FOTO` do Padrão foi a 11.900.
+No limite de 200.000/dia isso dá **~16 fotos/dia**, não as ~20 estimadas.
 
 **Hipótese não medida, e é a que decide se isto funciona**: é o MESMO modelo de visão sobre a
 MESMA imagem. Se perguntado de frente ele repetir a leitura errada, a rede não pega nada. Oito
@@ -207,6 +208,30 @@ declarada se confirmou num caso: o "sem sapatas" foi ratificado — mesmo modelo
 Seis testes novos, todos falham no código anterior. **313 testes passam.**
 
 ---
+
+## Revalidação de 26/09/2026 — o `outro_plano` salvou a NC real e fabricou outra (CONSERTADO, sem lote)
+
+`main` em `24230ab` (PR #78) pelo comportamento — a trilha traz "a imagem situa a abertura no
+plano parede" —; **hash não lido**. 5 fotos, 4 laudos na chave principal; a 5ª (a âncora) levou
+429 com a mensagem da Groq cortada no print (não se lê se foi o limite por minuto ou o diário) e foi
+rodada com a chave reserva. **Custo medido: 11.850 tokens/foto** (ver a seção da contraprova).
+
+| # | Foto | Laudo | Na imagem |
+|---|---|---|---|
+| 1 | `5af17330` | `18.9.2` → **`outro_plano`** → `NR-08 8.3.2.2` crítica | ❌ **falso positivo novo**: nicho raso na parede, fundo cinza visível, sem desnível — ampliado |
+| 2 | `13 PAV. … E SINALIZAÇÃO` | `18.9.2` → `outro_plano` → `8.3.2.2` crítica | ✅ vão de porta para o poço: a NC real voltou |
+| 3 | `6 PAV. TRABALHADORES` | vão de piso **contradito**; `NR-10 10.10.1` + `NR-11 11.3.3` confirmadas | ✅ segunda vez que o vão inventado cai; o "painel coberto por papelão" segue ABERTO (NOME) |
+| 4 | `8 PAV. CANCELA` | **0 NC** | ✅ os dois consertos (cancela e umidade) seguraram |
+| 5 | âncora | `18.9.2` crítica, confirmada | ✅ |
+
+**O defeito da foto 1 é o risco declarado do `outro_plano`, realizado**: a pergunta era EM QUE
+PLANO está a abertura, e não SE ALGUÉM CAI por ela. O lote anterior dera `contradiz` nela — o certo.
+**Conserto**: a contraprova responde `desnivel` (`sim|nao|nao_se_ve`) no `outro_plano`, e só `sim`
+reenquadra; `nao` e `nao_se_ve` (e o campo omitido) caem como `contradiz`, com o motivo na trilha, e
+o achado vai a ponto de atenção com "verificar no local". **Custo declarado**: se o modelo responder
+`nao_se_ve` no poço escuro da foto 2, a NC real volta a ser ponto de atenção — o simétrico, e só o
+lote diz de que lado ele cai. Quatro testes novos (cinco casos) falham no código anterior; os dois
+positivos antigos passaram a exigir `desnivel="sim"`. **318 testes passam.**
 
 ## Cancela aberta no embarque de 26/09/2026 — o sinal que provava o contrário do item (CONSERTADO, sem lote)
 
@@ -3546,7 +3571,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 313 testes
+$VENV -m pytest tests/ -q          # 318 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -3711,7 +3736,7 @@ próprio comando composto (exit 144).
   um `"sem"` de verdade estiver perto DELE no texto (`_proximidade_da_negacao`,
   `pipeline.py`), e sinal de exatamente dois radicais sem negador exige os dois próximos
   (`_bigrama_proximo`). Ver "Conserto de roteamento de 18/09/2026" para a medição.
-- **313 testes**
+- **318 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos

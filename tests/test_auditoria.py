@@ -6038,7 +6038,8 @@ def test_contraprova_em_outro_plano_passa_ao_item_de_parede_em_vez_de_retirar(ba
     nc = _nc_de_piso(base)
     laudo = Laudo(visao=Visao(), nao_conformidades=[nc], parecer_diretor="abertura no piso")
     _aplicar_contraprova(
-        laudo, {"A1": R("outro_plano", "Vão de porta na parede.", "parede", CORRIGIDA_PAREDE)}, base)
+        laudo, {"A1": R("outro_plano", "Vão de porta na parede.", "parede", CORRIGIDA_PAREDE,
+                    desnivel="sim")}, base)
     assert len(laudo.nao_conformidades) == 1, "a NC real caiu"
     fica = laudo.nao_conformidades[0]
     assert (fica.item.nr, fica.item.item) == ("NR-08", "8.3.2.2")
@@ -6057,7 +6058,7 @@ def test_contraprova_em_outro_plano_nao_cita_o_item_de_piso_como_complemento(bas
     nc = _nc_de_piso(base, [base.obter("NR-08", "8.3.2.2")])
     laudo = Laudo(visao=Visao(), nao_conformidades=[nc])
     _aplicar_contraprova(
-        laudo, {"A1": R("outro_plano", "", "parede", CORRIGIDA_PAREDE)}, base)
+        laudo, {"A1": R("outro_plano", "", "parede", CORRIGIDA_PAREDE, desnivel="sim")}, base)
     fica = laudo.nao_conformidades[0]
     assert (fica.item.nr, fica.item.item) == ("NR-08", "8.3.2.2")
     assert fica.complementos == []
@@ -6080,6 +6081,59 @@ def test_contraprova_em_outro_plano_sem_reescrita_cai(base):
     laudo = Laudo(visao=Visao(), nao_conformidades=[_nc_de_piso(base)])
     _aplicar_contraprova(laudo, {"A1": R("outro_plano", "", "parede", "")}, base)
     assert not laudo.nao_conformidades
+
+
+CORRIGIDA_NICHO = ("Abertura retangular na parede de concreto, no canto esquerdo, sem "
+                   "fechamento provisório rígido nem sistema de proteção.")
+
+
+def test_contraprova_em_outro_plano_sem_desnivel_nao_vira_nc(base):
+    """A foto `5af17330` do lote de 26/09 (revalidação): um nicho raso na
+    parede, fundo visível, peitoril no nível do piso. A contraprova acertou o
+    plano e o código reenquadrou em 8.3.2.2 CRÍTICA — "queda para o nível
+    inferior" sobre uma abertura por onde ninguém cai. O item exige proteção
+    "de forma que impeçam a queda": sem desnível, não há o que impedir."""
+    from auditoria.pipeline import RespostaContraprova as R, _aplicar_contraprova, Laudo, Visao
+    laudo = Laudo(visao=Visao(), nao_conformidades=[_nc_de_piso(base)])
+    _aplicar_contraprova(laudo, {"A1": R(
+        "outro_plano", "Nicho raso na parede, fundo de concreto visível.", "parede",
+        CORRIGIDA_NICHO, desnivel="nao")}, base)
+    assert not laudo.nao_conformidades, "nicho sem desnível virou NC de queda"
+    assert any("não há desnível" in v for v in laudo.vetos)
+    assert any("verificar no local" in p for p in laudo.sem_enquadramento)
+
+
+@pytest.mark.parametrize("desnivel", ["nao_se_ve", ""])
+def test_contraprova_em_outro_plano_sem_desnivel_visto_vai_a_ponto_de_atencao(base, desnivel):
+    """Desnível que a foto não mostra — interior escuro, ou o campo omitido —
+    não sustenta NC. Não some: vai a ponto de atenção para ver no local."""
+    from auditoria.pipeline import RespostaContraprova as R, _aplicar_contraprova, Laudo, Visao
+    laudo = Laudo(visao=Visao(), nao_conformidades=[_nc_de_piso(base)])
+    _aplicar_contraprova(laudo, {"A1": R(
+        "outro_plano", "", "parede", CORRIGIDA_PAREDE, desnivel=desnivel)}, base)
+    assert not laudo.nao_conformidades
+    assert any("não mostra desnível" in v for v in laudo.vetos)
+    assert any("verificar no local" in p for p in laudo.sem_enquadramento)
+
+
+def test_agente_contraprova_le_o_desnivel():
+    from auditoria.pipeline import agente_contraprova
+
+    class _Resp:
+        def conversar(self, *a, **k):
+            return ('{"conferencia": [{"ref": "A1", "visto": "vão", "veredito": "outro_plano",'
+                    ' "plano": "parede", "desnivel": "Não se vê", "constatacao_corrigida": "x"}]}')
+
+    from auditoria.pipeline import NaoConformidade
+    nc = NaoConformidade(None, "abertura", "", "critica", "", 1)
+    r = agente_contraprova(_Resp(), "", "m", [nc])
+    assert r["A1"].desnivel == "nao_se_ve"
+
+
+def test_prompt_da_contraprova_pergunta_o_desnivel():
+    from auditoria.pipeline import PROMPT_CONTRAPROVA as p
+    assert '"desnivel"' in p and "nicho" in p.lower()
+    assert "sem desnível não é risco de queda" in p
 
 
 def test_prompt_da_contraprova_separa_vao_inexistente_de_outro_plano():

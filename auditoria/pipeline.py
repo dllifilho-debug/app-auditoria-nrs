@@ -1732,21 +1732,27 @@ Para CADA [A<n>], nesta ordem:
      dita —, mas em OUTRO PLANO: a afirmação diz piso e ela está na parede, ou o contrário.
      Nesse caso diga em "plano" onde ela está de fato (piso, parede ou teto) e reescreva em
      "constatacao_corrigida" a mesma constatação com o plano certo, afirmando só o que a foto
-     mostra.
+     mostra. E responda em "desnivel" se a foto MOSTRA desnível através dessa abertura — um
+     nível mais baixo (poço, pavimento de baixo, vazio para fora da fachada) para onde uma
+     pessoa ou objeto cairia: "sim" se o desnível aparece; "nao" se o outro lado está no mesmo
+     nível ou é um nicho raso com fundo visível; "nao_se_ve" se o interior é escuro demais ou
+     está fora do recorte. Vão na parede sem desnível não é risco de queda.
    - "nao_decide": a parte que decide está fora do recorte ou não se distingue nesta imagem.
 
 Erros reais que o relatório já cometeu, todos impressos como não conformidade:
 - "abertura no piso" onde havia junta de dilatação, régua de nivelamento ou mesa sobre piso
   contínuo (isso é "contradiz": não há abertura nenhuma);
 - "abertura no piso" para um vão de porta na PAREDE, aberto para um poço (isso é "outro_plano":
-  a abertura existe, desprotegida, só que na parede);
+  a abertura existe, desprotegida, só que na parede, com desnível "sim");
+- "abertura no piso" para um NICHO raso na parede, com o fundo visível e o peitoril no nível do
+  piso (isso é "outro_plano" com desnível "nao": ninguém cai por ali);
 - "sem sapatas" sobre montantes de andaime assentados em placa de base visível;
 - cancela instalada, só aberta no embarque com a plataforma no nível, dada como ausente;
 - "usa boné" numa cabeça descoberta; "a mão não aparece" com a mão segurando a ferramenta.
 
 Não seja severo por reflexo: condição que a foto mostra de fato se confirma, mesmo simples.
 Responda SOMENTE com este JSON:
-{{"conferencia": [{{"ref": "A<n>", "visto": "<o que a foto mostra ali, em uma ou duas frases>", "veredito": "confirma|contradiz|outro_plano|nao_decide", "plano": "<piso|parede|teto — só em outro_plano>", "constatacao_corrigida": "<só em outro_plano>"}}]}}"""
+{{"conferencia": [{{"ref": "A<n>", "visto": "<o que a foto mostra ali, em uma ou duas frases>", "veredito": "confirma|contradiz|outro_plano|nao_decide", "plano": "<piso|parede|teto — só em outro_plano>", "desnivel": "<sim|nao|nao_se_ve — só em outro_plano>", "constatacao_corrigida": "<só em outro_plano>"}}]}}"""
 
 VEREDITOS_CONTRAPROVA = ("confirma", "contradiz", "outro_plano", "nao_decide")
 
@@ -1768,6 +1774,7 @@ class RespostaContraprova:
     visto: str = ""
     plano: str = ""
     corrigida: str = ""
+    desnivel: str = ""
 
 
 def agente_contraprova(
@@ -1803,6 +1810,7 @@ def agente_contraprova(
                 visto=str(c.get("visto", "")).strip(),
                 plano=normalizar(str(c.get("plano", "") or "")).strip(),
                 corrigida=str(c.get("constatacao_corrigida", "") or "").strip(),
+                desnivel=normalizar(str(c.get("desnivel", "") or "")).strip().replace(" ", "_"),
             )
     return saida
 
@@ -1862,9 +1870,24 @@ def _aplicar_contraprova(
         veredito = resposta.veredito
         visto = _em_poucas_palavras(_limpar_citacoes(resposta.visto))
         detalhe = f" — {visto}" if visto else ""
+        motivo_extra = ""
         if veredito == "outro_plano":
             corrigida = _limpar_citacoes(resposta.corrigida)
             novo = _item_para_o_plano(nc, resposta.plano, base) if corrigida else None
+            # O item de abertura exige proteção "de forma que impeçam a queda":
+            # sem desnível visto, não há queda a impedir. No lote de 26/09 a
+            # foto `5af17330` virou NC crítica de 8.3.2.2 sobre um nicho raso
+            # de parede, com o fundo visível — o plano estava certo e a
+            # consequência não existia. Só "sim" reenquadra: desnível que a
+            # foto não mostra não sustenta NC, e o achado vai a ponto de
+            # atenção para ser visto no local.
+            if novo is not None and resposta.desnivel != "sim":
+                motivo_extra = (
+                    "a imagem mostra que não há desnível através da abertura"
+                    if resposta.desnivel == "nao"
+                    else "a imagem não mostra desnível através da abertura"
+                )
+                novo = None
             if novo is not None:
                 reenquadradas += 1
                 ref_novo = f"{novo.nr} {novo.item}"
@@ -1893,6 +1916,8 @@ def _aplicar_contraprova(
         if veredito == "contradiz":
             refutadas += 1
             motivo = "a contraprova visual da foto contradisse a constatação" + (
+                f"; {motivo_extra}" if motivo_extra else ""
+            ) + (
                 f" ({visto.rstrip('.')})" if visto else ""
             )
             laudo.vetos.append(f"{rotulo}: {motivo}")

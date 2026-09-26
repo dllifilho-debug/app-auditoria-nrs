@@ -429,11 +429,12 @@ if arquivos:
     if len(arquivos) > 6:
         st.caption(f"…e mais {len(arquivos) - 6} imagem(ns).")
 
-# Custo por foto em cada perfil, para avisar antes de o lote começar. Os
-# valores de 7.100/7.300 foram medidos; os +2.500 da contraprova visual são
-# ESTIMATIVA (imagem ~1.600 + prompt e resposta curtos), à espera do primeiro
-# lote, e contam como se toda foto tivesse não conformidade — o teto, não a média.
-CUSTO_POR_FOTO = {"Rápido": 5_000, "Padrão": 9_600, "Máximo": 9_800}
+# Custo por foto em cada perfil, para avisar antes de o lote começar. O Padrão
+# com contraprova foi MEDIDO no lote de revalidação de 26/09: 47.402 tokens em 4
+# fotos, 11.850 por foto (n=4, 3 delas com não conformidade). A estimativa
+# anterior, 9.600, subestimava em ~20%. O Máximo é o Padrão mais a folga de
+# ciclo que ele sempre teve sobre ele; não foi medido.
+CUSTO_POR_FOTO = {"Rápido": 5_000, "Padrão": 11_900, "Máximo": 12_100}
 
 if "resultados" not in st.session_state:
     st.session_state.resultados = []
