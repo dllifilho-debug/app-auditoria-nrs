@@ -1830,7 +1830,7 @@ def _aplicar_contraprova(laudo: Laudo, respostas: dict[str, tuple[str, str]]) ->
     principal = min(sobreviventes, key=lambda x: x.prioridade)
     laudo.parecer_diretor = (
         f"Permanece(m) {len(sobreviventes)} não conformidade(s) confirmada(s) "
-        f"na revisão; a de maior gravidade ({principal.gravidade}) é: "
+        "na revisão; a de maior gravidade é: "
         f"{principal.constatacao.rstrip('.')}. A contraprova visual retirou "
         f"{refutadas} enquadramento(s) que a imagem não sustenta; eles seguem "
         "nos pontos de atenção para verificação no local."
