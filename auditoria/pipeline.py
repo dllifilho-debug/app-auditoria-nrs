@@ -1272,6 +1272,16 @@ APARADO — o trecho sustenta PARTE da constatação e o resto é suposição. N
   trecho diz e ajuste a ação corretiva a ela. "Escada apoiada sobre entulho, com a base
   fora do nível" sustenta apoio instável; "sem sapata antiderrapante" é suposição e sai
   da frase. O que sobrou continua sendo não conformidade e continua no laudo.
+  Todo aparo responde, em "sobra_descumpre", à pergunta que decide entre aparo e veto:
+  o que SOBROU da constatação é situação de que o TEXTO OFICIAL deste item trata?
+  "sim" só quando você consegue apontar no texto oficial a situação que sobrou; "nao"
+  quando o que sobrou é outra coisa — e aí o enquadramento cai como veto, mesmo que você
+  o tenha aparado. Casos reais, os três impressos no laudo do cliente: um vão no TETO
+  mantido num item que regula "aberturas em pisos e paredes"; um painel vertical mantido
+  num item de abertura no PISO; quadros de andaime desmontados mantidos num item de
+  andaime montado. Nos três você escreveu em "retirado" que o item não cobria aquilo —
+  "não tetos", "regula especificamente aberturas no piso", "não se aplica" — e manteve
+  o enquadramento. Se você escreveria isso, a resposta é "nao".
 VETADO — nenhum trecho sustenta a constatação; OU a versão aparada já não descumpre o
   TEXTO OFICIAL daquele item. Confira sempre este segundo caso: o enquadramento aparado
   aponta o MESMO item, então releia o TEXTO OFICIAL do bloco [V<n>] e pergunte se o que
@@ -1357,7 +1367,7 @@ o mesmo objeto.
 Responda SOMENTE com este JSON:
 {{
   "conferencia": [{{"ref": "V<n>", "fato": "<trecho literal da lista de fatos que sustenta, ou vazio>", "exigencia": "<trecho literal do TEXTO OFICIAL que a constatação descumpre; vazio só se vetado>", "decisao": "aprovado|aparado|vetado"}}],
-  "aparados": [{{"ref": "V<n>", "constatacao": "<reescrita, restrita ao trecho copiado>", "acao_corretiva": "<reescrita compatível>", "gravidade": "critica|alta|media|baixa", "retirado": "<a cláusula sem lastro que saiu, em UMA frase curta — este campo vai impresso no laudo do cliente, não delibere aqui>"}}],
+  "aparados": [{{"ref": "V<n>", "constatacao": "<reescrita, restrita ao trecho copiado>", "acao_corretiva": "<reescrita compatível>", "gravidade": "critica|alta|media|baixa", "retirado": "<a cláusula sem lastro que saiu, em UMA frase curta — este campo vai impresso no laudo do cliente, não delibere aqui>", "sobra_descumpre": "sim|nao"}}],
   "vetados": [{{"ref": "V<n>", "motivo": "<por que não se sustenta>", "observacao": "<a condição reescrita como verificação, ou vazio>"}}],
   "ajustes": [{{"ref": "V<n>", "constatacao": "<reescrita, ou omita>", "acao_corretiva": "<reescrita, ou omita>", "gravidade": "critica|alta|media|baixa"}}],
   "pontos_descartados": [{{"ref": "P<n>", "motivo": "<por que sai>"}}],
@@ -1373,6 +1383,13 @@ MOTIVO_EXIGENCIA_NAO_ANCORA = "a constatação não descumpre o texto oficial de
 
 # O trecho não veio. Nada foi refutado — não houve conferência. Dizer a mesma
 # frase aqui é pôr no laudo um juízo que o supervisor não emitiu.
+# O próprio supervisor respondeu, ao aparar, que o que sobrou não é situação
+# de que este item trata. É refutação dele, não do código — e o texto diz isso.
+MOTIVO_SOBRA_FORA_DO_ITEM = (
+    "a supervisão registrou, ao restringir a constatação, que o que sobrou não é "
+    "situação de que este item trata"
+)
+
 MOTIVO_CONFERENCIA_OMITIDA = (
     "a conferência não trouxe o trecho descumprido — o enquadramento caiu por "
     "omissão da supervisão, não por refutação"
@@ -1847,6 +1864,31 @@ def _executar(
         aparados = {
             str(a.get("ref", "")).strip().upper(): a for a in veredito.get("aparados", [])
         }
+        # A constatação aparada dos enquadramentos que caem por "sobra fora do
+        # item": é ela, e não a original, que vai aos pontos de atenção.
+        sobra_fora: dict[str, str] = {}
+
+        # Aparo cujo resto o próprio Diretor declara fora do item vira veto.
+        # Nasceu de três laudos em que ele escreveu a razão do veto no
+        # `retirado` — "não tetos" (14/09), "regula especificamente aberturas no
+        # piso" (09/09), "não se aplica" (24/09) — e manteve o enquadramento. A
+        # razão já estava no texto; faltava a decisão sair dela. Ler o
+        # `retirado` por regex foi medido e recusado: "não se aplica" tanto
+        # pode falar do trecho cortado (aparo legítimo) quanto do que sobrou
+        # (veto), e só o campo que pergunta pelo RESTO separa os dois.
+        #
+        # Campo ausente ou ilegível mantém o aparo, como antes do campo
+        # existir: tratá-lo como veto abriria uma porta nova de omissão, a
+        # mesma que o #34 teve de separar no `exigencia`.
+        #
+        # Vem antes da repescagem de propósito: enquadramento que o supervisor
+        # já refutou não é "silêncio" e não gasta chamada.
+        for ref, aparo in aparados.items():
+            if ref in vetados:
+                continue
+            if normalizar(str(aparo.get("sobra_descumpre", ""))).strip() in ("nao", "n"):
+                vetados[ref] = MOTIVO_SOBRA_FORA_DO_ITEM
+                sobra_fora[ref] = str(aparo.get("constatacao", "")).strip()
 
         # Enquadramento que não ancora a exigência no texto oficial vira veto.
         # É a metade mecânica da regra "só é não conformidade se descumprir
@@ -1952,8 +1994,18 @@ def _executar(
                 # emergência solto continua sendo um problema mesmo quando o item
                 # citado para ele estava errado — deixá-lo evaporar seria perder
                 # a informação que mais importa ao inspetor.
+                # No veto por "sobra fora do item" o aparo foi aceito como
+                # corte de lastro — só o item foi recusado —, então o achado que
+                # segue ao engenheiro é o restrito ao fato, não a frase original
+                # com a cláusula que o próprio supervisor tirou por falta de
+                # lastro.
+                achado = (
+                    observacoes.get(ref)
+                    or _limpar_citacoes(sobra_fora.get(ref, ""))
+                    or nc.constatacao
+                )
                 laudo.sem_enquadramento.append(
-                    f"{observacoes.get(ref) or nc.constatacao} (enquadramento proposto em "
+                    f"{achado} (enquadramento proposto em "
                     f"{nc.item.nr} {nc.item.item} foi recusado na supervisão: "
                     f"{vetados[ref].rstrip('.')})"
                 )
