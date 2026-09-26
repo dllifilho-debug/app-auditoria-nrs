@@ -769,8 +769,10 @@ def test_o_elevador_de_verdade_continua_chegando_ao_item_certo(base):
     cenas = [
         ["Torre de elevador de obra com cabine que corre pela própria torre e "
          "cremalheira dentada na face",
-         "Cancela metálica vermelha na entrada do pavimento, aberta, presa por "
-         "uma dobradiça"],
+         # O defeito da cena era "cancela ... aberta" até 26/09 — e cancela
+         # aberta no embarque não descumpre o 18.11.13, que cobra a cancela
+         # INSTALADA. Ver test_cancela_aberta_no_embarque_nao_poe_o_18_11_13_no_dossie.
+         "Cancela ausente na entrada do pavimento, com o acesso à torre aberto"],
         ["Torre de elevador de obra com cabine que sobe pela própria torre, "
          "base aberta sem tapume no perímetro"],
     ]
@@ -5949,3 +5951,55 @@ def test_contraprova_com_sobrevivente_refaz_o_parecer_sem_o_risco_retirado(base)
     assert "abertura no piso" not in laudo.parecer_diretor.lower()
     assert "Entulho acumulado" in laudo.parecer_diretor
     assert any("Abertura no piso" in p for p in laudo.sem_enquadramento)
+
+
+# ---------------------------------------------------------------------------
+# Cancela aberta no embarque (lote de 26/09)
+# ---------------------------------------------------------------------------
+
+FATO_CANCELA_EMBARQUE = (
+    "Cancela metálica de malha quadrada, pintada de vermelho, aberta, girada para dentro "
+    "do pavimento, com um dispositivo de fechamento azul fixado no montante"
+)
+
+
+def test_cancela_aberta_no_embarque_nao_poe_o_18_11_13_no_dossie(base):
+    """O 18.11.13 cobra que a cancela seja INSTALADA; aberta, ela está instalada.
+    No lote de 26/09 o sinal `"cancela aberta"` levou esse item a D1 e a foto
+    `8 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO` saiu com NC crítica de 1 dia."""
+    visao = Visao(
+        ambiente="Pavimento de obra junto à fachada, com torre de elevador de cremalheira",
+        achados=[Achado(FATO_CANCELA_EMBARQUE),
+                 Achado("Chapa metálica de embarque ligando o piso do pavimento à "
+                        "plataforma do elevador, no mesmo nível")],
+    )
+    ids = [r.id for r in rotear_riscos(visao)]
+    assert "torre_elevador_sem_cancela" not in ids
+    assert "tapume_galeria_ausente" not in ids
+    dossie, _ = montar_dossie(base, visao, "", HOJE)
+    assert not any(e.item.item.startswith("18.11.13") for e in dossie.entradas)
+
+
+@pytest.mark.parametrize("fato", [
+    "Acesso à torre do elevador de obra com a cancela ausente, vão aberto para o exterior",
+    "Cancela quebrada no acesso à torre do elevador, com a folha solta",
+    "Cancela da torre do elevador aberta, sem cabine no nível do pavimento, "
+    "com o vão da torre exposto",
+])
+def test_cancela_ausente_ou_vao_exposto_continua_chegando_ao_18_11_13(base, fato):
+    visao = Visao(ambiente="Pavimento de obra junto à fachada", achados=[Achado(fato)])
+    dossie, _ = montar_dossie(base, visao, "", HOJE)
+    assert any(e.item.item == "18.11.13" for e in dossie.entradas)
+
+
+def test_tapume_nao_dispara_por_aberta_sem_a_rua():
+    """`"obra aberta para a rua"` tinha 4 radicais, um deles cola (`para`), e
+    casava a 0,75 faltando `rua` — o único que diz que o risco é do passeio."""
+    def ids(fato):
+        return [r.id for r in rotear_riscos(
+            Visao(ambiente="Canteiro de obra urbano", achados=[Achado(fato)]))]
+    assert "tapume_galeria_ausente" in ids(
+        "Frente da obra aberta para a rua, sem tapume, com pedestres na calçada")
+    assert "tapume_galeria_ausente" not in ids(FATO_CANCELA_EMBARQUE + ", obra em andamento")
+    assert "tapume_galeria_ausente" not in ids(
+        "Tapume de madeira contínuo fechando a frente da obra, com a rua ao fundo")

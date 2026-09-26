@@ -489,7 +489,6 @@ RISCOS: dict[str, dict] = {
         # o Olho o descreve assim. Proteção inadequada não é representável por
         # sobreposição de radicais; é caso para o Analista ler o dossiê.
         "sinais": [
-            "cancela aberta",
             "cancela ausente",
             "cancela faltando",
             "cancela quebrada",
@@ -967,7 +966,7 @@ RISCOS: dict[str, dict] = {
             "sobre o passeio protegendo pedestres."
         ),
         "sinais": [
-            "obra aberta para a rua",
+            "obra aberta rua",
             "sem tapume na frente da obra",
             "tapume caido",
             "tapume baixo",
