@@ -161,6 +161,51 @@ SEM DOCUMENTAÇÃO` —, se sai `contradiz`; (b) nas NCs reais — a âncora `13
 PROTEÇÃO` e o controle `13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO E SINALIZAÇÃO` de 26/09 —, se sai `confirma` e a NC fica (o risco simétrico:
 contraprova severa derrubando NC real); (c) quantas saem `nao_decide`.
 
+**MEDIDO no lote de 26/09 — ver a seção de validação logo abaixo.**
+
+---
+
+## Lote de validação da contraprova de 26/09/2026 — pega o vão inexistente, e um defeito do próprio conserto
+
+`main` em `545788c` (PR #77) pelo comportamento — o `18.11.13` da cancela não saiu —; **hash não
+lido na barra lateral**. **6 laudos, 6 NCs, 0 não auditadas, 1 ciclo em todos.** Fotos na ordem
+dos laudos: `WhatsApp Image 2026-05-05 at 14.41.18`, `5af17330…`, `8 PAV. CANCELA CREMALHEIRA SEM
+SINALIZAÇÃO`, `6 PAV. TRABALHADORES SEM DOCUMENTAÇÃO`, `13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO` e
+`13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO E SINALIZAÇÃO`. As fotos 3, 4 e 6 foram abertas no acervo; os
+dossiês das fotos 3 e 6 foram reproduzidos sem rede a partir dos fatos dos laudos.
+
+| # | Foto | Laudo | Contraprova | Na imagem |
+|---|---|---|---|---|
+| 1 | `14.41.18` | `18.9.4.2` crítica + `18.12.13` "sem sapatas" alta | confirma as duas | guarda-corpo: conteúdo certo e **item certo** (a trava do `18.12.15.2` de 24/09 segurou); "sem sapatas": FALSO, placa de base visível (decidido em 24/09, não reaberto) |
+| 2 | `5af17330` | `18.9.2` proposto | **contradiz** → 0 NC | ✅ vão de parede lido como piso |
+| 3 | `8 PAV. CANCELA` | `NR-08 8.3.3.2` "umidade" média | confirma | ❌ **zero risco curado roteado**, item da busca textual; mancha escura em laje de obra |
+| 4 | `6 PAV. TRABALHADORES` | `18.9.2` proposto + `NR-10 10.10.1` + `NR-11 11.3.3` | **contradiz** o vão; confirma os dois | ✅ piso contínuo. Os sacos encostados: real. O "painel elétrico coberto por papelão" é um papelão preso na parede — NOME, fica ABERTO |
+| 5 | `13 PAV.` (âncora) | `18.9.2` crítica | confirma | ✅ |
+| 6 | `13 PAV. … E SINALIZAÇÃO` | `18.9.2` proposto → **0 NC** | **contradiz**: "vão de porta na parede, não no piso" | ⚠️ certo sobre o PLANO, e o laudo perdeu uma NC crítica real — vão de porta aberto para o poço |
+
+**(a) VÃO INEXISTENTE: 2 de 2 contraditos** (fotos 2 e 4) — a classe mais cara do histórico,
+pega pela primeira vez. **(b) NC real: a âncora ficou; o controle da foto 6 caiu** — o risco
+simétrico, e pelo mecanismo que ninguém previu: não contraprova severa, mas contraprova CERTA
+aplicada por um código que só sabia retirar. **(c) `nao_decide`: 0 em 9.** A hipótese de risco
+declarada se confirmou num caso: o "sem sapatas" foi ratificado — mesmo modelo, mesma leitura.
+**Medi X, afirmo Y**: são 9 veredictos em 6 fotos; nada disso é taxa.
+
+**Consertos do mesmo dia, sem lote:**
+- **`outro_plano`** — quarto veredito da contraprova, com `plano` e `constatacao_corrigida`. A NC
+  não cai: passa ao item que cobre o plano visto (`PLANOS_DO_ITEM` + `ITENS_EQUIVALENTES`:
+  `18.9.2` só piso → `8.3.2.2` piso e parede), com a constatação corrigida, o rótulo "Abertura no
+  piso" apagado, o item de piso fora dos complementos e o parecer refeito. Teto não tem item
+  (é o "não tetos" de 14/09) e cai como antes; sem reescrita, cai também. Reproduzido: o
+  `8.3.2.2` estava em D2 do dossiê da foto 6. **Mudança de prompt — só o lote diz se o modelo
+  separa "contradiz" de "outro_plano".**
+- **`ITENS_DE_DESEMPENHO_DA_EDIFICACAO`** (`dossie.py`) — `NR-08 8.3.3.1`/`8.3.3.2` fora da busca
+  textual: especificação da edificação acabada (impermeabilização, resistência ao fogo,
+  isolamento), que foto de obra não evidencia. Lista explícita porque `impermeabiliz` casa 11
+  itens da base e só esses dois são especificação — medido. Reproduzido: a mancha de umidade da
+  foto 3 deixa o `8.3.3.2` fora do dossiê.
+
+Seis testes novos, todos falham no código anterior. **313 testes passam.**
+
 ---
 
 ## Cancela aberta no embarque de 26/09/2026 — o sinal que provava o contrário do item (CONSERTADO, sem lote)
@@ -3501,7 +3546,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 307 testes
+$VENV -m pytest tests/ -q          # 313 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -3666,7 +3711,7 @@ próprio comando composto (exit 144).
   um `"sem"` de verdade estiver perto DELE no texto (`_proximidade_da_negacao`,
   `pipeline.py`), e sinal de exatamente dois radicais sem negador exige os dois próximos
   (`_bigrama_proximo`). Ver "Conserto de roteamento de 18/09/2026" para a medição.
-- **307 testes**
+- **313 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos

@@ -593,6 +593,24 @@ ITENS_RESTRITOS_A_TIPO: dict[str, tuple[str, ...]] = {
 }
 
 
+# Itens que especificam o DESEMPENHO da edificação acabada — impermeabilização,
+# proteção contra umidade, resistência ao fogo, isolamento térmico e acústico.
+# Uma foto de obra não os evidencia: mancha escura numa laje em construção não
+# prova falta de impermeabilização, e o "quando aplicável" do 8.3.3.2 remete a
+# projeto, não ao que a câmera vê. No lote de 26/09 a foto `8 PAV. CANCELA`,
+# com zero risco curado roteado, saiu com NC média de `NR-08 8.3.3.2` sobre
+# "manchas escuras de umidade" no piso — o mesmo vocabulário que já levava a
+# NR-15 ao dossiê e foi tirado em 26/09. Lista explícita, e não padrão de
+# texto: medido, `impermeabiliz` casa 11 itens da base (tinta, mergulho,
+# treinamento, serviço de impermeabilização da NR-18) e só estes dois são
+# especificação da edificação. Vale só para a busca textual, como os demais
+# filtros daqui.
+ITENS_DE_DESEMPENHO_DA_EDIFICACAO = frozenset({
+    "NR-08 8.3.3.1",
+    "NR-08 8.3.3.2",
+})
+
+
 def tipo_pertinente(item: Item, texto: str) -> bool:
     """O item não restringe o tipo de equipamento, ou a cena nomeia esse tipo?"""
     termos = ITENS_RESTRITOS_A_TIPO.get(item.id)
@@ -744,6 +762,7 @@ def montar(
             and prescritivo(item, base)
             and setor_pertinente(item, texto_da_cena)
             and tipo_pertinente(item, texto_da_cena)
+            and item.id not in ITENS_DE_DESEMPENHO_DA_EDIFICACAO
         )
 
     def registrar(item: Item, score: float, origem: str) -> None:

@@ -1728,20 +1728,46 @@ Para CADA [A<n>], nesta ordem:
    - "confirma": o que você descreveu mostra a condição afirmada.
    - "contradiz": a foto mostra algo incompatível com ela — o objeto não existe, está em outro
      plano, a peça dada como ausente aparece, a barreira dada como ausente está instalada.
+   - "outro_plano": a condição existe como afirmada — a abertura existe e está sem a proteção
+     dita —, mas em OUTRO PLANO: a afirmação diz piso e ela está na parede, ou o contrário.
+     Nesse caso diga em "plano" onde ela está de fato (piso, parede ou teto) e reescreva em
+     "constatacao_corrigida" a mesma constatação com o plano certo, afirmando só o que a foto
+     mostra.
    - "nao_decide": a parte que decide está fora do recorte ou não se distingue nesta imagem.
 
 Erros reais que o relatório já cometeu, todos impressos como não conformidade:
-- "abertura no piso" onde havia junta de dilatação, régua de nivelamento, mesa sobre piso
-  contínuo, ou um vão que ficava na PAREDE;
+- "abertura no piso" onde havia junta de dilatação, régua de nivelamento ou mesa sobre piso
+  contínuo (isso é "contradiz": não há abertura nenhuma);
+- "abertura no piso" para um vão de porta na PAREDE, aberto para um poço (isso é "outro_plano":
+  a abertura existe, desprotegida, só que na parede);
 - "sem sapatas" sobre montantes de andaime assentados em placa de base visível;
 - cancela instalada, só aberta no embarque com a plataforma no nível, dada como ausente;
 - "usa boné" numa cabeça descoberta; "a mão não aparece" com a mão segurando a ferramenta.
 
 Não seja severo por reflexo: condição que a foto mostra de fato se confirma, mesmo simples.
 Responda SOMENTE com este JSON:
-{{"conferencia": [{{"ref": "A<n>", "visto": "<o que a foto mostra ali, em uma ou duas frases>", "veredito": "confirma|contradiz|nao_decide"}}]}}"""
+{{"conferencia": [{{"ref": "A<n>", "visto": "<o que a foto mostra ali, em uma ou duas frases>", "veredito": "confirma|contradiz|outro_plano|nao_decide", "plano": "<piso|parede|teto — só em outro_plano>", "constatacao_corrigida": "<só em outro_plano>"}}]}}"""
 
-VEREDITOS_CONTRAPROVA = ("confirma", "contradiz", "nao_decide")
+VEREDITOS_CONTRAPROVA = ("confirma", "contradiz", "outro_plano", "nao_decide")
+
+# Em que plano cada item de abertura se aplica, pelo texto oficial. O 18.9.2
+# fala de "aberturas no piso"; o 8.3.2.2, de "aberturas nos pisos e nas
+# paredes". É o que decide, quando a contraprova põe a abertura noutro plano,
+# se o item ainda serve ou se o enquadramento passa ao equivalente declarado
+# em `ITENS_EQUIVALENTES`. Nenhum dos dois cobre teto: abertura no teto sem
+# item que a cubra cai, como antes.
+PLANOS_DO_ITEM: dict[str, frozenset[str]] = {
+    "NR-18 18.9.2": frozenset({"piso"}),
+    "NR-08 8.3.2.2": frozenset({"piso", "parede"}),
+}
+
+
+@dataclass
+class RespostaContraprova:
+    veredito: str
+    visto: str = ""
+    plano: str = ""
+    corrigida: str = ""
 
 
 def agente_contraprova(
@@ -1749,8 +1775,8 @@ def agente_contraprova(
     imagem_b64: str,
     modelo: str,
     ncs: Sequence[NaoConformidade],
-) -> dict[str, tuple[str, str]]:
-    """Confere cada constatação contra a imagem. Devolve {A<n>: (veredito, visto)}.
+) -> dict[str, RespostaContraprova]:
+    """Confere cada constatação contra a imagem. Devolve {A<n>: resposta}.
 
     Resposta ilegível devolve vazio e o laudo segue como estava, com a trilha
     dizendo que a contraprova não veio. Erro de cota, rede ou chave sobe, como
@@ -1767,17 +1793,58 @@ def agente_contraprova(
         dados = _conversar_sem_cortar(cliente, modelo, conteudo, 900, 0.0, "Contraprova")[0]
     except RespostaIlegivel:
         return {}
-    saida: dict[str, tuple[str, str]] = {}
+    saida: dict[str, RespostaContraprova] = {}
     for c in dados.get("conferencia", []) or []:
         ref = str(c.get("ref", "")).strip().upper()
         veredito = normalizar(str(c.get("veredito", ""))).strip().replace(" ", "_")
         if ref and veredito in VEREDITOS_CONTRAPROVA:
-            saida[ref] = (veredito, str(c.get("visto", "")).strip())
+            saida[ref] = RespostaContraprova(
+                veredito=veredito,
+                visto=str(c.get("visto", "")).strip(),
+                plano=normalizar(str(c.get("plano", "") or "")).strip(),
+                corrigida=str(c.get("constatacao_corrigida", "") or "").strip(),
+            )
     return saida
 
 
-def _aplicar_contraprova(laudo: Laudo, respostas: dict[str, tuple[str, str]]) -> None:
+def _item_para_o_plano(
+    nc: NaoConformidade, plano: str, base: BaseNormativa | None
+) -> Item | None:
+    """O item que cobre a abertura no plano em que a contraprova a situou.
+
+    O próprio item, se ele já cobre aquele plano; senão, o primeiro equivalente
+    declarado que cubra. `None` quando nenhum cobre — aí o enquadramento cai.
+    """
+    ref = f"{nc.item.nr} {nc.item.item}"
+    if plano in PLANOS_DO_ITEM.get(ref, frozenset()):
+        return nc.item
+    for outro in grupo_equivalente(ref):
+        if outro == ref or plano not in PLANOS_DO_ITEM.get(outro, frozenset()):
+            continue
+        ja = next((c for c in nc.complementos if f"{c.nr} {c.item}" == outro), None)
+        if ja is not None:
+            return ja
+        if base is not None:
+            nr, _, numero = outro.partition(" ")
+            if (item := base.obter(nr, numero)) is not None:
+                return item
+    return None
+
+
+def _aplicar_contraprova(
+    laudo: Laudo,
+    respostas: dict[str, RespostaContraprova],
+    base: BaseNormativa | None = None,
+) -> None:
     """Retira a não conformidade que a imagem contradiz e registra todas as outras.
+
+    "outro_plano" não retira: a abertura existe e está desprotegida, só que
+    noutro plano. No lote de 26/09 o controle `13 PAV. PEÇO ELEVADOR SEM
+    PROTEÇÃO E SINALIZAÇÃO` — vão de porta aberto para o poço — perdeu a NC
+    crítica porque a contraprova só sabia "contradiz": certa sobre o plano,
+    errada sobre a consequência. Agora a NC passa ao item que cobre o plano
+    visto (`_item_para_o_plano`), com a constatação reescrita; só cai se nenhum
+    item cobre aquele plano (teto) ou se a reescrita não veio.
 
     Só "contradiz" derruba. "nao_decide" mantém o enquadramento e fica na trilha:
     derrubar por inconclusão trocaria o falso positivo pelo achado que evapora
@@ -1788,11 +1855,41 @@ def _aplicar_contraprova(laudo: Laudo, respostas: dict[str, tuple[str, str]]) ->
     sobreviventes: list[NaoConformidade] = []
     linhas: list[str] = []
     refutadas = 0
+    reenquadradas = 0
     for n, nc in enumerate(laudo.nao_conformidades, start=1):
         rotulo = f"{nc.item.nr} {nc.item.item}"
-        veredito, visto = respostas.get(f"A{n}", ("", ""))
-        visto = _em_poucas_palavras(_limpar_citacoes(visto))
+        resposta = respostas.get(f"A{n}") or RespostaContraprova("")
+        veredito = resposta.veredito
+        visto = _em_poucas_palavras(_limpar_citacoes(resposta.visto))
         detalhe = f" — {visto}" if visto else ""
+        if veredito == "outro_plano":
+            corrigida = _limpar_citacoes(resposta.corrigida)
+            novo = _item_para_o_plano(nc, resposta.plano, base) if corrigida else None
+            if novo is not None:
+                reenquadradas += 1
+                ref_novo = f"{novo.nr} {novo.item}"
+                if ref_novo != rotulo:
+                    # O item antigo não cobre o plano visto: não fica nem como
+                    # citação complementar. E o rótulo do risco saía "Abertura
+                    # no piso…" — cai, e o relatório nomeia pela constatação.
+                    nc.complementos = [
+                        c for c in nc.complementos if f"{c.nr} {c.item}" != ref_novo
+                    ]
+                    nc.item = novo
+                    nc.rotulo_risco = ""
+                nc.constatacao = corrigida
+                sobreviventes.append(nc)
+                linhas.append(
+                    f"{rotulo}: a imagem situa a abertura no plano "
+                    f"{resposta.plano or 'indicado'}; "
+                    + (f"enquadramento passado a {ref_novo}" if ref_novo != rotulo
+                       else "constatação corrigida")
+                    + detalhe
+                )
+                continue
+            # Sem item que cubra o plano visto, ou sem a reescrita: é a
+            # constatação que está errada, e ela cai como "contradiz".
+            veredito = "contradiz"
         if veredito == "contradiz":
             refutadas += 1
             motivo = "a contraprova visual da foto contradisse a constatação" + (
@@ -1817,7 +1914,7 @@ def _aplicar_contraprova(laudo: Laudo, respostas: dict[str, tuple[str, str]]) ->
             linhas.append(f"{rotulo}: contraprova sem resposta; enquadramento mantido")
     laudo.nao_conformidades = sobreviventes
     laudo.contraprova = linhas
-    if not refutadas:
+    if not refutadas and not reenquadradas:
         return
     if not sobreviventes:
         laudo.parecer_diretor = _parecer_coerente("", [], laudo.vetos)
@@ -1827,14 +1924,25 @@ def _aplicar_contraprova(laudo: Laudo, respostas: dict[str, tuple[str, str]]) ->
     # interessa refutar (vão inexistente sai crítica). Acrescentar uma frase
     # deixaria o laudo afirmando o risco que ele mesmo retirou (classe 4).
     # Então o parecer é refeito pelo código, só com o que sobrou.
+    # Reenquadrar também reescreve a constatação, e o parecer do Diretor falava
+    # da versão antiga ("abertura no piso") — mesma razão de refazê-lo.
     principal = min(sobreviventes, key=lambda x: x.prioridade)
-    laudo.parecer_diretor = (
+    partes = [
         f"Permanece(m) {len(sobreviventes)} não conformidade(s) confirmada(s) "
-        "na revisão; a de maior gravidade é: "
-        f"{principal.constatacao.rstrip('.')}. A contraprova visual retirou "
-        f"{refutadas} enquadramento(s) que a imagem não sustenta; eles seguem "
-        "nos pontos de atenção para verificação no local."
-    )
+        f"na revisão; a de maior gravidade é: {principal.constatacao.rstrip('.')}."
+    ]
+    if reenquadradas:
+        partes.append(
+            f"A contraprova visual corrigiu o plano de {reenquadradas} "
+            "abertura(s), e o enquadramento seguiu o que a imagem mostra."
+        )
+    if refutadas:
+        partes.append(
+            f"A contraprova visual retirou {refutadas} enquadramento(s) que a "
+            "imagem não sustenta; eles seguem nos pontos de atenção para "
+            "verificação no local."
+        )
+    laudo.parecer_diretor = " ".join(partes)
 
 
 # ---------------------------------------------------------------------------
@@ -2236,6 +2344,7 @@ def _executar(
             agente_contraprova(
                 cliente, imagem_b64, config.modelo_visao, laudo.nao_conformidades
             ),
+            base,
         )
 
     return laudo
