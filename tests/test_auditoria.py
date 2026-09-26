@@ -3347,7 +3347,7 @@ def _veredito_de_aparo(sobra_descumpre=None, exigencia="deve ser apoiada em piso
 
 def test_aparo_com_sobra_fora_do_item_vira_veto_mesmo_com_exigencia_ancorada(base):
     """O caso de 14/09 (vão no TETO mantido num item de "pisos e paredes") e de
-    24/09 ("não se aplica" escrito no `retirado`): o Diretor diz, ao aparar,
+    24/09 ("não se aplica" escrito no próprio aparo): o Diretor diz, ao aparar,
     que o que sobrou não é situação do item, e mantém o enquadramento. A
     exigência que ele copia EXISTE no texto oficial, então `_exigencia_ancorada`
     não pega — é o campo `sobra_descumpre` que decide."""

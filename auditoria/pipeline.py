@@ -1280,9 +1280,8 @@ APARADO — o trecho sustenta PARTE da constatação e o resto é suposição. N
   mantido num item que regula "aberturas em pisos e paredes"; um painel vertical mantido
   num item de abertura no PISO; quadros de andaime desmontados mantidos num item sobre a
   superfície de trabalho do andaime. Nos três você mesmo escreveu, ao aparar, que o item
-  não cobria aquilo —
-  "não tetos", "regula especificamente aberturas no piso", "não se aplica" — e manteve
-  o enquadramento. Se você escreveria isso, a resposta é "nao".
+  não cobria aquilo — "não tetos", "regula especificamente aberturas no piso",
+  "não se aplica" — e manteve o enquadramento. Se você escreveria isso, a resposta é "nao".
 VETADO — nenhum trecho sustenta a constatação; OU a versão aparada já não descumpre o
   TEXTO OFICIAL daquele item. Confira sempre este segundo caso: o enquadramento aparado
   aponta o MESMO item, então releia o TEXTO OFICIAL do bloco [V<n>] e pergunte se o que
@@ -1382,8 +1381,6 @@ SEM_ITENS = "(nenhum)"
 # que a rede foi feita para pegar, e a frase é uma afirmação técnica correta.
 MOTIVO_EXIGENCIA_NAO_ANCORA = "a constatação não descumpre o texto oficial deste item"
 
-# O trecho não veio. Nada foi refutado — não houve conferência. Dizer a mesma
-# frase aqui é pôr no laudo um juízo que o supervisor não emitiu.
 # O próprio supervisor respondeu, ao aparar, que o que sobrou não é situação
 # de que este item trata. É refutação dele, não do código — e o texto diz isso.
 MOTIVO_SOBRA_FORA_DO_ITEM = (
@@ -1391,6 +1388,8 @@ MOTIVO_SOBRA_FORA_DO_ITEM = (
     "situação de que este item trata"
 )
 
+# O trecho não veio. Nada foi refutado — não houve conferência. Dizer a mesma
+# frase aqui é pôr no laudo um juízo que o supervisor não emitiu.
 MOTIVO_CONFERENCIA_OMITIDA = (
     "a conferência não trouxe o trecho descumprido — o enquadramento caiu por "
     "omissão da supervisão, não por refutação"
