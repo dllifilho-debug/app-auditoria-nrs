@@ -5936,7 +5936,9 @@ def test_contraprova_com_sobrevivente_refaz_o_parecer_sem_o_risco_retirado(base)
     """O parecer do Diretor é escrito antes da contraprova e elege o risco
     predominante; se a imagem refuta justamente esse, acrescentar uma frase
     deixaria o laudo afirmando o que retirou (classe de erro 4)."""
-    from auditoria.pipeline import NaoConformidade, _aplicar_contraprova, Laudo, Visao
+    from auditoria.pipeline import (
+        NaoConformidade, RespostaContraprova as R, _aplicar_contraprova, Laudo, Visao,
+    )
     item = base.obter("NR-18", "18.9.2")
     outro = base.obter("NR-18", "18.16.16")
     falsa = NaoConformidade(item, "Abertura no piso sem fechamento.", "queda",
@@ -5945,8 +5947,8 @@ def test_contraprova_com_sobrevivente_refaz_o_parecer_sem_o_risco_retirado(base)
                            "media", "remover", 30)
     laudo = Laudo(visao=Visao(), nao_conformidades=[falsa, real],
                   parecer_diretor="O risco predominante é a abertura no piso sem fechamento.")
-    _aplicar_contraprova(laudo, {"A1": ("contradiz", "Junta de dilatação, sem vão."),
-                                 "A2": ("confirma", "")})
+    _aplicar_contraprova(laudo, {"A1": R("contradiz", "Junta de dilatação, sem vão."),
+                                 "A2": R("confirma")})
     assert laudo.nao_conformidades == [real]
     assert "abertura no piso" not in laudo.parecer_diretor.lower()
     assert "Entulho acumulado" in laudo.parecer_diretor
@@ -6003,3 +6005,98 @@ def test_tapume_nao_dispara_por_aberta_sem_a_rua():
     assert "tapume_galeria_ausente" not in ids(FATO_CANCELA_EMBARQUE + ", obra em andamento")
     assert "tapume_galeria_ausente" not in ids(
         "Tapume de madeira contínuo fechando a frente da obra, com a rua ao fundo")
+
+
+
+# ---------------------------------------------------------------------------
+# Contraprova: a abertura existe, noutro plano (lote de 26/09)
+# ---------------------------------------------------------------------------
+
+def _nc_de_piso(base, complementos=()):
+    from auditoria.pipeline import NaoConformidade
+    nc = NaoConformidade(
+        base.obter("NR-18", "18.9.2"),
+        "Abertura retangular no piso, sem fechamento provisório nem proteção contra quedas.",
+        "queda", "critica", "fechar a abertura", 1,
+        rotulo_risco="Abertura no piso sem fechamento travado ou proteção contra queda",
+    )
+    nc.complementos = list(complementos)
+    return nc
+
+
+CORRIGIDA_PAREDE = ("Vão de porta na parede de alvenaria, aberto para o poço do elevador, "
+                    "sem fechamento nem proteção contra quedas.")
+
+
+def test_contraprova_em_outro_plano_passa_ao_item_de_parede_em_vez_de_retirar(base):
+    """O controle `13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO E SINALIZAÇÃO` de 26/09:
+    vão de porta aberto para o poço, lido como "abertura no piso". A contraprova
+    acertou o plano e o laudo perdeu a NC crítica, porque só sabia retirar. O
+    8.3.2.2 cobre "aberturas nos pisos e nas paredes" e é o equivalente
+    declarado — a NC fica, no item que cobre o que a foto mostra."""
+    from auditoria.pipeline import RespostaContraprova as R, _aplicar_contraprova, Laudo, Visao
+    nc = _nc_de_piso(base)
+    laudo = Laudo(visao=Visao(), nao_conformidades=[nc], parecer_diretor="abertura no piso")
+    _aplicar_contraprova(
+        laudo, {"A1": R("outro_plano", "Vão de porta na parede.", "parede", CORRIGIDA_PAREDE)}, base)
+    assert len(laudo.nao_conformidades) == 1, "a NC real caiu"
+    fica = laudo.nao_conformidades[0]
+    assert (fica.item.nr, fica.item.item) == ("NR-08", "8.3.2.2")
+    assert fica.constatacao == CORRIGIDA_PAREDE
+    assert fica.rotulo_risco == "", "o título continuaria dizendo 'no piso'"
+    assert fica.gravidade == "critica"
+    assert not laudo.vetos
+    assert "no piso" not in laudo.parecer_diretor
+    assert "passado a NR-08 8.3.2.2" in laudo.contraprova[0]
+
+
+def test_contraprova_em_outro_plano_nao_cita_o_item_de_piso_como_complemento(base):
+    """Se o 8.3.2.2 já vinha como complemento do 18.9.2 (a fusão), ele sobe a
+    item principal e o 18.9.2 não fica ao lado: ele não cobre parede."""
+    from auditoria.pipeline import RespostaContraprova as R, _aplicar_contraprova, Laudo, Visao
+    nc = _nc_de_piso(base, [base.obter("NR-08", "8.3.2.2")])
+    laudo = Laudo(visao=Visao(), nao_conformidades=[nc])
+    _aplicar_contraprova(
+        laudo, {"A1": R("outro_plano", "", "parede", CORRIGIDA_PAREDE)}, base)
+    fica = laudo.nao_conformidades[0]
+    assert (fica.item.nr, fica.item.item) == ("NR-08", "8.3.2.2")
+    assert fica.complementos == []
+
+
+def test_contraprova_no_teto_sem_item_que_cubra_cai_como_antes(base):
+    """Nenhum dos dois cobre teto (o aparo de 14/09: "não tetos") — cai."""
+    from auditoria.pipeline import RespostaContraprova as R, _aplicar_contraprova, Laudo, Visao
+    laudo = Laudo(visao=Visao(), nao_conformidades=[_nc_de_piso(base)])
+    _aplicar_contraprova(
+        laudo, {"A1": R("outro_plano", "Vão na laje de cima.", "teto", "Vão no teto.")}, base)
+    assert not laudo.nao_conformidades
+    assert laudo.vetos and any("verificar no local" in p for p in laudo.sem_enquadramento)
+
+
+def test_contraprova_em_outro_plano_sem_reescrita_cai(base):
+    """Sem a constatação corrigida, o texto do laudo diria "no piso" num item
+    de parede — pior que retirar. Cai para verificação."""
+    from auditoria.pipeline import RespostaContraprova as R, _aplicar_contraprova, Laudo, Visao
+    laudo = Laudo(visao=Visao(), nao_conformidades=[_nc_de_piso(base)])
+    _aplicar_contraprova(laudo, {"A1": R("outro_plano", "", "parede", "")}, base)
+    assert not laudo.nao_conformidades
+
+
+def test_prompt_da_contraprova_separa_vao_inexistente_de_outro_plano():
+    from auditoria.pipeline import PROMPT_CONTRAPROVA as p
+    assert '"outro_plano"' in p and '"constatacao_corrigida"' in p
+    assert "vão de porta na PAREDE" in p
+
+
+def test_mancha_de_umidade_no_piso_nao_traz_impermeabilizacao_ao_dossie(base):
+    """A NC falsa da foto `8 PAV. CANCELA` de 26/09: `NR-08 8.3.3.2` sobre
+    "manchas escuras de umidade" numa laje de obra. Especificação de desempenho
+    da edificação acabada — a foto não a evidencia."""
+    visao = Visao(
+        ambiente="Interior de edificação em fase de construção, com piso de concreto aparente",
+        achados=[Achado("Piso de concreto com textura irregular, apresentando manchas "
+                        "escuras de umidade e resíduos de argamassa espalhados.")],
+    )
+    dossie, _ = montar_dossie(base, visao, "", HOJE)
+    ids = {f"{e.item.nr} {e.item.item}" for e in dossie.entradas}
+    assert "NR-08 8.3.3.2" not in ids and "NR-08 8.3.3.1" not in ids
