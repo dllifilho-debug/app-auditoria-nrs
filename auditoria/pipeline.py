@@ -2026,9 +2026,21 @@ def _executar(
                     retirado = _em_poucas_palavras(
                         _limpar_citacoes(str(aparo.get("retirado", "")).strip())
                     )
+                    # O campo `sobra_descumpre` só decidia quando vinha "nao", e o
+                    # aparo mantido não dizia nada sobre ele. No lote de 26/09 isso
+                    # deixou sem resposta a primeira pergunta do conserto — o
+                    # Diretor preenche o campo? —, porque "sim" e ausente davam o
+                    # mesmo laudo. É a armadilha "rede que só registra quando
+                    # falha", e a linha abaixo separa as duas respostas.
+                    sobra = normalizar(str(aparo.get("sobra_descumpre", ""))).strip()
                     laudo.aparos.append(
                         f"{nc.item.nr} {nc.item.item}: constatação restrita ao fato registrado"
                         + (f" — retirado: {retirado}" if retirado else "")
+                        + (
+                            " — a supervisão declarou que o que sobrou segue coberto pelo item"
+                            if sobra in ("sim", "s")
+                            else " — a supervisão não declarou se o que sobrou segue coberto pelo item"
+                        )
                     )
                 nc.constatacao = nova
                 if (novo := str(aparo.get("acao_corretiva", "")).strip()):
