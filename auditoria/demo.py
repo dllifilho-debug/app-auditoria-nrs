@@ -141,6 +141,12 @@ class ClienteDemonstracao:
 
         if "perito em documentação fotográfica" in prompt:
             return json.dumps(FATOS_DEMO, ensure_ascii=False)
+        if "segundo perito" in prompt:
+            refs = re.findall(r"\[(A\d+)\]", prompt.split("Para CADA")[0])
+            return json.dumps({"conferencia": [
+                {"ref": r, "visto": "A condição descrita aparece na imagem.", "veredito": "confirma"}
+                for r in refs
+            ]}, ensure_ascii=False)
         if "DOSSIÊ NORMATIVO" in prompt:
             return json.dumps(self._analisar(prompt), ensure_ascii=False)
         if "Diretor Técnico" in prompt:

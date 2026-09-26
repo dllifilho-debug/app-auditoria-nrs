@@ -119,6 +119,50 @@ seguravam regrediram). **Decisão registrada no bloco acima: parar de iterar aqu
 
 ---
 
+## Contraprova visual de 26/09/2026 — o Diretor passa a ter a foto como segunda fonte (À ESPERA DE LOTE)
+
+Pedido do usuário: "ainda está errando coisas bobas — as de leitura, do Diretor". O diagnóstico é
+estrutural e está neste arquivo desde 11/09: **o Diretor confere a constatação contra o TEXTO do
+Olho, nunca contra a imagem**, e o `fato` é o único ponto do pipeline que ninguém confere. Os erros
+mais caros do histórico passaram por aí limpos — VÃO INEXISTENTE (seis ocorrências, inclusive a de
+PLANO errado de 24/09), "sem sapatas" sobre placa de base visível (24/09), cancela instalada e
+aberta lida como ausente (26/09), boné numa cabeça descoberta (16/09). É a "confirmação fato a
+fato" que a seção 7 da validação de 11/09 dizia faltar.
+
+**O conserto**: `agente_contraprova` (`pipeline.py`), uma chamada de VISÃO depois do Gauntlet, só
+para as NCs que sobreviveram. Recebe a imagem e as constatações como afirmações a REFUTAR (sem o
+item de norma — julga a condição física, não o enquadramento), pede primeiro `visto` (o que há no
+lugar, em que plano, se há profundidade, se a peça dada como ausente aparece) e só depois
+`veredito`: `confirma|contradiz|nao_decide`. O prompt lista os quatro erros reais acima.
+- **`contradiz` derruba**: vira veto, a constatação vai aos pontos de atenção com "verificar no
+  local", e o parecer é corrigido (laudo vazio → texto de `_parecer_coerente`; com sobreviventes,
+  o parecer é REFEITO pelo código a partir da mais grave que sobrou — o do Diretor foi escrito
+  antes e costuma eleger justamente a NC refutada. A primeira versão só acrescentava uma frase, e o
+  `/critico` rejeitou por classe de erro 4).
+- **`nao_decide` MANTÉM** e fica na trilha. Derrubar por inconclusão trocaria falso positivo por
+  achado que evapora (classe 5), e 16/09 mostrou o modelo preferindo não afirmar. O lote diz
+  quantas inconclusivas eram NC real antes de endurecer.
+- **Resposta ilegível mantém** ("contraprova sem resposta"); erro de cota/rede sobe, como em todo
+  agente.
+- **A trilha registra os quatro desfechos** — lição da "rede que só registra quando falha".
+- Perfil Padrão e Máximo ligam; Rápido desliga (`Configuracao.usar_contraprova`).
+
+**Custo**: uma chamada de visão a mais por foto COM NC. Estimado (não medido) em ~2.500 tokens;
+`CUSTO_POR_FOTO` do Padrão foi de 7.100 para 9.600 como teto. No limite de 200.000/dia isso tira
+~5 fotos/dia (de ~25 para ~20) se toda foto tiver NC.
+
+**Hipótese não medida, e é a que decide se isto funciona**: é o MESMO modelo de visão sobre a
+MESMA imagem. Se perguntado de frente ele repetir a leitura errada, a rede não pega nada. Oito
+testes travam o mecanismo (falham no código antigo; 302 no total); nenhum teste alcança o comportamento do
+modelo. **O que o lote tem de responder**, lido na linha "Contraprova visual" da trilha: (a) nas
+fotos de erro conhecido — `8 PAV. CANCELA CREMALHEIRA SEM SINALIZAÇÃO`, a foto 4 (`5af17330…`, vão de
+parede lido como piso) e a 6 (`WhatsApp Image 2026-05-05 at 14.41.18`, "sem sapatas") do lote de andaime, a contraparte `6 PAV. TRABALHADORES
+SEM DOCUMENTAÇÃO` —, se sai `contradiz`; (b) nas NCs reais — a âncora `13 PAV. PEÇO ELEVADOR SEM
+PROTEÇÃO` e o controle `13 PAV. PEÇO ELEVADOR SEM PROTEÇÃO E SINALIZAÇÃO` de 26/09 —, se sai `confirma` e a NC fica (o risco simétrico:
+contraprova severa derrubando NC real); (c) quantas saem `nao_decide`.
+
+---
+
 ## Laudo de andaime de 24/09/2026 — a periferia que ninguém endereçou, e um sinal frágil consertado
 
 `main` em `b18800a` (merge do PR #69). Um laudo real de andaime, com `andaime_sem_guarda_corpo`
@@ -3423,7 +3467,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 294 testes
+$VENV -m pytest tests/ -q          # 302 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -3588,7 +3632,7 @@ próprio comando composto (exit 144).
   um `"sem"` de verdade estiver perto DELE no texto (`_proximidade_da_negacao`,
   `pipeline.py`), e sinal de exatamente dois radicais sem negador exige os dois próximos
   (`_bigrama_proximo`). Ver "Conserto de roteamento de 18/09/2026" para a medição.
-- **294 testes**
+- **302 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos

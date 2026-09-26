@@ -3050,6 +3050,10 @@ class _Duble:
                 }],
                 "sem_enquadramento": [], "conformidades": [],
             }, ensure_ascii=False)
+        if "segundo perito" in p:
+            # Contraprova visual: sem resposta, o enquadramento fica — estes
+            # testes medem o Diretor, e ela não pode sobrescrever o prompt dele.
+            return json.dumps({"conferencia": []})
         self.prompt_diretor = p
         return json.dumps(self.veredito_fn(), ensure_ascii=False)
 
@@ -4413,7 +4417,8 @@ def test_a_retentativa_nao_dobra_o_teto_acima_do_limite_da_conta(base):
     cliente = _ClienteComOtpmApertado()
     laudo = executar(
         cliente, base, "imagem-falsa", "",
-        Configuracao(modelo_visao="d", modelo_texto="d", data_referencia=HOJE),
+        Configuracao(modelo_visao="d", modelo_texto="d", data_referencia=HOJE,
+                     usar_contraprova=False),
     )
     assert laudo.nao_conformidades, "o laudo se perdeu na segunda tentativa"
     assert cliente.tetos == [900] * 6, cliente.tetos
@@ -5826,3 +5831,121 @@ def test_mancha_de_umidade_nao_poe_a_nr15_no_dossie(base, fato):
     dossie_, _ = montar_dossie(base, visao, "", HOJE)
     assert "NR-15" not in dossie_.nrs_candidatas
     assert not [e.item.id for e in dossie_.entradas if e.item.nr == "NR-15"]
+
+
+# ---------------------------------------------------------------------------
+# Contraprova visual
+# ---------------------------------------------------------------------------
+
+class _DubleComContraprova(_Duble):
+    """O `_Duble` com o Diretor aprovando, e a contraprova respondendo `veredito`."""
+
+    def __init__(self, veredito: str | None, visto: str = ""):
+        super().__init__("NR-35 Anexo III 5.2.2.5", CONSTATACAO, lambda: {
+            "conferencia": [{"ref": "V1", "fato": FATO, "decisao": "aprovado",
+                             "exigencia": "deve ser apoiada em piso estável"}],
+            "aparados": [], "vetados": [], "ajustes": [], "pontos_descartados": [],
+            "conformidades_descartadas": [], "parecer": "Apoio instável da escada.",
+        })
+        self.veredito, self.visto = veredito, visto
+        self.mensagens_contraprova: list[dict] = []
+
+    def conversar(self, modelo, mensagens, teto_saida=1200, temperatura=0.0, json_estrito=False):
+        p = _texto_do_prompt(mensagens)
+        if "segundo perito" in p:
+            self.mensagens_contraprova = mensagens
+            if self.veredito is None:
+                return "isto não é JSON"
+            return json.dumps({"conferencia": [
+                {"ref": "A1", "visto": self.visto, "veredito": self.veredito}
+            ]}, ensure_ascii=False)
+        return super().conversar(modelo, mensagens, teto_saida, temperatura, json_estrito)
+
+
+def _rodar_contraprova(base, veredito, visto="", **config):
+    duble = _DubleComContraprova(veredito, visto)
+    laudo = executar(duble, base, "img", "", Configuracao(
+        modelo_visao="d", modelo_texto="d", data_referencia=HOJE, **config))
+    return laudo, duble
+
+
+def test_contraprova_que_contradiz_retira_a_nc_e_manda_para_ponto_de_atencao(base):
+    """O caso que a contraprova existe para pegar: o Diretor aprovou porque o
+    FATO do Olho sustenta a constatação, e o fato é falso — a imagem mostra
+    outra coisa (vão inexistente, sapata que existe, cancela instalada)."""
+    laudo, _ = _rodar_contraprova(
+        base, "contradiz", "Os montantes estão assentados em placa de base metálica visível.")
+    assert not laudo.nao_conformidades
+    assert not laudo.aprovado
+    assert any("contraprova visual" in v for v in laudo.vetos)
+    assert any("verificar no local" in s and "placa de base" in s
+               for s in laudo.sem_enquadramento), "o achado evaporou"
+    assert "não se sustentaram" in laudo.parecer_diretor, "o parecer contradiz o laudo vazio"
+    md = relatorio.markdown(laudo, base, numero=1)
+    assert "Contraprova visual" in md and "contradita pela imagem" in md
+
+
+def test_contraprova_inconclusiva_mantem_a_nc_e_registra_na_trilha(base):
+    """Derrubar por inconclusão trocaria falso positivo por achado que evapora."""
+    laudo, _ = _rodar_contraprova(base, "nao_decide", "A base da escada fica fora do recorte.")
+    assert len(laudo.nao_conformidades) == 1
+    assert laudo.contraprova and "não permitiu decidir" in laudo.contraprova[0]
+
+
+def test_contraprova_confirmada_deixa_linha_na_trilha(base):
+    """Rede que só registra quando falha não se mede no lote seguinte."""
+    laudo, _ = _rodar_contraprova(base, "confirma")
+    assert len(laudo.nao_conformidades) == 1
+    assert laudo.contraprova == ["NR-35 Anexo III 5.2.2.5: confirmada na imagem"]
+
+
+def test_contraprova_ilegivel_mantem_a_nc_sem_matar_a_foto(base):
+    laudo, _ = _rodar_contraprova(base, None)
+    assert len(laudo.nao_conformidades) == 1
+    assert "sem resposta" in laudo.contraprova[0]
+
+
+def test_contraprova_ve_a_imagem_e_nao_ve_o_item_de_norma(base):
+    """Ela julga a condição física contra a foto. Com o item à vista, viraria
+    uma segunda conferência de enquadramento — o que o Diretor já faz."""
+    _, duble = _rodar_contraprova(base, "confirma")
+    partes = duble.mensagens_contraprova[0]["content"]
+    assert any(p.get("type") == "image_url" and "img" in p["image_url"]["url"] for p in partes)
+    texto = _texto_do_prompt(duble.mensagens_contraprova)
+    assert "sapatas antiderrapantes" in texto          # a constatação vai
+    assert "NR-35" not in texto and "5.2.2.5" not in texto  # o item não
+
+
+def test_contraprova_desligada_nao_chama_o_modelo(base):
+    laudo, duble = _rodar_contraprova(base, "contradiz", usar_contraprova=False)
+    assert len(laudo.nao_conformidades) == 1
+    assert not duble.mensagens_contraprova and not laudo.contraprova
+
+
+def test_prompt_da_contraprova_pede_descricao_antes_do_veredito():
+    """A ordem é a trava contra ratificar a frase: olhar de novo, depois julgar."""
+    from auditoria.pipeline import PROMPT_CONTRAPROVA as p
+    assert p.index('"visto"') < p.index('"veredito"')
+    assert "piso, parede, teto" in p and "profundidade" in p
+    assert "Diretor Técnico" not in p and "perito em documentação fotográfica" not in p
+
+
+def test_contraprova_com_sobrevivente_refaz_o_parecer_sem_o_risco_retirado(base):
+    """O parecer do Diretor é escrito antes da contraprova e elege o risco
+    predominante; se a imagem refuta justamente esse, acrescentar uma frase
+    deixaria o laudo afirmando o que retirou (classe de erro 4)."""
+    from auditoria.pipeline import NaoConformidade, _aplicar_contraprova, Laudo, Visao
+    item = base.obter("NR-18", "18.9.2")
+    outro = base.obter("NR-18", "18.16.16")
+    falsa = NaoConformidade(item, "Abertura no piso sem fechamento.", "queda",
+                            "critica", "fechar", 1)
+    real = NaoConformidade(outro, "Entulho acumulado na circulação.", "tropeço",
+                           "media", "remover", 30)
+    laudo = Laudo(visao=Visao(), nao_conformidades=[falsa, real],
+                  parecer_diretor="O risco predominante é a abertura no piso sem fechamento.")
+    _aplicar_contraprova(laudo, {"A1": ("contradiz", "Junta de dilatação, sem vão."),
+                                 "A2": ("confirma", "")})
+    assert laudo.nao_conformidades == [real]
+    assert "abertura no piso" not in laudo.parecer_diretor.lower()
+    assert "Entulho acumulado" in laudo.parecer_diretor
+    assert any("Abertura no piso" in p for p in laudo.sem_enquadramento)
