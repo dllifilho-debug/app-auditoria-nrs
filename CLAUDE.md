@@ -188,9 +188,9 @@ escrito: `"cancela aberta sem cabine"` tem 4 radicais e passa a 0,75 sem `cabin`
 obrigatórios): o positivo "frente da obra aberta para a rua, sem tapume" continua; a cancela e
 "tapume contínuo … com a rua ao fundo" calam.
 
-Sinais: 883 → **882**; de 4+ radicais: 257 → **256**. Seis testes novos (um parametrizado em
-três): os dois que medem os consertos falham no código antigo; os quatro positivos passam nos
-dois. O teste antigo `test_o_elevador_de_verdade_continua_chegando_ao_item_certo` usava
+Sinais: 883 → **882**; de 4+ radicais: 257 → **256**. Cinco casos de teste novos (três funções, uma
+parametrizada em três): os dois que medem os consertos falham no código antigo; os três
+positivos passam nos dois. O teste antigo `test_o_elevador_de_verdade_continua_chegando_ao_item_certo` usava
 "cancela … aberta" como defeito da cena — o mesmo erro escrito como expectativa; trocado por
 cancela ausente. **307 testes passam.**
 
