@@ -596,7 +596,12 @@ CATALOGO_NR: dict[str, dict] = {
             "calor",
             "ibutg",
             "frio",
-            "umidade",
+            # "umidade" saiu em 26/09: "manchas escuras de umidade" é vocabulário
+            # corrente de parede e piso de obra, e bastava para pôr a NR-15 no
+            # escopo, onde o BM25 só achava o Anexo 6 (MERGULHO). A umidade da
+            # NR-15 é o Anexo 10, "locais alagados ou encharcados … em
+            # decorrência de laudo" — obrigação de papel, que o filtro de
+            # `comprovavel_em_foto` descarta de qualquer modo.
             "poeira mineral",
             "silica",
             "sílica",

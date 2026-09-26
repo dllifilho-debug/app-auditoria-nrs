@@ -5711,3 +5711,21 @@ def test_item_de_andaime_multidirecional_entra_quando_o_tipo_esta_na_cena(base, 
     ])
     assert "NR-18 18.12.15.2" in _itens_do_dossie(base, visao)
     assert "NR-18 18.12.15.2" in _itens_do_dossie(base, _ANDAIME_DE_QUADROS, contexto=nome)
+
+
+@pytest.mark.parametrize("fato", [
+    # Lote de andaime de 24/09, laudo 3: trouxe Anexo 6 (mergulho) ao dossiê.
+    "Piso de concreto com manchas escuras de umidade ou líquido e resíduos de "
+    "construção espalhados.",
+    # Lote de içamento de 02/09, foto do fosso: cinco vagas de mergulho.
+    "Parede de alvenaria com manchas escuras de umidade ou sujeira na superfície.",
+])
+def test_mancha_de_umidade_nao_poe_a_nr15_no_dossie(base, fato):
+    """A NR-15 é caracterização de insalubridade; a umidade dela é o Anexo 10
+    (local alagado, por laudo), que foto não comprova. A palavra solta só
+    abria a norma para o BM25 achar itens de mergulho hiperbárico."""
+    visao = Visao(ambiente="Pavimento de edificação em construção.",
+                  achados=[Achado(fato)])
+    dossie_, _ = montar_dossie(base, visao, "", HOJE)
+    assert "NR-15" not in dossie_.nrs_candidatas
+    assert not [e.item.id for e in dossie_.entradas if e.item.nr == "NR-15"]

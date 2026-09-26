@@ -235,7 +235,7 @@ três letras de sufixo e "multidirecional" não casaria o plural. O teste antigo
 os dois que medem o bloqueio falham no código antigo.
 
 **Em aberto, sem conserto**: o aparo que escreve a razão do veto e não veta (foto 3, a mesma classe
-da foto 4 de 14/09); `NR-15 Anexo 6` voltando por "umidade" (foto 3); a trava do vão não conferir o
+da foto 4 de 14/09); `NR-15 Anexo 6` voltando por "umidade" (foto 3 — consertado em 26/09, ver "Em aberto"); a trava do vão não conferir o
 PLANO da abertura (foto 4).
 
 ---
@@ -3350,7 +3350,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 280 testes
+$VENV -m pytest tests/ -q          # 282 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -3515,7 +3515,7 @@ próprio comando composto (exit 144).
   um `"sem"` de verdade estiver perto DELE no texto (`_proximidade_da_negacao`,
   `pipeline.py`), e sinal de exatamente dois radicais sem negador exige os dois próximos
   (`_bigrama_proximo`). Ver "Conserto de roteamento de 18/09/2026" para a medição.
-- **280 testes**
+- **282 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
@@ -4716,10 +4716,15 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   roteamento dado o fato certo, não do modelo escrevendo o fato certo. O risco simétrico
   a vigiar no lote é o Olho nomear ERRADO: nome errado é fato falso, e o `fato` do Olho
   é justamente o que nenhuma trava do pipeline confere.
-- **A palavra-chave `umidade` da NR-15 destranca o Anexo 6 (hiperbárico).** "Manchas
-  escuras de umidade" numa parede de alvenaria levou cinco itens de mergulho ao dossiê.
-  A `umidade` da NR-15 é o Anexo 10, locais alagados/encharcados — pede qualificação,
-  não a palavra solta. Conserto barato em `catalogo_nr.py`.
+- ~~A palavra-chave `umidade` da NR-15 destranca o Anexo 6 (hiperbárico)~~ — **CONSERTADO em
+  26/09, sem lote.** "Manchas escuras de umidade" numa parede de alvenaria levou cinco itens de
+  mergulho ao dossiê (02/09), e voltou no laudo 3 do lote de andaime (24/09). A palavra saiu de
+  `palavras_chave` da NR-15, e **não foi trocada por termos qualificados** — medido: a umidade da
+  NR-15 é o `Anexo 10 1` ("locais alagados ou encharcados … em decorrência de laudo"), que
+  `comprovavel_em_foto` descarta; com "alagado"/"encharcado" no lugar, uma vala alagada de verdade
+  só punha no dossiê o `15.1.1`, item de definição. Removida, as duas cenas reais ficam sem NR-15
+  candidata. `test_mancha_de_umidade_nao_poe_a_nr15_no_dossie` trava as duas e falha no catálogo
+  antigo.
 - **Nada pede que todo achado de risco seja endereçado — agora com dois casos.** Já
   estava registrado nas fotos (59)/(60); no lote de içamento reapareceu duas vezes na
   mesma foto: o laudo 5 enquadrou um vão no piso e deixou a cancela (o achado que o
