@@ -6116,6 +6116,29 @@ def test_contraprova_em_outro_plano_sem_desnivel_visto_vai_a_ponto_de_atencao(ba
     assert any("verificar no local" in p for p in laudo.sem_enquadramento)
 
 
+def test_ponto_de_atencao_do_outro_plano_leva_a_constatacao_corrigida(base):
+    """Laudos de 27/09 (`5af17330`, `13 PAV. … E SINALIZAÇÃO`): o ponto de
+    atenção começava com "abertura retangular no piso" e, no mesmo item, a
+    contraprova dizia que a abertura estava na parede. Com a reescrita em mãos,
+    o ponto de atenção leva o plano que a imagem mostra."""
+    from auditoria.pipeline import RespostaContraprova as R, _aplicar_contraprova, Laudo, Visao
+    laudo = Laudo(visao=Visao(), nao_conformidades=[_nc_de_piso(base)])
+    _aplicar_contraprova(laudo, {"A1": R(
+        "outro_plano", "", "parede", CORRIGIDA_NICHO, desnivel="nao_se_ve")}, base)
+    ponto = laudo.sem_enquadramento[0]
+    assert ponto.startswith(CORRIGIDA_NICHO)
+    assert "no piso, sem fechamento" not in ponto
+
+
+def test_ponto_de_atencao_do_contradiz_segue_com_a_constatacao_original(base):
+    """Contraparte: sem reescrita (contradiz puro), nada a trocar."""
+    from auditoria.pipeline import RespostaContraprova as R, _aplicar_contraprova, Laudo, Visao
+    nc = _nc_de_piso(base)
+    laudo = Laudo(visao=Visao(), nao_conformidades=[nc])
+    _aplicar_contraprova(laudo, {"A1": R("contradiz", "Piso contínuo.")}, base)
+    assert laudo.sem_enquadramento[0].startswith(nc.constatacao)
+
+
 def test_agente_contraprova_le_o_desnivel():
     from auditoria.pipeline import agente_contraprova
 

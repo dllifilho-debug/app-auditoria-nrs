@@ -1871,6 +1871,7 @@ def _aplicar_contraprova(
         visto = _em_poucas_palavras(_limpar_citacoes(resposta.visto))
         detalhe = f" — {visto}" if visto else ""
         motivo_extra = ""
+        texto_ponto = nc.constatacao
         if veredito == "outro_plano":
             corrigida = _limpar_citacoes(resposta.corrigida)
             novo = _item_para_o_plano(nc, resposta.plano, base) if corrigida else None
@@ -1910,8 +1911,12 @@ def _aplicar_contraprova(
                     + detalhe
                 )
                 continue
-            # Sem item que cubra o plano visto, ou sem a reescrita: é a
-            # constatação que está errada, e ela cai como "contradiz".
+            # Sem item que cubra o plano visto, sem desnível ou sem a reescrita:
+            # cai como "contradiz". O ponto de atenção leva a constatação
+            # CORRIGIDA quando ela veio — a original diz "no piso", e o laudo
+            # de 27/09 imprimiu isso ao lado da contraprova dizendo "na parede".
+            if corrigida:
+                texto_ponto = corrigida
             veredito = "contradiz"
         if veredito == "contradiz":
             refutadas += 1
@@ -1922,7 +1927,7 @@ def _aplicar_contraprova(
             )
             laudo.vetos.append(f"{rotulo}: {motivo}")
             laudo.sem_enquadramento.append(
-                f"{nc.constatacao} (enquadramento proposto em {rotulo} foi retirado: "
+                f"{texto_ponto} (enquadramento proposto em {rotulo} foi retirado: "
                 f"{motivo}; verificar no local)"
             )
             linhas.append(f"{rotulo}: contradita pela imagem — enquadramento retirado{detalhe}")
