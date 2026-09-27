@@ -233,6 +233,28 @@ o achado vai a ponto de atenção com "verificar no local". **Custo declarado**:
 lote diz de que lado ele cai. Quatro testes novos (cinco casos) falham no código anterior; os dois
 positivos antigos passaram a exigir `desnivel="sim"`. **318 testes passam.**
 
+## Lote do desnível de 27/09/2026 — o nicho caiu, e o poço foi a ponto de atenção (com razão)
+
+`main` em `b11ce6f` (PR #79) pelo comportamento — a trilha traz "a imagem não mostra desnível" —;
+**hash não lido**. 3 fotos, 3 laudos, 1 NC.
+
+| # | Foto | Laudo | Na imagem |
+|---|---|---|---|
+| 1 | `5af17330` | **0 NC**; ponto de atenção "verificar no local" | ✅ o nicho raso não virou mais NC de queda |
+| 2 | `13 PAV. … E SINALIZAÇÃO` | **0 NC**; ponto de atenção, "a imagem não mostra desnível" | ⚠️ o risco simétrico declarado — e defensável: ampliada a soleira, o piso de terra ENTRA no vão no mesmo nível e há tábuas assentadas lá dentro; o desnível do poço não aparece no recorte (régua (a)/(c)). É o arranjo da âncora (tábuas sobre o poço), que o Olho descreveu como "abertura com profundidade visível" |
+| 3 | âncora | `18.9.2` crítica, confirmada | ✅ |
+
+**Correção do registro anterior**: a revalidação de 26/09 chamou a NC `8.3.2.2` da foto 2 de "NC
+real que voltou". Isso vinha do NOME do arquivo, não da imagem — a geometria não mostra a queda.
+**Medi X, afirmo Y**: o que está medido é a ampliação da soleira; que haja ou não vão sob as tábuas
+fica ABERTO, e é por isso que ponto de atenção é o desfecho certo e NC crítica não era.
+
+**Consertado no mesmo dia, sem lote**: quando o `outro_plano` cai (sem desnível, sem item ou
+teto), o ponto de atenção passa a levar a constatação CORRIGIDA, não a original — as fotos 1 e 2
+imprimiram "abertura retangular **no piso**…" ao lado da contraprova dizendo "na parede". Um teste
+novo falha no código anterior; a contraparte (contradiz puro mantém a original) passa nos dois.
+**320 testes passam.**
+
 ## Cancela aberta no embarque de 26/09/2026 — o sinal que provava o contrário do item (CONSERTADO, sem lote)
 
 `NR-18 18.11.13` cobra que a cancela seja **instalada** ("deve ser instalada barreira (cancela)
@@ -3571,7 +3593,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 318 testes
+$VENV -m pytest tests/ -q          # 320 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -3736,7 +3758,7 @@ próprio comando composto (exit 144).
   um `"sem"` de verdade estiver perto DELE no texto (`_proximidade_da_negacao`,
   `pipeline.py`), e sinal de exatamente dois radicais sem negador exige os dois próximos
   (`_bigrama_proximo`). Ver "Conserto de roteamento de 18/09/2026" para a medição.
-- **318 testes**
+- **320 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
