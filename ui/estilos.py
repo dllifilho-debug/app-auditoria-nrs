@@ -142,6 +142,20 @@ hr { border-color: var(--borda) !important; }
 }
 [data-testid="stTable"] th { background: #EAF1F4; color: var(--pri-esc); }
 
+/* Badge de gravidade: texto + cor, legível também sem cor */
+.nr-badge { display:inline-block; padding:.1rem .6rem; border-radius:999px; font-size:.78rem;
+  font-weight:700; letter-spacing:.02em; border:1px solid transparent; }
+.nr-badge.critica { background:#FDE8E8; color:#9B1C1C; border-color:#F5B5B5; }
+.nr-badge.alta    { background:#FEEBDC; color:#9A3412; border-color:#F8C7A1; }
+.nr-badge.media   { background:#FEF6D8; color:#7A5B00; border-color:#F1DE92; }
+.nr-badge.baixa   { background:#E3F4EF; color:#0E6B5F; border-color:#A9DCCF; }
+
+/* Estado vazio: como funciona */
+.nr-vazio { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:.8rem; margin:.4rem 0 1rem; }
+.nr-vazio > div { background:var(--card); border:1px solid var(--borda); border-radius:var(--raio);
+  padding:.9rem 1rem; box-shadow:var(--sombra); font-size:.9rem; color:var(--suave); }
+.nr-vazio b { display:block; color:var(--pri-esc); margin-bottom:.2rem; }
+
 /* Stepper (HTML próprio, ver `stepper()`) */
 .nr-stepper { display: flex; gap: .5rem; margin: .4rem 0 1.4rem; flex-wrap: wrap; }
 .nr-passo {
@@ -185,3 +199,20 @@ def stepper(passos: list[tuple[str, str]]) -> str:
             f'<div class="nr-passo {estado}"><span class="nr-num">{marca}</span>{rotulo}</div>'
         )
     return f'<div class="nr-stepper">{"".join(itens)}</div>'
+
+
+def badge_gravidade(chave: str, rotulo: str) -> str:
+    """HTML de um selo de gravidade; o texto continua sendo o rótulo do laudo."""
+    classe = chave if chave in ("critica", "alta", "media", "baixa") else "baixa"
+    return f'<span class="nr-badge {classe}">{rotulo}</span>'
+
+
+def como_funciona() -> str:
+    """Estado vazio: três cartões explicando o fluxo, mostrado antes do upload."""
+    return (
+        '<div class="nr-vazio">'
+        "<div><b>1. Envie as fotos</b>Um lote de imagens da vistoria, de qualquer pavimento.</div>"
+        "<div><b>2. O app audita</b>Leitura da imagem, dossiê normativo e supervisão técnica.</div>"
+        "<div><b>3. Baixe o laudo</b>Cada citação é conferida contra o texto oficial do MTE.</div>"
+        "</div>"
+    )

@@ -26,7 +26,7 @@ from auditoria.kb import carregar_base
 from auditoria.modelos import ClienteGroq, ErroDeAuditoria
 from auditoria.pipeline import Configuracao, executar
 from auditoria.riscos import catalogo as catalogo_riscos, riscos_marcaveis
-from ui.estilos import aplicar_estilos, stepper
+from ui.estilos import aplicar_estilos, badge_gravidade, como_funciona, stepper
 
 LIMITE_BASE64 = 3_600_000        # a Groq recusa imagem base64 acima de ~4 MB
 
@@ -415,6 +415,9 @@ contexto = st.text_area(
     placeholder="Ex.: vistoria no 3º pavimento durante concretagem; equipe própria de 12 pessoas.",
     height=80,
 )
+
+if not st.session_state.get("resultados"):
+    st.markdown(como_funciona(), unsafe_allow_html=True)
 
 arquivos = st.file_uploader(
     "Fotos da vistoria",
@@ -905,7 +908,10 @@ if resultados:
                     st.markdown("**Gravidade das constatações**")
                     for nc in laudo.nao_conformidades:
                         rot = relatorio.SELOS.get(nc.gravidade, nc.gravidade)
-                        st.markdown(f"`{nc.item.nr} {nc.item.item}` — **{rot}**")
+                        st.markdown(
+                            f"`{nc.item.nr} {nc.item.item}` — {badge_gravidade(nc.gravidade, rot)}",
+                            unsafe_allow_html=True,
+                        )
                 if not laudo.aprovado:
                     st.warning(
                         f"A revisão técnica vetou {len(laudo.vetos)} enquadramento(s). "
