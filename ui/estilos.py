@@ -19,6 +19,10 @@ PALETA = {
     "texto_suave": "#5B6B7A",
 }
 
+# Nome exibido no cabeçalho. Troque aqui; nada mais depende dele.
+MARCA = "NormaLens"
+SUBTITULO = "Auditoria de NRs por imagem"
+
 _FONTES = (
     "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
 )
@@ -45,6 +49,16 @@ html, body, [data-testid="stAppViewContainer"], .stApp {
   background: linear-gradient(90deg, var(--pri-esc), var(--pri) 55%, var(--ace));
   height: 3rem;
 }
+[data-testid="stHeader"]::before {
+  content: "__MARCA__"; color: #fff; font-weight: 700; font-size: 1.15rem;
+  letter-spacing: -.01em; padding-left: 1rem; display: flex; align-items: center; gap: .6rem;
+}
+[data-testid="stHeader"]::after {
+  content: "__SUBTITULO__"; position: absolute; left: 9.2rem; top: 0; height: 100%;
+  display: flex; align-items: center; color: rgba(255,255,255,.75); font-size: .85rem;
+  border-left: 1px solid rgba(255,255,255,.35); padding-left: .8rem; pointer-events: none;
+}
+@media (max-width: 640px) { [data-testid="stHeader"]::after { display: none; } }
 [data-testid="stHeader"] button, [data-testid="stHeader"] svg { color: #fff !important; }
 
 [data-testid="stMainBlockContainer"], .block-container { padding-top: 2.2rem; max-width: 1280px; }
@@ -182,6 +196,7 @@ hr { border-color: var(--borda) !important; }
 def aplicar_estilos() -> None:
     """Injeta o CSS global. Chamar uma vez, logo após `set_page_config`."""
     css = _CSS.replace("__FONTES__", _FONTES)
+    css = css.replace("__MARCA__", MARCA).replace("__SUBTITULO__", SUBTITULO)
     for chave, valor in PALETA.items():
         css = css.replace(f"__{chave}__", valor)
     st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
