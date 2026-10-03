@@ -436,17 +436,17 @@ def para_html(markdown_texto: str, titulo: str = "Relatório de Inspeção") -> 
 <title>{html.escape(titulo)}</title>
 <style>
   :root {{ color-scheme: light; }}
-  body {{ font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  body {{ font-family: Inter, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
          max-width: 900px; margin: 0 auto; padding: 40px 24px; line-height: 1.6;
          color: #1a1d21; background: #fff; }}
-  h1 {{ font-size: 1.7rem; border-bottom: 3px solid #0b5fff; padding-bottom: .4em; }}
+  h1 {{ font-size: 1.7rem; border-bottom: 3px solid #0F4C5C; padding-bottom: .4em; }}
   h2 {{ font-size: 1.25rem; margin-top: 2em; border-bottom: 1px solid #dfe3e8; padding-bottom: .3em; }}
   h3 {{ font-size: 1.05rem; margin-top: 1.6em; }}
-  h4 {{ font-size: 1rem; margin-top: 1.4em; color: #0b3d91; }}
+  h4 {{ font-size: 1rem; margin-top: 1.4em; color: #0F4C5C; }}
   table {{ border-collapse: collapse; width: 100%; margin: 1em 0; font-size: .92rem; }}
   th, td {{ border: 1px solid #d8dde3; padding: 8px 10px; text-align: left; vertical-align: top; }}
-  th {{ background: #f2f5f9; font-weight: 600; }}
-  blockquote {{ border-left: 4px solid #0b5fff; background: #f6f9ff; margin: 1em 0;
+  th {{ background: #EAF1F4; color: #0A3642; font-weight: 600; }}
+  blockquote {{ border-left: 4px solid #1B998B; background: #F2FAF9; margin: 1em 0;
                 padding: .8em 1.1em; font-size: .93rem; color: #2a3138; }}
   code {{ background: #eef1f5; padding: 1px 5px; border-radius: 3px; font-size: .9em; }}
   hr {{ border: 0; border-top: 1px solid #dfe3e8; margin: 2.4em 0; }}

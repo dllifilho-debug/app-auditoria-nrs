@@ -26,6 +26,7 @@ from auditoria.kb import carregar_base
 from auditoria.modelos import ClienteGroq, ErroDeAuditoria
 from auditoria.pipeline import Configuracao, executar
 from auditoria.riscos import catalogo as catalogo_riscos, riscos_marcaveis
+from ui.estilos import aplicar_estilos, badge_gravidade, como_funciona, selo_status, stepper
 
 LIMITE_BASE64 = 3_600_000        # a Groq recusa imagem base64 acima de ~4 MB
 
@@ -35,6 +36,7 @@ st.set_page_config(
     page_icon="•",
     initial_sidebar_state="expanded",
 )
+aplicar_estilos()
 
 
 # ---------------------------------------------------------------------------
@@ -393,6 +395,8 @@ if modo_demo:
         "Desligue na barra lateral e informe a chave da Groq para analisar fotos de verdade.",
     )
 
+etapas_visuais = st.empty()  # preenchido adiante; só decoração
+
 col_a, col_b, col_c = st.columns([2, 2, 1])
 with col_a:
     obra = st.text_input("Obra / unidade", placeholder="Ex.: Edifício Aurora — Torre B")
@@ -412,6 +416,9 @@ contexto = st.text_area(
     height=80,
 )
 
+if not st.session_state.get("resultados"):
+    st.markdown(como_funciona(), unsafe_allow_html=True)
+
 arquivos = st.file_uploader(
     "Fotos da vistoria",
     type=["jpg", "jpeg", "png", "webp", "bmp"],
@@ -423,9 +430,11 @@ if arquivos:
     st.caption(f"{len(arquivos)} imagem(ns) carregada(s).")
     # Sempre 6 colunas: com poucas fotos, a miniatura não estica pela tela toda.
     miniaturas = st.columns(6)
+    selos_miniaturas = []  # preenchidos após a execução; só decoração
     for n, arquivo in enumerate(arquivos[:6]):
         with miniaturas[n]:
             st.image(arquivo, caption=arquivo.name[:18], use_container_width=True)
+            selos_miniaturas.append((arquivo.name, st.empty()))
     if len(arquivos) > 6:
         st.caption(f"…e mais {len(arquivos) - 6} imagem(ns).")
 
@@ -772,6 +781,25 @@ if executar_agora:
 
 resultados = st.session_state.resultados
 
+# Indicador visual de etapas, derivado de estado que já existe (somente leitura).
+_tem_dados = bool(obra or responsavel)
+if arquivos:
+    _auditadas = {r[0] for r in resultados}
+    _falhas = {f[0] for f in st.session_state.falhas}
+    for _nome, _slot in selos_miniaturas:
+        _estado = "auditada" if _nome in _auditadas else ("falhou" if _nome in _falhas else "pendente")
+        _slot.markdown(selo_status(_estado), unsafe_allow_html=True)
+
+etapas_visuais.markdown(
+    stepper([
+        ("Dados da vistoria", "feito" if _tem_dados else "ativo"),
+        ("Fotos", "feito" if arquivos else ("ativo" if _tem_dados else "pendente")),
+        ("Auditoria", "feito" if resultados else ("ativo" if arquivos else "pendente")),
+        ("Laudo", "ativo" if resultados else "pendente"),
+    ]),
+    unsafe_allow_html=True,
+)
+
 if st.session_state.falhas and not resultados:
     # Lote inteiro falhou: sem este aviso a tela volta ao estado inicial no rerun
     # seguinte e não sobra vestígio de que alguma coisa foi tentada.
@@ -889,7 +917,10 @@ if resultados:
                     st.markdown("**Gravidade das constatações**")
                     for nc in laudo.nao_conformidades:
                         rot = relatorio.SELOS.get(nc.gravidade, nc.gravidade)
-                        st.markdown(f"`{nc.item.nr} {nc.item.item}` — **{rot}**")
+                        st.markdown(
+                            f"`{nc.item.nr} {nc.item.item}` — {badge_gravidade(nc.gravidade, rot)}",
+                            unsafe_allow_html=True,
+                        )
                 if not laudo.aprovado:
                     st.warning(
                         f"A revisão técnica vetou {len(laudo.vetos)} enquadramento(s). "
