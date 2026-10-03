@@ -64,8 +64,13 @@ html, body, [data-testid="stAppViewContainer"], .stApp {
 [data-testid="stMainBlockContainer"], .block-container { padding-top: 2.2rem; max-width: 1280px; }
 
 /* Tipografia */
-h1 { font-weight: 700 !important; letter-spacing: -.02em; color: var(--pri) !important; }
+h1 { font-weight: 700 !important; letter-spacing: -.02em; color: var(--pri) !important; font-size: 2.1rem !important; }
+h2 { font-size: 1.45rem !important; }
+h3 { font-size: 1.15rem !important; }
 h2, h3 { font-weight: 600 !important; letter-spacing: -.01em; color: var(--pri-esc) !important; }
+/* Dentro do laudo (abas), títulos menores que os do cabeçalho da página */
+[data-testid="stTabs"] h1 { font-size: 1.6rem !important; line-height: 1.25; }
+[data-testid="stTabs"] h2 { font-size: 1.25rem !important; }
 [data-testid="stCaptionContainer"], .stCaption { color: var(--suave) !important; }
 hr { border-color: var(--borda) !important; }
 
