@@ -164,6 +164,13 @@ hr { border-color: var(--borda) !important; }
 .nr-badge.media   { background:#FEF6D8; color:#7A5B00; border-color:#F1DE92; }
 .nr-badge.baixa   { background:#E3F4EF; color:#0E6B5F; border-color:#A9DCCF; }
 
+/* Selo de status da miniatura */
+.nr-status { display:block; text-align:center; margin:-.3rem auto .6rem; width:fit-content;
+  padding:.1rem .6rem; border-radius:999px; font-size:.74rem; font-weight:700; border:1px solid transparent; }
+.nr-status.pendente { background:#EEF1F4; color:#5B6B7A; border-color:var(--borda); }
+.nr-status.auditada { background:#E3F4EF; color:#0E6B5F; border-color:#A9DCCF; }
+.nr-status.falhou   { background:#FDE8E8; color:#9B1C1C; border-color:#F5B5B5; }
+
 /* Estado vazio: como funciona */
 .nr-vazio { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:.8rem; margin:.4rem 0 1rem; }
 .nr-vazio > div { background:var(--card); border:1px solid var(--borda); border-radius:var(--raio);
@@ -231,3 +238,11 @@ def como_funciona() -> str:
         "<div><b>3. Baixe o laudo</b>Cada citação é conferida contra o texto oficial do MTE.</div>"
         "</div>"
     )
+
+
+_ROTULOS_STATUS = {"pendente": "Pendente", "auditada": "Auditada", "falhou": "Não auditada"}
+
+
+def selo_status(estado: str) -> str:
+    """HTML do selo de uma miniatura: pendente | auditada | falhou."""
+    return f'<span class="nr-status {estado}">{_ROTULOS_STATUS.get(estado, estado)}</span>'
