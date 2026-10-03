@@ -792,7 +792,7 @@ if arquivos:
 
 etapas_visuais.markdown(
     stepper([
-        ("Dados da vistoria", "feito" if _tem_dados else "ativo"),
+        ("Dados da vistoria", "feito" if (_tem_dados or arquivos) else "ativo"),
         ("Fotos", "feito" if arquivos else ("ativo" if _tem_dados else "pendente")),
         ("Auditoria", "feito" if resultados else ("ativo" if arquivos else "pendente")),
         ("Laudo", "ativo" if resultados else "pendente"),
