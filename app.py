@@ -26,6 +26,7 @@ from auditoria.kb import carregar_base
 from auditoria.modelos import ClienteGroq, ErroDeAuditoria
 from auditoria.pipeline import Configuracao, executar
 from auditoria.riscos import catalogo as catalogo_riscos, riscos_marcaveis
+from ui.estilos import aplicar_estilos, stepper
 
 LIMITE_BASE64 = 3_600_000        # a Groq recusa imagem base64 acima de ~4 MB
 
@@ -35,6 +36,7 @@ st.set_page_config(
     page_icon="•",
     initial_sidebar_state="expanded",
 )
+aplicar_estilos()
 
 
 # ---------------------------------------------------------------------------
@@ -392,6 +394,8 @@ if modo_demo:
         "dossiê normativo, aferição e supervisão — com respostas simuladas do modelo. "
         "Desligue na barra lateral e informe a chave da Groq para analisar fotos de verdade.",
     )
+
+etapas_visuais = st.empty()  # preenchido adiante; só decoração
 
 col_a, col_b, col_c = st.columns([2, 2, 1])
 with col_a:
@@ -771,6 +775,18 @@ if executar_agora:
 # ---------------------------------------------------------------------------
 
 resultados = st.session_state.resultados
+
+# Indicador visual de etapas, derivado de estado que já existe (somente leitura).
+_tem_dados = bool(obra or responsavel)
+etapas_visuais.markdown(
+    stepper([
+        ("Dados da vistoria", "feito" if _tem_dados else "ativo"),
+        ("Fotos", "feito" if arquivos else ("ativo" if _tem_dados else "pendente")),
+        ("Auditoria", "feito" if resultados else ("ativo" if arquivos else "pendente")),
+        ("Laudo", "ativo" if resultados else "pendente"),
+    ]),
+    unsafe_allow_html=True,
+)
 
 if st.session_state.falhas and not resultados:
     # Lote inteiro falhou: sem este aviso a tela volta ao estado inicial no rerun
