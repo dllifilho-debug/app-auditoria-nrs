@@ -18,7 +18,7 @@ from pathlib import Path
 import streamlit as st
 from PIL import Image, ImageOps
 
-from auditoria import lote, modelos, progresso, relatorio
+from auditoria import kaiju, lote, modelos, progresso, relatorio
 from auditoria.catalogo_nr import CATALOGO_NR, NRS_VIGENTES
 from auditoria.consumo import ORCAMENTO_GRATUITO, Consumo
 from auditoria.demo import ClienteDemonstracao
@@ -131,6 +131,128 @@ def chave_configurada() -> str:
     except Exception:
         pass
     return os.environ.get("GROQ_API_KEY", "")
+
+
+def config_kaiju() -> tuple[str, str]:
+    """URL e chave PÚBLICA do Supabase do Kaiju. Sem as duas, a seção não aparece."""
+    valores = []
+    for nome in ("KAIJU_SUPABASE_URL", "KAIJU_SUPABASE_CHAVE"):
+        valor = ""
+        try:
+            if nome in st.secrets:
+                valor = str(st.secrets[nome])
+        except Exception:
+            pass
+        valores.append(valor or os.environ.get(nome, ""))
+    return valores[0], valores[1]
+
+
+def secao_kaiju(resultados: list, data_inspecao: date, obra: str, responsavel: str) -> None:
+    """"Enviar para o Kaiju": login do engenheiro, escolha das NCs e envio.
+
+    Só lê os laudos já emitidos. Login e listas ficam na sessão DESTE navegador
+    (`st.session_state`), nunca em `st.cache_*`, que é compartilhado entre
+    usuários — o token de um engenheiro não pode servir a outro.
+    """
+    url, chave = config_kaiju()
+    if not (url and chave):
+        return
+    st.divider()
+    st.markdown("### Enviar para o Kaiju")
+    st.caption(
+        "Grava as não conformidades escolhidas no KAIJU SGI como **Abertas**, cada uma "
+        "com sua ação corretiva, em seu nome e com as permissões do seu usuário lá. "
+        "O laudo é leitura automática da foto: **revise antes de marcar**. "
+        "Reenviar é seguro — NC que já está no Kaiju não é duplicada nem alterada."
+    )
+    cliente = kaiju.ClienteKaiju(url, chave)
+
+    sessao = st.session_state.get("kaiju_sessao")
+    if sessao is None:
+        with st.form("kaiju_login"):
+            email = st.text_input("E-mail do Kaiju")
+            senha = st.text_input("Senha do Kaiju", type="password")
+            if st.form_submit_button("Entrar no Kaiju"):
+                try:
+                    st.session_state.kaiju_sessao = cliente.entrar(email, senha)
+                except kaiju.ErroKaiju as erro:
+                    st.error(str(erro))
+                else:
+                    st.rerun()
+        return
+
+    c1, c2 = st.columns([3, 1])
+    c1.caption(f"Conectado ao Kaiju como **{sessao.email}**.")
+    if c2.button("Sair do Kaiju", use_container_width=True):
+        for chave_estado in ("kaiju_sessao", "kaiju_vinculos", "kaiju_obras", "kaiju_ultimo"):
+            st.session_state.pop(chave_estado, None)
+        st.rerun()
+
+    try:
+        if "kaiju_vinculos" not in st.session_state:
+            st.session_state.kaiju_vinculos = cliente.vinculos(sessao)
+        vinculos = [v for v in st.session_state.kaiju_vinculos if v.pode_enviar]
+        if not vinculos:
+            st.warning("Seu usuário não é admin nem técnico de SST de nenhuma empresa "
+                       "ativa no Kaiju, e só esses papéis gravam NC.")
+            return
+        empresa = st.selectbox("Empresa", vinculos, format_func=lambda v: v.razao_social,
+                               key="kaiju_empresa")
+        obras = st.session_state.setdefault("kaiju_obras", {})
+        if empresa.empresa_id not in obras:
+            obras[empresa.empresa_id] = cliente.obras(sessao, empresa.empresa_id)
+    except kaiju.ErroKaiju as erro:
+        st.error(str(erro))
+        return
+
+    obra_kaiju = st.selectbox(
+        "Obra / estabelecimento no Kaiju", [None] + obras[empresa.empresa_id],
+        format_func=lambda o: "Sem obra (empresa toda)" if o is None else o.nome,
+        key=f"kaiju_obra_{empresa.empresa_id}",
+    )
+    obra_id = obra_kaiju.id if obra_kaiju else None
+
+    candidatas = kaiju.listar_candidatas(
+        [(nome, laudo) for nome, laudo, _ in resultados], data_inspecao, obra_id)
+    if not candidatas:
+        st.info("Nenhuma não conformidade no lote para enviar.")
+        return
+
+    import pandas as pd  # já vem com o Streamlit
+
+    todas = st.checkbox("Marcar todas", key="kaiju_todas")
+    tabela = pd.DataFrame([{
+        "Enviar": todas,
+        "Laudo": c.numero,
+        "Foto": c.foto + (" (apontada)" if c.apontada else ""),
+        "Norma": f"{c.nc.item.nr} {c.nc.item.item}",
+        "Gravidade": relatorio.SELOS.get(c.nc.gravidade, c.nc.gravidade),
+        "Prazo (d)": c.nc.prazo_dias,
+        "Constatação": c.nc.constatacao,
+    } for c in candidatas])
+    editada = st.data_editor(
+        tabela, hide_index=True, use_container_width=True,
+        disabled=[col for col in tabela.columns if col != "Enviar"],
+        key=f"kaiju_sel_{empresa.empresa_id}_{obra_id}_{todas}",
+    )
+    escolhidas = [c for c, marcada in zip(candidatas, editada["Enviar"]) if marcada]
+
+    if st.button(f"Enviar {len(escolhidas)} NC(s) para o Kaiju", type="primary",
+                 disabled=not escolhidas, use_container_width=True):
+        itens = kaiju.montar_itens(escolhidas, data_inspecao, versao_do_app(),
+                                   obra=obra, responsavel=responsavel)
+        try:
+            r = cliente.enviar(sessao, empresa.empresa_id, obra_id, itens)
+        except kaiju.ErroKaiju as erro:
+            st.error(str(erro))
+        else:
+            st.session_state.kaiju_ultimo = (
+                f"{len(r.criadas)} NC(s) criada(s) em **{empresa.razao_social}**"
+                + (f"; {len(r.ja_existiam)} já estavam no Kaiju e não foram alteradas"
+                   if r.ja_existiam else "") + "."
+            )
+    if st.session_state.get("kaiju_ultimo"):
+        st.success(st.session_state.kaiju_ultimo)
 
 
 # ---------------------------------------------------------------------------
@@ -907,6 +1029,11 @@ if resultados:
             file_name=f"sumario_inspecao_{data_inspecao:%Y%m%d}.html",
             mime="text/html", use_container_width=True,
         )
+        # Acréscimo opcional: falha aqui nunca pode levar o sumário junto.
+        try:
+            secao_kaiju(resultados, data_inspecao, obra, responsavel)
+        except Exception as erro:
+            st.warning(f"Envio para o Kaiju indisponível nesta sessão: {erro}")
 
     for aba, (nome, laudo, miniatura) in zip(abas, resultados):
         with aba:
