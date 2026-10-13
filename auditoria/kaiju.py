@@ -151,6 +151,17 @@ def montar_itens(candidatas: Sequence[Candidata], data_inspecao: date, versao: s
     return [montar_item(c, data_inspecao, versao, obra, responsavel) for c in candidatas]
 
 
+def resumo_envio(criadas: int, ja_existiam: int, empresa: str) -> str:
+    """Mensagem do resultado do envio, com singular e plural certos."""
+    texto = (f"{criadas} NC criada em **{empresa}**" if criadas == 1
+             else f"{criadas} NCs criadas em **{empresa}**")
+    if ja_existiam == 1:
+        texto += "; 1 já estava no Kaiju e não foi alterada"
+    elif ja_existiam > 1:
+        texto += f"; {ja_existiam} já estavam no Kaiju e não foram alteradas"
+    return texto + "."
+
+
 # ---------------------------------------------------------------------------
 # Cliente HTTP — Supabase Auth + PostgREST
 # ---------------------------------------------------------------------------

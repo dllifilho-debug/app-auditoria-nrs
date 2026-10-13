@@ -246,11 +246,8 @@ def secao_kaiju(resultados: list, data_inspecao: date, obra: str, responsavel: s
         except kaiju.ErroKaiju as erro:
             st.error(str(erro))
         else:
-            st.session_state.kaiju_ultimo = (
-                f"{len(r.criadas)} NC(s) criada(s) em **{empresa.razao_social}**"
-                + (f"; {len(r.ja_existiam)} já estavam no Kaiju e não foram alteradas"
-                   if r.ja_existiam else "") + "."
-            )
+            st.session_state.kaiju_ultimo = kaiju.resumo_envio(
+                len(r.criadas), len(r.ja_existiam), empresa.razao_social)
     if st.session_state.get("kaiju_ultimo"):
         st.success(st.session_state.kaiju_ultimo)
 

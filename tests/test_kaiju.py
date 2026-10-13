@@ -261,3 +261,12 @@ def test_transporte_padrao_converte_falha_de_rede(monkeypatch):
     monkeypatch.setattr(kaiju.urllib.request, "urlopen", recusa)
     with pytest.raises(kaiju.ErroKaiju, match="Sem conexão com o Kaiju"):
         kaiju.ClienteKaiju(URL, "chave").entrar("eng@exemplo.com", "s")
+
+
+@pytest.mark.parametrize("criadas, existiam, esperado", [
+    (1, 0, "1 NC criada em **E**."),
+    (0, 1, "0 NCs criadas em **E**; 1 já estava no Kaiju e não foi alterada."),
+    (3, 2, "3 NCs criadas em **E**; 2 já estavam no Kaiju e não foram alteradas."),
+])
+def test_resumo_envio_concorda_singular_e_plural(criadas, existiam, esperado):
+    assert kaiju.resumo_envio(criadas, existiam, "E") == esperado
