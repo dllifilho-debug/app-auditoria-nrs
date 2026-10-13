@@ -11,7 +11,12 @@ Fluxo de trabalho agora passa por PR: branch `claude/...`, testes, navegador, PR
 `main`, e só mergear — nesse ponto ou quando o usuário pedir — depois disso o Streamlit
 Cloud redeploya sozinho em ~1-2 min (confirme pelo hash em "Versão em execução" na
 barra lateral). O repositório tem **"Automatically delete head branches" ligado** desde
-01/09: a branch some sozinha no merge, não precisa limpar depois. **Antes desta sessão, `main` estava travado num protótipo antigo e a
+01/09: a branch some sozinha no merge, não precisa limpar depois. **Depois de mergear algo que mude
+`auditoria/`, faça *Reboot app* no painel do Streamlit Cloud** (⋮ → Reboot app): medido em
+13/10/2026, o redeploy automático recarregou `app.py` com o módulo `auditoria.kaiju` antigo
+(`AttributeError: resumo_envio`) — o envio ao Kaiju já tinha gravado e só a mensagem falhou.
+Se só `app.py` ou documentação mudou, não foi medido se precisa — na dúvida, reboot.
+**Antes desta sessão, `main` estava travado num protótipo antigo e a
 reescrita inteira vivia numa branch nunca mergeada** — se `git diff main...HEAD` um dia
 mostrar milhares de linhas de novo, desconfie do `main` local antes de concluir que o
 `main` remoto está desatualizado (ver armadilha do `git fetch` abaixo).
