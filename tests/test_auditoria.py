@@ -6246,3 +6246,69 @@ def test_parecer_escrito_pelo_diretor_nao_e_substituido(base):
     laudo, _ = _rodar(base, "NR-35 Anexo III 5.2.2.5",
                       _veredito_aprovado("Apoio instável da escada sobre entulho."))
     assert laudo.parecer_diretor == "Apoio instável da escada sobre entulho."
+
+
+# ---------------------------------------------------------------------------
+# Ponto de atenção descartado pelo Diretor (lote de 15/10/2026, foto 7)
+# ---------------------------------------------------------------------------
+
+class _DubleQueDescartaPonto:
+    """Analista não enquadra nada e propõe um ponto; o Diretor o descarta e
+    escreve um parecer que o cita — o laudo da foto 7 de 15/10."""
+
+    ultimo_corte_por_limite = False
+
+    def __init__(self, descartar: bool):
+        self.descartar = descartar
+
+    def conversar(self, modelo, mensagens, teto_saida=1200, temperatura=0.0,
+                  json_estrito=False):
+        p = _texto_do_prompt(mensagens)
+        if "perito em documentação fotográfica" in p:
+            return json.dumps({
+                "ambiente": "canteiro de obras sob tenda",
+                "pessoas": {"presentes": False, "quantidade": 0},
+                "achados": [{"fato": "Cabo elétrico verde estendido sobre o piso de terra "
+                                     "batida, conectando-se à máquina",
+                             "onde": "primeiro plano", "confianca": "alta"}],
+            }, ensure_ascii=False)
+        if "DOSSIÊ NORMATIVO" in p:
+            return json.dumps({
+                "nao_conformidades": [],
+                "sem_enquadramento": ["Cabo elétrico estendido sobre o piso de terra, "
+                                      "sem proteção mecânica"],
+                "conformidades": [],
+            }, ensure_ascii=False)
+        return json.dumps({
+            "conferencia": [], "aparados": [], "vetados": [], "ajustes": [],
+            "pontos_descartados": (
+                [{"ref": "P1", "motivo": "condição de campo sem enquadramento normativo"}]
+                if self.descartar else []
+            ),
+            "conformidades_descartadas": [],
+            "parecer": "Os pontos de atenção identificados (cabo exposto) são condições "
+                       "de campo que requerem verificação local.",
+        }, ensure_ascii=False)
+
+
+def test_ponto_descartado_fica_na_trilha_e_o_parecer_nao_o_cita(base):
+    laudo = executar(_DubleQueDescartaPonto(descartar=True), base, "img", "",
+                     Configuracao(modelo_visao="d", modelo_texto="d", data_referencia=HOJE))
+    assert laudo.nao_conformidades == [] and laudo.sem_enquadramento == []
+    assert len(laudo.pontos_descartados) == 1
+    assert "Cabo elétrico" in laudo.pontos_descartados[0]
+    assert "sem enquadramento normativo" in laudo.pontos_descartados[0]
+    assert "cabo exposto" not in laudo.parecer_diretor
+    assert "descartados na revisão técnica" in laudo.parecer_diretor
+    md = relatorio.markdown(laudo, base, numero=1)
+    assert "Pontos de atenção descartados na revisão técnica" in md
+    assert "Cabo elétrico estendido sobre o piso de terra" in md
+
+
+def test_ponto_mantido_nao_muda_o_parecer(base):
+    """Contraparte: sem descarte, o ponto fica no laudo e o parecer do Diretor também."""
+    laudo = executar(_DubleQueDescartaPonto(descartar=False), base, "img", "",
+                     Configuracao(modelo_visao="d", modelo_texto="d", data_referencia=HOJE))
+    assert laudo.pontos_descartados == []
+    assert len(laudo.sem_enquadramento) == 1
+    assert "cabo exposto" in laudo.parecer_diretor

@@ -274,6 +274,13 @@ def markdown(
         p.append("- Contraprova visual (cada não conformidade conferida de novo contra a imagem):")
         for c in laudo.contraprova:
             p.append(f"  - {c}")
+    if laudo.pontos_descartados:
+        p.append(
+            "- Pontos de atenção descartados na revisão técnica (não fazem parte "
+            "das constatações; ficam registrados para verificação no local):"
+        )
+        for d in laudo.pontos_descartados:
+            p.append(f"  - {d}")
     if laudo.afericoes:
         p.append("- Descartes da aferição automática:")
         for a in laudo.afericoes:

@@ -135,6 +135,13 @@ class Laudo:
     # contra a imagem (confirmada, contradita, inconclusiva ou sem resposta). Vai
     # à trilha nos quatro casos: rede que só registra quando falha não se mede.
     contraprova: list[str] = field(default_factory=list)
+    # Pontos de atenção que o Diretor descartou, com o motivo dele. Sem isto o
+    # descarte não deixava rastro: no lote de 15/10 (foto 7) um condutor
+    # elétrico real sumiu do laudo e o parecer continuou citando "os pontos de
+    # atenção identificados (cabo exposto…)" ao lado de uma lista vazia. É a
+    # classe 5 pelo caminho do descarte, e a "rede que só registra quando
+    # falha" outra vez: o documento não dizia que houve descarte.
+    pontos_descartados: list[str] = field(default_factory=list)
 
     @property
     def aprovado(self) -> bool:
@@ -1670,6 +1677,29 @@ def _descartar(itens: list[str], veredito: dict, chave: str, letra: str) -> list
     return [t for n, t in enumerate(itens, start=1) if n not in fora]
 
 
+def _descartados(itens: list[str], veredito: dict, chave: str, letra: str) -> list[str]:
+    """Os itens que `_descartar` remove, cada um com o motivo do Diretor."""
+    saida: list[str] = []
+    for registro in veredito.get(chave, []) or []:
+        ref = str(registro.get("ref", "")).strip().upper()
+        if not (ref.startswith(letra) and ref[1:].isdigit()):
+            continue
+        n = int(ref[1:])
+        if not 1 <= n <= len(itens):
+            continue
+        motivo = _em_poucas_palavras(_limpar_citacoes(str(registro.get("motivo", "")).strip()))
+        saida.append(itens[n - 1] + (f" (motivo do descarte: {motivo})" if motivo else ""))
+    return saida
+
+
+PARECER_SO_DESCARTES = (
+    "Nenhuma não conformidade foi caracterizada nesta imagem, e os pontos de "
+    "atenção propostos foram descartados na revisão técnica — eles estão "
+    "listados, com o motivo, na trilha de auditoria, para verificação no local. "
+    "Isso não atesta conformidade do local."
+)
+
+
 def _parecer_coerente(parecer: str, sobreviventes: list, vetos: list) -> str:
     """Impede o parecer de descrever achados que o próprio supervisor derrubou.
 
@@ -2128,6 +2158,9 @@ def _executar(
         # Aplicados antes do laço de vetos porque os enquadramentos derrubados são
         # acrescentados aos pontos de atenção logo em seguida, e esses não passam
         # pelo crivo do Diretor — ele não os viu.
+        laudo.pontos_descartados = _descartados(
+            laudo.sem_enquadramento, veredito, "pontos_descartados", "P"
+        )
         laudo.sem_enquadramento = _descartar(
             laudo.sem_enquadramento, veredito, "pontos_descartados", "P"
         )
@@ -2370,6 +2403,13 @@ def _executar(
             _limpar_citacoes(_sem_rotulo_interno(str(veredito.get("parecer", "")).strip())),
             sobreviventes, motivos,
         )
+        # Nada sobreviveu e não houve veto: o laudo só tem o que o Diretor
+        # descartou. O parecer dele foi escrito sobre a proposta e costuma
+        # descrever justamente esses pontos (foto 7 de 15/10), o que deixa o
+        # documento citando o que não está nele (classe 4).
+        if (not sobreviventes and not motivos and not laudo.sem_enquadramento
+                and laudo.pontos_descartados):
+            laudo.parecer_diretor = PARECER_SO_DESCARTES
 
         if not motivos:
             avisar(f"Revisão técnica aprovou sem vetos no ciclo {ciclo}.")

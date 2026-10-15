@@ -170,6 +170,18 @@ parecer veio vazio** (hipótese não medida: Diretor enxuto pelo teto de 900). *
 lote**: com NC sobrevivente e parecer em branco, o código monta o parecer a partir da mais grave e
 declara "A revisão técnica não redigiu parecer…" — essa frase é o handle para medir a frequência.
 
+**Revalidação de 15/10, no `f841e5e` (hash lido na barra lateral), fotos 7 e 4 de novo.** Foto 7:
+**a grua sumiu** — o conserto do prompt segurou, e o `12.3.4` não saiu, como previsto; a serra segue
+"máquina industrial". Mas o laudo saiu com 0 NC, 0 veto, lista de pontos de atenção VAZIA e o
+parecer citando *"os pontos de atenção identificados (cabo exposto e materiais no chão)"*. Pelo
+código: o Diretor só roda se houver algo proposto e não houve NC nem veto, logo ele **descartou** os
+pontos — e o descarte não deixava rastro em lugar nenhum (classe 5 pelo descarte; classe 4 no
+parecer). **Medi X, afirmo Y**: o JSON não guarda a proposta do Analista; a dedução sai do caminho
+do código, não de registro. **CONSERTADO, sem lote**: `Laudo.pontos_descartados` (com o motivo do
+Diretor) vai à trilha, e com nada sobrevivendo além de descartes o parecer é o texto do código
+(`PARECER_SO_DESCARTES`). Foto 4: parecer veio do Diretor — a reserva não foi exercida; 2 NCs
+(`18.9.4` + `18.9.1`), o `18.9.4.2` não saiu, e o "sem guarda-corpo" ao lado da mureta continua.
+
 **Menores, não consertados**: `Laudo.tokens` nunca é preenchido (0 nos 9), então o JSON não mede
 custo por foto; pareceres vazios nas fotos 8/9 são o caminho "nada a auditar", sem Diretor.
 
@@ -3649,7 +3661,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 355 testes
+$VENV -m pytest tests/ -q          # 357 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -3814,7 +3826,7 @@ próprio comando composto (exit 144).
   um `"sem"` de verdade estiver perto DELE no texto (`_proximidade_da_negacao`,
   `pipeline.py`), e sinal de exatamente dois radicais sem negador exige os dois próximos
   (`_bigrama_proximo`). Ver "Conserto de roteamento de 18/09/2026" para a medição.
-- **355 testes**
+- **357 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
