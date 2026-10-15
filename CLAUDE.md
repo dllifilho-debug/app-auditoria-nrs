@@ -32,6 +32,14 @@ verdade é sempre com o usuário, em produção, com fotos e laudos que ele mand
 
 ---
 
+## PRÓXIMA TAREFA COMBINADA (15/10/2026): painel "Apontar achados foto a foto"
+
+Decidida com o usuário e ainda NÃO implementada — ver o item *"Painel de marcação"* em "Em aberto",
+que traz o escopo, as travas que não mudam e o que ficou para depois. Antes de rodar lote, confira
+na barra lateral que a produção está em `b80cf44` (PR #88) ou mais novo.
+
+---
+
 ## COMECE POR AQUI — decisão em 16/09/2026: PAROU de iterar no parágrafo de pessoa/EPI
 
 **Decisão do usuário, depois da quarta rodada (0 de 3, abaixo): parar de escrever mais
@@ -5046,6 +5054,26 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   registrado "Abertura retangular no teto de concreto, sem cobertura ou fechamento
   visível" e uma cancela aberta, com 1 trabalhador na cena. **Nenhum sinal cobre
   "abertura no teto"** — a laje do pavimento de cima vista de baixo.
+- **Painel de marcação — DECIDIDO em 15/10, a implementar.** O usuário pediu o painel "Apontar
+  achados foto a foto (opcional)" (`app.py`, o `st.multiselect` por foto) mais útil. O problema, no
+  print dele: 40 riscos numa lista corrida, ordenados por gravidade com o prefixo "Crítica ·" em
+  quase todas as linhas, sem miniatura da foto, e o nome do arquivo cortado ("WhatsApp Image 202…"),
+  de modo que não dá para saber qual foto se está marcando. Foram propostas cinco soluções; o
+  usuário escolheu **fazer as duas primeiras, num PR só, sem mudar o pipeline**:
+  1. **Agrupar os riscos de `riscos_marcaveis()` por tema** — Quedas e aberturas · Andaime ·
+     Elétrica · Elevador e içamento · Escada · Materiais e organização · Máquina —, em ordem
+     alfabética dentro do grupo e **sem o prefixo de gravidade** (a gravidade é o app que decide,
+     não o inspetor), com uma dica de que digitar no campo filtra a lista.
+  2. **Miniatura da foto ao lado de cada seletor**, com o nome completo do arquivo.
+  **Travas que não mudam**: `select_all=False`, `max_selections=3`, e a marcação **não** chega ao
+  Olho (ver "Achado apontado pelo inspetor" em Estado atual). Teste e verificação no navegador em
+  Modo Demonstração antes do PR. **Ficaram para depois, não fazer sem o usuário pedir**: (3) atalhos
+  de um clique para os ~8 riscos mais comuns; (4) aplicar a mesma marcação a várias fotos de uma
+  vez; (5) **revisão em duas fases** — o Olho roda no lote inteiro, o inspetor confirma, corrige ou
+  acrescenta fatos (cada um marcado "visto pelo modelo"/"declarado pelo inspetor") e só então o
+  enquadramento roda. A (5) é a única que ataca o teto da marcação atual — ela não recupera o que o
+  Olho não viu nem derruba o que ele inventou (a grua de 14/10, os vãos inexistentes) — e é decisão
+  de arquitetura, para conversa própria (ver "Separar a fase de VISÃO", nesta lista).
 - **Autenticação.** Discutida, não implementada. Recomendação: app privado no
   Streamlit Cloud (Settings → Sharing), que não cria segredo novo. Alternativas:
   `st.login()` (OIDC, disponível na versão instalada) ou senha nos Secrets com
