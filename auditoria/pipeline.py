@@ -1678,9 +1678,24 @@ def _parecer_coerente(parecer: str, sobreviventes: list, vetos: list) -> str:
     vetos dele serem aplicados. Quando ele veta tudo, o texto continua falando
     em "múltiplas não conformidades" ao lado de um laudo que não tem nenhuma —
     e um documento que se contradiz não se sustenta diante de quem o questione.
+
+    O caso oposto também sai daqui: NC sobrevivente com parecer em branco. No
+    lote de 14/10 a foto 4 foi ao cliente com três NCs críticas e nenhum
+    parecer — o Diretor omitiu o campo na mesma resposta em que omitiu as três
+    exigências da conferência (repescadas). O texto de reserva declara que foi
+    o código, e não a supervisão, que o escreveu: é por essa frase que o
+    próximo lote mede com que frequência a omissão acontece.
     """
     if sobreviventes:
-        return parecer
+        if parecer.strip():
+            return parecer
+        principal = min(sobreviventes, key=lambda x: x.prioridade)
+        return (
+            "A revisão técnica não redigiu parecer para esta imagem; este resumo "
+            f"foi gerado a partir das {len(sobreviventes)} não conformidade(s) "
+            "confirmada(s). A de maior gravidade é: "
+            f"{principal.constatacao.rstrip('.')}."
+        )
     if not vetos:
         return parecer
     return (

@@ -6177,3 +6177,34 @@ def test_mancha_de_umidade_no_piso_nao_traz_impermeabilizacao_ao_dossie(base):
     dossie, _ = montar_dossie(base, visao, "", HOJE)
     ids = {f"{e.item.nr} {e.item.item}" for e in dossie.entradas}
     assert "NR-08 8.3.3.2" not in ids and "NR-08 8.3.3.1" not in ids
+
+
+# ---------------------------------------------------------------------------
+# Parecer em branco com não conformidade sobrevivente (lote de 14/10/2026)
+# ---------------------------------------------------------------------------
+
+def _veredito_aprovado(parecer: str):
+    return lambda: {
+        "conferencia": [{"ref": "V1", "fato": FATO, "decisao": "aprovado",
+                         "exigencia": "deve ser apoiada em piso estável"}],
+        "aparados": [], "vetados": [], "ajustes": [], "pontos_descartados": [],
+        "conformidades_descartadas": [], "parecer": parecer,
+    }
+
+
+def test_nc_sobrevivente_com_parecer_em_branco_ganha_parecer_de_reserva(base):
+    """Foto 4 do lote de 14/10: três NCs críticas e o parecer vazio no laudo do
+    cliente. O código preenche, e declara que foi ele."""
+    laudo, _ = _rodar(base, "NR-35 Anexo III 5.2.2.5", _veredito_aprovado(""))
+    assert len(laudo.nao_conformidades) == 1
+    assert "não redigiu parecer" in laudo.parecer_diretor
+    assert "entulho" in laudo.parecer_diretor
+    md = relatorio.markdown(laudo, base, numero=1)
+    assert "não redigiu parecer" in md
+
+
+def test_parecer_escrito_pelo_diretor_nao_e_substituido(base):
+    """Contraparte: com parecer de verdade, nada muda."""
+    laudo, _ = _rodar(base, "NR-35 Anexo III 5.2.2.5",
+                      _veredito_aprovado("Apoio instável da escada sobre entulho."))
+    assert laudo.parecer_diretor == "Apoio instável da escada sobre entulho."
