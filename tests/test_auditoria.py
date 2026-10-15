@@ -727,6 +727,31 @@ def test_prompt_do_olho_nao_traz_frase_pronta_de_grua_para_copiar():
     assert "escreva \"grua\"" in PROMPT_OLHO
 
 
+def test_nenhum_exemplo_entre_aspas_do_prompt_do_olho_aciona_risco_se_ecoado():
+    """A regra geral do conserto da grua (14/10): exemplo de CENA entre aspas no
+    prompt é frase pronta, e o Olho pode copiá-la para uma foto que não a tem.
+    O exemplo da cancela ("…na entrada da torre do elevador, aberta…") acionava
+    `torre_elevador_sem_cancela` (`18.11.13`, crítica) se ecoado — o falso
+    positivo de cancela de 26/09 por outra porta. Foi o `/critico` que pegou.
+
+    Ficam de fora as frases curtas de vocabulário ("sem capacete, cabeça
+    descoberta", "sem EPI"): elas SÃO o formato que o roteamento precisa, e só
+    são escritas quando a condição aparece.
+    """
+    from auditoria.pipeline import PROMPT_OLHO
+
+    frases = [
+        q for linha in PROMPT_OLHO.splitlines()
+        for q in re.findall(r'"([^"]+)"', linha)
+        if len(q.split()) >= 5
+    ]
+    assert frases, "a extração não achou exemplo nenhum — o teste não mede nada"
+    for frase in frases:
+        visao = Visao(ambiente="pavimento de obra em construção",
+                      achados=[Achado(frase)])
+        assert rotear_riscos(visao) == [], frase
+
+
 def test_nome_errado_da_torre_leva_item_de_elevador_para_foto_de_grua(base):
     """O que o nome errado custou, medido — e por qual caminho.
 

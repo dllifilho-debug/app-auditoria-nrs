@@ -391,10 +391,9 @@ elevador, shaft. Nomear o que uma coisa É descreve; atribuir a ela uma FUNÇÃO
 conclui — por isso "betoneira" e "cancela" se escrevem e "rede de proteção" não: as duas
 primeiras são o nome do objeto, a terceira é uma afirmação sobre o que a tela faz.
 
-O nome NÃO dispensa os atributos que os dois parágrafos acima pedem — escreva os dois juntos.
-"Cancela metálica vermelha na entrada da torre do elevador, aberta, presa por uma dobradiça" é o
-fato completo: "grade metálica vermelha, aberta" perde o nome, e "cancela aberta" perde a
-descrição.
+O nome NÃO dispensa os atributos que os dois parágrafos acima pedem — escreva os dois juntos:
+o nome do objeto seguido de material, cor, estado e fixação, como você os vê. Só a descrição
+perde o nome; só o nome perde a descrição.
 
 Descrever a forma NO LUGAR do nome só vale quando a forma é ambígua de verdade — quando dois
 equipamentos diferentes teriam esse aspecto na foto. Se você consegue dizer o que a coisa faz
