@@ -704,14 +704,52 @@ def test_prompt_do_olho_separa_a_grua_do_elevador_pelo_que_esta_no_recorte():
     assert "shaft" in PROMPT_OLHO
     assert "não para o poço" in PROMPT_OLHO
 
-    # E `cabine` não pode ficar nas DUAS colunas. O parágrafo anterior — que é
-    # anterior a esta mudança — usa "com cabine e contrapesos" como exemplo de
-    # GRUA, e essa é justamente a frase que o modelo escreveu para a grua em
-    # produção. Listar a cabine como marca do elevador sem resolver o conflito
-    # seria duas regras competindo no mesmo prompt, que é exatamente como o
-    # defeito do #27 nasceu. O que decide é ONDE ela fica.
+    # E `cabine` não pode ficar nas DUAS colunas: listar a cabine como marca do
+    # elevador sem resolver o conflito com a grua seria duas regras competindo
+    # no mesmo prompt, que é exatamente como o defeito do #27 nasceu. O que
+    # decide é ONDE ela fica.
     assert "A cabine sozinha não decide nada" in PROMPT_OLHO
-    assert "com cabine e contrapesos" in PROMPT_OLHO
+
+
+def test_prompt_do_olho_nao_traz_frase_pronta_de_grua_para_copiar():
+    """Lote de 14/10, foto 7: o Olho escreveu "Estrutura metálica elevada com
+    cabine e contrapesos visíveis no topo, identificada como grua" numa foto
+    sem grua no recorte — quase literalmente o exemplo que o prompt trazia
+    entre aspas. Medido sem rede sobre os fatos do laudo: o fato abre
+    `ha_maquina_na_cena` e põe `NR-12 12.3.4` em D3; sem ele, o item sai do
+    dossiê. A NC daquela foto existiu por um objeto que não está na imagem.
+
+    O critério continua no prompt, descrito; a frase copiável, não.
+    """
+    from auditoria.pipeline import PROMPT_OLHO
+
+    assert "cabine e contrapesos" not in PROMPT_OLHO
+    assert "escreva \"grua\"" in PROMPT_OLHO
+
+
+def test_nenhum_exemplo_entre_aspas_do_prompt_do_olho_aciona_risco_se_ecoado():
+    """A regra geral do conserto da grua (14/10): exemplo de CENA entre aspas no
+    prompt é frase pronta, e o Olho pode copiá-la para uma foto que não a tem.
+    O exemplo da cancela ("…na entrada da torre do elevador, aberta…") acionava
+    `torre_elevador_sem_cancela` (`18.11.13`, crítica) se ecoado — o falso
+    positivo de cancela de 26/09 por outra porta. Foi o `/critico` que pegou.
+
+    Ficam de fora as frases curtas de vocabulário ("sem capacete, cabeça
+    descoberta", "sem EPI"): elas SÃO o formato que o roteamento precisa, e só
+    são escritas quando a condição aparece.
+    """
+    from auditoria.pipeline import PROMPT_OLHO
+
+    frases = [
+        q for linha in PROMPT_OLHO.splitlines()
+        for q in re.findall(r'"([^"]+)"', linha)
+        if len(q.split()) >= 5
+    ]
+    assert frases, "a extração não achou exemplo nenhum — o teste não mede nada"
+    for frase in frases:
+        visao = Visao(ambiente="pavimento de obra em construção",
+                      achados=[Achado(frase)])
+        assert rotear_riscos(visao) == [], frase
 
 
 def test_nome_errado_da_torre_leva_item_de_elevador_para_foto_de_grua(base):
@@ -6177,3 +6215,34 @@ def test_mancha_de_umidade_no_piso_nao_traz_impermeabilizacao_ao_dossie(base):
     dossie, _ = montar_dossie(base, visao, "", HOJE)
     ids = {f"{e.item.nr} {e.item.item}" for e in dossie.entradas}
     assert "NR-08 8.3.3.2" not in ids and "NR-08 8.3.3.1" not in ids
+
+
+# ---------------------------------------------------------------------------
+# Parecer em branco com não conformidade sobrevivente (lote de 14/10/2026)
+# ---------------------------------------------------------------------------
+
+def _veredito_aprovado(parecer: str):
+    return lambda: {
+        "conferencia": [{"ref": "V1", "fato": FATO, "decisao": "aprovado",
+                         "exigencia": "deve ser apoiada em piso estável"}],
+        "aparados": [], "vetados": [], "ajustes": [], "pontos_descartados": [],
+        "conformidades_descartadas": [], "parecer": parecer,
+    }
+
+
+def test_nc_sobrevivente_com_parecer_em_branco_ganha_parecer_de_reserva(base):
+    """Foto 4 do lote de 14/10: três NCs críticas e o parecer vazio no laudo do
+    cliente. O código preenche, e declara que foi ele."""
+    laudo, _ = _rodar(base, "NR-35 Anexo III 5.2.2.5", _veredito_aprovado(""))
+    assert len(laudo.nao_conformidades) == 1
+    assert "não redigiu parecer" in laudo.parecer_diretor
+    assert "entulho" in laudo.parecer_diretor
+    md = relatorio.markdown(laudo, base, numero=1)
+    assert "não redigiu parecer" in md
+
+
+def test_parecer_escrito_pelo_diretor_nao_e_substituido(base):
+    """Contraparte: com parecer de verdade, nada muda."""
+    laudo, _ = _rodar(base, "NR-35 Anexo III 5.2.2.5",
+                      _veredito_aprovado("Apoio instável da escada sobre entulho."))
+    assert laudo.parecer_diretor == "Apoio instável da escada sobre entulho."

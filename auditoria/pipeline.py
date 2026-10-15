@@ -391,18 +391,18 @@ elevador, shaft. Nomear o que uma coisa É descreve; atribuir a ela uma FUNÇÃO
 conclui — por isso "betoneira" e "cancela" se escrevem e "rede de proteção" não: as duas
 primeiras são o nome do objeto, a terceira é uma afirmação sobre o que a tela faz.
 
-O nome NÃO dispensa os atributos que os dois parágrafos acima pedem — escreva os dois juntos.
-"Cancela metálica vermelha na entrada da torre do elevador, aberta, presa por uma dobradiça" é o
-fato completo: "grade metálica vermelha, aberta" perde o nome, e "cancela aberta" perde a
-descrição.
+O nome NÃO dispensa os atributos que os dois parágrafos acima pedem — escreva os dois juntos:
+o nome do objeto seguido de material, cor, estado e fixação, como você os vê. Só a descrição
+perde o nome; só o nome perde a descrição.
 
 Descrever a forma NO LUGAR do nome só vale quando a forma é ambígua de verdade — quando dois
 equipamentos diferentes teriam esse aspecto na foto. Se você consegue dizer o que a coisa faz
 fisicamente (içar carga, subir pela lateral do prédio levando pessoas e material, barrar a
 entrada de um vão), então você a reconheceu: escreva o nome, seguido da forma que viu.
-"Estrutura metálica elevada de cor amarela, com cabine e contrapesos" é uma grua descrita sem
-nome — escreva "grua". Ambígua de verdade é a foto em que só se vê um "tambor cilíndrico
-metálico montado em chassi sobre rodas": aí descreva a forma e não invente o nome.
+Se a lança e os contrapesos estão no recorte e você descreveria a torre sem dizer o que ela é,
+você reconheceu uma grua — escreva "grua". Ambígua de verdade é a foto em que só se vê um
+"tambor cilíndrico metálico montado em chassi sobre rodas": aí descreva a forma e não invente
+o nome.
 
 Nomear também é AFIRMAR, e nome errado é fato falso — pior que nome nenhum, porque atravessa
 o laudo inteiro sem que nada o confira. Escreva o nome só quando o que distingue aquele
@@ -412,8 +412,7 @@ confundem, e o que separa uma da outra:
   partir da lança.
 - ELEVADOR DE OBRA (de cremalheira): cabine ou plataforma que SOBE PELA PRÓPRIA TORRE,
   cremalheira (barra dentada) na face da torre, cancela em cada pavimento de acesso.
-A cabine sozinha não decide nada: a grua também tem uma, e ela aparece no exemplo do
-parágrafo acima ("com cabine e contrapesos" é grua). O que decide é ONDE ela fica — no
+A cabine sozinha não decide nada: a grua também tem uma. O que decide é ONDE ela fica — no
 topo, junto da lança, é grua; correndo pela torre, é elevador. Se a foto mostra a cabine
 e não mostra qual das duas coisas ela faz, você não distinguiu: vá para a regra abaixo.
 Se o recorte mostra só a base, ou um trecho do meio da torre, nenhum dos dois sinais aparece:
@@ -1678,9 +1677,24 @@ def _parecer_coerente(parecer: str, sobreviventes: list, vetos: list) -> str:
     vetos dele serem aplicados. Quando ele veta tudo, o texto continua falando
     em "múltiplas não conformidades" ao lado de um laudo que não tem nenhuma —
     e um documento que se contradiz não se sustenta diante de quem o questione.
+
+    O caso oposto também sai daqui: NC sobrevivente com parecer em branco. No
+    lote de 14/10 a foto 4 foi ao cliente com três NCs críticas e nenhum
+    parecer — o Diretor omitiu o campo na mesma resposta em que omitiu as três
+    exigências da conferência (repescadas). O texto de reserva declara que foi
+    o código, e não a supervisão, que o escreveu: é por essa frase que o
+    próximo lote mede com que frequência a omissão acontece.
     """
     if sobreviventes:
-        return parecer
+        if parecer.strip():
+            return parecer
+        principal = min(sobreviventes, key=lambda x: x.prioridade)
+        return (
+            "A revisão técnica não redigiu parecer para esta imagem; este resumo "
+            f"foi gerado a partir das {len(sobreviventes)} não conformidade(s) "
+            "confirmada(s). A de maior gravidade é: "
+            f"{principal.constatacao.rstrip('.')}."
+        )
     if not vetos:
         return parecer
     return (

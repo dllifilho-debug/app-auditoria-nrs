@@ -124,6 +124,57 @@ seguravam regrediram). **Decisão registrada no bloco acima: parar de iterar aqu
 
 ---
 
+## Lote de 14/10/2026 — 9 fotos de obra nova (Setor Marista): a contraprova ratificou um vão inexistente, e o Olho copiou o exemplo do prompt
+
+Lido a partir do JSON de progresso (`progresso_20261014_9fotos.json`), não dos HTML. **O JSON não
+traz hash nem modelo**: o commit em produção é desconhecido (o `main` era `7e5ecd2`). As miniaturas
+do JSON vêm em 896 px — a escala em que o Olho recebe a foto —, e foram abertas e ampliadas; os
+dossiês das fotos 1, 4 e 7 foram reproduzidos sem rede a partir dos fatos. **Fotos novas, fora do
+acervo `auditoria-nrs-fixtures`**, sem nome de arquivo descritivo (`WhatsApp Image 2026-10-14 at …`):
+não há gabarito pelo nome; a leitura é pela régua (a)-(d). **8 NCs em 5 laudos, 0 não auditadas, 1
+ciclo em todos.** ~131 s por foto, **89% de espera de cota** (1.052 de 1.183 s).
+
+| # | Laudo | Na imagem |
+|---|---|---|
+| 1 | `18.9.2` crítica + `18.9.1` alta | ❌ piso contínuo com tábuas soltas: **VÃO INEXISTENTE, 7ª ocorrência, e a contraprova CONFIRMOU**. O "vão lateral sem barreira" tem **mureta de concreto** (altura ABERTA). O "andaime" são escoras de laje (NOME) |
+| 2 | `18.9.2` crítica | ⚠️ desnível real à esquerda, mas com o FUNDO visível (brita no nível de baixo); a placa central assenta sobre brita. Rebaixo, não vão para o pavimento inferior — profundidade ABERTA |
+| 3 | 0 NC | ✅ |
+| 4 | `18.9.1` + `18.9.4` + `18.9.4.2`, as três críticas | ❌ a MESMA borda contada três vezes; "sem guarda-corpo" ao lado da mureta que o próprio Olho registrou noutro fato; o `18.9.4.2` cobra 1,20 m e 90 kgf/m (classe 3). **Parecer vazio** — ver abaixo. O transformador junto da laje foi a `sem_enquadramento` |
+| 5 | `18.16.4` média | ⚠️ o aparo tirou a obstrução e o que sobrou ("desalinhada, ocupando espaço") não descumpre o item; saiu "segue coberto" assim mesmo — o `sobra_descumpre` declarou "sim" |
+| 6 | 0 NC, `8.3.2.1` vetado | ✅ veto certo. **NR-29 (portuária) em `nrs_sem_texto`**, não investigado |
+| 7 | `NR-12 12.3.4` alta | ⚠️ **certo pelo motivo errado** (abaixo). A máquina é **serra circular de bancada** (as placas nela dizem), e o Olho a chamou de "máquina industrial" — a omissão de 11/09 outra vez. O "cabo verde" parece mangueira e **o engenheiro confirmou que é condutor elétrico** (alimentação ou aterramento: ABERTO) |
+| 8, 9 | 0 NC | ✅ documentos na tela — controle negativo segurou |
+
+**1. O Olho ecoou o exemplo do prompt e inventou uma GRUA.** Foto 7: *"Estrutura metálica elevada
+com cabine e contrapesos visíveis no topo, identificada como grua"* — quase literalmente a frase
+entre aspas do `PROMPT_OLHO`. Ampliado o fundo à esquerda, não há grua no recorte. **Medido sem
+rede**: com o fato, `ha_maquina_na_cena` abre e `NR-12 12.3.4` vai a D3 (é `itens_so_com_maquina`);
+sem ele, o item sai do dossiê. A NC existiu por um objeto que não está na imagem — o VÃO INEXISTENTE
+na forma de equipamento, com origem nova: **frase de exemplo do prompt**. **CONSERTADO, sem lote**:
+a frase copiável saiu do prompt (o critério continua, descrito), sem regra nova. O `/critico`
+rejeitou a primeira versão: o exemplo da cancela, no mesmo parágrafo ("…na entrada da torre do
+elevador, aberta…"), ecoado como fato aciona `torre_elevador_sem_cancela` (`18.11.13` crítica) —
+medido. Reescrito também, e um teste passou a exigir que nenhuma frase de 5+ palavras entre aspas
+do `PROMPT_OLHO` acione risco se copiada como fato.
+
+**2. A contraprova ratificou o vão inexistente.** 8 de 8 "confirmada na imagem", 0 contradiz,
+0 `nao_decide`. Na foto 1 ela confirmou um vão de piso que a imagem não mostra e uma "falta de
+barreira" ao lado de uma mureta. Em 26/09 ela tinha pegado 2 de 2; é a primeira falha na classe que
+a motivou — o risco declarado (mesmo modelo, mesma leitura) realizado. **Medi X, afirmo Y**: n=1
+falha; não é taxa.
+
+**3. A repescagem da conferência MEDIDA pela primeira vez — funcionou.** Foto 4,
+`conferencia_reparada` com os três enquadramentos: o Diretor omitiu as três exigências e a
+repescagem as recuperou. É a resposta que este arquivo esperava desde 10/09. **Na mesma resposta o
+parecer veio vazio** (hipótese não medida: Diretor enxuto pelo teto de 900). **CONSERTADO, sem
+lote**: com NC sobrevivente e parecer em branco, o código monta o parecer a partir da mais grave e
+declara "A revisão técnica não redigiu parecer…" — essa frase é o handle para medir a frequência.
+
+**Menores, não consertados**: `Laudo.tokens` nunca é preenchido (0 nos 9), então o JSON não mede
+custo por foto; pareceres vazios nas fotos 8/9 são o caminho "nada a auditar", sem Diretor.
+
+---
+
 ## Contraprova visual de 26/09/2026 — o Diretor passa a ter a foto como segunda fonte (À ESPERA DE LOTE)
 
 Pedido do usuário: "ainda está errando coisas bobas — as de leitura, do Diretor". O diagnóstico é
@@ -3598,7 +3649,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 320 testes
+$VENV -m pytest tests/ -q          # 355 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -3763,7 +3814,7 @@ próprio comando composto (exit 144).
   um `"sem"` de verdade estiver perto DELE no texto (`_proximidade_da_negacao`,
   `pipeline.py`), e sinal de exatamente dois radicais sem negador exige os dois próximos
   (`_bigrama_proximo`). Ver "Conserto de roteamento de 18/09/2026" para a medição.
-- **320 testes**
+- **355 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
