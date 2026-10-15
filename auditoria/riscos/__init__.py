@@ -11,6 +11,7 @@ Cada domínio contribui com um dicionário `RISCOS`; aqui eles são unidos e
 conferidos.
 """
 
+import unicodedata
 from dataclasses import dataclass
 
 GRAVIDADES = ("critica", "alta", "media", "baixa")
@@ -249,6 +250,82 @@ def riscos_marcaveis() -> tuple[Risco, ...]:
             ),
             key=lambda r: (GRAVIDADES.index(r.gravidade_base), r.rotulo),
         )
+    )
+
+
+# Temas do painel de marcação. A lista corrida de 40 riscos, ordenada por
+# gravidade, abria com "Crítica ·" em quase toda linha e obrigava a ler as
+# quarenta para achar a escada. Agrupar pelo objeto da cena é como o inspetor
+# procura; a gravidade sai do rótulo porque quem a decide é o app, não quem
+# marca. A ordem dos temas é a do que mais aparece no acervo.
+TEMAS_MARCAVEIS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("Quedas e aberturas", (
+        "abertura_piso_desprotegida", "abertura_parede_desprotegida",
+        "periferia_laje_sem_guarda_corpo", "protecao_queda_materiais_periferia",
+        "rede_seguranca_irregular", "rampa_passarela_irregular",
+        "ancoragem_sem_projeto",
+    )),
+    ("Andaime e plataforma", (
+        "andaime_sem_guarda_corpo", "andaime_base_instavel", "andaime_piso_incompleto",
+        "andaime_sem_travamento", "andaime_acesso_improvisado",
+        "andaime_suspenso_irregular", "plataforma_cavalete_irregular",
+    )),
+    ("Elevador e içamento", (
+        "vao_caixa_elevador_sem_fechamento", "torre_elevador_sem_cancela",
+        "dispositivo_icamento_deteriorado", "equipamento_guindar_sem_itens_seguranca",
+        "carga_suspensa_area_sem_isolamento",
+    )),
+    ("Escada", (
+        "escada_mao_irregular", "escada_mao_local_perigoso",
+        "escada_provisoria_coletiva_irregular",
+    )),
+    ("Escavação, estrutura e fôrmas", (
+        "escavacao_sem_escoramento_ou_talude", "escavacao_sem_isolamento_sinalizacao",
+        "demolicao_sem_plano", "formas_escoramento_sem_projeto",
+        "armadura_sem_escoramento", "ferro_espera_sem_protecao",
+    )),
+    ("Materiais, organização e sinalização", (
+        "madeira_com_prego_exposto", "empilhamento_material_instavel",
+        "entulho_sobras_acumulados", "canteiro_desorganizado_circulacao_obstruida",
+        "canteiro_sem_sinalizacao", "tapume_galeria_ausente",
+        "area_carpintaria_armacao_irregular",
+    )),
+    ("Áreas de vivência", (
+        "agua_potavel_ausente", "instalacao_sanitaria_precaria",
+        "local_refeicao_inadequado", "vestiario_inadequado",
+        "sem_abrigo_intemperies_ceu_aberto",
+    )),
+)
+
+
+def _chave_alfabetica(texto: str) -> str:
+    # Sem isto "Área" iria para depois de "Vão": o Python ordena pelo código do
+    # caractere, e o acento joga a letra para o fim da tabela.
+    sem_acento = unicodedata.normalize("NFKD", texto)
+    return "".join(c for c in sem_acento if not unicodedata.combining(c)).casefold()
+
+
+def riscos_marcaveis_por_tema() -> tuple[tuple[str, tuple[Risco, ...]], ...]:
+    """Os riscos de `riscos_marcaveis`, por tema e em ordem alfabética dentro dele.
+
+    Quebra se um risco marcável ficar sem tema ou em dois, ou se um tema citar
+    risco que não é marcável: risco novo na taxonomia de construção sumiria do
+    painel em silêncio, e é para isso não acontecer que a conferência existe.
+    """
+    marcaveis = {r.id: r for r in riscos_marcaveis()}
+    vistos: list[str] = [i for _, ids in TEMAS_MARCAVEIS for i in ids]
+    repetidos = sorted({i for i in vistos if vistos.count(i) > 1})
+    sem_tema = sorted(set(marcaveis) - set(vistos))
+    estranhos = sorted(set(vistos) - set(marcaveis))
+    if repetidos or sem_tema or estranhos:
+        raise ValueError(
+            "TEMAS_MARCAVEIS desalinhado com riscos_marcaveis(): "
+            f"repetidos={repetidos} sem_tema={sem_tema} nao_marcaveis={estranhos}"
+        )
+    return tuple(
+        (tema, tuple(sorted((marcaveis[i] for i in ids),
+                            key=lambda r: _chave_alfabetica(r.rotulo))))
+        for tema, ids in TEMAS_MARCAVEIS
     )
 
 

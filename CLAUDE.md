@@ -32,10 +32,10 @@ verdade é sempre com o usuário, em produção, com fotos e laudos que ele mand
 
 ---
 
-## PRÓXIMA TAREFA COMBINADA (15/10/2026): painel "Apontar achados foto a foto"
+## Painel "Apontar achados foto a foto" — IMPLEMENTADO em 15/10/2026 (itens 1 e 2)
 
-Decidida com o usuário e ainda NÃO implementada — ver o item *"Painel de marcação"* em "Em aberto",
-que traz o escopo, as travas que não mudam e o que ficou para depois. Antes de rodar lote, confira
+Ver o item *"Painel de marcação"* em "Em aberto": o que foi feito, as travas que não mudaram e o que
+ficou para depois. Antes de rodar lote, confira
 na barra lateral que a produção está em `b80cf44` (PR #88) ou mais novo.
 
 ---
@@ -3669,7 +3669,7 @@ citação diretamente, o projeto perdeu sua garantia central.
 # interpretador com as dependências (o Python do sistema tem cryptography quebrado)
 VENV=/tmp/claude-0/.../scratchpad/venv/bin/python   # recrie com python3 -m venv se não existir
 
-$VENV -m pytest tests/ -q          # 357 testes
+$VENV -m pytest tests/ -q          # 360 testes
 $VENV -m auditoria.kb_build        # regenera a base a partir de normas/*.pdf
 $VENV -m streamlit run app.py --server.port 8600 --server.headless true
 ```
@@ -3834,7 +3834,7 @@ próprio comando composto (exit 144).
   um `"sem"` de verdade estiver perto DELE no texto (`_proximidade_da_negacao`,
   `pipeline.py`), e sinal de exatamente dois radicais sem negador exige os dois próximos
   (`_bigrama_proximo`). Ver "Conserto de roteamento de 18/09/2026" para a medição.
-- **357 testes**
+- **360 testes**
 - Sem texto: NR-14, 19, 22, 25, 29, 30, 31, 32, 34, 36, 37, 38 — nenhuma de construção civil.
   O app sinaliza aplicabilidade dessas normas mas **nunca cita item delas**.
 - **Diretor audita o laudo inteiro**, não só as não conformidades: recebe também pontos
@@ -5054,7 +5054,17 @@ Foram encontradas em produção. Ao revisar qualquer mudança, procure por elas:
   registrado "Abertura retangular no teto de concreto, sem cobertura ou fechamento
   visível" e uma cancela aberta, com 1 trabalhador na cena. **Nenhum sinal cobre
   "abertura no teto"** — a laje do pavimento de cima vista de baixo.
-- **Painel de marcação — DECIDIDO em 15/10, a implementar.** O usuário pediu o painel "Apontar
+- **Painel de marcação — DECIDIDO e IMPLEMENTADO em 15/10 (itens 1 e 2).** Feito:
+  `TEMAS_MARCAVEIS` + `riscos_marcaveis_por_tema()` (`riscos/__init__.py`) agrupam os 40 riscos em
+  sete temas, alfabéticos dentro do tema ignorando acento; o rótulo do seletor é "Tema · risco", sem
+  gravidade, para que digitar "andaime" filtre o grupo (o multiselect do Streamlit não tem cabeçalho
+  de grupo). **Elétrica e Máquina, da lista abaixo, não viraram tema**: nenhum risco marcável é
+  desses temas (a lista só oferece construção sem exigir pessoa); entraram "Escavação, estrutura e
+  fôrmas" e "Áreas de vivência". Risco marcável sem tema quebra `riscos_marcaveis_por_tema()` em vez
+  de sumir do painel (teste travando). Miniatura de 110 px ao lado de cada seletor, cacheada na
+  sessão por nome + tamanho, e o nome inteiro do arquivo como rótulo. **O filtro do Streamlit é
+  aproximado**: "escada" traz também "escavação" e "escoramento", abaixo dos três de escada. Texto
+  original da decisão: O usuário pediu o painel "Apontar
   achados foto a foto (opcional)" (`app.py`, o `st.multiselect` por foto) mais útil. O problema, no
   print dele: 40 riscos numa lista corrida, ordenados por gravidade com o prefixo "Crítica ·" em
   quase todas as linhas, sem miniatura da foto, e o nome do arquivo cortado ("WhatsApp Image 202…"),

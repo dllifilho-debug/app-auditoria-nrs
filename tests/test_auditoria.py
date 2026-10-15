@@ -11,6 +11,7 @@ import dataclasses
 import json
 import re
 import sys
+import unicodedata
 from datetime import date
 from pathlib import Path
 
@@ -30,6 +31,7 @@ from auditoria.riscos import (
     GRAVIDADES,
     catalogo as catalogo_riscos,
     riscos_marcaveis,
+    riscos_marcaveis_por_tema,
 )
 
 HOJE = date(2026, 8, 23)
@@ -4697,6 +4699,44 @@ def test_a_lista_marcavel_so_oferece_construcao_sem_exigir_pessoa():
     # quarenta itens sem ler os quarenta.
     posicao = [GRAVIDADES.index(r.gravidade_base) for r in marcaveis]
     assert posicao == sorted(posicao)
+
+
+def test_todo_risco_marcavel_tem_um_tema_e_so_um():
+    """O painel monta o seletor a partir dos temas: risco sem tema sumiria dele.
+
+    Um risco de construção cadastrado depois desta mudança, sem entrar em
+    `TEMAS_MARCAVEIS`, deixaria de ser oferecido ao inspetor sem aviso nenhum.
+    """
+    por_tema = riscos_marcaveis_por_tema()
+    ids = [r.id for _, riscos in por_tema for r in riscos]
+    assert sorted(ids) == sorted(r.id for r in riscos_marcaveis())
+    assert len(ids) == len(set(ids))
+    assert all(riscos for _, riscos in por_tema), "tema vazio no painel"
+
+
+def test_tema_desalinhado_quebra_em_vez_de_esconder_o_risco(monkeypatch):
+    import auditoria.riscos as mod
+
+    sem_o_primeiro = (
+        (mod.TEMAS_MARCAVEIS[0][0], mod.TEMAS_MARCAVEIS[0][1][1:]),
+    ) + mod.TEMAS_MARCAVEIS[1:]
+    monkeypatch.setattr(mod, "TEMAS_MARCAVEIS", sem_o_primeiro)
+    with pytest.raises(ValueError, match="sem_tema"):
+        mod.riscos_marcaveis_por_tema()
+
+
+def test_dentro_do_tema_a_ordem_e_alfabetica_ignorando_acento():
+    """"Área sob carga suspensa" vem antes de "Dispositivo", não depois de "Vão"."""
+    for tema, riscos in riscos_marcaveis_por_tema():
+        rotulos = [r.rotulo for r in riscos]
+        sem_acento = [
+            "".join(c for c in unicodedata.normalize("NFKD", t)
+                    if not unicodedata.combining(c)).casefold()
+            for t in rotulos
+        ]
+        assert sem_acento == sorted(sem_acento), tema
+    elevador = dict(riscos_marcaveis_por_tema())["Elevador e içamento"]
+    assert elevador[0].id == "carga_suspensa_area_sem_isolamento"
 
 
 def test_risco_marcado_traz_ao_dossie_o_item_que_o_olho_nao_alcancou(base):
