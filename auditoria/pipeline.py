@@ -400,9 +400,10 @@ Descrever a forma NO LUGAR do nome só vale quando a forma é ambígua de verdad
 equipamentos diferentes teriam esse aspecto na foto. Se você consegue dizer o que a coisa faz
 fisicamente (içar carga, subir pela lateral do prédio levando pessoas e material, barrar a
 entrada de um vão), então você a reconheceu: escreva o nome, seguido da forma que viu.
-"Estrutura metálica elevada de cor amarela, com cabine e contrapesos" é uma grua descrita sem
-nome — escreva "grua". Ambígua de verdade é a foto em que só se vê um "tambor cilíndrico
-metálico montado em chassi sobre rodas": aí descreva a forma e não invente o nome.
+Se a lança e os contrapesos estão no recorte e você descreveria a torre sem dizer o que ela é,
+você reconheceu uma grua — escreva "grua". Ambígua de verdade é a foto em que só se vê um
+"tambor cilíndrico metálico montado em chassi sobre rodas": aí descreva a forma e não invente
+o nome.
 
 Nomear também é AFIRMAR, e nome errado é fato falso — pior que nome nenhum, porque atravessa
 o laudo inteiro sem que nada o confira. Escreva o nome só quando o que distingue aquele
@@ -412,8 +413,7 @@ confundem, e o que separa uma da outra:
   partir da lança.
 - ELEVADOR DE OBRA (de cremalheira): cabine ou plataforma que SOBE PELA PRÓPRIA TORRE,
   cremalheira (barra dentada) na face da torre, cancela em cada pavimento de acesso.
-A cabine sozinha não decide nada: a grua também tem uma, e ela aparece no exemplo do
-parágrafo acima ("com cabine e contrapesos" é grua). O que decide é ONDE ela fica — no
+A cabine sozinha não decide nada: a grua também tem uma. O que decide é ONDE ela fica — no
 topo, junto da lança, é grua; correndo pela torre, é elevador. Se a foto mostra a cabine
 e não mostra qual das duas coisas ela faz, você não distinguiu: vá para a regra abaixo.
 Se o recorte mostra só a base, ou um trecho do meio da torre, nenhum dos dois sinais aparece:

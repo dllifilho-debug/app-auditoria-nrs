@@ -704,14 +704,27 @@ def test_prompt_do_olho_separa_a_grua_do_elevador_pelo_que_esta_no_recorte():
     assert "shaft" in PROMPT_OLHO
     assert "não para o poço" in PROMPT_OLHO
 
-    # E `cabine` não pode ficar nas DUAS colunas. O parágrafo anterior — que é
-    # anterior a esta mudança — usa "com cabine e contrapesos" como exemplo de
-    # GRUA, e essa é justamente a frase que o modelo escreveu para a grua em
-    # produção. Listar a cabine como marca do elevador sem resolver o conflito
-    # seria duas regras competindo no mesmo prompt, que é exatamente como o
-    # defeito do #27 nasceu. O que decide é ONDE ela fica.
+    # E `cabine` não pode ficar nas DUAS colunas: listar a cabine como marca do
+    # elevador sem resolver o conflito com a grua seria duas regras competindo
+    # no mesmo prompt, que é exatamente como o defeito do #27 nasceu. O que
+    # decide é ONDE ela fica.
     assert "A cabine sozinha não decide nada" in PROMPT_OLHO
-    assert "com cabine e contrapesos" in PROMPT_OLHO
+
+
+def test_prompt_do_olho_nao_traz_frase_pronta_de_grua_para_copiar():
+    """Lote de 14/10, foto 7: o Olho escreveu "Estrutura metálica elevada com
+    cabine e contrapesos visíveis no topo, identificada como grua" numa foto
+    sem grua no recorte — quase literalmente o exemplo que o prompt trazia
+    entre aspas. Medido sem rede sobre os fatos do laudo: o fato abre
+    `ha_maquina_na_cena` e põe `NR-12 12.3.4` em D3; sem ele, o item sai do
+    dossiê. A NC daquela foto existiu por um objeto que não está na imagem.
+
+    O critério continua no prompt, descrito; a frase copiável, não.
+    """
+    from auditoria.pipeline import PROMPT_OLHO
+
+    assert "cabine e contrapesos" not in PROMPT_OLHO
+    assert "escreva \"grua\"" in PROMPT_OLHO
 
 
 def test_nome_errado_da_torre_leva_item_de_elevador_para_foto_de_grua(base):
