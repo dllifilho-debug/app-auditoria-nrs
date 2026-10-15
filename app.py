@@ -25,7 +25,7 @@ from auditoria.demo import ClienteDemonstracao
 from auditoria.kb import carregar_base
 from auditoria.modelos import ClienteGroq, ErroDeAuditoria
 from auditoria.pipeline import Configuracao, executar
-from auditoria.riscos import catalogo as catalogo_riscos, riscos_marcaveis
+from auditoria.riscos import catalogo as catalogo_riscos, riscos_marcaveis_por_tema
 from ui.estilos import aplicar_estilos, badge_gravidade, como_funciona, selo_status, stepper
 
 LIMITE_BASE64 = 3_600_000        # a Groq recusa imagem base64 acima de ~4 MB
@@ -676,14 +676,44 @@ def marcados_de(nome: str) -> list[str]:
     return list(st.session_state.get(PREFIXO_MARCACAO + nome, []))
 
 
+LADO_MINIATURA_MARCACAO = 160
+
+
+def miniatura_da_foto(arquivo) -> bytes | None:
+    """Miniatura JPEG para o painel de marcação, guardada na sessão.
+
+    O painel roda a cada marcação, e cada marcação é um rerun: num lote de 100
+    fotos, reduzir as 100 de novo (ou fazer o `st.cache_data` hashear ~300 MB
+    de bytes) a cada clique travaria a tela. A chave é nome + tamanho: o
+    tamanho separa duas fotos de mesmo nome subidas em momentos diferentes.
+    """
+    cache = st.session_state.setdefault("miniaturas_marcacao", {})
+    chave = (arquivo.name, arquivo.size)
+    if chave not in cache:
+        try:
+            img = ImageOps.exif_transpose(Image.open(io.BytesIO(arquivo.getvalue())))
+            if img.mode != "RGB":
+                img = img.convert("RGB")
+            img.thumbnail((LADO_MINIATURA_MARCACAO, LADO_MINIATURA_MARCACAO))
+            buffer = io.BytesIO()
+            img.save(buffer, format="JPEG", quality=75)
+            cache[chave] = buffer.getvalue()
+        except (OSError, ValueError):
+            # Foto ilegível: o painel segue sem a miniatura, e é a execução que
+            # vai dizer o que há de errado com ela.
+            cache[chave] = None
+    return cache[chave]
+
+
 if arquivos:
-    marcaveis = riscos_marcaveis()
-    nome_da_gravidade = {
-        "critica": "Crítica", "alta": "Alta", "media": "Média", "baixa": "Baixa",
-    }
+    por_tema = riscos_marcaveis_por_tema()
+    # Ordem do seletor: tema a tema, alfabética dentro do tema. O rótulo leva o
+    # tema na frente para que digitar "andaime" ou "escada" filtre o grupo
+    # inteiro — o multiselect do Streamlit não tem cabeçalho de grupo.
+    # Sem a gravidade: quem decide a gravidade é o app, não quem marca.
+    opcoes_marcaveis = [r.id for _, riscos in por_tema for r in riscos]
     rotulo_marcavel = {
-        r.id: f"{nome_da_gravidade.get(r.gravidade_base, r.gravidade_base)} · {r.rotulo}"
-        for r in marcaveis
+        r.id: f"{tema} · {r.rotulo}" for tema, riscos in por_tema for r in riscos
     }
     com_marcacao = sum(1 for a in arquivos if marcados_de(a.name))
     with st.expander(
@@ -704,6 +734,13 @@ if arquivos:
             "esta indicação, para que os fatos do laudo sigam vindo da foto e não do "
             "que foi digitado. Toda marcação é declarada na trilha do laudo."
         )
+        st.caption(
+            "Os achados estão agrupados por tema: "
+            + " · ".join(f"*{tema}*" for tema, _ in por_tema)
+            + ". **Digite no campo para filtrar** — por exemplo andaime, "
+            "escada ou abertura. A gravidade não aparece aqui: ela é decidida "
+            "na análise."
+        )
         if ja_auditadas:
             st.caption(
                 f"{len(ja_auditadas)} foto(s) já auditada(s) nesta sessão: marcar agora "
@@ -711,28 +748,38 @@ if arquivos:
                 "antes de executar."
             )
         for arquivo in arquivos:
-            st.multiselect(
-                arquivo.name,
-                options=[r.id for r in marcaveis],
-                format_func=lambda i: rotulo_marcavel[i],
-                key=PREFIXO_MARCACAO + arquivo.name,
-                placeholder="Nenhum achado apontado — o app analisa por conta própria",
-                # O Streamlit oferece "Select all" por padrão, e aqui ele é um
-                # clique que marca os 40 riscos de uma vez: o dossiê tem teto de
-                # 22 entradas e os itens marcados entram primeiro, de modo que a
-                # marcação em massa expulsaria o roteamento e a busca textual
-                # inteiros. O app deixaria de auditar a foto e passaria a
-                # devolver a lista que lhe deram.
-                select_all=False,
-                # Mesmo raciocínio, para a marcação em massa feita à mão. Três é
-                # acima do que o acervo mostra por foto — o nome de arquivo que o
-                # engenheiro escreve nomeia um achado, às vezes dois
-                # ("SEM PROTEÇÃO E SINALIZAÇÃO") — e mantém espaço no dossiê para
-                # o que o app achar sozinho, que é a razão de ele existir.
-                # O limite é de desenho, não medido: a medição de 08/09 usou uma
-                # marcação por foto.
-                max_selections=3,
-            )
+            coluna_foto, coluna_marcacao = st.columns([1, 5], vertical_alignment="center")
+            with coluna_foto:
+                miniatura = miniatura_da_foto(arquivo)
+                if miniatura:
+                    # Largura fixa e pequena: num lote de 100 o painel é rolado,
+                    # e a miniatura só precisa dizer qual foto é.
+                    st.image(miniatura, width=110)
+            with coluna_marcacao:
+                st.multiselect(
+                    # Nome inteiro: o rótulo cortado ("WhatsApp Image 202…") não
+                    # dizia qual foto se estava marcando.
+                    arquivo.name,
+                    options=opcoes_marcaveis,
+                    format_func=lambda i: rotulo_marcavel[i],
+                    key=PREFIXO_MARCACAO + arquivo.name,
+                    placeholder="Nenhum achado apontado — o app analisa por conta própria",
+                    # O Streamlit oferece "Select all" por padrão, e aqui ele é um
+                    # clique que marca os 40 riscos de uma vez: o dossiê tem teto de
+                    # 22 entradas e os itens marcados entram primeiro, de modo que a
+                    # marcação em massa expulsaria o roteamento e a busca textual
+                    # inteiros. O app deixaria de auditar a foto e passaria a
+                    # devolver a lista que lhe deram.
+                    select_all=False,
+                    # Mesmo raciocínio, para a marcação em massa feita à mão. Três é
+                    # acima do que o acervo mostra por foto — o nome de arquivo que o
+                    # engenheiro escreve nomeia um achado, às vezes dois
+                    # ("SEM PROTEÇÃO E SINALIZAÇÃO") — e mantém espaço no dossiê para
+                    # o que o app achar sozinho, que é a razão de ele existir.
+                    # O limite é de desenho, não medido: a medição de 08/09 usou uma
+                    # marcação por foto.
+                    max_selections=3,
+                )
 
 
 refazer = False
